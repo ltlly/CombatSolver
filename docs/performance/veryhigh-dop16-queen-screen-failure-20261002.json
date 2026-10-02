@@ -1,0 +1,62 @@
+{
+  "scope": "First paired screen, not repeated acceptance; same frozen root/full production settings. Timed samples retained as quality observations.",
+  "case": "screen-queen",
+  "baselineSource": "88298ae5",
+  "candidateSource": "e3cd33d2",
+  "qualityPassed": false,
+  "baselineWon": true,
+  "candidateWon": false,
+  "runs": [
+    {
+      "arm": "A1",
+      "seconds": 311.1683613,
+      "peakBytes": 25583038464,
+      "timeBoundary": true,
+      "timeBoundaryObserved": true,
+      "quality": {
+        "won": true,
+        "outstandingStolenResource": 0,
+        "projectedBattleHpLost": 67,
+        "strategicHpDeficit": 67,
+        "potionStrategicCost": 0,
+        "projectedBattlePotionCount": 0,
+        "enemyHp": 0,
+        "score": 9997739915,
+        "combatEndedTurn": 13,
+        "theftPolicy": null,
+        "survives": true,
+        "deathSaveUseCount": 0,
+        "growthHpCredit": 0,
+        "growthRewardCount": 0
+      },
+      "totalExpanded": 107744,
+      "totalTransitions": 3754118
+    },
+    {
+      "arm": "B1",
+      "seconds": 302.2650918,
+      "peakBytes": 22720397312,
+      "timeBoundary": true,
+      "timeBoundaryObserved": true,
+      "quality": {
+        "won": false,
+        "outstandingStolenResource": 0,
+        "projectedBattleHpLost": 22,
+        "strategicHpDeficit": 22,
+        "potionStrategicCost": 0,
+        "projectedBattlePotionCount": 0,
+        "enemyHp": 557,
+        "score": -5240020,
+        "combatEndedTurn": null,
+        "theftPolicy": null,
+        "survives": true,
+        "deathSaveUseCount": 0,
+        "growthHpCredit": 0,
+        "growthRewardCount": 0
+      },
+      "totalExpanded": 135145,
+      "totalTransitions": 4657758
+    }
+  ],
+  "analysis": "Baseline first ENTROPY power-route member found a complete victory; candidate member timed without victory. No early opening incumbent ran in this encounter. Cause and repeat stability unresolved."
+}
