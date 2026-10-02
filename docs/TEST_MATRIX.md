@@ -1,5 +1,17 @@
 # CombatSolver 测试清单
 
+## 新增 Power 的生物顺序（2026-10-02）
+
+基线阶段源码 `e3cd33d2` 的 `WEB_CANNON_MOVE` 原生差分失败（`e3b4a1ef06b745ec8a5ed551b75d574b`）：玩家空监听桶、奥斯蒂保留 `DIE_FOR_YOU_POWER` 时，预测首项为奥斯蒂 Power，原生首项为玩家虚弱。完整有序 Power 比较保持不变，修复插入顺序。
+
+最终 Release 0 警告／错误。三个原生最小合同通过，实例已清理：
+
+- `VH16-FIX-OSTY-WEB`：`439dc589a6b84a29b4cf7ae82fac5f88`，战损 4、奥斯蒂 0 HP、虚弱 2，完整行动状态差分；夹具 `coverage/unattended/anchorless-player-power-osty-order-20261002.json`。
+- `VH16-FIX-ORB-WEB`：`7ca2c2754ee74c7785e4454e8493629f`，玩家闪电球、敌方力量 1，战损 10、虚弱 2，完整行动状态差分；夹具 `coverage/unattended/anchorless-player-power-orb-order-20261002.json`。
+- `MIRRORED-HOOK-FILTER`：`c2246e9871c5491ca31ecae40b951f96`，61 回调／1,671 模型，顺序、重复、Fork、失效、无锚点完整构建及有效前段复用通过。
+
+前两项复跑使用 `tools/run-unattended-test.sh --scenario-id <上述ID> --character-id NECROBINDER|DEFECT --encounter-id LOUSE_PROGENITOR_NORMAL --ascension 10 --act-index-for-test 1 --clear-player-piles --preserve-native-combat-state-for-test --monster-move-checks-path <上述夹具> --stop-after-combat-root-snapshot-assertion --timeout-seconds 120 --exit-on-complete --cleanup-instance-on-exit`；Windows 同协议使用 PascalCase 参数。实际日志、失败夹具及构建保留在该修复工作区 `.local/fix/`。初次球夹具使用错误模型 ID `LIGHTNING`，建局失败；改用 `LIGHTNING_ORB` 并加入敌方力量后通过。未运行完整战斗、增量搜索或可见 Steam 测试，未作性能结论。
+
 ## 部分重战斗场景搜索优化（2026-10-02，合并前回归待完成）
 
 本 PR 在上游 `88298ae5` 上保留 AfterCardPlayed 捕获参与过滤、安全边界保留、已证明无额外治疗路线的战损下界、组合成员共享无药完整胜利、开局完整路线，以及原生感染棱柱／灵魂枢纽／摄政虱虫场景的受限治疗闭包。未纳入伤害目标过滤原型或已撤回实验。

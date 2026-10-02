@@ -1764,7 +1764,7 @@ internal sealed partial class SimulatedCombatState
                 if (power.Amount != 0
                     && !ContainsPowerReference(listeners, power))
                 {
-                    int insertionIndex = FindPowerInsertionIndex(listeners, power);
+                    int insertionIndex = FindPowerInsertionIndex(listeners, power, requirePrefixAnchor);
                     // With no prefix anchor the original may insert at a card or at the
                     // end of the full sequence. Keep that original complete-list path.
                     if (insertionIndex < 0 && requirePrefixAnchor)
@@ -1788,7 +1788,8 @@ internal sealed partial class SimulatedCombatState
         return false;
     }
 
-    private int FindPowerInsertionIndex(IReadOnlyList<AbstractModel> listeners, PowerModel power)
+    private int FindPowerInsertionIndex(
+        IReadOnlyList<AbstractModel> listeners, PowerModel power, bool requirePrefixAnchor)
     {
         int insertionIndex = -1;
         for (int index = 0; index < listeners.Count; index++)
@@ -1805,7 +1806,36 @@ internal sealed partial class SimulatedCombatState
                 break;
             }
         }
+        if (requirePrefixAnchor)
+            return insertionIndex;
+
+        // Native listeners visit each creature's powers before moving to the next
+        // creature. An empty player bucket has no relic/potion/card anchor, but its
+        // newly acquired power must still precede Osty and enemy listeners.
+        int ownerIndex = CreatureListenerIndex(power.Owner);
+        if (ownerIndex < 0)
+            return insertionIndex;
+        for (int index = 0; index < listeners.Count; index++)
+        {
+            Creature? listenerOwner = listeners[index] switch
+            {
+                PowerModel existing => existing.Owner,
+                MonsterModel monster => monster.Creature,
+                _ => null,
+            };
+            if (listenerOwner is not null && CreatureListenerIndex(listenerOwner) > ownerIndex)
+                return insertionIndex < 0 ? index : Math.Min(insertionIndex, index);
+        }
         return insertionIndex;
+    }
+
+    private int CreatureListenerIndex(Creature owner)
+    {
+        IReadOnlyList<Creature> roster = Creatures;
+        for (int index = 0; index < roster.Count; index++)
+            if (ReferenceEquals(roster[index], owner))
+                return index;
+        return -1;
     }
 
     private bool IsOwnerHookAnchor(AbstractModel listener, Creature owner)
@@ -1814,6 +1844,7 @@ internal sealed partial class SimulatedCombatState
         {
             return listener is RelicModel relic && RelicsOf(player).Contains(relic)
                 || listener is PotionModel potion && ReferenceEquals(potion.Owner, player)
+                || listener is OrbModel orb && ReferenceEquals(orb.Owner, player)
                 || listener is CardModel card && ReferenceEquals(card.Owner, player);
         }
         return listener is MonsterModel monster && ReferenceEquals(monster.Creature, owner);

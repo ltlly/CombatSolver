@@ -1,4 +1,12 @@
 {
+  "ANCHORLESS-PLAYER-POWER-ORDER-20261002": {
+    "status": "Passed",
+    "level": "NativeOneStepDifferentialAndHookContract",
+    "procedure": "NECROBINDER 与 DEFECT／LOUSE_PROGENITOR_NORMAL，A10、Act1、空牌堆及遗物／Power；两个 WEB_CANNON_MOVE 一步差分；MIRRORED-HOOK-FILTER；120 秒、原生无头实例均清理。",
+    "expected": "新增玩家 Power 按原生生物顺序先于奥斯蒂及敌方 Power；球作为所有者锚点；前段无锚点仍回退完整构建；完整状态、Fork 和监听复用合同一致。",
+    "observed": "基线 e3b4a1ef06b745ec8a5ed551b75d574b Failed；最终奥斯蒂 439dc589a6b84a29b4cf7ae82fac5f88、球与敌方力量 7ca2c2754ee74c7785e4454e8493629f、监听合同 c2246e9871c5491ca31ecae40b951f96 Passed。Release 0 警告／错误。未验证整场或可见性能。",
+    "evidence": "coverage/unattended/anchorless-player-power-osty-order-20261002.json; coverage/unattended/anchorless-player-power-orb-order-20261002.json; docs/TEST_MATRIX.md"
+  },
   "INFUSED-CORE-INITIAL-SETUP-20260927": {
     "status": "Pending",
     "level": "OfflineProductionHookDiagnostic",

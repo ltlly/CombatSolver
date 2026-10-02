@@ -1,0 +1,31 @@
+[
+  {
+    "enemyIndex": 0,
+    "monsterId": "LOUSE_PROGENITOR",
+    "moveId": "WEB_CANNON_MOVE",
+    "playerHpBefore": 60,
+    "playerBlockBefore": 1,
+    "enemyHpBefore": 120,
+    "enemyBlockBefore": 0,
+    "clearAllRelicsBeforeMove": true,
+    "clearAllPowersBeforeMove": true,
+    "clearPlayerPilesBeforeMove": true,
+    "expectedPlayerPowers": {
+      "FRAIL_POWER": 2
+    },
+    "expectedEnemyBlockGain": 0,
+    "expectedEnemyHpGain": 0,
+    "ostyHpBefore": 5,
+    "powersBeforeMove": [
+      {
+        "powerId": "DIE_FOR_YOU_POWER",
+        "target": "Osty",
+        "amount": 1
+      }
+    ],
+    "expectedPlayerHpLoss": 4,
+    "expectedOstyHp": 0,
+    "expectedOstyMaxHp": 5,
+    "expectedOstyPowers": {}
+  }
+]

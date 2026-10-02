@@ -1,0 +1,37 @@
+[
+  {
+    "enemyIndex": 0,
+    "monsterId": "LOUSE_PROGENITOR",
+    "moveId": "WEB_CANNON_MOVE",
+    "playerHpBefore": 60,
+    "playerBlockBefore": 1,
+    "enemyHpBefore": 120,
+    "enemyBlockBefore": 0,
+    "clearAllRelicsBeforeMove": true,
+    "clearAllPowersBeforeMove": true,
+    "clearPlayerPilesBeforeMove": true,
+    "expectedPlayerPowers": {
+      "FRAIL_POWER": 2
+    },
+    "expectedEnemyBlockGain": 0,
+    "expectedEnemyHpGain": 0,
+    "clearPlayerOrbsBeforeMove": true,
+    "orbsBeforeMove": [
+      {
+        "orbId": "LIGHTNING_ORB",
+        "count": 1
+      }
+    ],
+    "expectedPlayerHpLoss": 10,
+    "powersBeforeMove": [
+      {
+        "powerId": "STRENGTH_POWER",
+        "target": "Enemy",
+        "amount": 1
+      }
+    ],
+    "expectedEnemyPowers": {
+      "STRENGTH_POWER": 1
+    }
+  }
+]

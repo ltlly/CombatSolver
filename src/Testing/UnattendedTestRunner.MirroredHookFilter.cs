@@ -165,9 +165,14 @@ internal sealed partial class UnattendedTestRunner
             int firstCard = expected.FindIndex(model => model is CardModel card && ReferenceEquals(card.Owner, player));
             if (firstCard < 0)
                 throw new InvalidOperationException("No-prefix-anchor fixture requires a player card.");
+            // Native visits the player's powers before the following creatures.
+            // Cards are in the simulated suffix, after that creature prefix.
+            int nextCreature = expected.FindIndex(model => model is MonsterModel
+                || model is PowerModel power && !ReferenceEquals(power.Owner, player.Creature));
+            int insertion = nextCreature < 0 ? firstCard : Math.Min(firstCard, nextCreature);
             long wholeBuilds = combat.HookListenerSegmentStatistics.WholeBuilds;
             combat.SetAmount<StrengthPower>(player.Creature, 1);
-            expected.Insert(firstCard, combat.GetPower<StrengthPower>(player.Creature)!);
+            expected.Insert(insertion, combat.GetPower<StrengthPower>(player.Creature)!);
             if (!expected.SequenceEqual(source.HookListeners, ReferenceEqualityComparer.Instance)
                 || combat.HookListenerSegmentStatistics.WholeBuilds <= wholeBuilds)
                 throw new InvalidOperationException("A Power without a prefix anchor changed its native insertion position.");
