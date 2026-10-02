@@ -1673,6 +1673,13 @@ internal sealed partial class CombatBeamSolver
                         fallback = child;
                     if (child.IsTerminal || child.Turn > node.Turn)
                     {
+                        // Publish an eligible victory before an unbounded play
+                        // layer finishes. Counter ties remain eligible at all turns.
+                        if (_strictHpBoundWithRelicTargets && child.IsTerminal
+                            && !child.Snapshot.HasRisk
+                            && child.BoundaryReason == SearchBoundaryReason.None)
+                            _ = TightenPrimarySearchIncumbentAtTurnLayer(
+                                [child], searchedTurnLayers + 1);
                         int explicitPotionUses = ExplicitPotionUseCount(child);
                         if (explicitPotionUses == 0 && child.Score > potionFreeBoundaryFallbackScore)
                         {

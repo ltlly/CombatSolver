@@ -20,6 +20,16 @@ internal sealed partial class UnattendedTestRunner
     {
         string liveBefore = ContinuationStamp.CaptureLive(live).StateText;
         int bookBefore = player.Relics.OfType<BookOfFiveRings>().Single().CardsAdded;
+        RelicCounterTarget[] zeroAllowance = [new(RelicCounterId.Pendulum, 2, 2, 0, 3)];
+        RelicCounterTarget[] paidAllowance = [new(RelicCounterId.Pendulum, 2, 2, 1, 3)];
+        if (!CombatBeamSolver.CanUseStrictHpRelicBound(true, false, zeroAllowance)
+            || CombatBeamSolver.CanUseStrictHpRelicBound(true, false, paidAllowance)
+            || CombatBeamSolver.CanUseStrictHpRelicBound(false, false, zeroAllowance)
+            || CombatBeamSolver.CanUseStrictHpRelicBound(true, true, zeroAllowance)
+            || !CombatBeamSolver.ShouldPruneByPrimaryIncumbent(29, 2, new(28, 3), allowTurnTieBound: false)
+            || CombatBeamSolver.ShouldPruneByPrimaryIncumbent(28, 99, new(28, 3), allowTurnTieBound: false)
+            || CombatBeamSolver.ShouldPruneByPrimaryIncumbent(27, 99, new(28, 3), allowTurnTieBound: false))
+            throw new InvalidOperationException("A zero-allowance counter objective must preserve equal/better HP at every turn; growth, unknown healing and paid allowance disable this bound.");
         CombatRootSnapshot root = CombatRootSnapshot.Capture(live);
         CombatPredictionSimulator parent = root.ForkSimulator();
         string parentBefore = DescribeContinuationContractState(parent, root, player);
