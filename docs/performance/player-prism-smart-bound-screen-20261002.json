@@ -1,5 +1,5 @@
 {
-  "status": "user accepted ~1.98x staged result; final deployment and regression pending",
+  "status": "user accepted ~1.98x staged result; Native full deployment passed; final submitted-version regression pending",
   "nativeProof": {
     "runId": "d00835b1a18d45a7ac971dde935fd8c5",
     "status": "Passed",
@@ -78,12 +78,13 @@
       "twoPotions": 10
     }
   },
-  "decision": "retain C40 source af626245 for final validation; user accepts this scene below2x; continue optimizing other slow scenes; C41 excluded",
+  "decision": "retain C40 source af626245 for submission; user accepts this scene below2x; continue optimizing other slow scenes; C41 excluded",
   "limits": [
-    "single screen per arm",
+    "single timed screen per arm",
     "complete recorded continuation verified; original native binary not comparable",
-    "full Native deployment and final paired gate pending",
-    "original Custom baseline failedOOM, not comparable"
+    "final submitted-version paired gate pending",
+    "original Custom baseline failedOOM, not comparable",
+    "full heavy-root incremental run timed out720s without result and is not verification evidence; retained minimal Native probe passed"
   ],
   "acceptance": {
     "date": "2026-10-03",
@@ -96,5 +97,29 @@
       "validate the proposed submitted version before merge"
     ],
     "sourceCommit": "af6262459c6485626ec13e2d44c1ce8d9e76722d"
+  },
+  "nativeDeployment": {
+    "runId": "632aac0c34dc4f56b8c75edb9628d965",
+    "status": "Passed",
+    "replayVerification": "deployment_completed",
+    "actualOutcome": {
+      "initialHp": 87,
+      "finalHp": 59,
+      "hpLost": 28,
+      "hpHealed": 0,
+      "selfDamage": 0,
+      "combatEnded": true,
+      "survived": true,
+      "finalEnemyHp": 0,
+      "potions": [],
+      "unattributedHpLoss": 0
+    },
+    "unexpectedReplans": 0,
+    "searchElapsedMilliseconds": 158382.3812,
+    "observedPeakRssBytes": 26018873344,
+    "fullSearchIncrementalVerification": false,
+    "minimalNativeProof": "d00835b1a18d45a7ac971dde935fd8c5",
+    "notASpeedupSample": "full battle deployment has distinct purpose and assertions",
+    "restorationLimit": "complete recorded continuation matched; original native binary encoding not comparable"
   }
 }

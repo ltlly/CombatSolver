@@ -4405,3 +4405,7 @@ pwsh -NoProfile -File tools\run-unattended-test.ps1 -ScenarioId MONSTER-MOVES-BA
 ### 2026-10-02 玩家感染棱柱性能原型
 
 `REMAINING-HEALING-DEFECT-PLAYER-PRISM` 使用实际问题包复原根，严格比对 Turbo、SporeMind、Compact 原生连续动作与预测状态，核对父分支/实机隔离，并检查未知回血卡、遗物外状态、再生药水与 Deck 链接状态牌拒绝证书。C38 run `29a4a65fc8f845a4badc6fb60fe509b5`、C39 run `3d7710f6c60748be83f4183ed35da7f7` Passed；C39 新增零额度目标保路及负例。C40 增加一瓶/两瓶门槛、药水替代抵扣只计一次、免费药水、首领恢复与未胜利/复活基线拒绝检查，run `d00835b1a18d45a7ac971dde935fd8c5` Passed；完整极高筛查run `6b2c6698f41f4691b9be17e7df495585` Passed，单次为1.979倍；用户于2026-10-03明确认可本例该提速幅度。整场质量与性能仅作单次筛查，完整原生部署及正式配对验收尚未完成。
+
+### 2026-10-03 玩家感染棱柱保留版本完整部署
+
+C40 冻结DLL（`d4c9fbb4...`，源码 `af626245`）在问题包原生恢复根、极高/DOP16/Smart/300秒请求预算下，`DeploySolver` run `632aac0c34dc4f56b8c75edb9628d965` Passed：实际第3回合击杀，87→59 HP、战损28、无治疗/药水、非预期重算0。该整场部署不计作新的提速样本。记录Continuation对账通过，但原包缺模型编号映射，原生二进制仍不可比。全根增量重放 run `dcaf198814b74accacf06e3c3e3f0d0a` 在预定720秒启动器截止内未产出结果，保留为未验证；没有延长超时，最小原生状态/隔离与门槛探针已有独立Passed证据。两个隔离实例已清理。拟提交版本其他场景的完整回归仍待完成。
