@@ -1,0 +1,141 @@
+{
+  "scope": "full unchanged VeryHigh/DOP16/Coordinator/Smart/Beamportfolio/300s/NoGC16GB, frozen source88298ae baseline vs initial stagee3cd33d2",
+  "runs": [
+    {
+      "label": "screen-queen-A1",
+      "valid": true,
+      "seconds": 311.1683613,
+      "peakRssBytes": 25583038464,
+      "quality": {
+        "won": true,
+        "outstandingStolenResource": 0,
+        "projectedBattleHpLost": 67,
+        "strategicHpDeficit": 67,
+        "potionStrategicCost": 0,
+        "projectedBattlePotionCount": 0,
+        "enemyHp": 0,
+        "score": 9997739915,
+        "combatEndedTurn": 13,
+        "theftPolicy": null,
+        "survives": true,
+        "deathSaveUseCount": 0,
+        "growthHpCredit": 0,
+        "growthRewardCount": 0
+      },
+      "timeBoundary": true,
+      "totalExpanded": 107744,
+      "totalTransitions": 3754118,
+      "winningPowerMembers": [
+        {
+          "prefix": "ENTROPY",
+          "beamWidth": 135,
+          "expandedNodes": 18235,
+          "battleHpLost": 67,
+          "elapsedMilliseconds": 38826,
+          "termination": "TimeLimit"
+        }
+      ]
+    },
+    {
+      "label": "screen-queen-B1",
+      "valid": true,
+      "seconds": 302.2650918,
+      "peakRssBytes": 22720397312,
+      "quality": {
+        "won": false,
+        "outstandingStolenResource": 0,
+        "projectedBattleHpLost": 22,
+        "strategicHpDeficit": 22,
+        "potionStrategicCost": 0,
+        "projectedBattlePotionCount": 0,
+        "enemyHp": 557,
+        "score": -5240020,
+        "combatEndedTurn": null,
+        "theftPolicy": null,
+        "survives": true,
+        "deathSaveUseCount": 0,
+        "growthHpCredit": 0,
+        "growthRewardCount": 0
+      },
+      "timeBoundary": true,
+      "totalExpanded": 135145,
+      "totalTransitions": 4657758,
+      "winningPowerMembers": []
+    },
+    {
+      "label": "screen-queen-A2",
+      "valid": true,
+      "seconds": 312.3159054,
+      "peakRssBytes": 23282544640,
+      "quality": {
+        "won": true,
+        "outstandingStolenResource": 0,
+        "projectedBattleHpLost": 67,
+        "strategicHpDeficit": 67,
+        "potionStrategicCost": 0,
+        "projectedBattlePotionCount": 0,
+        "enemyHp": 0,
+        "score": 9997619913,
+        "combatEndedTurn": 12,
+        "theftPolicy": null,
+        "survives": true,
+        "deathSaveUseCount": 0,
+        "growthHpCredit": 0,
+        "growthRewardCount": 0
+      },
+      "timeBoundary": true,
+      "totalExpanded": 136051,
+      "totalTransitions": 4546272,
+      "winningPowerMembers": [
+        {
+          "prefix": "SPECTRUM_SHIFT",
+          "beamWidth": 203,
+          "expandedNodes": 23882,
+          "battleHpLost": 67,
+          "elapsedMilliseconds": 49651,
+          "termination": "TimeLimit"
+        }
+      ]
+    },
+    {
+      "label": "screen-queen-B2",
+      "valid": true,
+      "seconds": 300.27794,
+      "peakRssBytes": 24932118528,
+      "quality": {
+        "won": true,
+        "outstandingStolenResource": 0,
+        "projectedBattleHpLost": 67,
+        "strategicHpDeficit": 67,
+        "potionStrategicCost": 0,
+        "projectedBattlePotionCount": 0,
+        "enemyHp": 0,
+        "score": 9997731919,
+        "combatEndedTurn": 12,
+        "theftPolicy": null,
+        "survives": true,
+        "deathSaveUseCount": 0,
+        "growthHpCredit": 0,
+        "growthRewardCount": 0
+      },
+      "timeBoundary": true,
+      "totalExpanded": 136834,
+      "totalTransitions": 4412006,
+      "winningPowerMembers": [
+        {
+          "prefix": "ENTROPY",
+          "beamWidth": 135,
+          "expandedNodes": 21168,
+          "battleHpLost": 67,
+          "elapsedMilliseconds": 38479,
+          "termination": "TimeLimit"
+        }
+      ]
+    }
+  ],
+  "conservativeSpeedup": 1.0294551694573155,
+  "conservativePeakRatio": 1.0708502405345328,
+  "qualityGate": "failed: both baseline samples win, first candidate does not; second candidate win does not erase first",
+  "cause": "timed member reach differs; a source-level cause is not established by these samples",
+  "decision": "retain all samples; initial stage does not satisfy full Queen quality gate; proposed C40 source independently validating now"
+}

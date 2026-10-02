@@ -1,6 +1,6 @@
 # 性能研究与复现
 
-- [玩家感染棱柱保留版本](player-prism-smart-bound-screen-20261002.json)：用户接受约1.98倍阶段结果，峰值+6.89%、战损28不变；最小原生合同与完整部署证据，拟提交版本回归待完成。
+- [玩家感染棱柱保留版本](player-prism-smart-bound-screen-20261002.json)：用户接受约1.98倍阶段结果，峰值+6.89%、战损28不变；最小原生合同与完整部署证据，拟提交版本回归待完成；[Queen两组](veryhigh-dop16-queen-confirm-20261003.json)及[拟提交版临界筛查](veryhigh-dop16-proposed-critical-screen-20261003.json)保留失败与资源差异。
 
 - [部分重战斗场景的阶段优化](veryhigh-dop16-20261001.md)：四场阶段ABBA提速2.336～5.544倍，质量和内存门槛通过；当前上游兼容及提交版本回归单独记录。
 
