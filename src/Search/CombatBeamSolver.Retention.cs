@@ -251,7 +251,8 @@ internal sealed partial class CombatBeamSolver
                 hasOrderedMutationWork,
                 hasCycleExitWork,
                 cycleRegionTransaction);
-            List<SearchNode> bounded = ApplyPrimaryIncumbentBound(finalized);
+            List<SearchNode> bounded = ApplySmartPotionEligibilityBound(
+                ApplyPrimaryIncumbentBound(finalized));
             // Emit all watched final aliases, after every portfolio and the incumbent.
             // The paired value events avoid equating a `with` clone with a dropped route.
             ObserveSearchPathBoundary(

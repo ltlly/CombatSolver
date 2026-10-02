@@ -39,6 +39,7 @@ internal sealed partial class CombatBeamSolver
         }
         finally
         {
+            EmitSmartPotionEligibilityBoundDiagnostics();
             // 最后才扫描标签，避免诊断在候选热路径上枚举整张表。
             var transpositions = _run.TranspositionDiagnostics.Capture(
                 policy.TranspositionEntryLimit, _run.Expanded, _run.TranspositionLimitBypasses,

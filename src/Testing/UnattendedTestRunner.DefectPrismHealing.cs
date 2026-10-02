@@ -30,6 +30,18 @@ internal sealed partial class UnattendedTestRunner
             || CombatBeamSolver.ShouldPruneByPrimaryIncumbent(28, 99, new(28, 3), allowTurnTieBound: false)
             || CombatBeamSolver.ShouldPruneByPrimaryIncumbent(27, 99, new(28, 3), allowTurnTieBound: false))
             throw new InvalidOperationException("A zero-allowance counter objective must preserve equal/better HP at every turn; growth, unknown healing and paid allowance disable this bound.");
+        PotionFreePolicyBaseline eligibilityBaseline = new(true, 28, 59, 3);
+        if (CombatBeamSolver.SmartPotionEligibilityHpCeiling(eligibilityBaseline, 1, 9, 0, BossHpRelief.None) != 19
+            || CombatBeamSolver.SmartPotionEligibilityHpCeiling(eligibilityBaseline, 2, 9, 0, BossHpRelief.None) != 10
+            || CombatBeamSolver.SmartPotionEligibilityHpCeiling(eligibilityBaseline, 2, 9, 9, BossHpRelief.None) != 19
+            || CombatBeamSolver.SmartPotionEligibilityHpCeiling(eligibilityBaseline, 1, 9, 99, BossHpRelief.None) != 27
+            || CombatBeamSolver.SmartPotionEligibilityHpCeiling(eligibilityBaseline, 1, 0, 0, BossHpRelief.None) != 28
+            || CombatBeamSolver.SmartPotionEligibilityHpCeiling(eligibilityBaseline, 1, 9, 0, BossHpRelief.ActClearHeal) != -17
+            || CombatBeamSolver.SmartPotionEligibilityHpCeiling(eligibilityBaseline with { Won = false }, 1, 9, 0, BossHpRelief.None) is not null
+            || CombatBeamSolver.SmartPotionEligibilityHpCeiling(eligibilityBaseline with { DeathSaveUseCount = 1 }, 1, 9, 0, BossHpRelief.None) is not null
+            || CombatBeamSolver.SmartPotionEligibilityHpCeiling(null, 1, 9, 0, BossHpRelief.None) is not null
+            || CombatBeamSolver.SmartPotionEligibilityHpCeiling(eligibilityBaseline, 0, 9, 0, BossHpRelief.None) is not null)
+            throw new InvalidOperationException("Smart eligibility must retain the exact saving threshold, apply replacement credit once, and require a complete surviving no-death-save baseline.");
         CombatRootSnapshot root = CombatRootSnapshot.Capture(live);
         CombatPredictionSimulator parent = root.ForkSimulator();
         string parentBefore = DescribeContinuationContractState(parent, root, player);

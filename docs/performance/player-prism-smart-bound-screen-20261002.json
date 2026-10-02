@@ -1,0 +1,88 @@
+{
+  "status": "experimental screen; below2x and not submitted",
+  "nativeProof": {
+    "runId": "d00835b1a18d45a7ac971dde935fd8c5",
+    "status": "Passed",
+    "checks": "original Native card sequence/state/isolation + zero-allowance guard + exact optional potion eligibility threshold/replacement/boss/death-save negative cases"
+  },
+  "build": "d4c9fbb4f42b6f44b081bce3d70831d344f01b32783c7e98d8ad8f2ba8ef6acd, Release0warnings0errors13.75s",
+  "boundaries": "241searchfiles Passed",
+  "config": "Native .NET9.0.7 workstationGC; VeryHigh135/500000/72/42/54/300000ms,DOP16,Smart,beamportfolio,true; noveltyfalse; NoGC16decimalGB",
+  "runs": {
+    "upstreamBaseline": {
+      "label": "VeryHigh-A2",
+      "runId": "1899f59ee13840d482578b8719d3785c",
+      "seconds": 313.0166646,
+      "peakRssBytes": 26283286528
+    },
+    "candidate": {
+      "label": "C40-VeryHigh-B1",
+      "runId": "6b2c6698f41f4691b9be17e7df495585",
+      "seconds": 158.1704336,
+      "peakRssBytes": 28094922752,
+      "work": [
+        {
+          "mechanism": "PrimaryBeam",
+          "expandedNodes": 99363,
+          "transitions": 698596,
+          "choiceBranches": 162931,
+          "elapsedMilliseconds": 154869.2759,
+          "workerAllocatedBytes": 68329006472,
+          "gen0Collections": 2208,
+          "gen1Collections": 1024,
+          "gen2Collections": 14,
+          "gcPauseMilliseconds": 56271.14,
+          "maxObservedGcPauseMilliseconds": 9519.632,
+          "recordedSolverCount": 1
+        },
+        {
+          "mechanism": "SmartPotionGradient",
+          "expandedNodes": 6774,
+          "transitions": 34177,
+          "choiceBranches": 3048,
+          "elapsedMilliseconds": 3301.1576999999997,
+          "workerAllocatedBytes": 1139504576,
+          "gen0Collections": 137,
+          "gen1Collections": 49,
+          "gen2Collections": 0,
+          "gcPauseMilliseconds": 1239.576,
+          "maxObservedGcPauseMilliseconds": 17.57,
+          "recordedSolverCount": 2
+        }
+      ]
+    }
+  },
+  "speedup": 1.9789834134968196,
+  "peakRssRatio": 1.0689273094546237,
+  "comparisonQuality": {
+    "won": true,
+    "outstandingStolenResource": 0,
+    "projectedBattleHpLost": 28,
+    "strategicHpDeficit": 28,
+    "potionStrategicCost": 0,
+    "projectedBattlePotionCount": 0,
+    "enemyHp": 0,
+    "score": 10000689960.999,
+    "combatEndedTurn": 3,
+    "theftPolicy": null,
+    "survives": true,
+    "deathSaveUseCount": 0,
+    "growthHpCredit": 0,
+    "growthRewardCount": 0
+  },
+  "smartEligibilityPruned": {
+    "onePotion": 820,
+    "twoPotions": 795,
+    "thresholds": {
+      "onePotion": 19,
+      "twoPotions": 10
+    }
+  },
+  "decision": "retain local prototype with measured evidence; no2x claim, no production deploy, no stage-PR source update",
+  "limits": [
+    "single screen per arm",
+    "complete recorded continuation verified; original native binary not comparable",
+    "full Native deployment and final paired gate pending",
+    "original Custom baseline failedOOM, not comparable"
+  ]
+}

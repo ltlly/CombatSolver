@@ -352,6 +352,7 @@ Smart 层间使用 `SmartLayerMemoryForecast` 的同窗分配和转移高水位�
 | `ParallelExpansionWorkProfile.cs` | coordinator 所有的作业经过时间分布与 wave/等待/提交计时；不代表 CPU 时间 |
 | `CombatBeamSolver.PathDiagnostics.cs` | 可选路径观察的值复制与边界配对；分别记录生成、两类转置、实际展开、动作准入、完整保留及回合注释，不写搜索策略或账本 |
 | `CombatBeamSolver.Retention.cs` | prune/retention 调用边界与相关小型辅助 |
+| `CombatBeamSolver.SmartPotionBound.cs` | 实验中的可选药水合格门槛下界；仅作用于已证明无治疗、无成长、零战损额度计数目标的原生棱柱根，不构造虚假 incumbent，不改变药水政策 |
 | `StrategicHpRecoveryBound.cs` | 主结果战损下界的无治疗来源证明与乐观回复量；未知来源保留完整缺血余量 |
 | `StrategicHpRecoveryBound.Remaining.cs` | 原生摄政／静默及已审查敌人的剩余治疗闭包、捕获药水槽与计划返回检查、有限再生上界；根一次冻结环境证据，未知来源保留完整缺血余量 |
 | `CombatBeamSolver.BeamRetentionPolicy.cs` | 保路主构造与字段、既有合同类型、RankFinal/RankBest协调、状态去重、多样性通道及路由分组；初始化顺序保持在此文件 |

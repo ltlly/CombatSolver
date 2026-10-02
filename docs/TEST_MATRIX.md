@@ -4401,3 +4401,7 @@ pwsh -NoProfile -File tools\run-unattended-test.ps1 -ScenarioId MONSTER-MOVES-BA
 - 在线服务 14 项测试通过，包含旧心跳、管理鉴权、持久登录、统计加权、筛选和战绩数据库重启恢复。
 - 日志服务 19 项测试通过，包含提交时战绩快照及小数百分比筛选；Windows 测试进程退出仍有原有 SQLite 临时文件清理占用提示。
 - UI-LOCALIZATION `42dce92d333e46e482ba556b9959e4eb` Passed，24.85 秒，覆盖 322 条中英资源与 headless 统计节点隔离。不是可见游戏结算/交互或帧率验收。
+
+### 2026-10-02 玩家感染棱柱性能原型
+
+`REMAINING-HEALING-DEFECT-PLAYER-PRISM` 使用实际问题包复原根，严格比对 Turbo、SporeMind、Compact 原生连续动作与预测状态，核对父分支/实机隔离，并检查未知回血卡、遗物外状态、再生药水与 Deck 链接状态牌拒绝证书。C38 run `29a4a65fc8f845a4badc6fb60fe509b5`、C39 run `3d7710f6c60748be83f4183ed35da7f7` Passed；C39 新增零额度目标保路及负例。C40 增加一瓶/两瓶门槛、药水替代抵扣只计一次、免费药水、首领恢复与未胜利/复活基线拒绝检查，run `d00835b1a18d45a7ac971dde935fd8c5` Passed；完整极高筛查run `6b2c6698f41f4691b9be17e7df495585` Passed，但仅1.979倍，未通过翻倍验收。整场质量与性能仅作单次筛查，完整原生部署及正式配对验收尚未完成。

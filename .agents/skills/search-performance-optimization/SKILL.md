@@ -18,6 +18,7 @@ description: 在战斗语义已证明正确后，审计或修改 CombatSolver �
 - `StateEvaluation` 计算快照、威胁和评分特征；
 - `PredictionCoverage` 可以在原四字段去重后物化gap，但仍须逐项执行原补偿判定，并保持SourceId/Method稳定排序及同键先遇到者；不能把本地去重扩展成跨历史/分支回调缓存。
 - `BeamRetentionPolicy` 决定中间候选保留；
+- `SmartPotionBound` 只在完整原生无治疗闭包及固定 Smart 可选药水层得到证明后应用现有合格门槛；它不是 incumbent 路线，未知来源、成长、有额外战损额度或强制药水时保持原路径；
 - `FinalPlanOrdering` 决定终局路线；
 - 最终续用戳由 `Terminal` 冻结选中路线的动作索引／回合边界，在既有完整标注回放的动作作用域退出后捕获。保持 EndTurn／强制结束、非死非胜且无边界、有该回合后续动作的原资格，准备根只回放一次已选 setup。只保存纯值，不 Fork 带遗物记录器的模拟器；结尾核对全部边界与最终状态。旧独立前缀回放只作测试 oracle；减少的物理 replay／setup transition 计数须如实报告，不伪加计数，不把长路线收尾收益外推为整搜提速。
 - `SearchRunContext` 拥有单次运行指标、转置和缓存；
