@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "scope": "one paired screen, not ABBA acceptance, not final merge regression pass",
+  "scenario": "user provided Defect / InfestedPrismsElite / A10 / Act2 / floor29",
+  "root": "combat_start -> first playable checkpoint",
+  "originalSetting": "Custom beam512 nodes500000000 branches100/42/54 budget300000ms DOP16; actual Windows serverGC true and NoGC false; Custom reproduction pending",
+  "testSetting": "explicit VeryHigh-equivalent profile135/500000/72/42/54,300000ms,DOP16,Smart,portfolio,NoGC16 decimalGB; actual native .NET9.0.7/workstationGC",
+  "restorationLimit": "Full recorded continuation matched at combat_start and first playable state. Original archive lacks model-ID mapping, so original native binary cannot be verified. Local installed Loadout/BaseLib/ModConfig restored empty summon-hook marker; other mod inventory differences retained.",
+  "runs": {
+    "baseline": {
+      "label": "VeryHigh-A2",
+      "source": "88298ae54fd626e52e87efd568dd19ffd507aafd",
+      "runId": "1899f59ee13840d482578b8719d3785c",
+      "status": "Passed",
+      "launcherExitCode": 0,
+      "restorationStatus": "restored_continuation",
+      "nativeStateVerified": false,
+      "continuationVerified": true,
+      "elapsedMilliseconds": 313016.6646,
+      "boundary": "TimeLimit",
+      "peakProcessWorkingSetBytes": 26283286528,
+      "expandedNodes": 280063,
+      "transitionCount": 1754085,
+      "workerAllocatedBytes": 108054312888,
+      "gcPauseMilliseconds": 43057.25,
+      "comparisonQuality": {
+        "won": true,
+        "outstandingStolenResource": 0,
+        "projectedBattleHpLost": 28,
+        "strategicHpDeficit": 28,
+        "potionStrategicCost": 0,
+        "projectedBattlePotionCount": 0,
+        "enemyHp": 0,
+        "score": 10000689936.999,
+        "combatEndedTurn": 3,
+        "theftPolicy": null,
+        "survives": true,
+        "deathSaveUseCount": 0,
+        "growthHpCredit": 0,
+        "growthRewardCount": 0
+      },
+      "hasRisk": false,
+      "runtime": {
+        "clr": "9.0.7",
+        "serverGc": false,
+        "profile": "Default",
+        "savedNoGcRegionEnabled": true,
+        "effectiveNoGcRegionEnabled": true
+      }
+    },
+    "candidate": {
+      "label": "VeryHigh-B1",
+      "source": "e3cd33d2",
+      "runId": "4b36c2d239504295a358163a59346bed",
+      "status": "Passed",
+      "launcherExitCode": 0,
+      "restorationStatus": "restored_continuation",
+      "nativeStateVerified": false,
+      "continuationVerified": true,
+      "elapsedMilliseconds": 302801.2938,
+      "boundary": "TimeLimit",
+      "peakProcessWorkingSetBytes": 26262081536,
+      "expandedNodes": 285013,
+      "transitionCount": 1770836,
+      "workerAllocatedBytes": 109297077440,
+      "gcPauseMilliseconds": 36075.729,
+      "comparisonQuality": {
+        "won": true,
+        "outstandingStolenResource": 0,
+        "projectedBattleHpLost": 28,
+        "strategicHpDeficit": 28,
+        "potionStrategicCost": 0,
+        "projectedBattlePotionCount": 0,
+        "enemyHp": 0,
+        "score": 10000689936.999,
+        "combatEndedTurn": 3,
+        "theftPolicy": null,
+        "survives": true,
+        "deathSaveUseCount": 0,
+        "growthHpCredit": 0,
+        "growthRewardCount": 0
+      },
+      "hasRisk": false,
+      "runtime": {
+        "clr": "9.0.7",
+        "serverGc": false,
+        "profile": "Default",
+        "savedNoGcRegionEnabled": true,
+        "effectiveNoGcRegionEnabled": true
+      }
+    }
+  },
+  "screen": {
+    "speedup": 1.0337362191284007,
+    "peakMemoryRatio": 0.999193213832775,
+    "sameCompleteQuality": true,
+    "bothWon": true,
+    "bothBattleHpLoss": 28,
+    "memoryWithin10Percent": true,
+    "atLeast2x": false,
+    "bothTimed": true,
+    "formalAcceptance": false
+  },
+  "excludedRuns": [
+    {
+      "label": "VeryHigh-A1",
+      "reason": "optional phase instrumentation grew runtime evidence beyond event_file_size_limit; not used in comparison"
+    }
+  ]
+}
