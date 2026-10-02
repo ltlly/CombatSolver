@@ -3,7 +3,7 @@
   "scope": "one paired screen, not ABBA acceptance, not final merge regression pass",
   "scenario": "user provided Defect / InfestedPrismsElite / A10 / Act2 / floor29",
   "root": "combat_start -> first playable checkpoint",
-  "originalSetting": "Custom beam512 nodes500000000 branches100/42/54 budget300000ms DOP16; actual Windows serverGC true and NoGC false; Custom reproduction pending",
+  "originalSetting": "Custom beam512 nodes500000000 branches100/42/54 budget300000ms DOP16; effective recorded Windows serverGC true and NoGC false; matching Native Custom-A1 baseline was killed by kernel global OOM at observed peak38,985,928,704bytes without complete result",
   "testSetting": "explicit VeryHigh-equivalent profile135/500000/72/42/54,300000ms,DOP16,Smart,portfolio,NoGC16 decimalGB; actual native .NET9.0.7/workstationGC; useNoveltyPortfolio=false in these scoped VeryHigh screens, original Custom had true",
   "restorationLimit": "Full recorded continuation matched at combat_start and first playable state. Original archive lacks model-ID mapping, so original native binary cannot be verified. Local installed Loadout/BaseLib/ModConfig restored empty summon-hook marker; other mod inventory differences retained.",
   "runs": {
@@ -106,5 +106,21 @@
       "label": "VeryHigh-A1",
       "reason": "optional phase instrumentation grew runtime evidence beyond event_file_size_limit; not used in comparison"
     }
-  ]
+  ],
+  "originalCustomFailure": {
+    "status": "failed, no result; excluded from completed performance comparison",
+    "label": "Custom-A1",
+    "runId": "4affd33fcd704b92a430e67b7fc52684",
+    "source": "baseline88298ae frozen DLL",
+    "configuration": "recorded Custom512/500000000/100/42/54/300000ms DOP16 Smart; novelty portfolio true; native .NET9.0.7 server-generational, NoGC disabled to match recorded effective flags",
+    "restorationScope": "recorded continuation only; original native binary not comparable",
+    "processPeakRssBytes": 38985928704,
+    "observedLifetimeSeconds": 215.668,
+    "exitCode": 137,
+    "launcherExitCode": 1,
+    "kernelEvidence": "2026-10-02 22:24:02 Asia/Shanghai kernel: Out of memory: Killed process2281771 (SlayTheSpire2), global_oom",
+    "quality": "no completed result; battle HP loss, victory and final policy eligibility unverified",
+    "performanceConclusion": "cannot compare whole completed requests; no claimed speedup",
+    "cleanup": "owned native process and isolated instance/source template removed by launcher/runner"
+  }
 }
