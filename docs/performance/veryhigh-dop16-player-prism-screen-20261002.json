@@ -4,7 +4,7 @@
   "scenario": "user provided Defect / InfestedPrismsElite / A10 / Act2 / floor29",
   "root": "combat_start -> first playable checkpoint",
   "originalSetting": "Custom beam512 nodes500000000 branches100/42/54 budget300000ms DOP16; actual Windows serverGC true and NoGC false; Custom reproduction pending",
-  "testSetting": "explicit VeryHigh-equivalent profile135/500000/72/42/54,300000ms,DOP16,Smart,portfolio,NoGC16 decimalGB; actual native .NET9.0.7/workstationGC",
+  "testSetting": "explicit VeryHigh-equivalent profile135/500000/72/42/54,300000ms,DOP16,Smart,portfolio,NoGC16 decimalGB; actual native .NET9.0.7/workstationGC; useNoveltyPortfolio=false in these scoped VeryHigh screens, original Custom had true",
   "restorationLimit": "Full recorded continuation matched at combat_start and first playable state. Original archive lacks model-ID mapping, so original native binary cannot be verified. Local installed Loadout/BaseLib/ModConfig restored empty summon-hook marker; other mod inventory differences retained.",
   "runs": {
     "baseline": {
