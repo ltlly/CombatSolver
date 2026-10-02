@@ -1,5 +1,5 @@
 {
-  "status": "experimental screen; below2x and not submitted",
+  "status": "user accepted ~1.98x staged result; final deployment and regression pending",
   "nativeProof": {
     "runId": "d00835b1a18d45a7ac971dde935fd8c5",
     "status": "Passed",
@@ -78,11 +78,23 @@
       "twoPotions": 10
     }
   },
-  "decision": "retain local prototype with measured evidence; no2x claim, no production deploy, no stage-PR source update",
+  "decision": "retain C40 source af626245 for final validation; user accepts this scene below2x; continue optimizing other slow scenes; C41 excluded",
   "limits": [
     "single screen per arm",
     "complete recorded continuation verified; original native binary not comparable",
     "full Native deployment and final paired gate pending",
     "original Custom baseline failedOOM, not comparable"
-  ]
+  ],
+  "acceptance": {
+    "date": "2026-10-03",
+    "userInstruction": "这个1.98也行吧 我认可了 你要是这个场景实在优化不动 就这样也行",
+    "scope": "this player INFESTED_PRISMS_ELITE scene only",
+    "speedupRequirement": "approximately1.98x accepted; no further micro-optimization required",
+    "unchangedRequirements": [
+      "battle loss must not increase",
+      "peak RSS may increase at most10%",
+      "validate the proposed submitted version before merge"
+    ],
+    "sourceCommit": "af6262459c6485626ec13e2d44c1ce8d9e76722d"
+  }
 }
