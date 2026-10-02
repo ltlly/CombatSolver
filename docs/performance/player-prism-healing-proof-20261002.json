@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "status": "not a performance success; retained as native proof foundation only",
+  "scope": "single combined-next-version screen, not ABBA, not submitted PR source",
+  "sourceBase": "8b3f8a59",
+  "candidateFrozenDllSha256": "a80ce660ddb1e5e2d62c2430e3afbc5dc564b26f632e730399b892542dda27fe",
+  "nativeProbeRunId": "29a4a65fc8f845a4badc6fb60fe509b5",
+  "nativeProbeScope": "restored player root, actual Turbo/Spore/Compact full-state match, unknown card/linked status/healing power/potion guards and parent/native isolation; original native archive binary still unverified",
+  "baselineReference": {
+    "source": "e3cd33d2",
+    "runId": "4b36c2d239504295a358163a59346bed",
+    "seconds": 302.8012938,
+    "peakRssBytes": 26262081536
+  },
+  "candidate": {
+    "runId": "ac630e8230af429fbb2920fbca6d7791",
+    "seconds": 305.2715897,
+    "peakRssBytes": 26301124608,
+    "boundary": "TimeLimit",
+    "quality": {
+      "won": true,
+      "outstandingStolenResource": 0,
+      "projectedBattleHpLost": 28,
+      "strategicHpDeficit": 28,
+      "potionStrategicCost": 0,
+      "projectedBattlePotionCount": 0,
+      "enemyHp": 0,
+      "score": 10000689936.999,
+      "combatEndedTurn": 3,
+      "theftPolicy": null,
+      "survives": true,
+      "deathSaveUseCount": 0,
+      "growthHpCredit": 0,
+      "growthRewardCount": 0
+    },
+    "risk": false,
+    "pruneCounters": {
+      "dominatedActionsPruned": 0,
+      "topQueueActionsDropped": 0,
+      "actionAdmissionRepresentativesProtected": 0,
+      "duplicateCardBranchesPruned": 84543,
+      "shuffleBranchesPruned": 0,
+      "soldHpBranchesPruned": 0,
+      "transpositionBranchesPruned": 48840,
+      "repeatableNoProgressBranchesPruned": 0,
+      "primaryIncumbentBranchesPruned": 0,
+      "cycleRegionsDetected": 99,
+      "cycleRegionCandidatesDropped": 749,
+      "crossTurnCandidatesProtected": 12
+    }
+  },
+  "comparison": {
+    "speedup": 0.9919078748781448,
+    "memoryRatio": 1.0014866708850356,
+    "fullQualitySame": true,
+    "formalAcceptance": false
+  },
+  "diagnosis": "CombatBeamSolver._hasGrowthTargets includes every relic counter target. The player Pendulum target therefore disables primary incumbent updates and pruning; widening the healing certificate alone cannot activate it. New work must preserve target ranking and equal-loss routes across turns."
+}

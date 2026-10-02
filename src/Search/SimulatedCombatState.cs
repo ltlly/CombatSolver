@@ -68,6 +68,8 @@ internal sealed partial class SimulatedCombatState
     private readonly PredictionModHookSubscriberCapture _modHookSubscribers;
     internal AdaptedOnPlaySnapshot? AdaptedOnPlay => _modHookSubscribers.AdaptedOnPlay;
     internal bool HasInactiveLoadoutSummonPowers => _modHookSubscribers.HasInactiveLoadoutSummonPowers;
+    internal bool RootHasOnlyNonHealingLoadoutSubscribers
+        => _modHookSubscribers.HasOnlyNonHealingLoadoutSubscribers;
     private readonly IReadOnlyDictionary<Player, int> _rootMaxHandSizes;
     private readonly RootCombatCardGenerationPoolSnapshot _rootCardGenerationPools;
     private readonly RootCombatTransformationPoolSnapshot _rootTransformationPools;

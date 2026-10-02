@@ -32,6 +32,24 @@ internal sealed class PredictionModHookSubscriberCapture
     public IReadOnlySet<Player> EveryCardFreePlayers { get; }
     public bool HasBaseLibCardModifiers { get; }
     public bool HasInactiveLoadoutSummonPowers { get; }
+    // Capture validated the source and settings of every subscriber. These
+    // Loadout hooks only configure pre-root state, hand limits or free costs;
+    // an empty summon-power configuration cannot add powers later in combat.
+    internal bool HasOnlyNonHealingLoadoutSubscribers
+        => RunSubscribers.All(IsNonHealingLoadoutSubscriber)
+            && CombatSubscribers.All(IsNonHealingLoadoutSubscriber);
+
+    private bool IsNonHealingLoadoutSubscriber(AbstractModel subscriber)
+    {
+        Type type = subscriber.GetType();
+        var source = AssemblyInfo.ModForType(type, out bool isBaseGame);
+        return !isBaseGame && source?.manifest?.id == "Loadout"
+            && type.FullName is { } name
+            && (KnownPreRootSubscriberTypeNames.Contains(name)
+                // This sealed hook only captures its snapshot in BeforeCombatStart.
+                || name == "Loadout.Services.Morphing.BottledMonsterMorphCombatSnapshotHook"
+                || name == LoadoutPowerGiverSummonHookTypeName && HasInactiveLoadoutSummonPowers);
+    }
     public AdaptedOnPlaySnapshot? AdaptedOnPlay { get; private init; }
     public MirroredHookListenerFilter MirroredHookFilter { get; } = MirroredHookListenerFilter.Capture();
 

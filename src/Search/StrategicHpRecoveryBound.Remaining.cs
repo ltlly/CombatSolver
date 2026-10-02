@@ -89,6 +89,8 @@ internal static partial class StrategicHpRecoveryBound
     internal static bool CanCertifyRemainingHealingEnvironment(
         CombatPredictionSimulator simulator, Player player)
     {
+        if (player.Character.GetType() == typeof(MegaCrit.Sts2.Core.Models.Characters.Defect))
+            return CanCertifyDefectPrismHealingEnvironment(simulator, player);
         SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
         bool nativeLouse = IsNativeRegentLouseEnvironment(combat, player);
         bool copiesExhaustedSkills = combat.RelicsOf(player)
@@ -130,6 +132,8 @@ internal static partial class StrategicHpRecoveryBound
     internal static int RemainingHealingUpperBound(
         CombatPredictionSimulator simulator, Player player, int postCombatHeal)
     {
+        if (player.Character.GetType() == typeof(MegaCrit.Sts2.Core.Models.Characters.Defect))
+            return DefectPrismHealingUpperBound(simulator, player, postCombatHeal);
         if (simulator.HasPendingChoice)
             return int.MaxValue;
         SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;

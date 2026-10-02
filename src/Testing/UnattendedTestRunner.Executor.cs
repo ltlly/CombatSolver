@@ -39,6 +39,12 @@ internal sealed partial class UnattendedTestRunner
             bool expectedCardPlayed = request.ExpectedPlayedCardId == null;
             bool expectedPotionUsed = request.ExpectedUsedPotionId == null;
             bool expectedPlayerPowerObserved = request.ExpectedObservedPlayerPowerId == null;
+            if (request.ScenarioId == "REMAINING-HEALING-DEFECT-PLAYER-PRISM")
+            {
+                runner.SetStage("remaining_healing_defect_player_prism");
+                await runner.RunDefectPrismHealingProbeAsync(combatState, player);
+                return Observation(combatEnded: false);
+            }
             if (request.ScenarioId == "GENERATED-NOVELTY-SEARCH")
             {
                 _ = ApplySettingsOverrides();
