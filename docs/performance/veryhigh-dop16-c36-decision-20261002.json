@@ -1,0 +1,59 @@
+{
+  "scope": "Silent 396-card full VeryHigh/DOP16 request ABBA; C36 alone on current upstream plus retained stage source and separately verified power-order fix. Both arms have that fix. Not a proposed PR version regression.",
+  "baselineSource": "e3cd33d2 + 8b3f8a59 (independent power-order fix)",
+  "candidateSource": "same source plus uncommitted C36 damage-target filter v4",
+  "baselineDllSha256": "843e724ef6976e010a13ef8c3ed6ca75fd0acca2521d084e49217694015615cb",
+  "candidateDllSha256": "007d7defd5b339c372f74c8f31ab9c10fa66a9c08a4fc7744b9cdb41ce97bdec",
+  "order": [
+    "A1",
+    "B1",
+    "B2",
+    "A2"
+  ],
+  "case": {
+    "id": "silent-large-deck-current-upstream-fix-C36",
+    "passed": false,
+    "slow": true,
+    "baselineSeconds": [
+      63.2715551,
+      64.130074
+    ],
+    "candidateSeconds": [
+      62.7389689,
+      63.9774542
+    ],
+    "baselinePeakBytes": [
+      25416867840,
+      25261641728
+    ],
+    "candidatePeakBytes": [
+      25757327360,
+      25765298176
+    ],
+    "minimumSpeedup": 0.9889664396805586,
+    "maximumMemoryRatio": 1.0199375976202587,
+    "baselineTimed": false,
+    "baselineQualityStable": true,
+    "qualityPassed": true,
+    "speedPassed": false,
+    "memoryPassed": true
+  },
+  "workPerRun": {
+    "expanded": 277007,
+    "transitions": 1002180
+  },
+  "qualityPerRun": {
+    "won": false,
+    "survives": false,
+    "projectedBattleHpLost": 65,
+    "enemyHp": 464,
+    "projectedBattlePotionCount": 0,
+    "risk": false
+  },
+  "nativeContracts": {
+    "damageTarget": "6c3beea2703d4184b7089ad4c601340b",
+    "ostyMoves": "bfccd864d8a7475182333ea3b5ec5ac8",
+    "checks": "24 direct native combinations, pending choice, two-receiver order/chained input, parent/live isolation, Fork, native Hook patch fallback/refresh; 4 native Osty moves. Passed; instances removed."
+  },
+  "decision": "Exclude C36 from PR: old approximately 3.1% gain did not reproduce conservatively."
+}
