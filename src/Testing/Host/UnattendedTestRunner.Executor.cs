@@ -1061,6 +1061,13 @@ internal sealed partial class UnattendedTestRunner
                 return Observation(combatEnded: false);
             }
 
+            if (request.ScenarioId == "POTION-COST-INCUMBENT")
+            {
+                runner.SetStage("potion_cost_incumbent");
+                await runner.AssertPotionCostIncumbentAsync(combatState, player);
+                return Observation(combatEnded: false);
+            }
+
             if (request.ScenarioId == "IRON-GENERATION-HEALING")
             {
                 runner.SetStage("iron_generation_healing");

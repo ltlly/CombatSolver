@@ -58,3 +58,9 @@ Offline comparisons do not prove native automatic deployment, visible Steam fram
 成长根：REGENT / FUZZY_WURM_CRAWLER_WEAK / GROWTHBUCKET20261004，飞升0、敌HP6、玩家75/75、能量3、原生遗物。清空牌组与牌堆，手牌永久Royalties、2张StrikeRegent、4张DefendRegent；抽牌堆5张StrikeRegent。测试设置 `{"growthBudgets":{"royalties":5}}`。Beam45、20000节点、20000ms。回血根使用 `coverage/fixtures/scenarios/state/not-yet-heal-resource-0170.json`，Beam20、12000节点、20000ms。完整命令与边界入口见[复跑说明](#reproduction)。
 
 耗时是单次离线观察，回血哨兵本次多0.10秒，不能称为所有场景提速。未执行原问题包恢复、完整原生自动部署、可见Steam性能、全部成长来源及正数药水档整场验证。本机产物保存在忽略目录 `.local/pr-validation/`。
+
+### 等战损药水成本胜利界
+
+`POTION-COST-INCUMBENT` / REGENT / THE_INSATIABLE_BOSS / seed `PR215_POTION_COST_20261005`：最小原生合同，普通120秒上限，独立实例退出清理。两次Strike的真实完整胜利、实际药水成本14/9、成员内部与共享表保留较便宜分支、共享消融、同成本仍剪枝、缺失成本保留、零药完整胜利界仍剪枝，原生药水完整Continuation、父分支/live/RNG隔离。旧入口失败复现`0a69bcdd3c2644a6b9e73638fc153829`，修正后扩展合同`0bfdd959a37f49cda8f24f3adcf1a39c` Passed；长期入口合同`8cdb3b3ff63540c3ae04b52760d33065` Passed。20项primary-incumbent及143项early-turn-continuation合同Passed。未做拟提交组合版本完整性能、RSS或固定全根回归；不能据此认定可以正式合并。
+
+最小入口：`bash tools/testing/run-unattended-test.sh --scenario-id POTION-COST-INCUMBENT --character-id REGENT --encounter-id THE_INSATIABLE_BOSS --seed PR215_POTION_COST_20261005 --timeout-seconds 120 --exit-on-complete --cleanup-instance-on-exit`。建局移除遗物/Power并注入两张Strike、两瓶原版药水；完整胜利只通过生产准备与回放入口得到，不注入伪造结果。
