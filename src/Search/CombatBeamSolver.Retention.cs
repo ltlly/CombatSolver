@@ -339,7 +339,8 @@ internal sealed partial class CombatBeamSolver
                 && _primaryIncumbents.TryGet(resourceBucket, out var shared)
                 && ShouldPruneByPrimaryIncumbent(
                     hpLowerBound - rewardCredit,
-                    node.Turn, shared, allowTurnTieBound: !_strictHpBoundWithRelicTargets,
+                    node.Turn, shared, allowTurnTieBound: !_strictHpBoundWithRelicTargets
+                        && CanPruneEqualHpWithPotionCost(node.Snapshot, shared),
                     pruneEqualHp: CanPruneEqualHpWithPotionCost(node.Snapshot, shared));
             if (!prune && eligible && !policy.IgnoreLongTermRewards && policy.RelicTargets.Count == 0
                 && (_hasGrowthTargets || node.Snapshot.GrowthRewards.Total != 0)
@@ -415,7 +416,7 @@ internal sealed partial class CombatBeamSolver
                     StrategicHpLowerBound(node.Snapshot, bossHpRelief, futureHealPotential),
                     node.Turn,
                     incumbent,
-                    allowTurnTieBound,
+                    allowTurnTieBound && CanPruneEqualHpWithPotionCost(node.Snapshot, incumbent),
                     pruneEqualHp && !node.IsTerminal && !node.Snapshot.HasRisk
                         && CanPruneEqualHpWithPotionCost(node.Snapshot, incumbent)))
             {
@@ -424,7 +425,7 @@ internal sealed partial class CombatBeamSolver
                         StrategicHpLowerBound(node.Snapshot, bossHpRelief, baselineFutureHealPotential),
                         node.Turn,
                         incumbent,
-                        allowTurnTieBound,
+                        allowTurnTieBound && CanPruneEqualHpWithPotionCost(node.Snapshot, incumbent),
                         pruneEqualHp && !node.IsTerminal && !node.Snapshot.HasRisk
                             && CanPruneEqualHpWithPotionCost(node.Snapshot, incumbent)))
                 {

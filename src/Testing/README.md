@@ -21,4 +21,4 @@
 
 旧 Soul/Custom/外骨骼虫路径追踪及 ACT3 硬编码路线观察入口已退出当前树，调查代码见 [固定提交](https://github.com/Torch1230/CombatSolver/tree/fe3edd2f7b4f3a92b266e6b13293810d31ce2e1b/src/Testing)。原生已知路线回归、生成上下文合同及其公共快照辅助继续维护。历史质量缺口与失败记录保持原结论，源码精简不代表问题修复。
 
-`Contracts/Search/UnattendedTestRunner.PotionCostIncumbent.cs` 通过 `POTION-COST-INCUMBENT` 验证真实完整胜利的药水成本比较；最小建局为REGENT/THE_INSATIABLE_BOSS，断言成员内部及共享界、缺失成本、零药边界和完整原生药水状态隔离。它不提供性能验收或玩家完整路线。
+`Contracts/Search/UnattendedTestRunner.PotionCostIncumbent.cs` 通过 `POTION-COST-INCUMBENT` 验证真实完整胜利的药水成本比较；最小建局为REGENT/THE_INSATIABLE_BOSS，断言成员内部及共享界在同回合与更晚回合保留低成本路线、缺失成本、零药边界，以及原生EndTurn/药水两项完整状态隔离。它不提供性能验收或玩家完整路线。

@@ -3,6 +3,7 @@ using CombatSolver.Engine.InCombat.Simulation;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
 
@@ -19,6 +20,8 @@ internal sealed partial class UnattendedTestRunner
         foreach (PotionModel? potion in player.PotionSlots.ToArray()) potion?.Discard();
         await InjectCardAsync(live, player, new() { CardId = "STRIKE_REGENT", Pile = "Hand" });
         await InjectCardAsync(live, player, new() { CardId = "STRIKE_REGENT", Pile = "Hand" });
+        await InjectCardAsync(live, player, new() { CardId = "STRIKE_REGENT", Pile = "Draw", Count = 2 });
+        await SetBlockAsync(player.Creature, 100);
         InjectPotionForTest(player, "CURE_ALL");
         InjectPotionForTest(player, "SHACKLING_POTION");
         SetEnergy(player, 3);
@@ -45,19 +48,32 @@ internal sealed partial class UnattendedTestRunner
             || ContinuationStamp.CaptureLive(live).StateText != liveBefore)
             throw new InvalidOperationException("Potion-cost proof changed parent/live/RNG.");
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        int previous = player.PlayerCombatState!.TurnNumber;
+        CombatManager.Instance.OnEndedTurnLocally();
+        var endTurn = new EndPlayerTurnAction(player, previous);
+        RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(endTurn);
+        await endTurn.CompletionTask.WaitAsync(deadline.Token);
+        while (player.PlayerCombatState is not { Phase: PlayerTurnPhase.Play } current || current.TurnNumber <= previous)
+        {
+            deadline.Token.ThrowIfCancellationRequested(); EnsureWithinDeadline(); await NextFrameAsync();
+        }
+        string endedExpected = ContinuationStamp.CapturePredicted(player, proof.LatePartial.Parent!.Snapshot.Simulator,
+            proof.LatePartial.Parent.Turn, root.Forecast, root.StartTurnNumber).StateText;
+        if (ContinuationStamp.CaptureLive(live).StateText != endedExpected)
+            throw new InvalidOperationException("Native later-turn cost prefix full state differs.");
         PotionModel nativePotion = player.GetPotionAtSlotIndex(1)!;
         GameAction use = await SolverController.EnqueueAndCaptureActionAsync(
             action => action is UsePotionAction potion && potion.PotionIndex == 1 && ReferenceEquals(potion.Player, player),
             () => nativePotion.EnqueueManualUse(null), deadline.Token);
         await use.CompletionTask.WaitAsync(deadline.Token);
-        string expected = ContinuationStamp.CapturePredicted(player, proof.CheapPartial.Snapshot.Simulator,
-            root.StartTurnNumber, root.Forecast, root.StartTurnNumber).StateText;
+        string expected = ContinuationStamp.CapturePredicted(player, proof.LatePartial.Snapshot.Simulator,
+            proof.LatePartial.Turn, root.Forecast, root.StartTurnNumber).StateText;
         if (ContinuationStamp.CaptureLive(live).StateText != expected)
             throw new InvalidOperationException("Native cheap potion full state differs from proof branch.");
-        _completedChecks.Add($"PotionCostIncumbent:RealCompleteVictories:SameHpTurnPotionCount:Costs={proof.ExpensiveCost}/{proof.CheapCost}:SharedKept={proof.SharedKept}:LocalKept={proof.LocalKept}:SharedAblationKept={proof.AblationKept}:SameCostPruned={proof.SameCostPruned}:MissingCostKept={proof.MissingCostKept}:ZeroCostPruned={proof.ZeroCostPruned}:NativeCheapPotionFullState:ParentLiveRngIsolation");
-        if (!proof.SharedKept || !proof.LocalKept)
-            throw new InvalidOperationException("Lower-cost equal-HP branch was pruned despite a same-turn complete victory: "
-                + $"costs={proof.ExpensiveCost}/{proof.CheapCost} shared_kept={proof.SharedKept} local_kept={proof.LocalKept}");
+        _completedChecks.Add($"PotionCostIncumbent:RealCompleteVictories:SameHpTurnPotionCount:Costs={proof.ExpensiveCost}/{proof.CheapCost}:SharedKept={proof.SharedKept}:LocalKept={proof.LocalKept}:SharedAblationKept={proof.AblationKept}:SameCostPruned={proof.SameCostPruned}:MissingCostKept={proof.MissingCostKept}:ZeroCostPruned={proof.ZeroCostPruned}:LateCheapSharedKept={proof.LateSharedKept}:LateCheapLocalKept={proof.LateLocalKept}:NativeLateEndTurnAndPotionFullStates:ParentLiveRngIsolation");
+        if (!proof.SharedKept || !proof.LocalKept || !proof.LateSharedKept || !proof.LateLocalKept)
+            throw new InvalidOperationException("Lower-cost equal-HP branch was pruned despite complete same-turn and later-turn victories: "
+                + $"costs={proof.ExpensiveCost}/{proof.CheapCost} shared_kept={proof.SharedKept} local_kept={proof.LocalKept} late_shared_kept={proof.LateSharedKept} late_local_kept={proof.LateLocalKept}");
     }
 }
 
@@ -65,7 +81,8 @@ internal sealed partial class CombatBeamSolver
 {
     internal sealed record PotionCostIncumbentProof(SearchNode CheapPartial, int ExpensiveCost, int CheapCost,
         bool SharedKept, bool LocalKept, bool AblationKept,
-        bool SameCostPruned, bool MissingCostKept, bool ZeroCostPruned);
+        bool SameCostPruned, bool MissingCostKept, bool ZeroCostPruned,
+        SearchNode LatePartial, bool LateSharedKept, bool LateLocalKept);
 
     internal static PotionCostIncumbentProof PotionCostIncumbentProbeForTesting(CombatRootSnapshot root,
         SolverDisplayNames names, BattleDamageSnapshot damage, SearchPolicySnapshot policy)
@@ -106,6 +123,18 @@ internal sealed partial class CombatBeamSolver
         if (!ablationKept) throw new InvalidOperationException("Bound sharing is not isolated by the ablation.");
         bool sameCostPruned = cheap.ApplyPrimaryIncumbentBound([expensivePartial]).Count == 0
             && expensive.ApplyPrimaryIncumbentBound([expensivePartial]).Count == 0;
+        var late = Member(policy);
+        SearchNode lateWinner = late.CostRouteForTesting(1, out SearchNode latePartial, laterTurn: true);
+        if (!lateWinner.IsTerminal || lateWinner.Snapshot.HasRisk
+            || lateWinner.Snapshot.CumulativePlayerHpLost != ExpensiveWinner.Snapshot.CumulativePlayerHpLost
+            || lateWinner.Snapshot.RecoveredPlayerHp != ExpensiveWinner.Snapshot.RecoveredPlayerHp
+            || lateWinner.Snapshot.PlayerMaxHp != ExpensiveWinner.Snapshot.PlayerMaxHp
+            || lateWinner.Snapshot.CombatEndedTurn <= ExpensiveWinner.Snapshot.CombatEndedTurn
+            || ExplicitPotionUseCount(lateWinner) != 1
+            || lateWinner.PotionStrategicCost >= ExpensiveWinner.PotionStrategicCost)
+            throw new InvalidOperationException("Later turn does not prove an actually complete lower-cost victory at equal HP.");
+        bool lateSharedKept = late.ApplyPrimaryIncumbentBound([latePartial]).Count == 1;
+        bool lateLocalKept = expensive.ApplyPrimaryIncumbentBound([latePartial]).Count == 1;
         var unknownTable = new PrimaryIncumbentTable();
         if (!policy.PrimaryIncumbents!.TryGet(ResourceIncumbentPolicy.CompletedBucket(ExpensiveWinner.Snapshot, 1), out var witnessed))
             throw new InvalidOperationException("Completed victory's shared metadata is absent.");
@@ -125,12 +154,13 @@ internal sealed partial class CombatBeamSolver
         if (!sameCostPruned || !missingCostKept || !zeroCostPruned)
             throw new InvalidOperationException($"Potion-cost guard failed: same={sameCostPruned} unknown={missingCostKept} zero={zeroCostPruned}.");
         return new(cheapPartial, ExpensiveWinner.PotionStrategicCost, CheapWinner.PotionStrategicCost,
-            sharedKept, localKept, ablationKept, sameCostPruned, missingCostKept, zeroCostPruned);
+            sharedKept, localKept, ablationKept, sameCostPruned, missingCostKept, zeroCostPruned, latePartial, lateSharedKept, lateLocalKept);
     }
 
-    private SearchNode CostRouteForTesting(int? slot, out SearchNode potionOnly)
+    private SearchNode CostRouteForTesting(int? slot, out SearchNode potionOnly, bool laterTurn = false)
     {
         SearchNode node = CreateOpeningSearchSeed(Replay([]));
+        if (laterTurn) node = CostChildForTesting(node, new(PlanActionKind.EndTurn, node.Turn));
         if (slot is { } selectedSlot)
         {
             PlanAction potion = PreparePotionActions(node).Single(action => action.Action.PotionSlot == selectedSlot).Action;

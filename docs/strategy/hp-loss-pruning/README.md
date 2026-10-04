@@ -63,4 +63,6 @@ Offline comparisons do not prove native automatic deployment, visible Steam fram
 
 `POTION-COST-INCUMBENT` / REGENT / THE_INSATIABLE_BOSS / seed `PR215_POTION_COST_20261005`：最小原生合同，普通120秒上限，独立实例退出清理。两次Strike的真实完整胜利、实际药水成本14/9、成员内部与共享表保留较便宜分支、共享消融、同成本仍剪枝、缺失成本保留、零药完整胜利界仍剪枝，原生药水完整Continuation、父分支/live/RNG隔离。旧入口失败复现`0a69bcdd3c2644a6b9e73638fc153829`，修正后扩展合同`0bfdd959a37f49cda8f24f3adcf1a39c` Passed；长期入口合同`8cdb3b3ff63540c3ae04b52760d33065` Passed。20项primary-incumbent及143项early-turn-continuation合同Passed。未做拟提交组合版本完整性能、RSS或固定全根回归；不能据此认定可以正式合并。
 
-最小入口：`bash tools/testing/run-unattended-test.sh --scenario-id POTION-COST-INCUMBENT --character-id REGENT --encounter-id THE_INSATIABLE_BOSS --seed PR215_POTION_COST_20261005 --timeout-seconds 120 --exit-on-complete --cleanup-instance-on-exit`。建局移除遗物/Power并注入两张Strike、两瓶原版药水；完整胜利只通过生产准备与回放入口得到，不注入伪造结果。
+更晚回合的等战损路径同样先比较药水成本。初次补测 `e193f3a1b37c4d21b2b3a19fe62c9bc4` Failed：完整零战损/一瓶的14成本胜利在第1回合结束，9成本胜利在第2回合结束；成员内和共享回合数剪枝都误删较便宜分支。原生EndTurn与随后的药水两项完整Continuation及父/live/RNG已对齐。给两个回合数剪枝入口加相同成本前提后，`883e0bb379cf41d6bf7f2c5888b08ba4` Passed，较便宜的同回合/更晚回合分支都保留；同成本、零药剪枝与缺失成本保留仍通过。Release13.23秒、0警告/错误，20项primary-incumbent合同Passed。此补测不提供性能或全根验收。
+
+最小入口：`bash tools/testing/run-unattended-test.sh --scenario-id POTION-COST-INCUMBENT --character-id REGENT --encounter-id THE_INSATIABLE_BOSS --seed PR215_POTION_COST_20261005 --timeout-seconds 120 --exit-on-complete --cleanup-instance-on-exit`。建局移除遗物/Power并注入两张手牌Strike、抽牌Strike、100格挡和两瓶原版药水；完整胜利只通过生产准备与回放入口得到，不注入伪造结果。
