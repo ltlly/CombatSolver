@@ -191,7 +191,7 @@ internal static partial class CombatSearchCoordinator
             {
                 policy.PrimaryIncumbents!.Tighten(
                     ResourceIncumbentPolicy.CompletedBucket(selected.Snapshot, 0),
-                    new(StrategicHpDeficit(root, policy, selected), endedTurn));
+                    new(StrategicHpDeficit(root, policy, selected), endedTurn, 0));
                 policy.PrimaryIncumbents.PotionFreeWitness = selected;
             }
             return selected;
@@ -942,7 +942,8 @@ internal static partial class CombatSearchCoordinator
             return null;
         return new PrimarySearchIncumbent(
             StrategicHpDeficit(root, policy, result),
-            combatEndedTurn);
+            combatEndedTurn,
+            result.PotionStrategicCostByTurn.Values.Sum());
     }
 
     private static SolverResult? SolveOptionalPotionPosterior(

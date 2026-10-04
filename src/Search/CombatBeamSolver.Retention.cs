@@ -340,7 +340,7 @@ internal sealed partial class CombatBeamSolver
                 && ShouldPruneByPrimaryIncumbent(
                     hpLowerBound - rewardCredit,
                     node.Turn, shared, allowTurnTieBound: !_strictHpBoundWithRelicTargets,
-                    pruneEqualHp: true);
+                    pruneEqualHp: CanPruneEqualHpWithPotionCost(node.Snapshot, shared));
             if (!prune && eligible && !policy.IgnoreLongTermRewards && policy.RelicTargets.Count == 0
                 && (_hasGrowthTargets || node.Snapshot.GrowthRewards.Total != 0)
                 && node.Snapshot.HasSimulator)
@@ -416,7 +416,8 @@ internal sealed partial class CombatBeamSolver
                     node.Turn,
                     incumbent,
                     allowTurnTieBound,
-                    pruneEqualHp && !node.IsTerminal && !node.Snapshot.HasRisk))
+                    pruneEqualHp && !node.IsTerminal && !node.Snapshot.HasRisk
+                        && CanPruneEqualHpWithPotionCost(node.Snapshot, incumbent)))
             {
                 if (rootHasCertifiedHealingBound
                     && !ShouldPruneByPrimaryIncumbent(
@@ -424,7 +425,8 @@ internal sealed partial class CombatBeamSolver
                         node.Turn,
                         incumbent,
                         allowTurnTieBound,
-                        pruneEqualHp && !node.IsTerminal && !node.Snapshot.HasRisk))
+                        pruneEqualHp && !node.IsTerminal && !node.Snapshot.HasRisk
+                            && CanPruneEqualHpWithPotionCost(node.Snapshot, incumbent)))
                 {
                     certifiedHealingBoundPruned++;
                 }
@@ -492,6 +494,13 @@ internal sealed partial class CombatBeamSolver
             bossHpRelief,
             snapshot.DeathSaveHpRestored);
 
+    // Equal HP may still improve potion cost. Consumed explicit cost cannot
+    // decrease within a branch; a missing witness cost leaves equality open.
+    private static bool CanPruneEqualHpWithPotionCost(
+        SimulationSnapshot snapshot, PrimarySearchIncumbent incumbent)
+        => incumbent.ExplicitPotionStrategicCost is { } cost
+            && snapshot.ExplicitPotionStrategicCost >= cost;
+
     internal static bool ShouldPruneByPrimaryIncumbent(
         int strategicHpLowerBound,
         int turn,
@@ -514,7 +523,8 @@ internal sealed partial class CombatBeamSolver
         int? candidateCombatEndedTurn,
         ref PrimarySearchIncumbent? incumbent,
         SolverPotionPolicy? effectivePotionPolicy = null,
-        int candidateDeathSaveUseCount = 0)
+        int candidateDeathSaveUseCount = 0,
+        int? candidateExplicitPotionStrategicCost = null)
     {
         if (!candidateCompleteVictory
             || !candidateSatisfiesHardRules
@@ -549,7 +559,8 @@ internal sealed partial class CombatBeamSolver
 
         PrimarySearchIncumbent candidate = new(
             candidateStrategicHpDeficit,
-            combatEndedTurn);
+            combatEndedTurn,
+            minimumPotionUses == 0 ? 0 : candidateExplicitPotionStrategicCost);
         if (incumbent is { } current
             && SolverInterimResultOrdering.ComparePrimaryQuality(
                 candidateCompleteVictory: true,
@@ -634,7 +645,8 @@ internal sealed partial class CombatBeamSolver
                 node.Snapshot.CombatEndedTurn,
                 ref classIncumbent,
                 effectivePotionPolicy: _potionPolicy,
-                candidateDeathSaveUseCount: node.Snapshot.ProjectedDeathSaveUseCount))
+                candidateDeathSaveUseCount: node.Snapshot.ProjectedDeathSaveUseCount,
+                candidateExplicitPotionStrategicCost: node.Snapshot.ExplicitPotionStrategicCost))
             {
                 bucketUpdated |= _primaryIncumbents.Tighten(resourceBucket, classIncumbent!.Value);
             }
@@ -653,7 +665,8 @@ internal sealed partial class CombatBeamSolver
                 node.Snapshot.CombatEndedTurn,
                 ref tightened,
                 effectivePotionPolicy: _potionPolicy,
-                candidateDeathSaveUseCount: node.Snapshot.ProjectedDeathSaveUseCount);
+                candidateDeathSaveUseCount: node.Snapshot.ProjectedDeathSaveUseCount,
+                candidateExplicitPotionStrategicCost: node.Snapshot.ExplicitPotionStrategicCost);
         }
 
         if (_hasGrowthTargets || root.InitialGrowthRewards.Total != 0

@@ -21,7 +21,8 @@ namespace CombatSolver;
 
 internal readonly record struct PrimarySearchIncumbent(
     int StrategicHpDeficit,
-    int CombatEndedTurn);
+    int CombatEndedTurn,
+    int? ExplicitPotionStrategicCost = null);
 
 internal sealed partial class CombatBeamSolver(
     CombatRootSnapshot root,
