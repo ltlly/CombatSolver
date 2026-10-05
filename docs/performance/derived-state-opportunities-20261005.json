@@ -1,0 +1,1552 @@
+{
+  "schemaVersion": 1,
+  "sourceBase": "3b3a6b8f",
+  "branch": "perf/common-state-cost-20261005",
+  "outcome": "Runtime ethereal/default-dispatch prototypes withdrawn after small fixed-work differences. Final source changes retain two stale native-test fixes and an opt-in offline diagnostic only. Whole-request 2x target remains active.",
+  "nativeAudit": {
+    "gameDllSha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+    "gameMvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+    "tool": "ilspycmd 9.1.0.7988",
+    "native": {
+      "AbstractModel.ShouldEtherealTrigger": "Constant true, no model fields or arguments read. Production checks original IL bytes 0x17 0x2a.",
+      "Hook.ShouldEtherealTrigger": "Iterates all current combat listeners, returns false at first rejecting callback, otherwise true.",
+      "Hook.IterateCombatHookListeners": "Native early combat-ending check may yield no listeners; all-default result remains true. Overrides retain native hook and early check.",
+      "CardModel.CompareTo": "Reference/null guards, base ModelId comparison, current upgrade comparison. No enum boxing found.",
+      "ModelId.CompareTo": "Ordinal category then ordinal entry comparison. Cached shuffle order must still preserve native equal-comparison order."
+    },
+    "certificate": "Known native module and base method IL; current complete branch listener layout; every source native and exact inherited base method; no Hook.ShouldEtherealTrigger or AbstractModel.ShouldEtherealTrigger patch at capture. Unknown revisions, external/default-only external sources, overrides, disabled filtering and opaque subscribers preserve native execution.",
+    "ownership": "Type-only immutable capability in existing layout. No live values, gameplay model references, extra simulator Fork or cache of mutable branch results. Native dispatch masks and order unchanged.",
+    "sourceHead": "3b3a6b8f",
+    "runtimeCandidateSubmitted": false
+  },
+  "prototype": {
+    "sourceHead": "3b3a6b8f",
+    "patchSha256": "cc5694ade6f420b9d3a67f8b605eb89a37d4fdf7e8394dc380cc2bd24dc8df18",
+    "decision": "Withdraw runtime and ethereal-only contract after weak fixed-work ACCA screens; retain two stale test fixes only. No whole-request acceptance claimed."
+  },
+  "scope": {
+    "profile": "VeryHigh",
+    "dop": 16,
+    "nodes": 25000,
+    "beam": 135,
+    "cardBranches": 72,
+    "pileBranches": 42,
+    "handBranches": 54,
+    "budgetMs": 60000,
+    "searchMode": "Evaluate",
+    "noGcRegionGb": 16,
+    "processTimeoutSeconds": 120,
+    "fixedRoots": [
+      {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/silent-large-deck.json",
+        "sha256": "193f0f6519c201dc8f8e5e79d3d4a3d6b906da17c735db0327da11760f121635"
+      },
+      {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-08-regent-boss.json",
+        "sha256": "d4a47c345404c8f1f7b499c8c8c0311ed0cfb7a403cebec4ec916554347b99f5"
+      }
+    ],
+    "qualityFields": [
+      "boundary",
+      "projectedBattleHpLost",
+      "potionCount",
+      "potionUses",
+      "score",
+      "finalHp",
+      "finalEnemyHp",
+      "combatEndedTurn",
+      "onlyDeathRoutes"
+    ],
+    "diagnosticInputLimit": "Each of full projection and sorting dependency sets is bounded to 4096 inputs per solver."
+  },
+  "historicalCpuSubpaths": {
+    "scope": "Inclusive subpath cycles and nearest owned snapshot caller from the existing historical regent hardware cycles trace; not new performance acceptance. Includes unresolved native leaves and compilation callers.",
+    "input": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/tool-tasks/regent-shared-proof/profile-cpu/callchains.txt",
+    "inputSha256": "ace163d7e83decb11f7b1353c5b416d368408c6ddcd3112eedd9bf488957e90c",
+    "samples": 16505,
+    "estimatedCycles": 300711199208,
+    "inclusive": [
+      {
+        "pattern": "::CardValue(",
+        "estimatedCycles": 4336395460,
+        "percent": 1.4420465454632247
+      },
+      {
+        "pattern": "::DynamicVarBaseValue(",
+        "estimatedCycles": 2924681645,
+        "percent": 0.9725882018038897
+      },
+      {
+        "pattern": "::BuildProjectedShuffleOrder(",
+        "estimatedCycles": 9947720859,
+        "percent": 3.30806464315259
+      },
+      {
+        "pattern": "::CalculateReachableHandPotential(",
+        "estimatedCycles": 7141246453,
+        "percent": 2.3747856653853607
+      },
+      {
+        "pattern": "::BuildStateKey(",
+        "estimatedCycles": 16389411548,
+        "percent": 5.450216550353201
+      },
+      {
+        "pattern": "::Snapshot(",
+        "estimatedCycles": 83285832966,
+        "percent": 27.696285733738744
+      },
+      {
+        "pattern": "StrategicEffectContext::Build(",
+        "estimatedCycles": 4355342421,
+        "percent": 1.4483472622472693
+      },
+      {
+        "pattern": "::Filter(",
+        "estimatedCycles": 17346883462,
+        "percent": 5.7686190297160405
+      },
+      {
+        "pattern": "::CloneModelForSimulation(",
+        "estimatedCycles": 7494900209,
+        "percent": 2.4923914469230746
+      },
+      {
+        "pattern": "::GetWithModifiers(",
+        "estimatedCycles": 795523429,
+        "percent": 0.2645473235101369
+      }
+    ],
+    "nearestOwnedSnapshotCallers": [
+      [
+        "instance class CombatSolver.SimulationSnapshot [CombatSolver] CombatSolver.CombatBeamSolver::Snapshot(class CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator,int32,int32,int32,valuetype CombatSolver.SearchBoundaryReason,class [System.Runtime]System.Collections.Generic.IReadOnlySet`1<uint32>)[Optimized]",
+        7174844505
+      ],
+      [
+        "instance valuetype [System.Runtime]System.ValueTuple`2<valuetype CombatSolver.StateFingerprint,int32> [CombatSolver] CombatSolver.CombatBeamSolver::BuildProjectedShuffleOrder(class CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator,class [System.Collections]System.Collections.Generic.List`1<class CombatSolver.Engine.Common.PredictedCard>)[OptimizedTier1]",
+        3438268603
+      ],
+      [
+        "float64 [CombatSolver] CombatSolver.CardChoiceSupport::DynamicVarBaseValue(class [sts2]MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet,string)[QuickJitted]",
+        2040062407
+      ],
+      [
+        "instance class [System.Runtime]System.Collections.Generic.IReadOnlyList`1<class [sts2]MegaCrit.Sts2.Core.Models.AbstractModel> [CombatSolver] CombatSolver.Engine.Common.MirroredHookListenerFilter::Filter(class [System.Runtime]System.Collections.Generic.IReadOnlyList`1<class [sts2]MegaCrit.Sts2.Core.Models.AbstractModel>,class CombatSolver.Engine.Common.MirroredHookListenerLayout&)[OptimizedTier1]",
+        1784454713
+      ],
+      [
+        "valuetype CombatSolver.StrategicEffectContext [CombatSolver] CombatSolver.StrategicEffectContext::Build(class [System.Runtime]System.Collections.Generic.IReadOnlyList`1<class CombatSolver.Engine.Common.PredictedCard>,int32,int32,int32,valuetype CombatSolver.StrategicEffectRequirements,bool)[OptimizedTier1]",
+        1506000954
+      ],
+      [
+        "class [sts2]MegaCrit.Sts2.Core.Entities.Cards.CardPile [CombatSolver] CombatSolver.SimulationCardPileLookupFastPath::Find(class [sts2]MegaCrit.Sts2.Core.Models.CardModel)[OptimizedTier1]",
+        1355825180
+      ],
+      [
+        "void [CombatSolver] CombatSolver.CombatBeamSolver::AppendCyclePileShape(valuetype CombatSolver.StateFingerprintBuilder&,class CombatSolver.Engine.Common.SimCardPile,char)[OptimizedTier1]",
+        1233123376
+      ],
+      [
+        "instance int32 [CombatSolver] CombatSolver.Engine.Common.PredictedCard::CompareTo(class CombatSolver.Engine.Common.PredictedCard)[InstrumentedTier]",
+        1210149854
+      ],
+      [
+        "float64 [CombatSolver] CombatSolver.CardChoiceSupport::CardValue(class [sts2]MegaCrit.Sts2.Core.Models.CardModel)[OptimizedTier1]",
+        1075270964
+      ],
+      [
+        "instance class [System.Runtime]System.Collections.Generic.IReadOnlyList`1<class [sts2]MegaCrit.Sts2.Core.Models.AbstractModel> [CombatSolver] CombatSolver.Engine.Common.MirroredHookListenerFilter::Filter(class [System.Runtime]System.Collections.Generic.IReadOnlyList`1<class [sts2]MegaCrit.Sts2.Core.Models.AbstractModel>,class CombatSolver.Engine.Common.MirroredHookListenerLayout&)[QuickJitted]",
+        1010841779
+      ],
+      [
+        "valuetype CombatSolver.StrategicEffectContext [CombatSolver] CombatSolver.StrategicEffectContext::Build(class [System.Runtime]System.Collections.Generic.IReadOnlyList`1<class CombatSolver.Engine.Common.PredictedCard>,int32,int32,int32,valuetype CombatSolver.StrategicEffectRequirements,bool)[InstrumentedTier]",
+        946848982
+      ],
+      [
+        "bool [CombatSolver] CombatSolver.Engine.InCombat.Simulation.CombatPredictedCardExtensions::HasKeyword(class CombatSolver.Engine.Common.PredictedCard,class CombatSolver.Engine.InCombat.Simulation.CombatPredictionState,valuetype [sts2]MegaCrit.Sts2.Core.Entities.Cards.CardKeyword)[OptimizedTier1]",
+        939397255
+      ],
+      [
+        "instance int32 [CombatSolver] CombatSolver.Engine.Common.PredictedCard::CompareTo(class CombatSolver.Engine.Common.PredictedCard)[QuickJitted]",
+        934010618
+      ],
+      [
+        "instance int32 [CombatSolver] CombatSolver.SimulatedCombatState::GetAmount(class [sts2]MegaCrit.Sts2.Core.Entities.Creatures.Creature)[OptimizedTier1]",
+        915159787
+      ],
+      [
+        "float64 [CombatSolver] CombatSolver.CardChoiceSupport::DynamicVarBaseValue(class [sts2]MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet,string)[InstrumentedTier]",
+        864035875
+      ],
+      [
+        "instance bool [CombatSolver] CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator::CanPlay(class CombatSolver.Engine.Common.PredictedCard,int32&,int32&)[OptimizedTier1]",
+        856683221
+      ],
+      [
+        "instance valuetype [System.Runtime]System.ValueTuple`2<int32,int32> [CombatSolver] CombatSolver.CombatBeamSolver::CaptureEnergyRefundWindow(class CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator,class CombatSolver.SimulatedCombatState,class CombatSolver.Engine.InCombat.Simulation.SimPlayerCombatState,class [System.Runtime]System.Collections.Generic.IReadOnlyList`1<class CombatSolver.Engine.Common.PredictedCard>,valuetype CombatSolver.StrategicEffectContext,bool)[OptimizedTier1]",
+        821627646
+      ],
+      [
+        "instance void [CombatSolver] CombatSolver.StateFingerprintBuilder::Add(string)[QuickJitted]",
+        812820502
+      ],
+      [
+        "int32 [CombatSolver] CombatSolver.CombatBeamSolver::LatentCardSetupValue(class [sts2]MegaCrit.Sts2.Core.Models.CardModel)[QuickJitted]",
+        783549536
+      ],
+      [
+        "valuetype CombatSolver.StrategicEffectContext [CombatSolver] CombatSolver.StrategicEffectContext::Build(class [System.Runtime]System.Collections.Generic.IReadOnlyList`1<class CombatSolver.Engine.Common.PredictedCard>,int32,int32,int32,valuetype CombatSolver.StrategicEffectRequirements,bool)[QuickJitted]",
+        769962068
+      ]
+    ]
+  },
+  "largeDeckCpu": {
+    "scope": "One 396-card fixed-root Evaluate diagnostic, 25000 nodes, DOP16, VeryHigh widths, NoGC16GB. Hardware cycles at199Hz from GC policy admission to retain/reset marker, realtime calibrated to CLOCK_MONOTONIC before launch. Not performance acceptance. Nearest owned caller is attribution, not native leaf resolution.",
+    "includedSamples": 14199,
+    "unresolvedLeafSamples": 7187,
+    "estimatedCycles": 253900093093,
+    "inclusive": [
+      {
+        "pattern": "::Snapshot(",
+        "cycles": 123837635962,
+        "percent": 48.77415933701136
+      },
+      {
+        "pattern": "::CardValue(",
+        "cycles": 6864053810,
+        "percent": 2.703446748042662
+      },
+      {
+        "pattern": "::DynamicVarBaseValue(",
+        "cycles": 4903367468,
+        "percent": 1.9312192478023102
+      },
+      {
+        "pattern": "::BuildProjectedShuffleOrder(",
+        "cycles": 36071957593,
+        "percent": 14.207146265120649
+      },
+      {
+        "pattern": "::StableShuffleProjection(",
+        "cycles": 21849740629,
+        "percent": 8.605644985327654
+      },
+      {
+        "pattern": "::CalculateReachableHandPotential(",
+        "cycles": 8613243187,
+        "percent": 3.39237496216478
+      },
+      {
+        "pattern": "::BuildStateKey(",
+        "cycles": 6740902041,
+        "percent": 2.6549427213210604
+      },
+      {
+        "pattern": "StrategicEffectContext::Build(",
+        "cycles": 14040952489,
+        "percent": 5.530109232318004
+      },
+      {
+        "pattern": "::Filter(",
+        "cycles": 28145612313,
+        "percent": 11.085309961934776
+      },
+      {
+        "pattern": "::CloneModelForSimulation(",
+        "cycles": 1282931739,
+        "percent": 0.5052899836984622
+      },
+      {
+        "pattern": "::GetWithModifiers(",
+        "cycles": 18205976,
+        "percent": 0.007170527500882566
+      },
+      {
+        "pattern": "::CompareTo(",
+        "cycles": 20311386161,
+        "percent": 7.99975530279157
+      },
+      {
+        "pattern": "::RemapCachedModels(",
+        "cycles": 3497536840,
+        "percent": 1.3775248356127627
+      },
+      {
+        "pattern": "::GetEnchantedReplayCount(",
+        "cycles": 145943514,
+        "percent": 0.057480685501971426
+      },
+      {
+        "pattern": "::LeavesHandAtTurnEnd(",
+        "cycles": 12790153750,
+        "percent": 5.037475013967462
+      },
+      {
+        "pattern": "::BuildCyclePileShapeKey(",
+        "cycles": 5277086870,
+        "percent": 2.0784107661067606
+      },
+      {
+        "pattern": "::AppendCyclePileShape(",
+        "cycles": 4735299262,
+        "percent": 1.8650246261491237
+      }
+    ],
+    "exclusiveStages": [
+      {
+        "stage": "Snapshot",
+        "cycles": 123837635962,
+        "percent": 48.77415933701136
+      },
+      {
+        "stage": "Replay",
+        "cycles": 80209516241,
+        "percent": 31.59097551477478
+      },
+      {
+        "stage": "Fork",
+        "cycles": 21381444176,
+        "percent": 8.42120375598613
+      },
+      {
+        "stage": "NoResolvedOwned",
+        "cycles": 13489200013,
+        "percent": 5.312798372255459
+      },
+      {
+        "stage": "OtherOwned",
+        "cycles": 11443563581,
+        "percent": 4.507112794483453
+      },
+      {
+        "stage": "Retention",
+        "cycles": 3538733120,
+        "percent": 1.3937502254888154
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/cpu-large/analysis.json",
+        "sha256": "83f78b0af619a1b5ee510fc42b83ad41bd517bfdb89bd47f8b78f91a071950ba"
+      },
+      {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/cpu-large/command.json",
+        "sha256": "fcb70efc423aa6b511ebcfc6f8f41312f7b51f8359c8dfb4ca397dba3e853512"
+      },
+      {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/cpu-large/clock.json",
+        "sha256": "2f987fbcfad4b4b9fdcebabb334bf598bba9419cec1b326db8cf95c44541912d"
+      },
+      {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/cpu-large/collect.py",
+        "sha256": "f74f216914b93f51c432bc236178699c9c528d1a99d365e9679de59d73621dd9"
+      },
+      {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/cpu-large/managed-perf.map",
+        "sha256": "fdd2343dbabab39cd790f7e569b1c5dddedc61bd5c62d865b6865c4434d53702"
+      },
+      {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/cpu-large/frames.txt",
+        "sha256": "47ae47befd8d77eb858d44b37949068580482956004a7761c66f321a3fa99ca2"
+      }
+    ],
+    "parserCorrection": "The first perf script field set had no stacks; frames.txt was extracted with time,period,ip,dso from the same perf.data, without recollection."
+  },
+  "fullSnapshotOpportunity": {
+    "totalCalls": 37128,
+    "duplicateEvaluationInputs": 418,
+    "solverInstances": 17,
+    "raw": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/probe-dev08/snapshot-opportunities.json",
+      "sha256": "5c526c654fa5f3d61a795c8fb5879d7d7873b6579f0d1edb1ec091be2d806e4c"
+    }
+  },
+  "nativeContracts": [
+    {
+      "validity": "Stale ExtraTurnCallbacks reflection oracle failed before new contract",
+      "runId": "20c6b3c628fe404582e0671109c30ab7",
+      "status": "Failed",
+      "completedChecks": [],
+      "error": "System.InvalidOperationException: Filtered dispatch differs for ExtraTurnCallbacks.\n   at CombatSolver.UnattendedTestRunner.AssertMirroredHookFilter(CombatState combat, Player player)\n   at CombatSolver.UnattendedTestRunner.Assertions.RunBeforeExecutionAsync(ScenarioContext scenario)\n   at CombatSolver.UnattendedTestRunner.RunAsync()",
+      "result": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-ethereal-filter/result.json",
+        "sha256": "209761aa855d0f2f9286b40a8d50665bfd2c5211d2bd204cfd26c5991b9c4b04"
+      },
+      "timings": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-ethereal-filter/timings.json",
+        "sha256": "8a0cb99674a36f4e8e1c91768d4915202dbf489fd38fb4d764c2fe35210ef91a"
+      }
+    },
+    {
+      "validity": "New fixture incorrectly expected a wrapper for a default-only Reflex source",
+      "runId": "37ecfae3dafc4aba89a1922278fcf353",
+      "status": "Failed",
+      "completedChecks": [],
+      "error": "System.InvalidCastException: Unable to cast object of type 'MegaCrit.Sts2.Core.Models.AbstractModel[]' to type 'CombatSolver.Engine.Common.MirroredHookListenerSnapshot'.\n   at CombatSolver.UnattendedTestRunner.AssertEtherealTriggerNoOpGuard(CombatState live, Player player, AbstractModel[] models)\n   at CombatSolver.UnattendedTestRunner.AssertMirroredHookFilter(CombatState combat, Player player)\n   at CombatSolver.UnattendedTestRunner.Assertions.RunBeforeExecutionAsync(ScenarioContext scenario)\n   at CombatSolver.UnattendedTestRunner.RunAsync()",
+      "result": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-ethereal-filter-fixed/result.json",
+        "sha256": "e66782c71028ed099dcb25d12e1705109d4853d9d79300e048b0652c47cc2a28"
+      },
+      "timings": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-ethereal-filter-fixed/timings.json",
+        "sha256": "919716f12182307e3eea88436b984db21b88b0670669e2c3bcc8cb1930f1aaa1"
+      }
+    },
+    {
+      "validity": "Passed ethereal-only prototype after correcting fixture",
+      "runId": "0bf2ea036d5d453a82b22e7f86dfebcb",
+      "status": "Passed",
+      "completedChecks": [
+        "EtherealNoOp:NativeDefault:RejectedSources=14:FullStateRng:ParentForkLive:NativeAndBasePatchRefresh",
+        "MirroredHookFilter:Methods=64:Models=1674:OrderDuplicatesExternalForkInvalidationPatchRefreshSharedLayoutsSegmentsNoAnchorEffectivePrefixReuse",
+        "NativeOutcome:combatEnded=True:turn=4:hp=74:maxHp=80"
+      ],
+      "error": null,
+      "result": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-ethereal-filter-final/result.json",
+        "sha256": "fdbd1cb701457d3465be25b8a8d53de26977dc55a6af20b7b137de9310e8ded6"
+      },
+      "timings": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-ethereal-filter-final/timings.json",
+        "sha256": "4c24fe93960f6fd629d8a18107cd29080237ea22b752c9292d920754e027fc34"
+      }
+    },
+    {
+      "validity": "Stale AdvanceRound reflection arity, six instead of seven",
+      "runId": "4243d538dc2940038fc38c8f2e7c8707",
+      "status": "Failed",
+      "completedChecks": [],
+      "error": "System.Reflection.TargetParameterCountException: Parameter count mismatch.\n   at System.Reflection.MethodBaseInvoker.ThrowTargetParameterCountException()\n   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n   at CombatSolver.UnattendedTestRunner.AssertGhostSeedKeywordLifecycleAsync(CombatState combat, Player player)\n   at CombatSolver.UnattendedTestRunner.Executor.ExecuteAsync(ScenarioContext scenario)\n   at CombatSolver.UnattendedTestRunner.RunAsync()",
+      "result": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-ethereal-ghost/result.json",
+        "sha256": "e203f56c2efc08fc27f5d9d96728ef47858427832f04be9cf5f666878e69519c"
+      },
+      "timings": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-ethereal-ghost/timings.json",
+        "sha256": "5c187e613c8e28e49d07bae4031ab45794fc7b43e0db8f9428a1d5fdbda4cb56"
+      }
+    },
+    {
+      "validity": "Passed corrected two-turn native difference",
+      "runId": "55fc909a73214a9c8b92cc885fdca155",
+      "status": "Passed",
+      "completedChecks": [
+        "GhostSeed:NativeDowngrade:EntryAndClone:TwoTurns:LocalKeywordContinuation:CompleteStateAndRng",
+        "NativeOutcome:combatEnded=False:turn=2:hp=76:maxHp=80"
+      ],
+      "error": null,
+      "result": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-ethereal-ghost-fixed/result.json",
+        "sha256": "350cd99103dec6098c891a837bdc145deb5538e58a4c4c82edf65d58c4609ca8"
+      },
+      "timings": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-ethereal-ghost-fixed/timings.json",
+        "sha256": "ed75c6f4da5aae280c26cc74743a32dacb6ddd61da384f31e079fa4a840222fd"
+      }
+    },
+    {
+      "validity": "Passed new empty dispatch type-proof variant",
+      "runId": "eb894f987cae462cb3a37f8e3bd2eb72",
+      "status": "Passed",
+      "completedChecks": [
+        "EtherealNoOp:NativeDefault:EmptyDispatchProof:RejectedSources=14:FullStateRng:ParentForkLive:NativeAndBasePatchRefresh",
+        "MirroredHookFilter:Methods=64:Models=1674:OrderDuplicatesExternalForkInvalidationPatchRefreshSharedLayoutsSegmentsNoAnchorEffectivePrefixReuse",
+        "NativeOutcome:combatEnded=True:turn=4:hp=74:maxHp=80"
+      ],
+      "error": null,
+      "result": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-empty-proof-filter/result.json",
+        "sha256": "457dc22d85972d271f6b570cd5fbe013d992b994eeacd0a73ec08bd4fb3dc714"
+      },
+      "timings": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-empty-proof-filter/timings.json",
+        "sha256": "b2fcdd7b1646d1b524054766541483d843cf1665ac9a1cca79b0c2b213a96040"
+      }
+    },
+    {
+      "validity": "Passed empty proof two-turn native difference",
+      "runId": "e67cc8a1023e488e9274221bf1fa0782",
+      "status": "Passed",
+      "completedChecks": [
+        "GhostSeed:NativeDowngrade:EntryAndClone:TwoTurns:LocalKeywordContinuation:CompleteStateAndRng",
+        "NativeOutcome:combatEnded=False:turn=2:hp=76:maxHp=80"
+      ],
+      "error": null,
+      "result": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-empty-proof-ghost/result.json",
+        "sha256": "fca4fca0eab8435f1b138999c714c69564f8ab6c32579a62d764ca14f644f0d0"
+      },
+      "timings": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/native-empty-proof-ghost/timings.json",
+        "sha256": "30eedd1495c63540a5e2f9d1c6a0d28d13a38367b869d443df4f23bd2fb01fc6"
+      }
+    }
+  ],
+  "screens": [
+    {
+      "name": "ethereal-benchmark",
+      "provenance": {
+        "scope": "Fixed-work Evaluate screening, not whole Coordinator or 2x acceptance",
+        "sequence": [
+          "A1",
+          "C1",
+          "C2",
+          "A2"
+        ],
+        "roots": [
+          "silent-large-deck",
+          "dev-08-regent-boss"
+        ],
+        "baselineDll": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/tool-tasks/pr207-opening-admission-sync-20261005/candidate-build/CombatSolver.dll",
+        "candidateDll": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/ethereal-build/CombatSolver.dll",
+        "profile": "VeryHigh",
+        "dop": 16,
+        "nodes": 25000,
+        "beam": 135,
+        "cardBranches": 72,
+        "pileBranches": 42,
+        "handBranches": 54,
+        "budgetMs": 60000,
+        "searchMode": "Evaluate",
+        "noGcRegionGb": 16,
+        "processTimeoutSeconds": 120,
+        "diagnostics": false,
+        "requestDirectory": "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests",
+        "host": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-build/OfflineSearchHarness/bin/Release/net9.0/OfflineSearchHarness.dll",
+        "baselineDllSha256": "e04003a5710f43268b28e9ee14ea32fcbe8e35c7f59f086f524e1e48bd102c02",
+        "candidateDllSha256": "f21470111560142c68855667eb4fb2eeec7132374bc5f92a4aafeb9dc737d790"
+      },
+      "summary": [
+        {
+          "scene": "silent-large-deck",
+          "baselineMedianSeconds": 7.4158931,
+          "candidateMedianSeconds": 7.31213695,
+          "speedup": 1.0141895796959874,
+          "maxRssRatio": 1.0010540023603143,
+          "qualityAndWorkEqual": true
+        },
+        {
+          "scene": "dev-08-regent-boss",
+          "baselineMedianSeconds": 4.136748000000001,
+          "candidateMedianSeconds": 4.09298575,
+          "speedup": 1.010692011326939,
+          "maxRssRatio": 1.0009115452128479,
+          "qualityAndWorkEqual": true
+        }
+      ],
+      "runs": [
+        {
+          "scene": "silent-large-deck",
+          "label": "A1",
+          "wallSeconds": 7.4426221,
+          "coordinatorMs": 7049.121,
+          "peakProcessWorkingSetBytes": 5032550400,
+          "workerAllocatedBytes": 4135627736,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 65,
+            "potionCount": 0,
+            "potionUses": [],
+            "score": -1000006974043,
+            "finalHp": 0,
+            "finalEnemyHp": 476,
+            "combatEndedTurn": null,
+            "onlyDeathRoutes": true
+          },
+          "work": {
+            "totalExpanded": 11111,
+            "totalTransitions": 42886,
+            "totalChoiceBranches": 13212,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 9.615567584056407
+        },
+        {
+          "scene": "silent-large-deck",
+          "label": "C1",
+          "wallSeconds": 7.4040995,
+          "coordinatorMs": 7001.0945,
+          "peakProcessWorkingSetBytes": 5017690112,
+          "workerAllocatedBytes": 4123930328,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 65,
+            "potionCount": 0,
+            "potionUses": [],
+            "score": -1000006974043,
+            "finalHp": 0,
+            "finalEnemyHp": 476,
+            "combatEndedTurn": null,
+            "onlyDeathRoutes": true
+          },
+          "work": {
+            "totalExpanded": 11111,
+            "totalTransitions": 42886,
+            "totalChoiceBranches": 13212,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 9.565546615980566
+        },
+        {
+          "scene": "silent-large-deck",
+          "label": "C2",
+          "wallSeconds": 7.2201744,
+          "coordinatorMs": 6844.6176,
+          "peakProcessWorkingSetBytes": 5037854720,
+          "workerAllocatedBytes": 4141814120,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 65,
+            "potionCount": 0,
+            "potionUses": [],
+            "score": -1000006974043,
+            "finalHp": 0,
+            "finalEnemyHp": 476,
+            "combatEndedTurn": null,
+            "onlyDeathRoutes": true
+          },
+          "work": {
+            "totalExpanded": 11111,
+            "totalTransitions": 42886,
+            "totalChoiceBranches": 13212,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 9.309342331020162
+        },
+        {
+          "scene": "silent-large-deck",
+          "label": "A2",
+          "wallSeconds": 7.3891641,
+          "coordinatorMs": 7031.7134,
+          "peakProcessWorkingSetBytes": 5026385920,
+          "workerAllocatedBytes": 4132984872,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 65,
+            "potionCount": 0,
+            "potionUses": [],
+            "score": -1000006974043,
+            "finalHp": 0,
+            "finalEnemyHp": 476,
+            "combatEndedTurn": null,
+            "onlyDeathRoutes": true
+          },
+          "work": {
+            "totalExpanded": 11111,
+            "totalTransitions": 42886,
+            "totalChoiceBranches": 13212,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 9.515119998017326
+        },
+        {
+          "scene": "dev-08-regent-boss",
+          "label": "A1",
+          "wallSeconds": 4.0996553,
+          "coordinatorMs": 3844.0257,
+          "peakProcessWorkingSetBytes": 1995100160,
+          "workerAllocatedBytes": 1730899448,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 25,
+            "potionCount": 2,
+            "potionUses": [
+              {
+                "id": "SPEED_POTION",
+                "title": "SPEED_POTION.title",
+                "turn": 3,
+                "slot": 0
+              },
+              {
+                "id": "SWIFT_POTION",
+                "title": "SWIFT_POTION.title",
+                "turn": 3,
+                "slot": 1
+              }
+            ],
+            "score": 10000693970,
+            "finalHp": 50,
+            "finalEnemyHp": 0,
+            "combatEndedTurn": 6,
+            "onlyDeathRoutes": false
+          },
+          "work": {
+            "totalExpanded": 8209,
+            "totalTransitions": 37126,
+            "totalChoiceBranches": 888,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 6.183191914809868
+        },
+        {
+          "scene": "dev-08-regent-boss",
+          "label": "C1",
+          "wallSeconds": 4.0907725,
+          "coordinatorMs": 3828.2006,
+          "peakProcessWorkingSetBytes": 1996840960,
+          "workerAllocatedBytes": 1733526840,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 25,
+            "potionCount": 2,
+            "potionUses": [
+              {
+                "id": "SPEED_POTION",
+                "title": "SPEED_POTION.title",
+                "turn": 3,
+                "slot": 0
+              },
+              {
+                "id": "SWIFT_POTION",
+                "title": "SWIFT_POTION.title",
+                "turn": 3,
+                "slot": 1
+              }
+            ],
+            "score": 10000693970,
+            "finalHp": 50,
+            "finalEnemyHp": 0,
+            "combatEndedTurn": 6,
+            "onlyDeathRoutes": false
+          },
+          "work": {
+            "totalExpanded": 8209,
+            "totalTransitions": 37126,
+            "totalChoiceBranches": 888,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 6.08141083503142
+        },
+        {
+          "scene": "dev-08-regent-boss",
+          "label": "C2",
+          "wallSeconds": 4.095199,
+          "coordinatorMs": 3841.8613,
+          "peakProcessWorkingSetBytes": 1996918784,
+          "workerAllocatedBytes": 1732854296,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 25,
+            "potionCount": 2,
+            "potionUses": [
+              {
+                "id": "SPEED_POTION",
+                "title": "SPEED_POTION.title",
+                "turn": 3,
+                "slot": 0
+              },
+              {
+                "id": "SWIFT_POTION",
+                "title": "SWIFT_POTION.title",
+                "turn": 3,
+                "slot": 1
+              }
+            ],
+            "score": 10000693970,
+            "finalHp": 50,
+            "finalEnemyHp": 0,
+            "combatEndedTurn": 6,
+            "onlyDeathRoutes": false
+          },
+          "work": {
+            "totalExpanded": 8209,
+            "totalTransitions": 37126,
+            "totalChoiceBranches": 888,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 6.134345753118396
+        },
+        {
+          "scene": "dev-08-regent-boss",
+          "label": "A2",
+          "wallSeconds": 4.1738407,
+          "coordinatorMs": 3924.3373,
+          "peakProcessWorkingSetBytes": 1995030528,
+          "workerAllocatedBytes": 1730776688,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 25,
+            "potionCount": 2,
+            "potionUses": [
+              {
+                "id": "SPEED_POTION",
+                "title": "SPEED_POTION.title",
+                "turn": 3,
+                "slot": 0
+              },
+              {
+                "id": "SWIFT_POTION",
+                "title": "SWIFT_POTION.title",
+                "turn": 3,
+                "slot": 1
+              }
+            ],
+            "score": 10000693970,
+            "finalHp": 50,
+            "finalEnemyHp": 0,
+            "combatEndedTurn": 6,
+            "onlyDeathRoutes": false
+          },
+          "work": {
+            "totalExpanded": 8209,
+            "totalTransitions": 37126,
+            "totalChoiceBranches": 888,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 6.181388573953882
+        }
+      ],
+      "raw": [
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/ethereal-benchmark/plan.json",
+          "sha256": "bb2d680ba592c488831a612b6cf811d8a5412e867675dce913b2779845daf76f"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/ethereal-benchmark/provenance.json",
+          "sha256": "7e9a3835f32be1c7a2c569c32d9973e64729720388413bad3dcc3aefc0617af1"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/ethereal-benchmark/runs.json",
+          "sha256": "5ac88f730d87b9ad8fbeedc50dd1a58066cfa3710788c0e799bbc26e72857813"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/ethereal-benchmark/run.py",
+          "sha256": "e845e83c85e3addc0240421555214330dfbf59bd87af2598faea3e0b804bbd6d"
+        }
+      ],
+      "metricNameNote": "The runner field coordinatorMs contains solverMetrics.totalElapsedMilliseconds in Evaluate mode. It is not a whole Coordinator request measurement."
+    },
+    {
+      "name": "empty-proof-benchmark",
+      "provenance": {
+        "scope": "Fixed-work Evaluate screening, not whole Coordinator or 2x acceptance",
+        "sequence": [
+          "A1",
+          "C1",
+          "C2",
+          "A2"
+        ],
+        "roots": [
+          "silent-large-deck",
+          "dev-08-regent-boss"
+        ],
+        "baselineDll": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/tool-tasks/pr207-opening-admission-sync-20261005/candidate-build/CombatSolver.dll",
+        "candidateDll": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/empty-proof-build/CombatSolver.dll",
+        "profile": "VeryHigh",
+        "dop": 16,
+        "nodes": 25000,
+        "beam": 135,
+        "cardBranches": 72,
+        "pileBranches": 42,
+        "handBranches": 54,
+        "budgetMs": 60000,
+        "searchMode": "Evaluate",
+        "noGcRegionGb": 16,
+        "processTimeoutSeconds": 120,
+        "diagnostics": false,
+        "requestDirectory": "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests",
+        "host": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-build/OfflineSearchHarness/bin/Release/net9.0/OfflineSearchHarness.dll",
+        "baselineDllSha256": "e04003a5710f43268b28e9ee14ea32fcbe8e35c7f59f086f524e1e48bd102c02",
+        "candidateDllSha256": "f140c958185c4309a47297387a7051bba70a572080be0056c6d9feed04afbe88"
+      },
+      "summary": [
+        {
+          "scene": "silent-large-deck",
+          "baselineMedianSeconds": 7.30307455,
+          "candidateMedianSeconds": 7.180646250000001,
+          "speedup": 1.017049760667433,
+          "maxRssRatio": 1.0002968321905972,
+          "qualityAndWorkEqual": true
+        },
+        {
+          "scene": "dev-08-regent-boss",
+          "baselineMedianSeconds": 4.12087815,
+          "candidateMedianSeconds": 4.1026876,
+          "speedup": 1.0044338130936414,
+          "maxRssRatio": 1.0011929474425547,
+          "qualityAndWorkEqual": true
+        }
+      ],
+      "runs": [
+        {
+          "scene": "silent-large-deck",
+          "label": "A1",
+          "wallSeconds": 7.3044973,
+          "coordinatorMs": 6951.1994,
+          "peakProcessWorkingSetBytes": 5036650496,
+          "workerAllocatedBytes": 4142951112,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 65,
+            "potionCount": 0,
+            "potionUses": [],
+            "score": -1000006974043,
+            "finalHp": 0,
+            "finalEnemyHp": 476,
+            "combatEndedTurn": null,
+            "onlyDeathRoutes": true
+          },
+          "work": {
+            "totalExpanded": 11111,
+            "totalTransitions": 42886,
+            "totalChoiceBranches": 13212,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 9.510108368936926
+        },
+        {
+          "scene": "silent-large-deck",
+          "label": "C1",
+          "wallSeconds": 7.2174823,
+          "coordinatorMs": 6842.4376,
+          "peakProcessWorkingSetBytes": 5011566592,
+          "workerAllocatedBytes": 4119763120,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 65,
+            "potionCount": 0,
+            "potionUses": [],
+            "score": -1000006974043,
+            "finalHp": 0,
+            "finalEnemyHp": 476,
+            "combatEndedTurn": null,
+            "onlyDeathRoutes": true
+          },
+          "work": {
+            "totalExpanded": 11111,
+            "totalTransitions": 42886,
+            "totalChoiceBranches": 13212,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 9.309964459156618
+        },
+        {
+          "scene": "silent-large-deck",
+          "label": "C2",
+          "wallSeconds": 7.1438102,
+          "coordinatorMs": 6764.208,
+          "peakProcessWorkingSetBytes": 5038145536,
+          "workerAllocatedBytes": 4141656936,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 65,
+            "potionCount": 0,
+            "potionUses": [],
+            "score": -1000006974043,
+            "finalHp": 0,
+            "finalEnemyHp": 476,
+            "combatEndedTurn": null,
+            "onlyDeathRoutes": true
+          },
+          "work": {
+            "totalExpanded": 11111,
+            "totalTransitions": 42886,
+            "totalChoiceBranches": 13212,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 9.304722236003727
+        },
+        {
+          "scene": "silent-large-deck",
+          "label": "A2",
+          "wallSeconds": 7.3016518,
+          "coordinatorMs": 6942.337,
+          "peakProcessWorkingSetBytes": 5029740544,
+          "workerAllocatedBytes": 4133270872,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 65,
+            "potionCount": 0,
+            "potionUses": [],
+            "score": -1000006974043,
+            "finalHp": 0,
+            "finalEnemyHp": 476,
+            "combatEndedTurn": null,
+            "onlyDeathRoutes": true
+          },
+          "work": {
+            "totalExpanded": 11111,
+            "totalTransitions": 42886,
+            "totalChoiceBranches": 13212,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 9.411578255007043
+        },
+        {
+          "scene": "dev-08-regent-boss",
+          "label": "A1",
+          "wallSeconds": 4.1334372,
+          "coordinatorMs": 3873.4852,
+          "peakProcessWorkingSetBytes": 1994870784,
+          "workerAllocatedBytes": 1731056544,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 25,
+            "potionCount": 2,
+            "potionUses": [
+              {
+                "id": "SPEED_POTION",
+                "title": "SPEED_POTION.title",
+                "turn": 3,
+                "slot": 0
+              },
+              {
+                "id": "SWIFT_POTION",
+                "title": "SWIFT_POTION.title",
+                "turn": 3,
+                "slot": 1
+              }
+            ],
+            "score": 10000693970,
+            "finalHp": 50,
+            "finalEnemyHp": 0,
+            "combatEndedTurn": 6,
+            "onlyDeathRoutes": false
+          },
+          "work": {
+            "totalExpanded": 8209,
+            "totalTransitions": 37126,
+            "totalChoiceBranches": 888,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 6.1321739370469
+        },
+        {
+          "scene": "dev-08-regent-boss",
+          "label": "C1",
+          "wallSeconds": 4.0932665,
+          "coordinatorMs": 3838.6752,
+          "peakProcessWorkingSetBytes": 1996972032,
+          "workerAllocatedBytes": 1733247232,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 25,
+            "potionCount": 2,
+            "potionUses": [
+              {
+                "id": "SPEED_POTION",
+                "title": "SPEED_POTION.title",
+                "turn": 3,
+                "slot": 0
+              },
+              {
+                "id": "SWIFT_POTION",
+                "title": "SWIFT_POTION.title",
+                "turn": 3,
+                "slot": 1
+              }
+            ],
+            "score": 10000693970,
+            "finalHp": 50,
+            "finalEnemyHp": 0,
+            "combatEndedTurn": 6,
+            "onlyDeathRoutes": false
+          },
+          "work": {
+            "totalExpanded": 8209,
+            "totalTransitions": 37126,
+            "totalChoiceBranches": 888,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 6.084454901982099
+        },
+        {
+          "scene": "dev-08-regent-boss",
+          "label": "C2",
+          "wallSeconds": 4.1121087,
+          "coordinatorMs": 3860.9286,
+          "peakProcessWorkingSetBytes": 1997250560,
+          "workerAllocatedBytes": 1733417848,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 25,
+            "potionCount": 2,
+            "potionUses": [
+              {
+                "id": "SPEED_POTION",
+                "title": "SPEED_POTION.title",
+                "turn": 3,
+                "slot": 0
+              },
+              {
+                "id": "SWIFT_POTION",
+                "title": "SWIFT_POTION.title",
+                "turn": 3,
+                "slot": 1
+              }
+            ],
+            "score": 10000693970,
+            "finalHp": 50,
+            "finalEnemyHp": 0,
+            "combatEndedTurn": 6,
+            "onlyDeathRoutes": false
+          },
+          "work": {
+            "totalExpanded": 8209,
+            "totalTransitions": 37126,
+            "totalChoiceBranches": 888,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 6.129998947028071
+        },
+        {
+          "scene": "dev-08-regent-boss",
+          "label": "A2",
+          "wallSeconds": 4.1083191,
+          "coordinatorMs": 3846.6477,
+          "peakProcessWorkingSetBytes": 1994756096,
+          "workerAllocatedBytes": 1731072928,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 25,
+            "potionCount": 2,
+            "potionUses": [
+              {
+                "id": "SPEED_POTION",
+                "title": "SPEED_POTION.title",
+                "turn": 3,
+                "slot": 0
+              },
+              {
+                "id": "SWIFT_POTION",
+                "title": "SWIFT_POTION.title",
+                "turn": 3,
+                "slot": 1
+              }
+            ],
+            "score": 10000693970,
+            "finalHp": 50,
+            "finalEnemyHp": 0,
+            "combatEndedTurn": 6,
+            "onlyDeathRoutes": false
+          },
+          "work": {
+            "totalExpanded": 8209,
+            "totalTransitions": 37126,
+            "totalChoiceBranches": 888,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 6.082298167981207
+        }
+      ],
+      "raw": [
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/empty-proof-benchmark/plan.json",
+          "sha256": "e4b66a4084a41e6c62ad302c774f4be418bc44c107284c6c398e474aa86abfcf"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/empty-proof-benchmark/provenance.json",
+          "sha256": "1fc8451922dea0afc46ec649c64319fc224c4cb1d7c2fa286b628fa04bca4d86"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/empty-proof-benchmark/runs.json",
+          "sha256": "8bc75899565bc3de17f22092d0324011341b99190d24ee2ef00184446cf6c3e3"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/empty-proof-benchmark/run.py",
+          "sha256": "e845e83c85e3addc0240421555214330dfbf59bd87af2598faea3e0b804bbd6d"
+        }
+      ],
+      "metricNameNote": "The runner field coordinatorMs contains solverMetrics.totalElapsedMilliseconds in Evaluate mode. It is not a whole Coordinator request measurement."
+    }
+  ],
+  "diagnostics": [
+    {
+      "name": "shuffle-probes",
+      "provenance": {
+        "scope": "Diagnostic ordered projection input repeats; original runtime always executes; not performance acceptance",
+        "sequence": [
+          "A1"
+        ],
+        "roots": [
+          "silent-large-deck",
+          "dev-08-regent-boss"
+        ],
+        "baselineDll": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/tool-tasks/pr207-opening-admission-sync-20261005/candidate-build/CombatSolver.dll",
+        "candidateDll": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/tool-tasks/pr207-opening-admission-sync-20261005/candidate-build/CombatSolver.dll",
+        "profile": "VeryHigh",
+        "dop": 16,
+        "nodes": 25000,
+        "beam": 135,
+        "cardBranches": 72,
+        "pileBranches": 42,
+        "handBranches": 54,
+        "budgetMs": 60000,
+        "searchMode": "Evaluate",
+        "noGcRegionGb": 16,
+        "processTimeoutSeconds": 120,
+        "diagnostics": true,
+        "requestDirectory": "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests",
+        "host": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/shuffle-probe-host/OfflineSearchHarness.dll",
+        "baselineDllSha256": "e04003a5710f43268b28e9ee14ea32fcbe8e35c7f59f086f524e1e48bd102c02",
+        "candidateDllSha256": "e04003a5710f43268b28e9ee14ea32fcbe8e35c7f59f086f524e1e48bd102c02"
+      },
+      "summary": [
+        {
+          "Calls": 42888,
+          "Repeats": 826,
+          "Cards": 16644547,
+          "RepeatedCards": 320391,
+          "RejectedSources": 0,
+          "LimitBypasses": 0,
+          "RetainedInputs": 42062,
+          "OutputMismatches": 0,
+          "scene": "silent-large-deck",
+          "solverInstances": 17,
+          "repeatRate": 0.019259466517440777,
+          "cardWeightedRepeatRate": 0.019249006896973526,
+          "qualityAndWorkEqual": true
+        },
+        {
+          "Calls": 37128,
+          "Repeats": 2515,
+          "Cards": 1263325,
+          "RepeatedCards": 81332,
+          "RejectedSources": 0,
+          "LimitBypasses": 0,
+          "RetainedInputs": 34613,
+          "OutputMismatches": 0,
+          "scene": "dev-08-regent-boss",
+          "solverInstances": 17,
+          "repeatRate": 0.0677386339151045,
+          "cardWeightedRepeatRate": 0.0643793164862565,
+          "qualityAndWorkEqual": true
+        }
+      ],
+      "runs": [
+        {
+          "scene": "silent-large-deck",
+          "label": "A1",
+          "wallSeconds": 7.6483887,
+          "coordinatorMs": 7266.7527,
+          "peakProcessWorkingSetBytes": 6212882432,
+          "workerAllocatedBytes": 5079488872,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 65,
+            "potionCount": 0,
+            "potionUses": [],
+            "score": -1000006974043,
+            "finalHp": 0,
+            "finalEnemyHp": 476,
+            "combatEndedTurn": null,
+            "onlyDeathRoutes": true
+          },
+          "work": {
+            "totalExpanded": 11111,
+            "totalTransitions": 42886,
+            "totalChoiceBranches": 13212,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 9.854475786909461
+        },
+        {
+          "scene": "dev-08-regent-boss",
+          "label": "A1",
+          "wallSeconds": 4.2292219,
+          "coordinatorMs": 3977.6661,
+          "peakProcessWorkingSetBytes": 2085130240,
+          "workerAllocatedBytes": 1814916688,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 25,
+            "potionCount": 2,
+            "potionUses": [
+              {
+                "id": "SPEED_POTION",
+                "title": "SPEED_POTION.title",
+                "turn": 3,
+                "slot": 0
+              },
+              {
+                "id": "SWIFT_POTION",
+                "title": "SWIFT_POTION.title",
+                "turn": 3,
+                "slot": 1
+              }
+            ],
+            "score": 10000693970,
+            "finalHp": 50,
+            "finalEnemyHp": 0,
+            "combatEndedTurn": 6,
+            "onlyDeathRoutes": false
+          },
+          "work": {
+            "totalExpanded": 8209,
+            "totalTransitions": 37126,
+            "totalChoiceBranches": 888,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 6.235125872073695
+        }
+      ],
+      "host": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/shuffle-probe-host/OfflineSearchHarness.dll",
+        "sha256": "8684ada2e90596e7bb934fa60ea4235ac6077d5471a5c055dd2892f08f770a40"
+      },
+      "raw": [
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/shuffle-probes/plan.json",
+          "sha256": "533205093ca6ce3de3e7d51ddf901612d966807a541b4cb19c6809df6ce93437"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/shuffle-probes/provenance.json",
+          "sha256": "471d25bc199a786b0f2671936dd1ecd965068be42b5d5788bfcd63a5130b0b44"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/shuffle-probes/runs.json",
+          "sha256": "5bc0f0584175f3dd3786c033b1f3bdce403be57e55d1621cc59736b935f2141b"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/shuffle-probes/run.py",
+          "sha256": "cdf68139a37deed78c0623b58279e899d69b565a2703bc9b4abc9ff14b5fbdeb"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/shuffle-probes/silent-large-deck-A1/shuffle-projection-opportunities.json",
+          "sha256": "830236e831a933b908f7f748d630c93e2b7269a09d1b800ecb1404f11c39a539"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/shuffle-probes/dev-08-regent-boss-A1/shuffle-projection-opportunities.json",
+          "sha256": "498553f51415004911bcf4f42ed859cda5fa94224822415a677ee706a11b91ef"
+        }
+      ]
+    },
+    {
+      "name": "sorting-probes",
+      "provenance": {
+        "scope": "Separate diagnostic: adds exact ordered sorting inputs excluding card values and RNG; original projection still executes",
+        "sequence": [
+          "A1"
+        ],
+        "roots": [
+          "silent-large-deck",
+          "dev-08-regent-boss"
+        ],
+        "baselineDll": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/tool-tasks/pr207-opening-admission-sync-20261005/candidate-build/CombatSolver.dll",
+        "candidateDll": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/tool-tasks/pr207-opening-admission-sync-20261005/candidate-build/CombatSolver.dll",
+        "profile": "VeryHigh",
+        "dop": 16,
+        "nodes": 25000,
+        "beam": 135,
+        "cardBranches": 72,
+        "pileBranches": 42,
+        "handBranches": 54,
+        "budgetMs": 60000,
+        "searchMode": "Evaluate",
+        "noGcRegionGb": 16,
+        "processTimeoutSeconds": 120,
+        "diagnostics": true,
+        "requestDirectory": "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests",
+        "host": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/sorting-probe-host/OfflineSearchHarness.dll",
+        "baselineDllSha256": "e04003a5710f43268b28e9ee14ea32fcbe8e35c7f59f086f524e1e48bd102c02",
+        "candidateDllSha256": "e04003a5710f43268b28e9ee14ea32fcbe8e35c7f59f086f524e1e48bd102c02"
+      },
+      "summary": [
+        {
+          "Calls": 42888,
+          "Repeats": 804,
+          "Cards": 16644547,
+          "RepeatedCards": 311817,
+          "RejectedSources": 0,
+          "LimitBypasses": 0,
+          "RetainedInputs": 42084,
+          "OutputMismatches": 0,
+          "SortingInputRepeats": 804,
+          "SortingRepeatedCards": 311817,
+          "SortingRetainedInputs": 42084,
+          "SortingLimitBypasses": 0,
+          "scene": "silent-large-deck",
+          "solverInstances": 17,
+          "repeatRate": 0.018746502518186905,
+          "sortingRepeatRate": 0.018746502518186905,
+          "sortingCardWeightedRepeatRate": 0.01873388323515203,
+          "qualityAndWorkEqual": true
+        },
+        {
+          "Calls": 37128,
+          "Repeats": 2444,
+          "Cards": 1263325,
+          "RepeatedCards": 78539,
+          "RejectedSources": 0,
+          "LimitBypasses": 0,
+          "RetainedInputs": 34684,
+          "OutputMismatches": 0,
+          "SortingInputRepeats": 3410,
+          "SortingRepeatedCards": 108878,
+          "SortingRetainedInputs": 33718,
+          "SortingLimitBypasses": 0,
+          "scene": "dev-08-regent-boss",
+          "solverInstances": 17,
+          "repeatRate": 0.06582633053221289,
+          "sortingRepeatRate": 0.0918444300797242,
+          "sortingCardWeightedRepeatRate": 0.08618368195040864,
+          "qualityAndWorkEqual": true
+        }
+      ],
+      "runs": [
+        {
+          "scene": "silent-large-deck",
+          "label": "A1",
+          "wallSeconds": 7.6843098,
+          "coordinatorMs": 7310.8043,
+          "peakProcessWorkingSetBytes": 6203424768,
+          "workerAllocatedBytes": 5072196632,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 65,
+            "potionCount": 0,
+            "potionUses": [],
+            "score": -1000006974043,
+            "finalHp": 0,
+            "finalEnemyHp": 476,
+            "combatEndedTurn": null,
+            "onlyDeathRoutes": true
+          },
+          "work": {
+            "totalExpanded": 11111,
+            "totalTransitions": 42886,
+            "totalChoiceBranches": 13212,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 9.857012202963233
+        },
+        {
+          "scene": "dev-08-regent-boss",
+          "label": "A1",
+          "wallSeconds": 4.1875619,
+          "coordinatorMs": 3913.8733,
+          "peakProcessWorkingSetBytes": 2096037888,
+          "workerAllocatedBytes": 1822867232,
+          "quality": {
+            "boundary": "None",
+            "projectedBattleHpLost": 25,
+            "potionCount": 2,
+            "potionUses": [
+              {
+                "id": "SPEED_POTION",
+                "title": "SPEED_POTION.title",
+                "turn": 3,
+                "slot": 0
+              },
+              {
+                "id": "SWIFT_POTION",
+                "title": "SWIFT_POTION.title",
+                "turn": 3,
+                "slot": 1
+              }
+            ],
+            "score": 10000693970,
+            "finalHp": 50,
+            "finalEnemyHp": 0,
+            "combatEndedTurn": 6,
+            "onlyDeathRoutes": false
+          },
+          "work": {
+            "totalExpanded": 8209,
+            "totalTransitions": 37126,
+            "totalChoiceBranches": 888,
+            "maxParallelConcurrency": 16
+          },
+          "processWallSeconds": 6.1850047369953245
+        }
+      ],
+      "host": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/sorting-probe-host/OfflineSearchHarness.dll",
+        "sha256": "88bc4a06feae861188c1554befc8c34f978f0721e39b4f4b5a369d75febd74d8"
+      },
+      "raw": [
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/sorting-probes/plan.json",
+          "sha256": "aa28746f316fd32c7e24e42ac32aa56e08460577de706a5a80494e570eacd7f7"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/sorting-probes/provenance.json",
+          "sha256": "ec374d9507778db5209ad34b8bfd088c0b6c4593ab35263ea08337dfe61f7fd4"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/sorting-probes/runs.json",
+          "sha256": "51d1daf5809817f9bc5a1f8b419a80e551dc03d23ba8917d1f62acd6e652f024"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/sorting-probes/run.py",
+          "sha256": "cdf68139a37deed78c0623b58279e899d69b565a2703bc9b4abc9ff14b5fbdeb"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/sorting-probes/silent-large-deck-A1/shuffle-projection-opportunities.json",
+          "sha256": "8d56969d7c1ed3d224c44ae3a4146ccc7f906cb0b21cad9735c0b9cf163ee301"
+        },
+        {
+          "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/sorting-probes/dev-08-regent-boss-A1/shuffle-projection-opportunities.json",
+          "sha256": "ac28a8992802455962b43830def827fd96349d7e7e9f2c83cea7762fc2f2ce62"
+        }
+      ]
+    }
+  ],
+  "finalBuild": {
+    "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/final-build/CombatSolver.dll",
+    "sha256": "8581889c8ed75344e541a3f4ed99b3ae6efe982174498ea44310c87fc844c025"
+  },
+  "unverified": [
+    "No production runtime candidate retained",
+    "No whole Coordinator acceptance for these prototypes",
+    "No final DOP1/2 candidate acceptance",
+    "No fixed full quality/memory regression for these prototypes",
+    "No full route/resource equality inferred from selected output fields",
+    "Recorded 128-bit card fingerprints are not a new proof that all card semantics are encoded",
+    "Per-solver repeats do not measure cross-worker/request sharing"
+  ],
+  "validation": {
+    "releaseBuild": {
+      "seconds": 14.31,
+      "warnings": 0,
+      "errors": 0
+    },
+    "offlineDiagnosticHostBuild": {
+      "seconds": 2.77,
+      "warnings": 0,
+      "errors": 0
+    },
+    "structuralBoundaries": {
+      "bash": "Passed",
+      "powershell": "Passed",
+      "searchFiles": 251
+    },
+    "documentation": {
+      "status": "Passed",
+      "files": 463,
+      "links": 1866
+    },
+    "tools": {
+      "status": "Passed",
+      "files": 293,
+      "projects": 37
+    },
+    "coveragePlacement": {
+      "status": "Passed",
+      "data": 528,
+      "fixtures": 478,
+      "groups": 37
+    },
+    "runtimeInputNote": "Production runtime source restored to the already validated baseline; retained native-test fixes passed before prototype withdrawal. Tool sources are excluded from the Mod build. No duplicate behavior checks after documentation-only changes."
+  },
+  "deployment": {
+    "status": "Passed",
+    "sourceBase": "3b3a6b8f",
+    "sourceChanges": "Native-test fixes only; production runtime prototype withdrawn; tools excluded from Mod assembly",
+    "dllSha256": "8581889c8ed75344e541a3f4ed99b3ae6efe982174498ea44310c87fc844c025",
+    "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver",
+    "files": [
+      "CombatSolver.json",
+      "CombatSolver.dll",
+      "CombatSolver.MemoryCleaner.exe",
+      "LICENSE",
+      "THIRD_PARTY_NOTICES.md"
+    ],
+    "backup": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/installed-before-research-completion",
+    "memoryCleaner": "Reused unchanged binary from the previously successful five-file deployment; helper source unchanged",
+    "releaseBuildSeconds": 14.31,
+    "warnings": 0,
+    "errors": 0,
+    "releaseOrGameLaunch": false
+  }
+}
