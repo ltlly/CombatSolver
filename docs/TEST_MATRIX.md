@@ -1,5 +1,7 @@
 # CombatSolver 测试入口
 
+2026-10-06 [指纹关键词复用研究](performance/fingerprint-keyword-reuse-research-20261006.md)原生`0d8ec7b7363847fcbe87a255d4807c6d`通过603卡/16标志指纹、全局回调、特殊comparer、Fork/父/live/RNG及补丁刷新；前置拒绝全部保存并清理实例。12次Evaluate与4次完整Coordinator逐次记录，整请求0.988倍未证明收益，原型和专属合同撤回。没有追加最终九根或DOP验收，当前运行时与既有五文件部署保持。
+
 0.50.0 定稿沿用 PR #207、PR #211 与开局药水准入的既有行为证据，来源和范围见 [历史卷 20](archive/testing/volume-20.md)。
 
 按改动选择最小验证层，方法见 [无人测试](HEADLESS_TESTING.md) 与 [社区验收](community/testing-guide.md)。以下命令提供当前复跑入口，不表示本轮已执行。单人共享损血剪枝的新基线验证见[策略证据](strategy/hp-loss-pruning/README.md#单人共享损血剪枝2026-10-05)。

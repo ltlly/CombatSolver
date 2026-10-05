@@ -1,5 +1,7 @@
 # 性能工作入口
 
+- [指纹关键词复用研究](fingerprint-keyword-reuse-research-20261006.md)：603卡及16标志原生合同通过；12次短搜和4次完整请求保留，整请求无收益，原型撤回。
+
 - [全程录制](long-session-recording.md)：现行采集方法。
 - [性能夹具](PERFORMANCE_FIXTURES.md)：固定输入与比较口径。
 - [ServerGC 启动](server-gc.md)：现行使用与恢复方式。
