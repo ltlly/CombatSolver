@@ -1,0 +1,360 @@
+{
+  "scope": "Read-only reanalysis of unchanged existing evidence. No new search, performance acceptance, runtime change, or deployment.",
+  "sourceHead": "4d2c9e0e",
+  "gameDllSha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+  "gameMvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+  "tracePath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-derived-state-20261005/cpu-large/frames.txt",
+  "traceSha256": "47ae47befd8d77eb858d44b37949068580482956004a7761c66f321a3fa99ca2",
+  "mapSha256": "fdd2343dbabab39cd790f7e569b1c5dddedc61bd5c62d865b6865c4434d53702",
+  "includedSamples": 14199,
+  "estimatedCycles": 253900093093,
+  "pathInterpretation": "Inclusive paths overlap; zero sampled matches is not proof of zero execution cost. Replay nearest-child attribution is a heuristic with unresolved native leaves.",
+  "inclusive": [
+    {
+      "path": "MirroredHookListenerFilter::Filter(",
+      "cycles": 28145612313,
+      "percent": 11.085309961934776
+    },
+    {
+      "path": "MirroredHookListenerLayout::Matches(",
+      "cycles": 7565656436,
+      "percent": 2.9797769444806024
+    },
+    {
+      "path": "::GetBaseHookListeners(",
+      "cycles": 13223732109,
+      "percent": 5.208242323942881
+    },
+    {
+      "path": "::GetEffectiveHookListeners(",
+      "cycles": 18419066803,
+      "percent": 7.254454529188911
+    },
+    {
+      "path": "::GetMirroredHookListeners(",
+      "cycles": 32532878277,
+      "percent": 12.81325968836241
+    },
+    {
+      "path": "SimulationCardPileLookupFastPath::Find(",
+      "cycles": 7828506365,
+      "percent": 3.083301888405582
+    },
+    {
+      "path": "SimCardPile::Fork(",
+      "cycles": 7361908147,
+      "percent": 2.8995295186061383
+    },
+    {
+      "path": "PredictedCard::Fork(",
+      "cycles": 2995448271,
+      "percent": 1.1797743886225398
+    },
+    {
+      "path": "PredictionForkContext::FindIndexed(",
+      "cycles": 2942881449,
+      "percent": 1.1590706459182212
+    },
+    {
+      "path": "::ForkManualCardChoice(",
+      "cycles": 8203438866,
+      "percent": 3.2309711926711255
+    },
+    {
+      "path": "::ForkExecutionContinuation(",
+      "cycles": 0,
+      "percent": 0.0
+    },
+    {
+      "path": "::ResumeManualCardChoice(",
+      "cycles": 8793273643,
+      "percent": 3.463280984217343
+    },
+    {
+      "path": "::DoTurnEnd(",
+      "cycles": 9512110290,
+      "percent": 3.746398898135043
+    }
+  ],
+  "listenerUnion": {
+    "paths": [
+      "::GetBaseHookListeners(",
+      "::GetEffectiveHookListeners(",
+      "::GetMirroredHookListeners(",
+      "MirroredHookListenerFilter::Filter(",
+      "MirroredHookListenerLayout::Matches("
+    ],
+    "cycles": 47511964472,
+    "percent": 18.712858232232723
+  },
+  "listenerUnionByOwningStage": [
+    {
+      "stage": "Replay",
+      "cycles": 35078283023,
+      "percentOfAll": 13.81578186745734
+    },
+    {
+      "stage": "Snapshot",
+      "cycles": 12399481264,
+      "percentOfAll": 4.883606426823265
+    },
+    {
+      "stage": "Other",
+      "cycles": 34200185,
+      "percentOfAll": 0.013469937952119206
+    }
+  ],
+  "replayNearestOwned": [
+    {
+      "symbol": "CombatSolver.SimulatedCombatState::GetBaseHookListeners",
+      "cycles": 9654531482,
+      "percentOfAll": 3.8024922970247523
+    },
+    {
+      "symbol": "CombatSolver.Engine.Common.MirroredHookListenerFilter::Filter",
+      "cycles": 9564562176,
+      "percentOfAll": 3.767057372640126
+    },
+    {
+      "symbol": "CombatSolver.Engine.Common.MirroredHookListenerLayout::Matches",
+      "cycles": 4319841855,
+      "percentOfAll": 1.7013943564871807
+    },
+    {
+      "symbol": "CombatSolver.SimulatedCombatState::GetEffectiveHookListeners",
+      "cycles": 3982412577,
+      "percentOfAll": 1.5684959105317455
+    },
+    {
+      "symbol": "CombatSolver.Engine.InCombat.Simulation.SimPlayerCombatState+Enumerator::MoveNext",
+      "cycles": 3553109843,
+      "percentOfAll": 1.3994125798522439
+    },
+    {
+      "symbol": "CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator::DoTurnEnd",
+      "cycles": 2527438382,
+      "percentOfAll": 0.9954460241470787
+    },
+    {
+      "symbol": "CombatSolver.SimulatedCombatState+ConcatenatedListenerView+<GetEnumerator>d__13::MoveNext",
+      "cycles": 2424105730,
+      "percentOfAll": 0.9547478697111326
+    },
+    {
+      "symbol": "CombatSolver.Engine.Common.PredictedCard::get_Preview",
+      "cycles": 2285641386,
+      "percentOfAll": 0.9002128979774742
+    },
+    {
+      "symbol": "CombatSolver.SimulatedCombatState::NormalizePowerAfflictions",
+      "cycles": 2266331319,
+      "percentOfAll": 0.8926075179381187
+    },
+    {
+      "symbol": "CombatSolver.SimulatedCombatState+ConcatenatedListenerView::get_Item",
+      "cycles": 2006679489,
+      "percentOfAll": 0.790342163547369
+    },
+    {
+      "symbol": "CombatSolver.SimulatedCombatState::NormalizeCardAfflictions",
+      "cycles": 1891041807,
+      "percentOfAll": 0.7447976028537092
+    },
+    {
+      "symbol": "CombatSolver.Engine.Common.PredictedCard [CombatSolver] CombatSolver.Engine.InCombat.Simulation.SimPlayerCombatState+Enumerator::get_Current",
+      "cycles": 1727000148,
+      "percentOfAll": 0.6801888597053111
+    },
+    {
+      "symbol": "CombatSolver.SimulatedCombatState::NormalizeSwordSageReplays",
+      "cycles": 1604005636,
+      "percentOfAll": 0.6317467695502087
+    },
+    {
+      "symbol": "CombatSolver.Engine.Common.MirroredHookMask [CombatSolver] CombatSolver.Engine.Common.MirroredHookListenerFilter::MaskFor",
+      "cycles": 1505961146,
+      "percentOfAll": 0.5931313878834963
+    },
+    {
+      "symbol": "CombatSolver.PersistentPowerSupport::GetModifiedHandDraw",
+      "cycles": 1431925523,
+      "percentOfAll": 0.5639720354397452
+    },
+    {
+      "symbol": "CombatSolver.SimulationCardPileLookupFastPath::Find",
+      "cycles": 1183364661,
+      "percentOfAll": 0.466074922062573
+    },
+    {
+      "symbol": "CombatSolver.PersistentPowerSupport::GetModifiedMaxEnergy",
+      "cycles": 911709194,
+      "percentOfAll": 0.3590818667664111
+    },
+    {
+      "symbol": "CombatSolver.SimulationSnapshot [CombatSolver] CombatSolver.CombatBeamSolver+<>c__DisplayClass471_0::<ReplayAction>b__0",
+      "cycles": 892977870,
+      "percentOfAll": 0.351704427958959
+    },
+    {
+      "symbol": "CombatSolver.SimulatedCombatState::ShouldClearBlock",
+      "cycles": 829925300,
+      "percentOfAll": 0.3268708135904504
+    },
+    {
+      "symbol": "CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator::TryDamageTarget",
+      "cycles": 717468038,
+      "percentOfAll": 0.28257887945602356
+    }
+  ],
+  "selectedContinuationCounters": [
+    {
+      "scene": "dev-06-silent-boss",
+      "measurementGroup": "pr211-candidate",
+      "resultPath": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/tool-tasks/pr207-pr211-sync-20261005/fixed-regression/runs/dev-06-silent-boss-211-candidate/result.json",
+      "resultSha256": "48c9cf9c700a40f9f5f9b94f4e42562de92ec9b2af9019c948bf4b3be9134398",
+      "selectedSolverOnly": true,
+      "counters": {
+        "selectedChoiceBranches": 10204,
+        "choiceReplayAttempts": 10204,
+        "cardChoicePrefixCaptures": 1707,
+        "cardChoicePrefixReuses": 10204,
+        "cardChoicePrefixFallbacks": 0,
+        "executionChoiceCaptures": 0,
+        "executionChoiceReuses": 0,
+        "potionChoicePrefixReuses": 0,
+        "potionChoicePrefixFallbacks": 0,
+        "roundReplayPrefixReuses": 0,
+        "maxParallelConcurrency": 16
+      }
+    },
+    {
+      "scene": "dev-08-regent-boss",
+      "measurementGroup": "pr211-candidate",
+      "resultPath": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/tool-tasks/pr207-pr211-sync-20261005/fixed-regression/runs/dev-08-regent-boss-211-candidate/result.json",
+      "resultSha256": "3906ddd420f229a3ad7cea9dd1234627bce67d21978aaa5999811470ee4d998f",
+      "selectedSolverOnly": true,
+      "counters": {
+        "selectedChoiceBranches": 1092,
+        "choiceReplayAttempts": 1092,
+        "cardChoicePrefixCaptures": 0,
+        "cardChoicePrefixReuses": 0,
+        "cardChoicePrefixFallbacks": 0,
+        "executionChoiceCaptures": 0,
+        "executionChoiceReuses": 0,
+        "potionChoicePrefixReuses": 0,
+        "potionChoicePrefixFallbacks": 0,
+        "roundReplayPrefixReuses": 0,
+        "maxParallelConcurrency": 16
+      }
+    },
+    {
+      "scene": "dev-09-necrobinder-boss",
+      "measurementGroup": "pr211-candidate",
+      "resultPath": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/tool-tasks/pr207-pr211-sync-20261005/fixed-regression/runs/dev-09-necrobinder-boss-211-candidate/result.json",
+      "resultSha256": "16e6a2748b7c376f5e453558523306b519c9d224602361ed87eb540193c3007d",
+      "selectedSolverOnly": true,
+      "counters": {
+        "selectedChoiceBranches": 49134,
+        "choiceReplayAttempts": 49134,
+        "cardChoicePrefixCaptures": 2150,
+        "cardChoicePrefixReuses": 41833,
+        "cardChoicePrefixFallbacks": 0,
+        "executionChoiceCaptures": 1645,
+        "executionChoiceReuses": 6149,
+        "potionChoicePrefixReuses": 0,
+        "potionChoicePrefixFallbacks": 0,
+        "roundReplayPrefixReuses": 0,
+        "maxParallelConcurrency": 16
+      }
+    },
+    {
+      "scene": "silent-large-deck",
+      "measurementGroup": "pr211-candidate",
+      "resultPath": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/tool-tasks/pr207-pr211-sync-20261005/fixed-regression/runs/silent-large-deck-211-candidate/result.json",
+      "resultSha256": "f8eac6307315576915fe8388392be347da1695737596462848028dc4d7f51793",
+      "selectedSolverOnly": true,
+      "counters": {
+        "selectedChoiceBranches": 20353,
+        "choiceReplayAttempts": 20353,
+        "cardChoicePrefixCaptures": 6484,
+        "cardChoicePrefixReuses": 20353,
+        "cardChoicePrefixFallbacks": 0,
+        "executionChoiceCaptures": 0,
+        "executionChoiceReuses": 0,
+        "potionChoicePrefixReuses": 0,
+        "potionChoicePrefixFallbacks": 0,
+        "roundReplayPrefixReuses": 0,
+        "maxParallelConcurrency": 16
+      }
+    },
+    {
+      "scene": "soul-nexus-uploaded",
+      "measurementGroup": "pr211-candidate",
+      "resultPath": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/tool-tasks/pr207-pr211-sync-20261005/soul-211-C1/result.json",
+      "resultSha256": "aac1c86aac2ca94342df40e0cf38ba5e5126b3cb36ed906db355c2903a4aca10",
+      "selectedSolverOnly": true,
+      "counters": {
+        "selectedChoiceBranches": 45264,
+        "choiceReplayAttempts": 45264,
+        "cardChoicePrefixCaptures": 7951,
+        "cardChoicePrefixReuses": 45249,
+        "cardChoicePrefixFallbacks": 1,
+        "executionChoiceCaptures": 0,
+        "executionChoiceReuses": 0,
+        "potionChoicePrefixReuses": 0,
+        "potionChoicePrefixFallbacks": 0,
+        "roundReplayPrefixReuses": 0,
+        "maxParallelConcurrency": 16
+      }
+    },
+    {
+      "scene": "holdout-04-necrobinder",
+      "measurementGroup": "component-final-historical",
+      "resultPath": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/general-healing-audit/component-final-acceptance/runs/component-final-regression-holdout-04-necrobinder/result.json",
+      "resultSha256": "2e11b31a3c04fe5556a51782c08b8023aaf3b05fee907fe19cd06a287854c248",
+      "selectedSolverOnly": true,
+      "counters": {
+        "selectedChoiceBranches": 660692,
+        "choiceReplayAttempts": 660692,
+        "cardChoicePrefixCaptures": 9024,
+        "cardChoicePrefixReuses": 55980,
+        "cardChoicePrefixFallbacks": 0,
+        "executionChoiceCaptures": 229134,
+        "executionChoiceReuses": 520380,
+        "potionChoicePrefixReuses": 0,
+        "potionChoicePrefixFallbacks": 0,
+        "roundReplayPrefixReuses": 0,
+        "maxParallelConcurrency": 16
+      }
+    },
+    {
+      "scene": "screen-necro-projected",
+      "measurementGroup": "0494-v9-historical",
+      "resultPath": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/tool-tasks/pr207-upstream-integration-20261005/fixed-regression/runs/screen-necro-projected-0494-candidate/result.json",
+      "resultSha256": "577630d36fe48651dd49dda32faab340dc9701090a1b7b66034384fd85caad6f",
+      "selectedSolverOnly": true,
+      "counters": {
+        "selectedChoiceBranches": 340465,
+        "choiceReplayAttempts": 340465,
+        "cardChoicePrefixCaptures": 12547,
+        "cardChoicePrefixReuses": 136024,
+        "cardChoicePrefixFallbacks": 0,
+        "executionChoiceCaptures": 66,
+        "executionChoiceReuses": 585,
+        "potionChoicePrefixReuses": 211877,
+        "potionChoicePrefixFallbacks": 0,
+        "roundReplayPrefixReuses": 16,
+        "maxParallelConcurrency": 16
+      }
+    }
+  ],
+  "counterInterpretation": "Selected solver counters, not whole Coordinator coverage. Capture/reuse families can overlap or occur multiple times per logical branch; do not sum them into a hit rate.",
+  "notVerified": [
+    "all-scene CPU attribution",
+    "lock wait time or sustained worker saturation",
+    "incremental listener/feature optimization semantics or benefit",
+    "new whole-request speed, HP loss, potion/resource quality, or process peak memory"
+  ],
+  "analysisScriptSha256": "0fb824973609e6fed5a6a10a6ac4ff2167fc2d5ca30428742a5188da0cab562a",
+  "analysisScriptPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-replay-cost-20261005/analyze.py"
+}
