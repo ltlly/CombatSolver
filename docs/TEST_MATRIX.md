@@ -1,5 +1,7 @@
 # CombatSolver 测试入口
 
+2026-10-06 [指纹内联研究](performance/fingerprint-inline-research-20261006.md)：12个编译方法IL一致，CARD-CONTINUATION-CONTRACT原生`b250abe60dc4464384b1f0c361af9060`通过完整状态/指纹/历史/RNG、隔离及选择结算；实例清理。12次Evaluate及4次亡灵完整Coordinator保持对应质量/工作，整请求1.0008倍没有稳定收益，原型撤回；未追加最终回归或新部署。
+
 2026-10-06 [指纹关键词复用研究](performance/fingerprint-keyword-reuse-research-20261006.md)原生`0d8ec7b7363847fcbe87a255d4807c6d`通过603卡/16标志指纹、全局回调、特殊comparer、Fork/父/live/RNG及补丁刷新；前置拒绝全部保存并清理实例。12次Evaluate与4次完整Coordinator逐次记录，整请求0.988倍未证明收益，原型和专属合同撤回。没有追加最终九根或DOP验收，当前运行时与既有五文件部署保持。
 
 0.50.0 定稿沿用 PR #207、PR #211 与开局药水准入的既有行为证据，来源和范围见 [历史卷 20](archive/testing/volume-20.md)。
