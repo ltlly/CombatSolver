@@ -10,6 +10,8 @@
 
 2026-10-05 [排序比较键研究](performance/native-sort-key-research-20261005.md)原生603类型/363609对比较、40案例与16并行Fork通过（`5c68036ad29c47a4a3b43bc40085429a`）；两个原型共16次固定Evaluate ACCA没有稳定收益，已撤回，未扩展为整请求验收或新的部署。
 
+2026-10-05 [选牌续接Fork锁等待](performance/continuation-fork-contention-research-20261005.md)使用真正的`CARD-CONTINUATION-CONTRACT`（`253dd45c073d400aab3eedc4e8383b59`），完整状态/历史/RNG、原生续接、并行读者、销毁排空及精确请求/源权限通过；此前SEARCH入口只属搜索helper。12次Evaluate交错质量/工作/剪枝相同但无稳定收益，14文件原型保存并撤回；未追加整请求或最终14维质量验收。Bash/Ps1原型门禁通过，基线生产与已验证部署继续适用。
+
 历史记录见 [归档索引](archive/testing/README.md)，0.48.1 的验证、失败与未验证项见 [历史卷 12](archive/testing/volume-12.md)。
 
 0.49.4 的额外回合镜像顺序、同根成长胜利续用、整场自动部署与上传引导验证见 [历史卷 16](archive/testing/volume-16.md)。
