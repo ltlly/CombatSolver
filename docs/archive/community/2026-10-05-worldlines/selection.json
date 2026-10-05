@@ -1,0 +1,2227 @@
+{
+  "schemaVersion": 1,
+  "preparedAt": "2026-10-05T14:19:54.770694+00:00",
+  "sourceCommitAtPreparation": "0d290fbee7e2779d2cebd8b8f652d82d00b6e8fc",
+  "minimumVersion": "0.44.0",
+  "versionScope": "0.49.0–0.50.0",
+  "rankMetric": "potionAdjustedHpReduction",
+  "themeGrouping": "combat.sessionId",
+  "snapshotReportCount": 65,
+  "snapshotSessionCount": 65,
+  "requestedBatchCount": 5,
+  "batchCount": 5,
+  "representativeReportCount": 25,
+  "verification": "static_only",
+  "excludedReports": [
+    {
+      "reportId": "0aca2ad5f3044ca3a121e0f97ba56fbf",
+      "reason": "原基线禁用技能药水，手操用药改变了允许资源；留待同政策复核。"
+    }
+  ],
+  "batches": [
+    {
+      "batchId": "Q011",
+      "title": "[更优世界线 Q011] 总折算战损改善量：94 HP",
+      "kind": "optimization",
+      "claimUnit": "batch",
+      "themesPerBatch": 5,
+      "representativeCount": 5,
+      "versionScope": "0.49.0–0.50.0",
+      "verification": "static_only",
+      "archive": "Q011.zip",
+      "totalPotionAdjustedHpReduction": 94,
+      "largeTaskCount": 1,
+      "smallTaskCount": 4,
+      "themeIds": [
+        "O046",
+        "O047",
+        "O048",
+        "O049",
+        "O050"
+      ],
+      "themes": [
+        {
+          "themeId": "O046",
+          "title": "实验体 / 储君 / T1→T3 路线质量",
+          "mechanismKey": "worldline-session:5c85ce02ea534cc0bf78fc0cd053f414",
+          "representativeIds": [
+            "0312158218e7402ca348841dc06d74fe"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "large",
+          "potionAdjustedHpReduction": 42,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O047",
+          "title": "异蛙寄生虫 / 铁甲战士 / T1→T2 路线质量",
+          "mechanismKey": "worldline-session:d35a003002474d94a57f353b0d209621",
+          "representativeIds": [
+            "87045dced16d4990a5483765461801d3"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 18,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O048",
+          "title": "乐加维林族母 / 故障机器人 / T1→T6 路线质量",
+          "mechanismKey": "worldline-session:d31eb45c13b74849912fbb264bcd01cd",
+          "representativeIds": [
+            "70a2682df4b446d79df41fff44ed2ba1"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 13,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O049",
+          "title": "一些构装体 / 亡灵契约师 / T2→T2 路线质量",
+          "mechanismKey": "worldline-session:fa53fbc829f94ea9a35b3a6447bd7e3b",
+          "representativeIds": [
+            "b62fcb0d35ed477083973cb270798753"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 12,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O050",
+          "title": "异蛙寄生虫 / 亡灵契约师 / T1→T2 路线质量",
+          "mechanismKey": "worldline-session:3a62cad21e4746639d4c7136bd88ab9a",
+          "representativeIds": [
+            "0ac8de5845564bceb6c51a5d784a1975"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 9,
+          "legacyTaskIds": []
+        }
+      ],
+      "sizeBytes": 1659095,
+      "issueNumber": 218,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/218",
+      "assetId": 612782587,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q011.zip",
+      "assetSizeBytes": 1659095
+    },
+    {
+      "batchId": "Q012",
+      "title": "[更优世界线 Q012] 总折算战损改善量：59 HP",
+      "kind": "optimization",
+      "claimUnit": "batch",
+      "themesPerBatch": 5,
+      "representativeCount": 5,
+      "versionScope": "0.49.0–0.50.0",
+      "verification": "static_only",
+      "archive": "Q012.zip",
+      "totalPotionAdjustedHpReduction": 59,
+      "largeTaskCount": 1,
+      "smallTaskCount": 4,
+      "themeIds": [
+        "O051",
+        "O052",
+        "O053",
+        "O054",
+        "O055"
+      ],
+      "themes": [
+        {
+          "themeId": "O051",
+          "title": "异蛙寄生虫 / 铁甲战士 / T4→T5 路线质量",
+          "mechanismKey": "worldline-session:c393c44322494b278f562384e0304f20",
+          "representativeIds": [
+            "588441120d3d4d59a26a8c792228081e"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "large",
+          "potionAdjustedHpReduction": 28,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O052",
+          "title": "骇鳗 / 亡灵契约师 / T1→T4 路线质量",
+          "mechanismKey": "worldline-session:9a1306b25b0a4a95b26bd34ca35c2333",
+          "representativeIds": [
+            "e401cd2b9e7947f1b42691c5fa594105"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 9,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O053",
+          "title": "墨影幻灵 / 静默猎手 / T1→T2 路线质量",
+          "mechanismKey": "worldline-session:61a407a37de54a4da71fa87bb4e3b313",
+          "representativeIds": [
+            "85ebdbc6636f4e0a8c61038818cd1e28"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 8,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O054",
+          "title": "实验体 / 故障机器人 / T1→T3 路线质量",
+          "mechanismKey": "worldline-session:5ec4aaf2da4d41aaab881fa9d84f7aea",
+          "representativeIds": [
+            "d71ccb46909e4c74a68bf4ae629aef9f"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 7,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O055",
+          "title": "无厌沙虫 / 储君 / T1→T4 路线质量",
+          "mechanismKey": "worldline-session:565cf29d2aba42a2ac6aafc4e7a5832f",
+          "representativeIds": [
+            "0b0feb3f7a6f4e499a7295e3103b0469"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 7,
+          "legacyTaskIds": []
+        }
+      ],
+      "sizeBytes": 1788868,
+      "issueNumber": 219,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/219",
+      "assetId": 612782858,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q012.zip",
+      "assetSizeBytes": 1788868
+    },
+    {
+      "batchId": "Q013",
+      "title": "[更优世界线 Q013] 总折算战损改善量：46 HP",
+      "kind": "optimization",
+      "claimUnit": "batch",
+      "themesPerBatch": 5,
+      "representativeCount": 5,
+      "versionScope": "0.49.0–0.50.0",
+      "verification": "static_only",
+      "archive": "Q013.zip",
+      "totalPotionAdjustedHpReduction": 46,
+      "largeTaskCount": 1,
+      "smallTaskCount": 4,
+      "themeIds": [
+        "O056",
+        "O057",
+        "O058",
+        "O059",
+        "O060"
+      ],
+      "themes": [
+        {
+          "themeId": "O056",
+          "title": "永世沙漏 / 铁甲战士 / T1→T2 路线质量",
+          "mechanismKey": "worldline-session:286ad69445f24e01a7a955c0334637be",
+          "representativeIds": [
+            "837d5e68074e4f0ab7df9efe56dfcfd9"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "large",
+          "potionAdjustedHpReduction": 22,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O057",
+          "title": "残杀千足虫 / 故障机器人 / T1→T1 路线质量",
+          "mechanismKey": "worldline-session:33a4802d71a94193b1aaee0837afd148",
+          "representativeIds": [
+            "94c22bac17d64d2fb376653b6a91faae"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 6,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O058",
+          "title": "女王 / 铁甲战士 / T1→T2 路线质量",
+          "mechanismKey": "worldline-session:0b9f718c60384a1ab469d906a02dbc83",
+          "representativeIds": [
+            "764b1b7856f448efab85b13538c67cd8"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 6,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O059",
+          "title": "感染棱柱 / 铁甲战士 / T1→T4 路线质量",
+          "mechanismKey": "worldline-session:9b80ba1b4f25421bab4dc7eb3cb097bc",
+          "representativeIds": [
+            "6b865d22c24d4b0890dd0e79a03d82a9"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 6,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O060",
+          "title": "女王 / 储君 / T1→T1 路线质量",
+          "mechanismKey": "worldline-session:b3914c6cf6414750aa8f9d58a3f53b4e",
+          "representativeIds": [
+            "f5425cbe14a543c7b8edebad7de5d941"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 6,
+          "legacyTaskIds": []
+        }
+      ],
+      "sizeBytes": 1778388,
+      "issueNumber": 220,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/220",
+      "assetId": 612783221,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q013.zip",
+      "assetSizeBytes": 1778388
+    },
+    {
+      "batchId": "Q014",
+      "title": "[更优世界线 Q014] 总折算战损改善量：44 HP",
+      "kind": "optimization",
+      "claimUnit": "batch",
+      "themesPerBatch": 5,
+      "representativeCount": 5,
+      "versionScope": "0.49.0–0.50.0",
+      "verification": "static_only",
+      "archive": "Q014.zip",
+      "totalPotionAdjustedHpReduction": 44,
+      "largeTaskCount": 1,
+      "smallTaskCount": 4,
+      "themeIds": [
+        "O061",
+        "O062",
+        "O063",
+        "O064",
+        "O065"
+      ],
+      "themes": [
+        {
+          "themeId": "O061",
+          "title": "永世沙漏 / 储君 / T1→T5 路线质量",
+          "mechanismKey": "worldline-session:54dd4ac6ed2b4482af78773a9fd8a7ca",
+          "representativeIds": [
+            "8f972f15c0ea4cba8433301efe2c45e9"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "large",
+          "potionAdjustedHpReduction": 20,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O062",
+          "title": "感染棱柱 / 铁甲战士 / T1→T2 路线质量",
+          "mechanismKey": "worldline-session:25efa8df802e487881a907b0383d3251",
+          "representativeIds": [
+            "80c6c6a3c1594889ba52f8aff9e26bb4"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 6,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O063",
+          "title": "花园幽灵鳗 / 静默猎手 / T1→T2 路线质量",
+          "mechanismKey": "worldline-session:767bfc5a53cb484d952bbf637613a926",
+          "representativeIds": [
+            "45aecb509dd2479db2c781b284cf0e4e"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 6,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O064",
+          "title": "骇鳗 / 静默猎手 / T1→T1 路线质量",
+          "mechanismKey": "worldline-session:dd79a5298aa141a8b127709f0849db3f",
+          "representativeIds": [
+            "46cde55aacf444a586dcbce771f61ae9"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 6,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O065",
+          "title": "瀑布巨兽 / 故障机器人 / T3→T4 路线质量",
+          "mechanismKey": "worldline-session:d8c83d41ade641eba0f2468e123dafda",
+          "representativeIds": [
+            "88e11da8b51e400b8c1afec753cfa055"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 6,
+          "legacyTaskIds": []
+        }
+      ],
+      "sizeBytes": 1436939,
+      "issueNumber": 221,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/221",
+      "assetId": 612783424,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q014.zip",
+      "assetSizeBytes": 1436939
+    },
+    {
+      "batchId": "Q015",
+      "title": "[更优世界线 Q015] 总折算战损改善量：25 HP",
+      "kind": "optimization",
+      "claimUnit": "batch",
+      "themesPerBatch": 5,
+      "representativeCount": 5,
+      "versionScope": "0.49.0–0.50.0",
+      "verification": "static_only",
+      "archive": "Q015.zip",
+      "totalPotionAdjustedHpReduction": 25,
+      "largeTaskCount": 0,
+      "smallTaskCount": 5,
+      "themeIds": [
+        "O066",
+        "O067",
+        "O068",
+        "O069",
+        "O070"
+      ],
+      "themes": [
+        {
+          "themeId": "O066",
+          "title": "异蛙寄生虫 / 储君 / T4→T4 路线质量",
+          "mechanismKey": "worldline-session:03b561868c6d4ceea599655def8da459",
+          "representativeIds": [
+            "488b952ad66f4c5dbed59264ae7361f2"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 5,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O067",
+          "title": "感染棱柱 / 静默猎手 / T1→T6 路线质量",
+          "mechanismKey": "worldline-session:3e88aff1627f423e8a26c4fb2fd9b652",
+          "representativeIds": [
+            "cc243a922beb4965995c911f8ff9fb60"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 5,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O068",
+          "title": "海洋混混 / 储君 / T2→T3 路线质量",
+          "mechanismKey": "worldline-session:37c2b7a8552141f1aeae8735dc84fc36",
+          "representativeIds": [
+            "1b49315484e242cf8604815953f82a6d"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 5,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O069",
+          "title": "灵魂枢纽 / 亡灵契约师 / T1→T5 路线质量",
+          "mechanismKey": "worldline-session:44abdd695aca454dab8065a93b82e0f0",
+          "representativeIds": [
+            "c1185416b35446cfaa685e41f0876e50"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 5,
+          "legacyTaskIds": []
+        },
+        {
+          "themeId": "O070",
+          "title": "永世沙漏 / 故障机器人 / T1→T3 路线质量",
+          "mechanismKey": "worldline-session:745949047c544bb28d0edb785f42e0b5",
+          "representativeIds": [
+            "acdd30c74a154131abb6c01e68340674"
+          ],
+          "evidenceLevel": "shared_mechanism",
+          "taskSize": "small",
+          "potionAdjustedHpReduction": 5,
+          "legacyTaskIds": []
+        }
+      ],
+      "sizeBytes": 1759527,
+      "issueNumber": 222,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/222",
+      "assetId": 612783624,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q015.zip",
+      "assetSizeBytes": 1759527
+    }
+  ],
+  "themes": [
+    {
+      "themeId": "O046",
+      "batchId": "Q011",
+      "title": "实验体 / 储君 / T1→T3 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:5c85ce02ea534cc0bf78fc0cd053f414",
+      "sessionId": "5c85ce02ea534cc0bf78fc0cd053f414",
+      "encounterId": "TEST_SUBJECT_BOSS",
+      "characterId": "REGENT",
+      "representativeIds": [
+        "0312158218e7402ca348841dc06d74fe"
+      ],
+      "version": "0.49.1",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 42,
+        "after": 0,
+        "reduction": 42,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 42
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 42,
+      "taskSize": "large",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "储君的星能与君王之刃路线。核对第一回合开局如何保留第三回合的低战损后缀。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T3；从combat_start重建录制前缀后，固定政策和预算对照。",
+        "原比较检查点ID缺失，战损与资源基线由比较日志及保留结果交叉核对。"
+      ],
+      "comparisonTurns": [
+        1,
+        3
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q011.zip",
+      "issueNumber": 218,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/218",
+      "assetId": 612782587,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q011.zip",
+      "assetSizeBytes": 1659095
+    },
+    {
+      "themeId": "O047",
+      "batchId": "Q011",
+      "title": "异蛙寄生虫 / 铁甲战士 / T1→T2 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:d35a003002474d94a57f353b0d209621",
+      "sessionId": "d35a003002474d94a57f353b0d209621",
+      "encounterId": "PHROG_PARASITE_ELITE",
+      "characterId": "IRONCLAD",
+      "representativeIds": [
+        "87045dced16d4990a5483765461801d3"
+      ],
+      "version": "0.49.3",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 77,
+        "after": 59,
+        "reduction": 18,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 18
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 18,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "铁甲战士首回合攻击与防御顺序。两端总用药均为零，核对第二回合及后续保路。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T2；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        2
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q011.zip",
+      "issueNumber": 218,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/218",
+      "assetId": 612782587,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q011.zip",
+      "assetSizeBytes": 1659095
+    },
+    {
+      "themeId": "O048",
+      "batchId": "Q011",
+      "title": "乐加维林族母 / 故障机器人 / T1→T6 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:d31eb45c13b74849912fbb264bcd01cd",
+      "sessionId": "d31eb45c13b74849912fbb264bcd01cd",
+      "encounterId": "LAGAVULIN_MATRIARCH_BOSS",
+      "characterId": "DEFECT",
+      "representativeIds": [
+        "70a2682df4b446d79df41fff44ed2ba1"
+      ],
+      "version": "0.49.1",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 26,
+        "after": 13,
+        "reduction": 13,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 13
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 13,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "故障机器人的过牌、全息影像与爪击。比较跨至第六回合，核对早期选择对后缀战损的影响。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T6；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        6
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q011.zip",
+      "issueNumber": 218,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/218",
+      "assetId": 612782587,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q011.zip",
+      "assetSizeBytes": 1659095
+    },
+    {
+      "themeId": "O049",
+      "batchId": "Q011",
+      "title": "一些构装体 / 亡灵契约师 / T2→T2 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:fa53fbc829f94ea9a35b3a6447bd7e3b",
+      "sessionId": "fa53fbc829f94ea9a35b3a6447bd7e3b",
+      "encounterId": "CONSTRUCT_MENAGERIE_NORMAL",
+      "characterId": "NECROBINDER",
+      "representativeIds": [
+        "b62fcb0d35ed477083973cb270798753"
+      ],
+      "version": "0.49.4",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 21,
+        "after": 0,
+        "reduction": 21,
+        "additionalPotionCount": 1,
+        "potionHpCost": 9,
+        "potionAdjustedHpReduction": 12
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 1,
+      "potionAdjustedHpReduction": 12,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "亡灵契约师第二回合手动用药后的召唤、灵魂与选牌。旧计划预计损失21 HP，新结果为0 HP，扣除一瓶药后改善12 HP。",
+      "evidenceBoundaries": [
+        "比较发生于T2→T2；从combat_start重建录制前缀后，固定政策和预算对照。",
+        "原比较检查点ID缺失，战损与资源基线由比较日志及保留结果交叉核对。"
+      ],
+      "comparisonTurns": [
+        2,
+        2
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q011.zip",
+      "issueNumber": 218,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/218",
+      "assetId": 612782587,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q011.zip",
+      "assetSizeBytes": 1659095
+    },
+    {
+      "themeId": "O050",
+      "batchId": "Q011",
+      "title": "异蛙寄生虫 / 亡灵契约师 / T1→T2 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:3a62cad21e4746639d4c7136bd88ab9a",
+      "sessionId": "3a62cad21e4746639d4c7136bd88ab9a",
+      "encounterId": "PHROG_PARASITE_ELITE",
+      "characterId": "NECROBINDER",
+      "representativeIds": [
+        "0ac8de5845564bceb6c51a5d784a1975"
+      ],
+      "version": "0.49.4",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 40,
+        "after": 31,
+        "reduction": 9,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 9
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 9,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "亡灵契约师对异蛙的防御、召唤与挽歌路线。核对开局攻击顺序和第二回合灵魂后缀。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T2；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        2
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q011.zip",
+      "issueNumber": 218,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/218",
+      "assetId": 612782587,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q011.zip",
+      "assetSizeBytes": 1659095
+    },
+    {
+      "themeId": "O051",
+      "batchId": "Q012",
+      "title": "异蛙寄生虫 / 铁甲战士 / T4→T5 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:c393c44322494b278f562384e0304f20",
+      "sessionId": "c393c44322494b278f562384e0304f20",
+      "encounterId": "PHROG_PARASITE_ELITE",
+      "characterId": "IRONCLAD",
+      "representativeIds": [
+        "588441120d3d4d59a26a8c792228081e"
+      ],
+      "version": "0.49.3",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 91,
+        "after": 63,
+        "reduction": 28,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 28
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 28,
+      "taskSize": "large",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "异蛙寄生虫转阶段后的敌人身份与防御路线。比较字段为敌人 combat_id，先核对阵容转换和续用边界。",
+      "evidenceBoundaries": [
+        "比较发生于T4→T5；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        4,
+        5
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q012.zip",
+      "issueNumber": 219,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/219",
+      "assetId": 612782858,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q012.zip",
+      "assetSizeBytes": 1788868
+    },
+    {
+      "themeId": "O052",
+      "batchId": "Q012",
+      "title": "骇鳗 / 亡灵契约师 / T1→T4 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:9a1306b25b0a4a95b26bd34ca35c2333",
+      "sessionId": "9a1306b25b0a4a95b26bd34ca35c2333",
+      "encounterId": "TERROR_EEL_ELITE",
+      "characterId": "NECROBINDER",
+      "representativeIds": [
+        "e401cd2b9e7947f1b42691c5fa594105"
+      ],
+      "version": "0.49.1",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 20,
+        "after": 2,
+        "reduction": 18,
+        "additionalPotionCount": 1,
+        "potionHpCost": 9,
+        "potionAdjustedHpReduction": 9
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 1,
+      "potionAdjustedHpReduction": 9,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "亡灵契约师对骇鳗的负面脉冲、召唤与手中资源。额外一瓶药纳入折算，比较跨至第四回合。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T4；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        4
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q012.zip",
+      "issueNumber": 219,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/219",
+      "assetId": 612782858,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q012.zip",
+      "assetSizeBytes": 1788868
+    },
+    {
+      "themeId": "O053",
+      "batchId": "Q012",
+      "title": "墨影幻灵 / 静默猎手 / T1→T2 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:61a407a37de54a4da71fa87bb4e3b313",
+      "sessionId": "61a407a37de54a4da71fa87bb4e3b313",
+      "encounterId": "VANTOM_BOSS",
+      "characterId": "SILENT",
+      "representativeIds": [
+        "85ebdbc6636f4e0a8c61038818cd1e28"
+      ],
+      "version": "0.49.3",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 37,
+        "after": 11,
+        "reduction": 26,
+        "additionalPotionCount": 2,
+        "potionHpCost": 18,
+        "potionAdjustedHpReduction": 8
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 2,
+      "potionAdjustedHpReduction": 8,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "静默猎手对墨影幻灵的肾上腺素、准备与致残云路线。新路线预计增加两瓶药，折算收益为8 HP。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T2；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        2
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q012.zip",
+      "issueNumber": 219,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/219",
+      "assetId": 612782858,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q012.zip",
+      "assetSizeBytes": 1788868
+    },
+    {
+      "themeId": "O054",
+      "batchId": "Q012",
+      "title": "实验体 / 故障机器人 / T1→T3 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:5ec4aaf2da4d41aaab881fa9d84f7aea",
+      "sessionId": "5ec4aaf2da4d41aaab881fa9d84f7aea",
+      "encounterId": "TEST_SUBJECT_BOSS",
+      "characterId": "DEFECT",
+      "representativeIds": [
+        "d71ccb46909e4c74a68bf4ae629aef9f"
+      ],
+      "version": "0.49.4",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 7,
+        "after": 0,
+        "reduction": 7,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 7
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 7,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "故障机器人的幻影、缓冲与终极打击。保留同一开局和抽牌输入，核对第三回合零战损后缀。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T3；从combat_start重建录制前缀后，固定政策和预算对照。",
+        "原搜索终止边界为TimeLimit；先区分固定预算消耗与策略遗漏。"
+      ],
+      "comparisonTurns": [
+        1,
+        3
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q012.zip",
+      "issueNumber": 219,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/219",
+      "assetId": 612782858,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q012.zip",
+      "assetSizeBytes": 1788868
+    },
+    {
+      "themeId": "O055",
+      "batchId": "Q012",
+      "title": "无厌沙虫 / 储君 / T1→T4 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:565cf29d2aba42a2ac6aafc4e7a5832f",
+      "sessionId": "565cf29d2aba42a2ac6aafc4e7a5832f",
+      "encounterId": "THE_INSATIABLE_BOSS",
+      "characterId": "REGENT",
+      "representativeIds": [
+        "0b0feb3f7a6f4e499a7295e3103b0469"
+      ],
+      "version": "0.49.1",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 13,
+        "after": 6,
+        "reduction": 7,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 7
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 7,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "储君对无厌沙虫的星能与防御资源分配。重建第四回合的创世之柱、随从和抽牌动作窗口。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T4；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        4
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q012.zip",
+      "issueNumber": 219,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/219",
+      "assetId": 612782858,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q012.zip",
+      "assetSizeBytes": 1788868
+    },
+    {
+      "themeId": "O056",
+      "batchId": "Q013",
+      "title": "永世沙漏 / 铁甲战士 / T1→T2 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:286ad69445f24e01a7a955c0334637be",
+      "sessionId": "286ad69445f24e01a7a955c0334637be",
+      "encounterId": "AEONGLASS_BOSS",
+      "characterId": "IRONCLAD",
+      "representativeIds": [
+        "837d5e68074e4f0ab7df9efe56dfcfd9"
+      ],
+      "version": "0.49.3",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 63,
+        "after": 32,
+        "reduction": 31,
+        "additionalPotionCount": 1,
+        "potionHpCost": 9,
+        "potionAdjustedHpReduction": 22
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 1,
+      "potionAdjustedHpReduction": 22,
+      "taskSize": "large",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "永世沙漏中的抽牌、消耗与能力启动。改善路线总用药增加一瓶，先固定药水政策再比较。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T2；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        2
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q013.zip",
+      "issueNumber": 220,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/220",
+      "assetId": 612783221,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q013.zip",
+      "assetSizeBytes": 1778388
+    },
+    {
+      "themeId": "O057",
+      "batchId": "Q013",
+      "title": "残杀千足虫 / 故障机器人 / T1→T1 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:33a4802d71a94193b1aaee0837afd148",
+      "sessionId": "33a4802d71a94193b1aaee0837afd148",
+      "encounterId": "DECIMILLIPEDE_ELITE",
+      "characterId": "DEFECT",
+      "representativeIds": [
+        "94c22bac17d64d2fb376653b6a91faae"
+      ],
+      "version": "0.50.0",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 37,
+        "after": 22,
+        "reduction": 15,
+        "additionalPotionCount": 1,
+        "potionHpCost": 9,
+        "potionAdjustedHpReduction": 6
+      },
+      "previousProjectedBattlePotionCount": 1,
+      "currentProjectedBattlePotionCount": 2,
+      "potionAdjustedHpReduction": 6,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "故障机器人对残杀千足虫的药水使用时点。原端包含强制爆炸安瓿，新端已消费该瓶药；需按原端政策恢复完整用药窗口。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T1；从combat_start重建录制前缀后，固定政策和预算对照。",
+        "原搜索终止边界为NodeLimit；先区分固定预算消耗与策略遗漏。"
+      ],
+      "comparisonTurns": [
+        1,
+        1
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q013.zip",
+      "issueNumber": 220,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/220",
+      "assetId": 612783221,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q013.zip",
+      "assetSizeBytes": 1778388
+    },
+    {
+      "themeId": "O058",
+      "batchId": "Q013",
+      "title": "女王 / 铁甲战士 / T1→T2 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:0b9f718c60384a1ab469d906a02dbc83",
+      "sessionId": "0b9f718c60384a1ab469d906a02dbc83",
+      "encounterId": "QUEEN_BOSS",
+      "characterId": "IRONCLAD",
+      "representativeIds": [
+        "764b1b7856f448efab85b13538c67cd8"
+      ],
+      "version": "0.49.4",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 63,
+        "after": 57,
+        "reduction": 6,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 6
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 6,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "铁甲战士对女王的燃烧外衣、消耗与格挡路线。总用药均为零，核对第二回合的攻击、防御安排。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T2；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        2
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q013.zip",
+      "issueNumber": 220,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/220",
+      "assetId": 612783221,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q013.zip",
+      "assetSizeBytes": 1778388
+    },
+    {
+      "themeId": "O059",
+      "batchId": "Q013",
+      "title": "感染棱柱 / 铁甲战士 / T1→T4 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:9b80ba1b4f25421bab4dc7eb3cb097bc",
+      "sessionId": "9b80ba1b4f25421bab4dc7eb3cb097bc",
+      "encounterId": "INFESTED_PRISMS_ELITE",
+      "characterId": "IRONCLAD",
+      "representativeIds": [
+        "6b865d22c24d4b0890dd0e79a03d82a9"
+      ],
+      "version": "0.49.3",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 30,
+        "after": 24,
+        "reduction": 6,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 6
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 6,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "铁甲战士对感染棱柱的消耗和续用路线。原比较检查点 ID 缺失，旧计划由保留结果条目和录制动作重建。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T4；从combat_start重建录制前缀后，固定政策和预算对照。",
+        "原比较检查点ID缺失，战损与资源基线由比较日志及保留结果交叉核对。"
+      ],
+      "comparisonTurns": [
+        1,
+        4
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q013.zip",
+      "issueNumber": 220,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/220",
+      "assetId": 612783221,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q013.zip",
+      "assetSizeBytes": 1778388
+    },
+    {
+      "themeId": "O060",
+      "batchId": "Q013",
+      "title": "女王 / 储君 / T1→T1 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:b3914c6cf6414750aa8f9d58a3f53b4e",
+      "sessionId": "b3914c6cf6414750aa8f9d58a3f53b4e",
+      "encounterId": "QUEEN_BOSS",
+      "characterId": "REGENT",
+      "representativeIds": [
+        "f5425cbe14a543c7b8edebad7de5d941"
+      ],
+      "version": "0.49.3",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 43,
+        "after": 28,
+        "reduction": 15,
+        "additionalPotionCount": 1,
+        "potionHpCost": 9,
+        "potionAdjustedHpReduction": 6
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 1,
+      "potionAdjustedHpReduction": 6,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "储君对女王的启蒙、最亮火焰与格挡药水时点。原端Smart政策预计不用药，手操使用一瓶后折算改善6 HP。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T1；从combat_start重建录制前缀后，固定政策和预算对照。",
+        "原搜索终止边界为TimeLimit；先区分固定预算消耗与策略遗漏。"
+      ],
+      "comparisonTurns": [
+        1,
+        1
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q013.zip",
+      "issueNumber": 220,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/220",
+      "assetId": 612783221,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q013.zip",
+      "assetSizeBytes": 1778388
+    },
+    {
+      "themeId": "O061",
+      "batchId": "Q014",
+      "title": "永世沙漏 / 储君 / T1→T5 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:54dd4ac6ed2b4482af78773a9fd8a7ca",
+      "sessionId": "54dd4ac6ed2b4482af78773a9fd8a7ca",
+      "encounterId": "AEONGLASS_BOSS",
+      "characterId": "REGENT",
+      "representativeIds": [
+        "8f972f15c0ea4cba8433301efe2c45e9"
+      ],
+      "version": "0.49.4",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 47,
+        "after": 27,
+        "reduction": 20,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 20
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 20,
+      "taskSize": "large",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "储君第五回合的君王之刃、产能与防御衔接。从第一回合重建跨四回合的差距。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T5；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        5
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q014.zip",
+      "issueNumber": 221,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/221",
+      "assetId": 612783424,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q014.zip",
+      "assetSizeBytes": 1436939
+    },
+    {
+      "themeId": "O062",
+      "batchId": "Q014",
+      "title": "感染棱柱 / 铁甲战士 / T1→T2 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:25efa8df802e487881a907b0383d3251",
+      "sessionId": "25efa8df802e487881a907b0383d3251",
+      "encounterId": "INFESTED_PRISMS_ELITE",
+      "characterId": "IRONCLAD",
+      "representativeIds": [
+        "80c6c6a3c1594889ba52f8aff9e26bb4"
+      ],
+      "version": "0.49.3",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 22,
+        "after": 7,
+        "reduction": 15,
+        "additionalPotionCount": 1,
+        "potionHpCost": 9,
+        "potionAdjustedHpReduction": 6
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 1,
+      "potionAdjustedHpReduction": 6,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "铁甲战士对感染棱柱的第二回合无色药水与生成选牌。原始战损下降15 HP，扣一瓶药后改善6 HP。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T2；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        2
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q014.zip",
+      "issueNumber": 221,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/221",
+      "assetId": 612783424,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q014.zip",
+      "assetSizeBytes": 1436939
+    },
+    {
+      "themeId": "O063",
+      "batchId": "Q014",
+      "title": "花园幽灵鳗 / 静默猎手 / T1→T2 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:767bfc5a53cb484d952bbf637613a926",
+      "sessionId": "767bfc5a53cb484d952bbf637613a926",
+      "encounterId": "PHANTASMAL_GARDENERS_ELITE",
+      "characterId": "SILENT",
+      "representativeIds": [
+        "45aecb509dd2479db2c781b284cf0e4e"
+      ],
+      "version": "0.49.2",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 50,
+        "after": 44,
+        "reduction": 6,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 6
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 6,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "静默猎手对花园幽灵鳗的小刀目标、攻击与格挡安排。两端均预计不用药，核对同根敌人生命与牌序。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T2；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        2
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q014.zip",
+      "issueNumber": 221,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/221",
+      "assetId": 612783424,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q014.zip",
+      "assetSizeBytes": 1436939
+    },
+    {
+      "themeId": "O064",
+      "batchId": "Q014",
+      "title": "骇鳗 / 静默猎手 / T1→T1 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:dd79a5298aa141a8b127709f0849db3f",
+      "sessionId": "dd79a5298aa141a8b127709f0849db3f",
+      "encounterId": "TERROR_EEL_ELITE",
+      "characterId": "SILENT",
+      "representativeIds": [
+        "46cde55aacf444a586dcbce771f61ae9"
+      ],
+      "version": "0.49.1",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 29,
+        "after": 14,
+        "reduction": 15,
+        "additionalPotionCount": 1,
+        "potionHpCost": 9,
+        "potionAdjustedHpReduction": 6
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 1,
+      "potionAdjustedHpReduction": 6,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "静默猎手对骇鳗的铁之心药水与首回合防御安排。原端Smart政策预计不用药，手操用药后折算改善6 HP。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T1；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        1
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q014.zip",
+      "issueNumber": 221,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/221",
+      "assetId": 612783424,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q014.zip",
+      "assetSizeBytes": 1436939
+    },
+    {
+      "themeId": "O065",
+      "batchId": "Q014",
+      "title": "瀑布巨兽 / 故障机器人 / T3→T4 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:d8c83d41ade641eba0f2468e123dafda",
+      "sessionId": "d8c83d41ade641eba0f2468e123dafda",
+      "encounterId": "WATERFALL_GIANT_BOSS",
+      "characterId": "DEFECT",
+      "representativeIds": [
+        "88e11da8b51e400b8c1afec753cfa055"
+      ],
+      "version": "0.49.1",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 9,
+        "after": 3,
+        "reduction": 6,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 6
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 6,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "故障机器人对瀑布巨兽的全息影像、循环与球结算。核对第三至第四回合的状态及后续防御路线。",
+      "evidenceBoundaries": [
+        "比较发生于T3→T4；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        3,
+        4
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q014.zip",
+      "issueNumber": 221,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/221",
+      "assetId": 612783424,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q014.zip",
+      "assetSizeBytes": 1436939
+    },
+    {
+      "themeId": "O066",
+      "batchId": "Q015",
+      "title": "异蛙寄生虫 / 储君 / T4→T4 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:03b561868c6d4ceea599655def8da459",
+      "sessionId": "03b561868c6d4ceea599655def8da459",
+      "encounterId": "PHROG_PARASITE_ELITE",
+      "characterId": "REGENT",
+      "representativeIds": [
+        "488b952ad66f4c5dbed59264ae7361f2"
+      ],
+      "version": "0.49.4",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 17,
+        "after": 3,
+        "reduction": 14,
+        "additionalPotionCount": 1,
+        "potionHpCost": 9,
+        "potionAdjustedHpReduction": 5
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 1,
+      "potionAdjustedHpReduction": 5,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "储君第四回合对异蛙的药水时点与星能续用。两端处于同一回合，新路线增加一瓶药后改善5 HP。",
+      "evidenceBoundaries": [
+        "比较发生于T4→T4；从combat_start重建录制前缀后，固定政策和预算对照。",
+        "旧结果startTurnNumber为1，比较基线回合为4；核对续用投影范围。"
+      ],
+      "comparisonTurns": [
+        4,
+        4
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q015.zip",
+      "issueNumber": 222,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/222",
+      "assetId": 612783624,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q015.zip",
+      "assetSizeBytes": 1759527
+    },
+    {
+      "themeId": "O067",
+      "batchId": "Q015",
+      "title": "感染棱柱 / 静默猎手 / T1→T6 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:3e88aff1627f423e8a26c4fb2fd9b652",
+      "sessionId": "3e88aff1627f423e8a26c4fb2fd9b652",
+      "encounterId": "INFESTED_PRISMS_ELITE",
+      "characterId": "SILENT",
+      "representativeIds": [
+        "cc243a922beb4965995c911f8ff9fb60"
+      ],
+      "version": "0.49.3",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 12,
+        "after": 7,
+        "reduction": 5,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 5
+      },
+      "previousProjectedBattlePotionCount": 1,
+      "currentProjectedBattlePotionCount": 1,
+      "potionAdjustedHpReduction": 5,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "静默猎手对感染棱柱的能力启动和敏捷药水后缀。原端Force敏捷药水的总量已包含一瓶，跨至第六回合比较。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T6；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        6
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q015.zip",
+      "issueNumber": 222,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/222",
+      "assetId": 612783624,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q015.zip",
+      "assetSizeBytes": 1759527
+    },
+    {
+      "themeId": "O068",
+      "batchId": "Q015",
+      "title": "海洋混混 / 储君 / T2→T3 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:37c2b7a8552141f1aeae8735dc84fc36",
+      "sessionId": "37c2b7a8552141f1aeae8735dc84fc36",
+      "encounterId": "SEAPUNK_WEAK",
+      "characterId": "REGENT",
+      "representativeIds": [
+        "1b49315484e242cf8604815953f82a6d"
+      ],
+      "version": "0.49.3",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 8,
+        "after": 3,
+        "reduction": 5,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 5
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 5,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "储君对海洋混混的第二回合星能与攻击顺序。比较字段为敌人HP，从开局核对第三回合的低战损后缀。",
+      "evidenceBoundaries": [
+        "比较发生于T2→T3；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        2,
+        3
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q015.zip",
+      "issueNumber": 222,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/222",
+      "assetId": 612783624,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q015.zip",
+      "assetSizeBytes": 1759527
+    },
+    {
+      "themeId": "O069",
+      "batchId": "Q015",
+      "title": "灵魂枢纽 / 亡灵契约师 / T1→T5 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:44abdd695aca454dab8065a93b82e0f0",
+      "sessionId": "44abdd695aca454dab8065a93b82e0f0",
+      "encounterId": "SOUL_NEXUS_ELITE",
+      "characterId": "NECROBINDER",
+      "representativeIds": [
+        "c1185416b35446cfaa685e41f0876e50"
+      ],
+      "version": "0.49.3",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 46,
+        "after": 32,
+        "reduction": 14,
+        "additionalPotionCount": 1,
+        "potionHpCost": 9,
+        "potionAdjustedHpReduction": 5
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 1,
+      "potionAdjustedHpReduction": 5,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "亡灵契约师对灵魂枢纽的灵魂资源、格挡与第五回合选牌。增加一瓶药后折算改善5 HP。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T5；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        5
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q015.zip",
+      "issueNumber": 222,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/222",
+      "assetId": 612783624,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q015.zip",
+      "assetSizeBytes": 1759527
+    },
+    {
+      "themeId": "O070",
+      "batchId": "Q015",
+      "title": "永世沙漏 / 故障机器人 / T1→T3 路线质量",
+      "kind": "optimization",
+      "mechanismKey": "worldline-session:745949047c544bb28d0edb785f42e0b5",
+      "sessionId": "745949047c544bb28d0edb785f42e0b5",
+      "encounterId": "AEONGLASS_BOSS",
+      "characterId": "DEFECT",
+      "representativeIds": [
+        "acdd30c74a154131abb6c01e68340674"
+      ],
+      "version": "0.49.3",
+      "hpLoss": {
+        "kind": "manual_projection",
+        "before": 25,
+        "after": 20,
+        "reduction": 5,
+        "additionalPotionCount": 0,
+        "potionHpCost": 0,
+        "potionAdjustedHpReduction": 5
+      },
+      "previousProjectedBattlePotionCount": 0,
+      "currentProjectedBattlePotionCount": 0,
+      "potionAdjustedHpReduction": 5,
+      "taskSize": "small",
+      "taskSizeReason": "按代表折算改善量20 HP阈值分档",
+      "evidenceLevel": "shared_mechanism",
+      "verification": "static_only",
+      "rootCauseVerifiedByExecution": false,
+      "staticCause": "报告、比较日志和保留结果中的预测战损与总用药一致；具体战斗提供路线质量调查窗口，算法首因待定位。",
+      "acceptanceFocus": "故障机器人对永世沙漏的疯狂科学、抽牌和万物一心路线。核对第一回合到第三回合的牌序与生成资源。",
+      "evidenceBoundaries": [
+        "比较发生于T1→T3；从combat_start重建录制前缀后，固定政策和预算对照。"
+      ],
+      "comparisonTurns": [
+        1,
+        3
+      ],
+      "sourcePaths": [
+        "src/Runtime/SolverController.cs",
+        "src/Runtime/ManualProjectionComparison.cs",
+        "src/Search/CombatBeamSolver.Expansion.cs",
+        "src/Search/CombatBeamSolver.BeamRetentionPolicy.cs",
+        "src/Search/CombatBeamSolver.FinalPlanOrdering.cs"
+      ],
+      "sourceSymbols": [
+        "RecordManualProjectionComparison",
+        "ManualProjectionComparison",
+        "BeamRetentionPolicy",
+        "FinalPlanOrdering"
+      ],
+      "groupIds": [],
+      "legacyTaskIds": [],
+      "signaturePatterns": [],
+      "unresolved": "从combat_start核对模拟、部署与RNG，固定药水政策和预算作同根质量与耗时对照。",
+      "requiresSourceSymbolForMatch": false,
+      "acceptance": [
+        "combat_start恢复与完整状态对账",
+        "模拟与原生部署正确",
+        "同根同政策同预算比较折算战损",
+        "固定哨兵质量无退化与耗时无明显增加"
+      ],
+      "archive": "Q015.zip",
+      "issueNumber": 222,
+      "issueUrl": "https://github.com/Torch1230/CombatSolver/issues/222",
+      "assetId": 612783624,
+      "assetUrl": "https://github.com/Torch1230/CombatSolver/releases/download/community-tasks-2026-10-02/Q015.zip",
+      "assetSizeBytes": 1759527
+    }
+  ]
+}
