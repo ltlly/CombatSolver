@@ -183,3 +183,5 @@ L0：原生回复审计工具迁入tools/inspection后构建和真实DLL扫描�
 ## 性能研究分支
 
 既有组件、药水、魂枢及未达标原型的合同与历史结果见[历史卷18](archive/testing/volume-18.md)。PR #207最新上游整合、逐次ABBA、23根品质回归及NoGC波动/超时限制见[当前验收](performance/pr207-upstream-0494-integration-20261005.md)。
+
+[公共Fork及牌堆缓存研究](performance/fork-pile-cache-research-20261005.md)新增三次原生宿主机制合同与36次Evaluate交错，未建立稳定收益，原型全部撤回；对应完整Coordinator、最终8根回归及DOP1/2未追加执行，旧成功部署继续按原来源复用。
