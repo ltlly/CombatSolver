@@ -6,6 +6,8 @@ using CombatSolver.Engine.Common;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Entities.Cards;
 
 namespace OfflineSearchHarness;
 
@@ -59,6 +61,11 @@ internal static class SnapshotOpportunityProbe
     internal static void Install(string output)
     {
         string? mode = Environment.GetEnvironmentVariable("OFFLINE_HARNESS_SNAPSHOT_PROBE");
+        if (mode == "pile-lookups")
+        {
+            PileLookupProbe.Install(output);
+            return;
+        }
         if (mode == "worker-families")
         {
             GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(CombatBeamSolver), "CreateExpansionWorker"),
@@ -158,6 +165,7 @@ internal static class SnapshotOpportunityProbe
 
     internal static void RunShuffleWitness(CombatState combat, string output)
     {
+        PileLookupProbe.RunWitness(combat);
         if (Environment.GetEnvironmentVariable("OFFLINE_HARNESS_SHUFFLE_WITNESS") != "1") return;
         string liveBefore = ContinuationStamp.CaptureLive(combat).StateText;
         var player = combat.Players.Single();
@@ -185,5 +193,110 @@ internal static class SnapshotOpportunityProbe
             nativeCompare = first.CompareTo(second), sameMultiset, sameSequence,
             forward = a, reversed = b, rng.Counter, liveUnchanged = true,
         }, new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    // Tags identify the helper that returned a model, not a membership certificate.
+    // Original lookup always executes. No Player, pile, simulator, or Model is
+    // retained by the result rows; model tags have weak keys and scalar values.
+    private static class PileLookupProbe
+    {
+        private enum Origin { Unmarked, CloneHelper, GeneratedHelper }
+        private sealed record Tag(Origin Origin);
+        private sealed class Counts
+        {
+            public long Queries, Present, Absent;
+            public readonly List<string> FirstPaths = [];
+        }
+        private sealed class State
+        {
+            public readonly ConditionalWeakTable<CardModel, Tag> Tags = new();
+            public readonly Dictionary<(string Type, Origin Origin, string Phase), Counts> Rows = [];
+            public object? Witness;
+        }
+        private static State? _state;
+        [ThreadStatic] private static int _snapshotDepth;
+        [ThreadStatic] private static bool _witness;
+
+        internal static void Install(string output)
+        {
+            _state = new();
+            GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(PredictionUtils), nameof(PredictionUtils.CloneCardStateForSimulation)),
+                postfix: new HarmonyMethod(typeof(PileLookupProbe), nameof(ObserveClone)));
+            GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(PredictionUtils), nameof(PredictionUtils.CreateCard)),
+                postfix: new HarmonyMethod(typeof(PileLookupProbe), nameof(ObserveGenerated)));
+            GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(SimulationCardPileLookupFastPath), nameof(SimulationCardPileLookupFastPath.Find)),
+                postfix: new HarmonyMethod(typeof(PileLookupProbe), nameof(ObserveLookup)));
+            GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(CombatBeamSolver), "Snapshot"),
+                prefix: new HarmonyMethod(typeof(PileLookupProbe), nameof(EnterSnapshot)),
+                finalizer: new HarmonyMethod(typeof(PileLookupProbe), nameof(LeaveSnapshot)));
+            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+            {
+                lock (Gate) File.WriteAllText(Path.Combine(output, "native-pile-lookup-opportunities.json"),
+                    JsonSerializer.Serialize(new
+                    {
+                        observationOnly = true,
+                        scope = "Helper tags do not prove absence. Snapshot phase is inclusive; remaining queries are outside Snapshot. Witness queries are separate. No cache or original lookup suppression.",
+                        witness = _state.Witness,
+                        rows = _state.Rows.OrderBy(r => r.Key.Phase).ThenBy(r => r.Key.Origin)
+                            .ThenBy(r => r.Key.Type, StringComparer.Ordinal).Select(r => new
+                            {
+                                r.Key.Type, origin = r.Key.Origin.ToString(), r.Key.Phase,
+                                r.Value.Queries, r.Value.Present, r.Value.Absent, r.Value.FirstPaths,
+                            }),
+                    }, new JsonSerializerOptions { WriteIndented = true }));
+            };
+        }
+
+        private static void ObserveClone(CardModel __result)
+            => _state!.Tags.GetValue(__result, static _ => new(Origin.CloneHelper));
+        private static void ObserveGenerated(CardModel __result)
+            => _state!.Tags.GetValue(__result, static _ => new(Origin.GeneratedHelper));
+        private static void EnterSnapshot() => _snapshotDepth++;
+        private static void LeaveSnapshot() => _snapshotDepth--;
+
+        private static void ObserveLookup(CardModel card, CardPile? __result)
+        {
+            State state = _state!;
+            Origin origin = state.Tags.TryGetValue(card, out Tag? tag) ? tag.Origin : Origin.Unmarked;
+            string phase = _witness ? "Witness" : _snapshotDepth > 0 ? "SnapshotInclusive" : "OutsideSnapshot";
+            lock (Gate)
+            {
+                var key = (card.GetType().FullName!, origin, phase);
+                if (!state.Rows.TryGetValue(key, out Counts? counts)) state.Rows.Add(key, counts = new());
+                counts.Queries++;
+                if (__result is null) counts.Absent++; else counts.Present++;
+                if (counts.FirstPaths.Count < 1)
+                    counts.FirstPaths.Add(string.Join("\n", new System.Diagnostics.StackTrace().GetFrames()
+                        .Select(f => f.GetMethod()).Where(m => m is not null)
+                        .Select(m => m!.DeclaringType?.FullName + "." + m.Name)));
+            }
+        }
+
+        internal static void RunWitness(CombatState combat)
+        {
+            if (_state is null) return;
+            string before = ContinuationStamp.CaptureLive(combat).StateText;
+            var player = combat.Players.Single();
+            CardPile hand = player.PlayerCombatState!.Hand;
+            CardModel original = player.PlayerCombatState.AllPiles.SelectMany(p => p.Cards).First();
+            using IDisposable isolation = SimulationNotificationIsolation.Enter();
+            _witness = true;
+            try
+            {
+                CardModel clone = PredictionUtils.CloneCardStateForSimulation(original);
+                bool absentBefore = clone.Pile is null;
+                hand.AddInternal(clone, silent: true);
+                bool presentAfterAdd;
+                try { presentAfterAdd = ReferenceEquals(clone.Pile, hand); }
+                finally { hand.RemoveInternal(clone, silent: true); }
+                bool absentAfterRemove = clone.Pile is null;
+                bool liveRestored = ContinuationStamp.CaptureLive(combat).StateText == before;
+                if (!absentBefore || !presentAfterAdd || !absentAfterRemove || !liveRestored)
+                    throw new InvalidOperationException("Native pile insertion/removal witness failed or did not restore live state.");
+                _state.Witness = new { absentBefore, presentAfterAdd, absentAfterRemove, liveRestored,
+                    scope = "Offline actual game AddInternal/RemoveInternal under notification isolation; not full native/simulated combat proof." };
+            }
+            finally { _witness = false; }
+        }
     }
 }

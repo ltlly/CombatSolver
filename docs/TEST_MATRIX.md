@@ -163,6 +163,8 @@ pwsh -NoProfile -File tools\testing\run-unattended-test.ps1 -ScenarioId RADIANT-
 
 ## 性能研究分支
 
+2026-10-06 [原生牌堆查询观察](performance/native-pile-lookup-opportunities-20261006.md)：三次离线实际AddInternal／RemoveInternal见证、完整live续用戳恢复和Evaluate观察；复用三个控制的根／9项质量／工作相同。没有原生Godot新合同、完整性能或14维最终验收；可选宿主模式不改生产。
+
 2026-10-06 [可选监听投影存储](performance/external-listener-projections-research-20261006.md)：两版监听合同含完整状态/RNG/Fork/父live/弱生命周期；存在位版实际CARD-CONTINUATION-CONTRACT（`30cfcfce42b942f8809569d72b86e11b`）通过；第一版SEARCH只属helper。16次整请求交错收益较小或不稳定，均撤回，未追加最终七根/DOP1/2/16，原部署来源保持。
 
 2026-10-06 [当前CPU及lane分组诊断](performance/upstream-common-cpu-20261006.md)：宿主构建零警告/错误，一次完整请求CPU与两次Evaluate观察通过；发现同指纹历史偏移反例，无生产缓存、原生新验收或提速/RSS结论。

@@ -23,6 +23,7 @@
 - [Fork与牌堆缓存研究](fork-pile-cache-research-20261005.md)：三种通用存储原型、三次原生合同及36次短搜交错；没有稳定收益，全部撤回，修正牌堆类型与整条Fork调用链的归因范围。
 - [选牌续接Fork锁等待](continuation-fork-contention-research-20261005.md)：严格等待归因、精确请求授权及并行读者合同；12次短搜交错无稳定收益，撤回原型并保留证据。
 - [可选监听投影存储](external-listener-projections-research-20261006.md)：两种弱键存储、四次原生请求及16次完整交错；内存通过，时间收益较小或不稳定，均撤回。
+- [原生牌堆查询与指纹关键词](native-pile-lookup-opportunities-20261006.md)：三根227万次观察、原生加入／移除见证及重复关键词调用路径；新增可选宿主诊断，未建立缓存或提速结论。
 - [当前完整请求CPU与跨worker评估](upstream-common-cpu-20261006.md)：PR #213后独立采样、真实lane分组诊断及历史偏移反例，未启用完整快照共享。
 - [静态牌值公共缓存](intrinsic-card-value-research-20261006.md)：603类型原生合同、24次短搜及24次整请求；大牌组约1.047倍，但固定回归两个精英根峰值超标，原型撤回。
 - [稀疏回调位置与调度窗口](sparse-hook-positions-research-20261006.md)：六次原生合同、36次短搜及14次整请求；首版内存超标，两种扩展无收益，均撤回。
