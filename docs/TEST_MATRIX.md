@@ -6,7 +6,7 @@
 
 2026-10-05 [重场景共性分析](performance/heavy-scene-common-costs-20261005.md)复用七份整请求记录及87902组分配栈，阶段／历史／最终DLL范围分别保留。保持完整评估的类型原型CARD-CONTINUATION-SEARCH通过（`4ec5d4c324b84beca0b1e659c908b6cf`）；[两根诊断](performance/pending-choice-evaluation-opportunity-20261005.json)未启用延后评估，原型已撤回。[公共回放核对](performance/common-replay-state-cost-20261005.md)复用续接计数和同一14,199个CPU样本，监听维护并集18.713%，核对Fork／pending拥有者；仅L0文档与既有数据处理，无新游戏测试或性能验收。
 
-2026-10-05 [状态派生研究](performance/derived-state-opportunities-20261005.md)的默认回调/空派发证明原型原生合同及两回合严格差分通过（最终`eb894f987cae462cb3a37f8e3bd2eb72`/`e67cc8a1023e488e9274221bf1fa0782`）；16次固定Evaluate交错收益小并撤回，过期反射oracle/签名测试修正保留。新增大牌组CPU及可选宿主有序依赖重复计数；记录输出相同、诊断工作/质量字段保持，未把它们算作整请求或完整质量验收。
+2026-10-05 [状态派生研究](performance/derived-state-opportunities-20261005.md)的默认回调/空派发证明原型原生合同及两回合严格差分通过（最终`eb894f987cae462cb3a37f8e3bd2eb72`/`e67cc8a1023e488e9274221bf1fa0782`）；16次固定Evaluate交错收益小并撤回，过期反射oracle/签名测试修正保留。新增大牌组CPU及可选宿主有序依赖重复计数；记录输出相同、诊断工作/质量字段保持，未把它们算作整请求或完整质量验收。 [牌堆投影组合](performance/pile-listener-projections-20261005.md)新增八个完整分支差分、14来源拒绝与原生/基类补丁刷新（`c6d4be826dda489cb06d2da93a535259`）；续接`2d695710335144d6bc927d04e3c74fe0`及DOP1/2/16工作量通过。最终完整请求与内存结果按报告更新，不把最小合同外推。
 
 2026-10-05 [排序比较键研究](performance/native-sort-key-research-20261005.md)原生603类型/363609对比较、40案例与16并行Fork通过（`5c68036ad29c47a4a3b43bc40085429a`）；两个原型共16次固定Evaluate ACCA没有稳定收益，已撤回，未扩展为整请求验收或新的部署。
 
