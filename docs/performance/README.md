@@ -1,5 +1,7 @@
 # 性能工作入口
 
+- [空共享见证表的回复查询](shared-incumbent-empty-research-20261006.md)：复用同一CPU，原生发布边界与药水成本合同通过；12次交错短搜未建立共同收益，原型撤回。
+
 - [Fork监听布局复用](fork-listener-layout-research-20261006.md)：两项原生合同、12次交错短搜与独立消费/JIT诊断；部分预绑定在首读前失效，未建立共同收益，原型撤回。
 
 - [牌值存储与根资格](intrinsic-value-storage-research-20261006.md)：两项原生合同、对象分配大小/实际JIT及40次性能样本；压缩版最终猎手首领RSS超门槛，两版撤回。

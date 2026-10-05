@@ -171,6 +171,8 @@ pwsh -NoProfile -File tools\testing\run-unattended-test.ps1 -ScenarioId RADIANT-
 
 ## 性能研究分支
 
+2026-10-06 [空共享见证表查询](performance/shared-incumbent-empty-research-20261006.md)：`165855ef32ce4b89915844eea37adb7a`原生合同验证空表同一候选／完整状态／RNG及首次发布恢复；实际14／9成本、同回合及更晚便宜路线、相同／未知／零成本、父live对账通过。12次Evaluate未建立共同收益，源码及专属接入撤回；CPU取原trace，未追加完整请求／最终14维或增量／DOP验收。
+
 2026-10-06 [Fork监听布局复用](performance/fork-listener-layout-research-20261006.md)：原生监听合同含16并行兄弟／两代Fork、COW与类型变更拒绝，卡牌续接完整状态／历史／RNG合同通过；第一项Passed后启动器身份竞态单独记录，进程及实例已结束。12次Evaluate保持根／政策／9项质量及逻辑工作，时间无共同收益；独立消费计数及JIT不进入性能，原型撤回，未追加完整请求／14维最终回归／增量／DOP验收。
 
 2026-10-06 [原生牌堆查询观察](performance/native-pile-lookup-opportunities-20261006.md)：三次离线实际AddInternal／RemoveInternal见证、完整live续用戳恢复和Evaluate观察；复用三个控制的根／9项质量／工作相同。没有原生Godot新合同、完整性能或14维最终验收；可选宿主模式不改生产。
