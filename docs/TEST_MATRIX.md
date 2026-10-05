@@ -4,7 +4,7 @@
 
 PR #207 合入0.49.4的本轮证据见[整合验收](performance/pr207-upstream-0494-integration-20261005.md)：成本、组件回复及Smart原生合同通过，零额度遗物本地/外部准入先失败后通过；最终整请求及固定回归结果按该报告更新，旧版本数字不冒充本轮通过。
 
-2026-10-05 [重场景共性分析](performance/heavy-scene-common-costs-20261005.md)复用七份整请求记录，逐项核对阶段时长合计及工作量，并从同一份87902组分配栈重新细分Power复制路径。仅新增分析与L0文档检查，未运行游戏或新增性能验收；近期PR #211阶段、两个历史版本及最终开局准入DLL的证据范围分别保留。
+2026-10-05 [重场景共性分析](performance/heavy-scene-common-costs-20261005.md)复用七份整请求记录，逐项核对阶段时长合计及工作量，并从同一份87902组分配栈重新细分Power复制路径。近期PR #211阶段、两个历史版本及最终开局准入DLL的证据范围分别保留。后续保持完整评估的类型原型CARD-CONTINUATION-SEARCH通过（runId `4ec5d4c324b84beca0b1e659c908b6cf`）；两个离线小预算诊断见[索引](performance/pending-choice-evaluation-opportunity-20261005.json)。延后评估未启用，全部运行时改动已撤回，没有新增性能验收。
 
 历史记录见 [归档索引](archive/testing/README.md)，0.48.1 的验证、失败与未验证项见 [历史卷 12](archive/testing/volume-12.md)。
 

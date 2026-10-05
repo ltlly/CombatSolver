@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 1,
+  "scope": "Pending choice snapshot opportunity experiment; original eager behavior retained, prototype withdrawn. No deferred evaluator enabled and no performance acceptance.",
+  "baseHead": "8c30c50ccc43943f8f3db2638359f76f554def38",
+  "runtimeDll": {
+    "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-state-cost-20261005/eager-build/CombatSolver.dll",
+    "sha256": "0f1ea3dda9012de2b9c6a72af35a91a3b15f0bd1883e9dc9335e042e512bde88"
+  },
+  "gameDllSha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+  "gameMvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+  "prototype": {
+    "baseHead": "8c30c50ccc43943f8f3db2638359f76f554def38",
+    "trackedFiles": [
+      "src/Search/CombatBeamSolver.AdmittedExpansion.cs",
+      "src/Search/CombatBeamSolver.BlockPotionInsertion.cs",
+      "src/Search/CombatBeamSolver.CardChoiceContinuation.cs",
+      "src/Search/CombatBeamSolver.CycleReplay.cs",
+      "src/Search/CombatBeamSolver.EndTurnChoiceReplay.cs",
+      "src/Search/CombatBeamSolver.ExecutionChoiceContinuation.Testing.cs",
+      "src/Search/CombatBeamSolver.ExecutionChoiceContinuation.cs",
+      "src/Search/CombatBeamSolver.Expansion.Choices.cs",
+      "src/Search/CombatBeamSolver.Expansion.Opening.cs",
+      "src/Search/CombatBeamSolver.Expansion.Replay.cs",
+      "src/Search/CombatBeamSolver.Expansion.cs",
+      "src/Search/CombatBeamSolver.ExpansionPlan.cs",
+      "src/Search/CombatBeamSolver.ParallelExpansion.cs",
+      "src/Search/CombatBeamSolver.Phases.cs",
+      "src/Search/CombatBeamSolver.PotionChoiceContinuation.cs",
+      "src/Search/CombatBeamSolver.PrimaryChoiceReplay.cs",
+      "src/Search/CombatBeamSolver.Retention.cs",
+      "src/Search/CombatBeamSolver.RoundTransition.cs",
+      "src/Search/CombatPlan.cs",
+      "src/Search/SearchPerformanceMetrics.cs",
+      "src/Testing/Contracts/Search/UnattendedTestRunner.PotionCostIncumbent.cs"
+    ],
+    "newFiles": [
+      "src/Search/CombatBeamSolver.ReplayEvaluation.cs",
+      "src/Search/SearchReplayState.cs"
+    ],
+    "patchPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-state-cost-20261005/pending-eager-prototype.patch",
+    "patchSha256": "05066a8070645aaa7123908ff8696a092a961342cceca8644473bb71a61075b1",
+    "deferredEvaluationEnabled": false,
+    "candidateAdopted": false,
+    "reason": "Eligible pending snapshot work is small in both diagnostic roots; no lazy evaluator enabled or performance candidate accepted."
+  },
+  "build": {
+    "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-state-cost-20261005/build-eager-diagnostic.log",
+    "seconds": 6.35,
+    "warnings": 0,
+    "errors": 0,
+    "copyModOnBuild": false
+  },
+  "nativeEagerBoundaryProof": {
+    "result": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-state-cost-20261005/native-eager/result.json",
+      "sha256": "b78f612114bfff128ee7ccf36ed094f2de2e2a2f82c91073abdde9794f6f2a46"
+    },
+    "runId": "4ec5d4c324b84beca0b1e659c908b6cf",
+    "scenarioId": "CARD-CONTINUATION-SEARCH",
+    "status": "Passed",
+    "elapsedMilliseconds": 27885.0673,
+    "mainAssemblyHash": "0F1EA3DDA9012DE2B9C6A72AF35A91A3B15F0BD1883E9DC9335E042E512BDE88",
+    "onlyEagerOwnershipBoundaryWasTested": true,
+    "instanceCleaned": true
+  },
+  "failures": {
+    "initialBuild": "Compiler errors adapting evaluated-only consumers; corrected before successful build.",
+    "initialNativeLaunch": "Missing manifest in isolated output; launcher refused before starting game, source manifest copied and failed launch retried."
+  },
+  "records": [
+    {
+      "scene": "dev09",
+      "result": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-state-cost-20261005/diag-dev09/result.json",
+        "sha256": "e01e944529d9818215f036495103f12739fb6bd57112f5cd3baea5e4e8c07b14"
+      },
+      "diagnosticLog": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-state-cost-20261005/diag-dev09/logs/678254-8799f8e8d9774f95b64c7044b413ac3d/process.jsonl",
+        "sha256": "f151bf122eb63adba2667e6080132c08f87572e0a5504d24d46a87737055039a"
+      },
+      "request": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-09-necrobinder-boss.json",
+        "sha256": "b23a21a9103b1d3ceac381f09353e91c6d42bdc695db8244bf7c4580fc95a398"
+      },
+      "generatedScenario": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-09-necrobinder-boss-scenario.json",
+        "sha256": "ed60144ec2a03fa99b7acb8b16e963eae82a94ad90181ff2b3ddee822a669431"
+      },
+      "budget": {
+        "profile": "VeryHigh",
+        "beamWidth": 135,
+        "maxExpandedNodes": 25000,
+        "maxCardBranchesPerNode": 72,
+        "maxPileChoiceBranchesPerAction": 42,
+        "maxHandChoiceBranchesPerAction": 54,
+        "maxDegreeOfParallelism": 16,
+        "budgetMilliseconds": 60000,
+        "earlyTurnExplorationDepth": 0,
+        "earlyTurnExplorationBudgetMilliseconds": 0,
+        "potionPolicy": "Smart",
+        "searchMode": "Evaluate",
+        "usePortfolio": false,
+        "fixedSearchBudget": true,
+        "enableNoGcRegion": false,
+        "noGcRegionBudgetGigabytes": null
+      },
+      "pending": {
+        "calls": 4153,
+        "inclusiveMilliseconds": 928.167,
+        "inclusiveAllocatedBytes": 16329000
+      },
+      "allSnapshots": {
+        "calls": 137502,
+        "inclusiveMilliseconds": 38451.573,
+        "inclusiveAllocatedBytes": 801001568
+      },
+      "pendingSnapshotCallPercent": 3.020319704440663,
+      "pendingSnapshotInclusiveTimePercent": 2.4138596358593705,
+      "pendingSnapshotAllocatedPercent": 2.03857278841182,
+      "pendingAllocatedPercentOfSearchWorkers": 0.29875794767129893,
+      "metrics": {
+        "totalExpanded": 23272,
+        "totalTransitions": 143649,
+        "totalChoiceBranches": 49548,
+        "totalElapsedMilliseconds": 15842.2672,
+        "totalWorkerAllocatedBytes": 5465628656,
+        "maxParallelConcurrency": 16,
+        "projectedBattleHpLost": 9,
+        "potionCount": 2,
+        "finalEnemyHp": 0,
+        "combatEndedTurn": 13
+      },
+      "wholeHarnessWallSeconds": 16.0692504,
+      "peakProcessWorkingSetBytes": 543752192,
+      "timeScope": "Diagnostic Evaluate member; not whole Coordinator acceptance, not CPU. Inclusive Stopwatch time sums worker waits and GC pauses."
+    },
+    {
+      "scene": "large",
+      "result": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-state-cost-20261005/diag-large/result.json",
+        "sha256": "59232cffcea310e46e02e7a7acc9243bb806e945a0aae2e2330f6512d7997d58"
+      },
+      "diagnosticLog": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/common-state-cost-20261005/diag-large/logs/678713-86a5dfac7bff490c98fa94625ba7fb3d/process.jsonl",
+        "sha256": "c009cee7afd2ec894d4146dd336470654d5e8556f6a25b1cec8bc7d86d77aa13"
+      },
+      "request": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/silent-large-deck.json",
+        "sha256": "193f0f6519c201dc8f8e5e79d3d4a3d6b906da17c735db0327da11760f121635"
+      },
+      "generatedScenario": null,
+      "budget": {
+        "profile": "VeryHigh",
+        "beamWidth": 135,
+        "maxExpandedNodes": 5000,
+        "maxCardBranchesPerNode": 72,
+        "maxPileChoiceBranchesPerAction": 42,
+        "maxHandChoiceBranchesPerAction": 54,
+        "maxDegreeOfParallelism": 16,
+        "budgetMilliseconds": 60000,
+        "earlyTurnExplorationDepth": 0,
+        "earlyTurnExplorationBudgetMilliseconds": 0,
+        "potionPolicy": "Smart",
+        "searchMode": "Evaluate",
+        "usePortfolio": false,
+        "fixedSearchBudget": true,
+        "enableNoGcRegion": false,
+        "noGcRegionBudgetGigabytes": null
+      },
+      "pending": {
+        "calls": 1309,
+        "inclusiveMilliseconds": 2213.314,
+        "inclusiveAllocatedBytes": 10038744
+      },
+      "allSnapshots": {
+        "calls": 15447,
+        "inclusiveMilliseconds": 24881.109,
+        "inclusiveAllocatedBytes": 258614632
+      },
+      "pendingSnapshotCallPercent": 8.474137372952677,
+      "pendingSnapshotInclusiveTimePercent": 8.895560081345248,
+      "pendingSnapshotAllocatedPercent": 3.8817386017044853,
+      "pendingAllocatedPercentOfSearchWorkers": 0.6586782739004517,
+      "metrics": {
+        "totalExpanded": 4498,
+        "totalTransitions": 15445,
+        "totalChoiceBranches": 3654,
+        "totalElapsedMilliseconds": 6123.6782,
+        "totalWorkerAllocatedBytes": 1524073952,
+        "maxParallelConcurrency": 16,
+        "projectedBattleHpLost": 65,
+        "potionCount": 0,
+        "finalEnemyHp": 494,
+        "combatEndedTurn": null
+      },
+      "wholeHarnessWallSeconds": 6.4574149,
+      "peakProcessWorkingSetBytes": 450011136,
+      "timeScope": "Diagnostic Evaluate member; not whole Coordinator acceptance, not CPU. Inclusive Stopwatch time sums worker waits and GC pauses."
+    }
+  ],
+  "eligibility": "Pending choice snapshots returned through card, potion and EndTurn expansion/continuation paths. StandPat, eager full replay, setup and evaluated diagnostic probes excluded because they consume full features.",
+  "safetyOutstanding": [
+    "Coverage collection also executes original compensation classification; future deferral must retain this audit or prove an explicit safe fallback.",
+    "Fingerprint and scoring extension callbacks were not certified for skipping.",
+    "No lazy snapshot, pending materialization, optimized strict differential, or eager/candidate interleaved performance tested."
+  ],
+  "decision": "Withdraw pending replay type refactor and diagnostic instrumentation. Keep original full snapshots. Investigate stable snapshot/state costs rather than treating all choice branches as redundant intermediate evaluation.",
+  "acceptance": {
+    "newTwofoldRoots": 0,
+    "memoryGateClaimed": false,
+    "qualityEquivalenceOfDeferredEvaluationClaimed": false,
+    "deployedPrototype": false
+  }
+}
