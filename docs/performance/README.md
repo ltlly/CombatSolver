@@ -1,5 +1,7 @@
 # 性能工作入口
 
+- [牌值存储与根资格](intrinsic-value-storage-research-20261006.md)：两项原生合同、对象分配大小/实际JIT及40次性能样本；压缩版最终猎手首领RSS超门槛，两版撤回。
+
 - [监听类型同步遍历](listener-type-traversal-research-20261006.md)：原生边界/Fork及实际JIT通过；12次短搜、4次完整请求仅小幅收益，原型撤回。
 
 - [单次牌值集合复用](intrinsic-variable-set-research-20261006.md)：603类型/16Fork及三个补丁回退原生合同通过，12次短搜没有收益，原型撤回。

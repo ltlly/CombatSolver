@@ -184,3 +184,5 @@ pwsh -NoProfile -File tools\testing\run-unattended-test.ps1 -ScenarioId RADIANT-
 既有组件、药水、魂枢及未达标原型的合同与历史结果见[历史卷18](archive/testing/volume-18.md)。PR #207最新上游整合、逐次ABBA、23根品质回归及NoGC波动/超时限制见[当前验收](performance/pr207-upstream-0494-integration-20261005.md)。
 
 [公共Fork及牌堆缓存研究](performance/fork-pile-cache-research-20261005.md)新增三次原生宿主机制合同与36次Evaluate交错，未建立稳定收益，原型全部撤回；对应完整Coordinator、最终8根回归及DOP1/2未追加执行，旧成功部署继续按原来源复用。
+
+2026-10-06 [牌值存储与根资格](performance/intrinsic-value-storage-research-20261006.md)：两项最小原生合同覆盖603牌/16Fork/完整父liveRNG、五getter补丁及真实Ritsu附着/写入/移除回退；24次Evaluate、4次交错完整请求和12次最终哨兵保留。对象分配大小相同但猎手首领RSS+12.158%失败，两版撤回；未追加最终增量/DOP1/2、Windows或可见Steam。
