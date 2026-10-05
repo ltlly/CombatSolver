@@ -68,6 +68,8 @@ dotnet .local/tool-build/OfflineSearchHarness/bin/Release/net9.0/OfflineSearchHa
 
 ## 批量用法
 
+`OFFLINE_HARNESS_SNAPSHOT_PROBE=worker-families` 观察同一coordinator及其实际创建的并行workers，以状态指纹、动作数和边界统计重复评估输入，输出 `snapshot-worker-families.json`。每组最多保留100,000个纯值输入和15项选定特征，不持有模型／模拟器图；同／跨worker计数相对首次出现的实例，容量旁路后的重复率只作下限。相同输入可有不同历史偏移，因此这些计数不能当作共享整份Snapshot的证明。该模式只用于小预算诊断，关闭后再做性能验收；实际范围见[当前证据](performance/upstream-common-cpu-20261006.md)。原 `OFFLINE_HARNESS_SNAPSHOT_PROBE=1` 的逐solver计数保持。
+
 `OFFLINE_HARNESS_EQUIVALENCE_PROBE=1` 可在小预算 `Evaluate` 请求中观察已有转置拒绝、候选分类次数和自然出现的两步反向动作，输出 `equivalence-probe.json`。每个求解器最多保存20,000个分离出的两步索引，不持有节点/模型，也不改变剪枝结果；指纹相同只是研究线索，不是交换性证明。该模式有额外锁和序列化开销，不能用于时间或分配评测。适用范围和复现命令见[准入优化与采样](archive/performance/equivalence-admission-20260929.md)。
 
 `tools/search/OfflineSearchHarness/run_plan.py` 吃一份 plan JSON（数组），起 N 个宿主进程并行消费：

@@ -188,6 +188,8 @@ L0：原生回复审计工具迁入tools/inspection后构建和真实DLL扫描�
 
 ## 性能研究分支
 
+2026-10-06 [当前CPU及lane分组诊断](performance/upstream-common-cpu-20261006.md)：宿主构建零警告/错误，一次完整请求CPU与两次Evaluate观察通过；发现同指纹历史偏移反例，无生产缓存、原生新验收或提速/RSS结论。
+
 2026-10-06 [静态牌值公共缓存](performance/intrinsic-card-value-research-20261006.md)：四项原生合同、24次Evaluate、24次完整Coordinator；九根14项导出质量一致，两个精英根RSS超门槛，原型撤回。拒绝后未追加最终DOP1/2/16，复用上游合并版本既有部署。
 
 2026-10-06 [稀疏回调位置研究](performance/sparse-hook-positions-research-20261006.md)六次原生请求、36次Evaluate、14次完整Coordinator；大牌组首版1.043倍但峰值+12.673%，逐回调及调度扩展未证明收益，三版撤回。结果仅对应PR #213之前的源码；完整14维与未获胜控制的范围分别保留，未追加最终回归。

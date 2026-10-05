@@ -1,0 +1,1197 @@
+{
+  "schemaVersion": 1,
+  "sourceBase": "4b07fe7d",
+  "runtimeSource": "bb004176",
+  "upstream": "9a4489d8",
+  "version": "0.50.0",
+  "baselineDllSha256": "2aa06f3e5adfc9e82492d2a43c806f2b3aa1964e92b9c250da013ffa2d68e45e",
+  "decision": "Current complete-request CPU remains dominated by per-branch evaluation/replay/clone work. Worker-family duplicate observations do not justify whole-snapshot sharing; identical fingerprint/action/boundary can have different HistoryEntryCount. No production optimization or 2x acceptance.",
+  "cpu": {
+    "command": {
+      "diagnosticOnly": true,
+      "command": [
+        "perf",
+        "record",
+        "-e",
+        "cycles:u",
+        "-F",
+        "199",
+        "--call-graph",
+        "fp",
+        "-k",
+        "1",
+        "-o",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/cpu-large/perf.data",
+        "--",
+        "dotnet",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/intrinsic-card-value-20261006/updated-harness/OfflineSearchHarness.dll",
+        "--request",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/silent-large-deck.json",
+        "--label",
+        "pr213-complete-common-cpu",
+        "--out",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/cpu-large/run",
+        "--profile",
+        "VeryHigh",
+        "--dop",
+        "16",
+        "--budget-ms",
+        "300000",
+        "--search-mode",
+        "Coordinator",
+        "--nodes",
+        "500000",
+        "--beam",
+        "135",
+        "--card-branches",
+        "72",
+        "--pile-branches",
+        "42",
+        "--hand-branches",
+        "54",
+        "--enable-no-gc-region",
+        "--no-gc-region-budget-gigabytes",
+        "16",
+        "--use-portfolio"
+      ],
+      "dll": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-pr213-sync-20261006/build/CombatSolver.dll",
+      "envExtra": {
+        "DOTNET_PerfMapEnabled": "3"
+      },
+      "outerTimeoutSeconds": 120,
+      "sourceBase": "4b07fe7d",
+      "runtimeBaseline": "bb004176",
+      "dllSha256": "2aa06f3e5adfc9e82492d2a43c806f2b3aa1964e92b9c250da013ffa2d68e45e",
+      "scope": "Independent full Coordinator CPU diagnosis, not a timing/RSS acceptance run"
+    },
+    "clock": {
+      "realtime": 1791223623.6974723,
+      "monotonic": 1253998.404434945,
+      "finishedRealtime": 1791223677.3317835,
+      "finishedMonotonic": 1254052.038744728
+    },
+    "analysis": {
+      "scope": "PR213 baseline complete Coordinator CPU diagnosis, not performance acceptance; inclusive paths overlap; nearest managed frame is attribution, not leaf resolution",
+      "startMonotonic": 1254001.1129624844,
+      "endMonotonic": 1254051.3059625626,
+      "includedSamples": 79029,
+      "estimatedCycles": 1264892541299,
+      "listenerUnionPercent": 18.211578911077424,
+      "inclusive": [
+        {
+          "path": "::Snapshot(",
+          "percent": 47.094575412251345
+        },
+        {
+          "path": "::BuildProjectedShuffleOrder(",
+          "percent": 14.012774642182178
+        },
+        {
+          "path": "::StableShuffleProjection(",
+          "percent": 1.1838032835281325
+        },
+        {
+          "path": "::CompareTo(",
+          "percent": 4.760267258526493
+        },
+        {
+          "path": "::LeavesHandAtTurnEnd(",
+          "percent": 3.2371214627410003
+        },
+        {
+          "path": "::CalculateReachableHandPotential(",
+          "percent": 2.0248266115710907
+        },
+        {
+          "path": "StrategicEffectContext::Build(",
+          "percent": 6.953127640208778
+        },
+        {
+          "path": "::CardValue(",
+          "percent": 0.4822916495922279
+        },
+        {
+          "path": "::DynamicVarBaseValue(",
+          "percent": 0.3697580938533199
+        },
+        {
+          "path": "::BuildStateKey(",
+          "percent": 3.14574999771417
+        },
+        {
+          "path": "::Filter(",
+          "percent": 10.492443066800217
+        },
+        {
+          "path": "::Matches(",
+          "percent": 0.896766410714305
+        },
+        {
+          "path": "::GetBaseHookListeners(",
+          "percent": 7.0143865758654185
+        },
+        {
+          "path": "::GetEffectiveHookListeners(",
+          "percent": 7.63300248919543
+        },
+        {
+          "path": "::GetMirroredHookListeners(",
+          "percent": 2.185020715642499
+        },
+        {
+          "path": "::TryBuildMirroredListenerProjections(",
+          "percent": 0.0
+        },
+        {
+          "path": "::GetHookProjection(",
+          "percent": 0.0
+        },
+        {
+          "path": "::Fork(",
+          "percent": 10.798436737379154
+        }
+      ],
+      "stages": {
+        "Other": 10.479877787077974,
+        "Fork": 10.798436737379154,
+        "Replay": 31.62836150161401,
+        "Snapshot": 47.09332397392886
+      },
+      "nearestOwned": [
+        {
+          "path": "CombatSolver.StateFingerprint,int32> [CombatSolver] CombatSolver.CombatBeamSolver::BuildProjectedShuffleOrder",
+          "percent": 11.569950516247518
+        },
+        {
+          "path": "CombatSolver.Engine.Common.MirroredHookListenerFilter::Filter",
+          "percent": 9.034519817441693
+        },
+        {
+          "path": "CombatSolver.SimulatedCombatState::GetBaseHookListeners",
+          "percent": 6.799861009668837
+        },
+        {
+          "path": "CombatSolver.StrategicEffectContext [CombatSolver] CombatSolver.StrategicEffectContext::Build",
+          "percent": 6.58020128140871
+        },
+        {
+          "path": "CombatSolver.SimulationCardPileLookupFastPath::Find",
+          "percent": 4.270401287727374
+        },
+        {
+          "path": "CombatSolver.SimulationSnapshot [CombatSolver] CombatSolver.CombatBeamSolver::Snapshot",
+          "percent": 3.9785965418309788
+        },
+        {
+          "path": "CombatSolver.Engine.Common.SimCardPile [CombatSolver] CombatSolver.Engine.Common.SimCardPile::Fork",
+          "percent": 3.9321480402533955
+        },
+        {
+          "path": "CombatSolver.Engine.Common.PredictedCard::get_Preview",
+          "percent": 1.7512621841576443
+        },
+        {
+          "path": "CombatSolver.SimulatedCombatState+ConcatenatedListenerView+<GetEnumerator>d__13::MoveNext",
+          "percent": 1.7284400518756766
+        },
+        {
+          "path": "CombatSolver.CombatBeamSolver::LeavesHandAtTurnEnd",
+          "percent": 1.6781679651775476
+        },
+        {
+          "path": "CombatSolver.Engine.Common.PredictedCard::CompareTo",
+          "percent": 1.6181018936186355
+        },
+        {
+          "path": "CombatSolver.CombatBeamSolver::AppendCyclePileShape",
+          "percent": 1.4993290352968416
+        },
+        {
+          "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictionState [CombatSolver] CombatSolver.Engine.InCombat.Simulation.CombatPredictionState::Fork",
+          "percent": 1.0506465454648108
+        },
+        {
+          "path": "CombatSolver.SimulatedCombatState::RemapCachedModels",
+          "percent": 1.048587944820897
+        },
+        {
+          "path": "CombatSolver.CombatBeamSolver::BranchCardValue",
+          "percent": 1.0012299315951396
+        },
+        {
+          "path": "CombatSolver.Engine.InCombat.Mirrors.HookMirrors::ModifyDamage",
+          "percent": 0.9582116937422075
+        },
+        {
+          "path": "CombatSolver.SimulatedCombatState::CombatSolver.Engine.Common.ICombatPredictionForkableState.Fork",
+          "percent": 0.9041956052847382
+        },
+        {
+          "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator::CanPlay",
+          "percent": 0.9002334338461643
+        },
+        {
+          "path": "CombatSolver.Engine.Common.MirroredHookListenerLayout::Matches",
+          "percent": 0.7992215717880755
+        },
+        {
+          "path": "CombatSolver.SimulatedCombatState::NormalizePowerAfflictions",
+          "percent": 0.7989836026403636
+        },
+        {
+          "path": "CombatSolver.SimulatedCombatState::NormalizeCardAfflictions",
+          "percent": 0.7913910159292924
+        },
+        {
+          "path": "CombatSolver.Engine.Common.PredictionUtils::CloneModelForSimulation",
+          "percent": 0.7447407739732435
+        },
+        {
+          "path": "CombatSolver.SimulationSnapshot [CombatSolver] CombatSolver.CombatBeamSolver::Replay",
+          "percent": 0.7265174005661018
+        },
+        {
+          "path": "CombatSolver.Engine.Common.PredictedCard [CombatSolver] CombatSolver.SimulatedCombatState::ForkCard",
+          "percent": 0.6835036910029754
+        },
+        {
+          "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator::DoTurnEnd",
+          "percent": 0.6688075293978878
+        }
+      ]
+    },
+    "lostSamples": 0,
+    "lostSamplesEvidence": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/cpu-large/leaf-report.txt",
+      "sha256": "eff36cc3593107d60f290b24832af90df0bff602ef67a601d2252b0bf3139ba9"
+    },
+    "trace": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/cpu-large/perf.data",
+      "sha256": "3b05e83a23d9c88048a398862a0afc2fb38d58adbfa4b7db00fd73b43bc7185d"
+    },
+    "frames": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/cpu-large/frames.txt",
+      "sha256": "635e73527865453b32990649984d30511d824b03b662a421a29217aa73d7331d"
+    },
+    "managedMap": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/cpu-large/managed-perf.map",
+      "sha256": "cdeca998274791405fe1dd963afea229978d3091e907ec6fde82e1f8ab8f9b47"
+    },
+    "limitations": [
+      "Nearest owned frame and inclusive path estimates, not exclusive native leaves",
+      "Includes JIT/native work in the selected request window",
+      "No IPC/cache-miss/wait or pause-time attribution",
+      "No inference of achievable whole-request speedup from CPU shares"
+    ],
+    "budget": {
+      "Profile": "VeryHigh",
+      "BeamWidth": 135,
+      "MaxExpandedNodes": 500000,
+      "MaxCardBranchesPerNode": 72,
+      "MaxPileChoiceBranchesPerAction": 42,
+      "MaxHandChoiceBranchesPerAction": 54,
+      "MaxDegreeOfParallelism": 16,
+      "BudgetMilliseconds": 300000,
+      "EarlyTurnExplorationDepth": 0,
+      "EarlyTurnExplorationBudgetMilliseconds": 0,
+      "PotionPolicy": "Smart",
+      "SearchMode": "Coordinator",
+      "UsePortfolio": true,
+      "fixedSearchBudget": true,
+      "enableNoGcRegion": true,
+      "noGcRegionBudgetGigabytes": 16
+    },
+    "searchPolicy": {
+      "Profile": {
+        "BeamWidth": 135,
+        "MaxExpandedNodes": 500000,
+        "MaxCardBranchesPerNode": 72,
+        "MaxPileChoiceBranchesPerAction": 42,
+        "MaxHandChoiceBranchesPerAction": 54,
+        "SoftTimeBudgetMilliseconds": 600000,
+        "SecondRankBand": false,
+        "ContinuousThreatRanking": false,
+        "BaseScoreTacticalTies": false,
+        "AdaptiveNoveltyRefinement": false,
+        "OffensiveRefinementPortfolio": false,
+        "BoundedOffensiveRefinementPortfolio": false,
+        "ReallocatedRefinementPortfolio": true,
+        "StopPortfolioAtHpTarget": true,
+        "BaseScoreOnly": false,
+        "AggressivePowerCommitment": false
+      },
+      "PotionPolicy": 1,
+      "PotionStrategy": {
+        "DefaultPolicy": 1,
+        "Directives": [],
+        "HasForcedDirectives": false,
+        "ForcedDirectiveCount": 0
+      },
+      "FixedBudget": true,
+      "MaxDegreeOfParallelism": 16,
+      "IncludeTurnSetup": false,
+      "ActTransitionBossHpStrategy": 0,
+      "FinalBossHpStrategy": 0,
+      "AcceptableBattleHpLoss": 0,
+      "StopAtAcceptableBattleHpLoss": false,
+      "Act3BossStrategy": true,
+      "GrowthBudgets": {
+        "HandOfGreed": 0,
+        "TheHunt": 0,
+        "Feed": 0,
+        "Royalties": 0,
+        "Alchemize": 0,
+        "GeneticAlgorithm": 0,
+        "TheScythe": 0,
+        "Goopy": 0,
+        "ForbiddenGrimoire": 0,
+        "MadScience": 0
+      },
+      "RelicTargets": [],
+      "HasGrowthTargets": false,
+      "IgnoreLongTermRewards": false,
+      "VerifyIncrementalSearch": false,
+      "DetailedDiagnostics": false,
+      "MeasurePhasePerformance": false,
+      "UseBeamWidthPortfolio": true,
+      "BeamWidthPortfolioPlainBaselineMember": true,
+      "UseNoveltyPortfolio": false,
+      "observePortfolio": false
+    },
+    "quality": {
+      "Won": false,
+      "OutstandingStolenResource": 0,
+      "ProjectedBattleHpLost": 65,
+      "StrategicHpDeficit": 65,
+      "PotionStrategicCost": 0,
+      "ProjectedBattlePotionCount": 0,
+      "EnemyHp": 464,
+      "Score": -1000006862052,
+      "Survives": false,
+      "DeathSaveUseCount": 0,
+      "GrowthHpCredit": 0,
+      "GrowthRewardCount": 0
+    },
+    "gc": {
+      "TotalGen0Collections": 94,
+      "TotalGen1Collections": 58,
+      "TotalGen2Collections": 19,
+      "ConfiguredNoGcRegionEnabled": true,
+      "ConfiguredNoGcRegionBudgetBytes": 16000000000,
+      "NoGcRegionActive": true,
+      "NoGcRegionBudgetBytes": 2986706273,
+      "NoGcRegionRolloverCount": 0
+    },
+    "result": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/cpu-large/run/result.json",
+      "sha256": "c7fb4858cec395443ed782b216bab3f2874e37997f4da2f7507da86047c30e15"
+    }
+  },
+  "workerFamilies": [
+    {
+      "scene": "silent-large-deck",
+      "observation": {
+        "observationOnly": true,
+        "maximumKeysPerFamily": 100000,
+        "scope": "Worker families follow actual CreateExpansionWorker ownership. Keys and selected feature equality are not a cache-safety proof. No snapshot/model graphs retained.",
+        "families": [
+          {
+            "Total": 42888,
+            "Workers": 16,
+            "retainedInputs": 39047,
+            "SameWorkerRepeats": 213,
+            "CrossWorkerRepeats": 3628,
+            "LimitBypasses": 0,
+            "FeatureMismatches": 130,
+            "Mismatches": [
+              {
+                "Item2": 22,
+                "Item3": 0,
+                "first": {
+                  "ScoreBits": -4516535203430137856,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 145,
+                  "Shuffles": 0,
+                  "Risk": false
+                },
+                "current": {
+                  "ScoreBits": -4516535203430137856,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 144,
+                  "Shuffles": 0,
+                  "Risk": false
+                }
+              },
+              {
+                "Item2": 22,
+                "Item3": 0,
+                "first": {
+                  "ScoreBits": -4516535203430137856,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 145,
+                  "Shuffles": 0,
+                  "Risk": false
+                },
+                "current": {
+                  "ScoreBits": -4516535203430137856,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 144,
+                  "Shuffles": 0,
+                  "Risk": false
+                }
+              },
+              {
+                "Item2": 22,
+                "Item3": 0,
+                "first": {
+                  "ScoreBits": -4516535203430137856,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 145,
+                  "Shuffles": 0,
+                  "Risk": false
+                },
+                "current": {
+                  "ScoreBits": -4516535203430137856,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 144,
+                  "Shuffles": 0,
+                  "Risk": false
+                }
+              },
+              {
+                "Item2": 22,
+                "Item3": 0,
+                "first": {
+                  "ScoreBits": -4516535203430137856,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 145,
+                  "Shuffles": 0,
+                  "Risk": false
+                },
+                "current": {
+                  "ScoreBits": -4516535203430137856,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 144,
+                  "Shuffles": 0,
+                  "Risk": false
+                }
+              },
+              {
+                "Item2": 22,
+                "Item3": 0,
+                "first": {
+                  "ScoreBits": -4516535203430137856,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 145,
+                  "Shuffles": 0,
+                  "Risk": false
+                },
+                "current": {
+                  "ScoreBits": -4516535203430137856,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 144,
+                  "Shuffles": 0,
+                  "Risk": false
+                }
+              },
+              {
+                "Item2": 23,
+                "Item3": 0,
+                "first": {
+                  "ScoreBits": -4516535202356396032,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 148,
+                  "Shuffles": 0,
+                  "Risk": false
+                },
+                "current": {
+                  "ScoreBits": -4516535202356396032,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 147,
+                  "Shuffles": 0,
+                  "Risk": false
+                }
+              },
+              {
+                "Item2": 23,
+                "Item3": 0,
+                "first": {
+                  "ScoreBits": -4516535202356396032,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 147,
+                  "Shuffles": 0,
+                  "Risk": false
+                },
+                "current": {
+                  "ScoreBits": -4516535202356396032,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 14372914821983183190,
+                    "Second": 11264544492731793138
+                  },
+                  "ShuffleValue": 595686,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 148,
+                  "Shuffles": 0,
+                  "Risk": false
+                }
+              },
+              {
+                "Item2": 21,
+                "Item3": 0,
+                "first": {
+                  "ScoreBits": -4516535204503879680,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 17515655338042620819,
+                    "Second": 10531631820006997751
+                  },
+                  "ShuffleValue": 638648,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 142,
+                  "Shuffles": 0,
+                  "Risk": false
+                },
+                "current": {
+                  "ScoreBits": -4516535204503879680,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 17515655338042620819,
+                    "Second": 10531631820006997751
+                  },
+                  "ShuffleValue": 638648,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 143,
+                  "Shuffles": 0,
+                  "Risk": false
+                }
+              },
+              {
+                "Item2": 23,
+                "Item3": 0,
+                "first": {
+                  "ScoreBits": -4516535202356396032,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 17306911781935012856,
+                    "Second": 18171196735285890821
+                  },
+                  "ShuffleValue": 643649,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 149,
+                  "Shuffles": 0,
+                  "Risk": false
+                },
+                "current": {
+                  "ScoreBits": -4516535202356396032,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 17306911781935012856,
+                    "Second": 18171196735285890821
+                  },
+                  "ShuffleValue": 643649,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 148,
+                  "Shuffles": 0,
+                  "Risk": false
+                }
+              },
+              {
+                "Item2": 23,
+                "Item3": 0,
+                "first": {
+                  "ScoreBits": -4516535202356396032,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 17306911781935012856,
+                    "Second": 18171196735285890821
+                  },
+                  "ShuffleValue": 643649,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 149,
+                  "Shuffles": 0,
+                  "Risk": false
+                },
+                "current": {
+                  "ScoreBits": -4516535202356396032,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 17306911781935012856,
+                    "Second": 18171196735285890821
+                  },
+                  "ShuffleValue": 643649,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 148,
+                  "Shuffles": 0,
+                  "Risk": false
+                }
+              },
+              {
+                "Item2": 23,
+                "Item3": 0,
+                "first": {
+                  "ScoreBits": -4516535202356396032,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 17306911781935012856,
+                    "Second": 18171196735285890821
+                  },
+                  "ShuffleValue": 643649,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 148,
+                  "Shuffles": 0,
+                  "Risk": false
+                },
+                "current": {
+                  "ScoreBits": -4516535202356396032,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 17306911781935012856,
+                    "Second": 18171196735285890821
+                  },
+                  "ShuffleValue": 643649,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 149,
+                  "Shuffles": 0,
+                  "Risk": false
+                }
+              },
+              {
+                "Item2": 23,
+                "Item3": 0,
+                "first": {
+                  "ScoreBits": -4516535202356396032,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 17306911781935012856,
+                    "Second": 18171196735285890821
+                  },
+                  "ShuffleValue": 643649,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 149,
+                  "Shuffles": 0,
+                  "Risk": false
+                },
+                "current": {
+                  "ScoreBits": -4516535202356396032,
+                  "ProjectedHp": 43,
+                  "ShuffleKey": {
+                    "First": 17306911781935012856,
+                    "Second": 18171196735285890821
+                  },
+                  "ShuffleValue": 643649,
+                  "PersistentBuff": 64,
+                  "LatentSetup": 118,
+                  "RetainedAttack": 1272,
+                  "ReachableHand": 30,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 0,
+                  "HistoryCount": 148,
+                  "Shuffles": 0,
+                  "Risk": false
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "total": 42888,
+      "crossWorkerRelativeToFirstObservation": 3628,
+      "sameWorkerRelativeToFirstObservation": 213,
+      "observedRepeatedInputPct": 8.955885096064167,
+      "observedCrossWorkerPct": 8.459242678604738,
+      "limitBypasses": 0,
+      "qualitySubset": {
+        "boundary": "None",
+        "projectedBattleHpLost": 65,
+        "potionCount": 0,
+        "finalHp": 0,
+        "finalEnemyHp": 476,
+        "score": -1000006974043,
+        "combatEndedTurn": null,
+        "onlyDeathRoutes": true
+      },
+      "comparisonQuality": null,
+      "budget": {
+        "profile": "VeryHigh",
+        "beamWidth": 135,
+        "maxExpandedNodes": 25000,
+        "maxCardBranchesPerNode": 72,
+        "maxPileChoiceBranchesPerAction": 42,
+        "maxHandChoiceBranchesPerAction": 54,
+        "maxDegreeOfParallelism": 16,
+        "budgetMilliseconds": 60000,
+        "earlyTurnExplorationDepth": 0,
+        "earlyTurnExplorationBudgetMilliseconds": 0,
+        "potionPolicy": "Smart",
+        "searchMode": "Evaluate",
+        "usePortfolio": false,
+        "fixedSearchBudget": true,
+        "enableNoGcRegion": true,
+        "noGcRegionBudgetGigabytes": 16
+      },
+      "command": [
+        "dotnet",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/family-harness/OfflineSearchHarness.dll",
+        "--request",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/silent-large-deck.json",
+        "--out",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/family-silent-large-deck",
+        "--label",
+        "worker-family-silent-large-deck",
+        "--profile",
+        "VeryHigh",
+        "--dop",
+        "16",
+        "--search-mode",
+        "Evaluate",
+        "--nodes",
+        "25000",
+        "--budget-ms",
+        "60000",
+        "--beam",
+        "135",
+        "--card-branches",
+        "72",
+        "--pile-branches",
+        "42",
+        "--hand-branches",
+        "54",
+        "--enable-no-gc-region",
+        "--no-gc-region-budget-gigabytes",
+        "16"
+      ],
+      "result": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/family-silent-large-deck/result.json",
+        "sha256": "f08c71c0b1578adf8463b1169ada9adee7151899748fed78a39f5d88527ce968"
+      },
+      "observationReceipt": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/family-silent-large-deck/snapshot-worker-families.json",
+        "sha256": "81e9728a27ced11f6eafee143fced52400c6543b47887eed76344d1a104fb27b"
+      }
+    },
+    {
+      "scene": "dev-09-necrobinder-boss",
+      "observation": {
+        "observationOnly": true,
+        "maximumKeysPerFamily": 100000,
+        "scope": "Worker families follow actual CreateExpansionWorker ownership. Keys and selected feature equality are not a cache-safety proof. No snapshot/model graphs retained.",
+        "families": [
+          {
+            "Total": 160195,
+            "Workers": 16,
+            "retainedInputs": 100000,
+            "SameWorkerRepeats": 423,
+            "CrossWorkerRepeats": 7894,
+            "LimitBypasses": 51878,
+            "FeatureMismatches": 1,
+            "Mismatches": [
+              {
+                "Item2": 53,
+                "Item3": 0,
+                "first": {
+                  "ScoreBits": -4436860825103589376,
+                  "ProjectedHp": 0,
+                  "ShuffleKey": {
+                    "First": 5568812827089265882,
+                    "Second": 10063831607199854693
+                  },
+                  "ShuffleValue": 3142,
+                  "PersistentBuff": 6,
+                  "LatentSetup": 0,
+                  "RetainedAttack": 134,
+                  "ReachableHand": 21,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 23,
+                  "HistoryCount": 374,
+                  "Shuffles": 2,
+                  "Risk": false
+                },
+                "current": {
+                  "ScoreBits": -4436860825103589376,
+                  "ProjectedHp": 0,
+                  "ShuffleKey": {
+                    "First": 5568812827089265882,
+                    "Second": 10063831607199854693
+                  },
+                  "ShuffleValue": 3142,
+                  "PersistentBuff": 6,
+                  "LatentSetup": 0,
+                  "RetainedAttack": 134,
+                  "ReachableHand": 21,
+                  "FutureHeal": 2147483647,
+                  "GrowthCredit": 0,
+                  "RelicCredit": 0,
+                  "PotionCost": 23,
+                  "HistoryCount": 376,
+                  "Shuffles": 2,
+                  "Risk": false
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "total": 160195,
+      "crossWorkerRelativeToFirstObservation": 7894,
+      "sameWorkerRelativeToFirstObservation": 423,
+      "observedRepeatedInputPct": 5.191797496800774,
+      "observedCrossWorkerPct": 4.927744311620213,
+      "limitBypasses": 51878,
+      "qualitySubset": {
+        "boundary": "NodeLimit",
+        "projectedBattleHpLost": 0,
+        "potionCount": 2,
+        "finalHp": 66,
+        "finalEnemyHp": 0,
+        "score": 10001931935,
+        "combatEndedTurn": 8,
+        "onlyDeathRoutes": false
+      },
+      "comparisonQuality": null,
+      "budget": {
+        "profile": "VeryHigh",
+        "beamWidth": 135,
+        "maxExpandedNodes": 25000,
+        "maxCardBranchesPerNode": 72,
+        "maxPileChoiceBranchesPerAction": 42,
+        "maxHandChoiceBranchesPerAction": 54,
+        "maxDegreeOfParallelism": 16,
+        "budgetMilliseconds": 60000,
+        "earlyTurnExplorationDepth": 0,
+        "earlyTurnExplorationBudgetMilliseconds": 0,
+        "potionPolicy": "Smart",
+        "searchMode": "Evaluate",
+        "usePortfolio": false,
+        "fixedSearchBudget": true,
+        "enableNoGcRegion": true,
+        "noGcRegionBudgetGigabytes": 16
+      },
+      "command": [
+        "dotnet",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/family-harness/OfflineSearchHarness.dll",
+        "--request",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-09-necrobinder-boss.json",
+        "--out",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/family-dev-09-necrobinder-boss",
+        "--label",
+        "worker-family-dev-09-necrobinder-boss",
+        "--profile",
+        "VeryHigh",
+        "--dop",
+        "16",
+        "--search-mode",
+        "Evaluate",
+        "--nodes",
+        "25000",
+        "--budget-ms",
+        "60000",
+        "--beam",
+        "135",
+        "--card-branches",
+        "72",
+        "--pile-branches",
+        "42",
+        "--hand-branches",
+        "54",
+        "--enable-no-gc-region",
+        "--no-gc-region-budget-gigabytes",
+        "16"
+      ],
+      "result": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/family-dev-09-necrobinder-boss/result.json",
+        "sha256": "c57363813bdc212434f0ad061d32337ff0ec0dde674958e2ffb444408abee092"
+      },
+      "observationReceipt": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/family-dev-09-necrobinder-boss/snapshot-worker-families.json",
+        "sha256": "0f4f417576865930b91ed23d3b5232ece6c155f9e7a81f9362064656c4d8f956"
+      }
+    }
+  ],
+  "hostBuild": {
+    "command": [
+      "dotnet",
+      "build",
+      "tools/search/OfflineSearchHarness/OfflineSearchHarness.csproj",
+      "-c",
+      "Release",
+      "-p:CombatSolverDll=/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-pr213-sync-20261006/build/CombatSolver.dll",
+      "-o",
+      "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-common-cpu-20261006/family-harness"
+    ],
+    "exitCode": 0,
+    "seconds": 3.2830008279997855
+  },
+  "launchers": [
+    {
+      "scene": "silent-large-deck",
+      "exitCode": 0,
+      "seconds": 10.771591301076114,
+      "baselineDllSha256": "2aa06f3e5adfc9e82492d2a43c806f2b3aa1964e92b9c250da013ffa2d68e45e",
+      "diagnosticOnly": true
+    },
+    {
+      "scene": "dev-09-necrobinder-boss",
+      "exitCode": 0,
+      "seconds": 15.069087723037228,
+      "baselineDllSha256": "2aa06f3e5adfc9e82492d2a43c806f2b3aa1964e92b9c250da013ffa2d68e45e",
+      "diagnosticOnly": true
+    }
+  ],
+  "probeSource": {
+    "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/tools/search/OfflineSearchHarness/SnapshotOpportunityProbe.cs",
+    "sha256": "57193a177c375d8ba4ab3728920cc60716a1fb363b77f31b46e68a2f4d74548b"
+  },
+  "production": "Mod unchanged; reuse prior successful five-file baseline deployment",
+  "unverified": [
+    "No new runtime candidate",
+    "No native semantic tests in this round",
+    "No new timing/RSS acceptance or fixed regression",
+    "No complete Coordinator family census or cross-member memo proof",
+    "SoulNexus long tests and paused Queen route work not run",
+    "No version bump, release, PR, merge, push or visible Steam launch"
+  ]
+}
