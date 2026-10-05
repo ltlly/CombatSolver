@@ -1,5 +1,7 @@
 # CombatSolver 测试入口
 
+2026-10-06 [监听类型同步遍历](performance/listener-type-traversal-research-20261006.md)：原生`2107f524896d4794a4b899ac81c7d6b5`通过数组/列表/嵌套冻结段、顺序/短路、未知访问器及异常/List子类/协变/外部标记回退，64方法/1674模型、Fork/补丁刷新/live合同通过并清理实例。12次短搜、4次完整Coordinator质量/工作相应保持，完整请求仅1.0051倍；原型撤回，未追加最终九根或新部署。
+
 2026-10-06 [单次牌值集合复用](performance/intrinsic-variable-set-research-20261006.md)：原生`d21f3161db494846b6bc5b60a563bcaf`通过603类型逐位值、16Fork/修改/Clone、父/live/RNG与三个真实补丁的回退次数/根刷新；续接合同通过、实例清理。12次Evaluate无收益，原型及临时合同撤回，未执行整请求或最终固定回归。
 
 2026-10-06 [指纹内联研究](performance/fingerprint-inline-research-20261006.md)：12个编译方法IL一致，CARD-CONTINUATION-CONTRACT原生`b250abe60dc4464384b1f0c361af9060`通过完整状态/指纹/历史/RNG、隔离及选择结算；实例清理。12次Evaluate及4次亡灵完整Coordinator保持对应质量/工作，整请求1.0008倍没有稳定收益，原型撤回；未追加最终回归或新部署。
