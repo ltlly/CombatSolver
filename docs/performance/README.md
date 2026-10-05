@@ -1,5 +1,7 @@
 # 性能工作入口
 
+- [单次牌值集合复用](intrinsic-variable-set-research-20261006.md)：603类型/16Fork及三个补丁回退原生合同通过，12次短搜没有收益，原型撤回。
+
 - [指纹内联研究](fingerprint-inline-research-20261006.md)：编译后12方法IL与原生续接合同通过；12次短搜和4次亡灵完整请求未证明收益，原型撤回。
 
 - [指纹关键词复用研究](fingerprint-keyword-reuse-research-20261006.md)：603卡及16标志原生合同通过；12次短搜和4次完整请求保留，整请求无收益，原型撤回。
