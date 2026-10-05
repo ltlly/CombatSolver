@@ -14,5 +14,6 @@
 - [组合回复上界](component-healing-bound-20261003.md)：组件证书、Smart 后续搜索、原生合同与最终验收状态。
 - [PR #215 回复证明组合研究](pr215-recovery-proof-research-20261005.md)：复用共享表的有限回复、初始来源、代价见证与亡灵组合证据及失败范围。
 - [储君搜索成本研究](regent-search-cost-research-20261005.md)：独立 CPU/分配诊断、缓存交错失败、强制回合证明及同容量布局槽混合及容器拥有者标记初筛。
+- [剩余重场景的共性成本](heavy-scene-common-costs-20261005.md)：复用阶段账本和完整分配栈，区分多成员、选择密度与牌组规模，确定通用优化验证顺序；没有新增性能验收。
 - [TheHunt 与零额度成长证明研究](hunt-zero-growth-proof-research-20261005.md)：战后奖励来源认证、闭合药水层原生质量对照、原型日志崩溃修正及空表扫描质量失败。
 - [历史实验](../archive/performance/README.md)：已完成、撤回和旧基线报告；指标只适用于报告列出的源码和输入。
