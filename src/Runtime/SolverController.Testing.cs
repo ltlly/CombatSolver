@@ -5,6 +5,10 @@ namespace CombatSolver;
 
 internal static partial class SolverController
 {
+    // Unlike session counters, this only advances when a background search starts
+    // and survives the combat-end reset.
+    internal static int SearchGenerationForTesting => _nextSearchGeneration;
+
     // Unattended validation installs a frozen result at the normal deployment boundary.
     internal static void StartPredictedRouteForTesting(NGame host, CombatState state, SolverResult result, Action<CombatState> onCombatEnd)
     {

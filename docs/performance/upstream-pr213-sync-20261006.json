@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "status": "MergedValidatedDeployed",
+  "date": "2026-10-06",
+  "previousTaskHead": "3452ee27",
+  "branch": "perf/common-state-cost-20261005",
+  "upstream": "9a4489d840a3772aef451d5c6dc42dd79719f380",
+  "version": "0.50.0",
+  "mergeConflicts": [
+    "docs/DEVELOPMENT_NOTES.md; resolved by retaining both upstream behavior and local historical research"
+  ],
+  "candidateDllSha256": "2aa06f3e5adfc9e82492d2a43c806f2b3aa1964e92b9c250da013ffa2d68e45e",
+  "build": {
+    "command": [
+      "dotnet",
+      "build",
+      "CombatSolver.csproj",
+      "-c",
+      "Release",
+      "-p:CopyModOnBuild=false",
+      "-o",
+      ".local/tool-tasks/upstream-pr213-sync-20261006/build"
+    ],
+    "exitCode": 0,
+    "seconds": 13.998393357964233
+  },
+  "nativeRuns": [
+    {
+      "name": "fixed-prefix",
+      "resultPath": ".local/tool-tasks/upstream-pr213-sync-20261006/fixed-prefix/result.json",
+      "runId": "a70fcff495184d6898a51c0623837b97",
+      "status": "Passed",
+      "scenarioId": "FIXED-PREFIX-TURN-OUTCOMES",
+      "mainAssemblyHash": "2AA06F3E5ADFC9E82492D2A43C806F2B3AA1964E92B9C250DA013FFA2D68E45E",
+      "elapsedMilliseconds": 29025.8935,
+      "completedChecks": [
+        "FixedPrefixOutcomes:NodeOwnedBeforeProjection:RawFallbackSoldDelta:ExistingOutcomePreserved",
+        "FixedPrefixContinuations:IndependentPrefixOracle:FullStateText:Turn:ForecastOffset:Order",
+        "FixedPrefixOutcomes:ThreeTurns:ZeroAndPositiveLoss:PartialTail:Terminal:TruncatedSuffix:Empty:InvalidFlag:RootUnchanged",
+        "FixedPrefixOutcomes:SevenTables:CacheRoundtrip:InvalidCachePreserved:ImportAndContinuationRejected:MissingLossNotZero",
+        "FixedPrefixOutcomes:NativeThreeTurnContinuation:LiveEndTurnRiskMatches:ReuseAndDisplayTotals",
+        "FixedPrefixContinuations:N4:IndependentPrefixOracle:FullStateText:Turn:ForecastOffset:RootUnchanged",
+        "FixedPrefixContinuations:N8:IndependentPrefixOracle:FullStateText:Turn:ForecastOffset:RootUnchanged",
+        "FixedPrefixContinuations:N17:IndependentPrefixOracle:FullStateText:Turn:ForecastOffset:RootUnchanged",
+        "NativeOutcome:combatEnded=False:turn=4:hp=999:maxHp=999"
+      ],
+      "error": null
+    },
+    {
+      "name": "checkpoint-profile",
+      "resultPath": ".local/tool-tasks/upstream-pr213-sync-20261006/checkpoint-profile/result.json",
+      "runId": "f54db6fd731645f6bfe1d729e96b0cc1",
+      "status": "Passed",
+      "scenarioId": "CHECKPOINT-PROFILE-CONTRACT",
+      "mainAssemblyHash": "2AA06F3E5ADFC9E82492D2A43C806F2B3AA1964E92B9C250DA013FFA2D68E45E",
+      "elapsedMilliseconds": 26385.2477,
+      "completedChecks": [
+        "CheckpointPolicy:RecordedTrueAndFalseSwitches:FrozenPolicy:LegacyFallback",
+        "CheckpointProfile:CompleteRecord:FrozenPolicy:ClearRestoresOrdinaryProfile",
+        "NativeOutcome:combatEnded=False:turn=1:hp=80:maxHp=80"
+      ],
+      "error": null
+    }
+  ],
+  "nativeLaunchers": [
+    {
+      "name": "fixed-prefix",
+      "scenario": "FIXED-PREFIX-TURN-OUTCOMES",
+      "command": [
+        "bash",
+        "tools/testing/run-unattended-test.sh",
+        "--scenario-id",
+        "FIXED-PREFIX-TURN-OUTCOMES",
+        "--character-id",
+        "IRONCLAD",
+        "--encounter-id",
+        "FUZZY_WURM_CRAWLER_WEAK",
+        "--enemy-current-hp",
+        "1000",
+        "--combat-solver-build-dir",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-pr213-sync-20261006/build",
+        "--evidence-directory",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-pr213-sync-20261006/fixed-prefix",
+        "--headless-instance",
+        "pr213-sync-fixed-prefix",
+        "--timeout-seconds",
+        "120",
+        "--exit-on-complete",
+        "--cleanup-instance-on-exit"
+      ],
+      "exitCode": 0,
+      "seconds": 37.533120684092864
+    },
+    {
+      "name": "checkpoint-profile",
+      "scenario": "CHECKPOINT-PROFILE-CONTRACT",
+      "command": [
+        "bash",
+        "tools/testing/run-unattended-test.sh",
+        "--scenario-id",
+        "CHECKPOINT-PROFILE-CONTRACT",
+        "--character-id",
+        "IRONCLAD",
+        "--encounter-id",
+        "FUZZY_WURM_CRAWLER_WEAK",
+        "--enemy-current-hp",
+        "1000",
+        "--combat-solver-build-dir",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-pr213-sync-20261006/build",
+        "--evidence-directory",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-pr213-sync-20261006/checkpoint-profile",
+        "--headless-instance",
+        "pr213-sync-checkpoint-profile",
+        "--timeout-seconds",
+        "120",
+        "--exit-on-complete",
+        "--cleanup-instance-on-exit"
+      ],
+      "exitCode": 0,
+      "seconds": 35.32909761485644
+    }
+  ],
+  "staticChecks": [
+    {
+      "name": "power-valuation",
+      "command": [
+        "dotnet",
+        "run",
+        "--project",
+        "tools/testing/checks/PowerCardValuationChecks/PowerCardValuationChecks.csproj",
+        "-c",
+        "Release"
+      ],
+      "exitCode": 0,
+      "seconds": 2.6439171209931374
+    },
+    {
+      "name": "boundaries-bash",
+      "command": [
+        "bash",
+        "tools/inspection/verify-refactor-boundaries.sh"
+      ],
+      "exitCode": 0,
+      "seconds": 15.52861960302107
+    },
+    {
+      "name": "boundaries-powershell",
+      "command": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "tools/inspection/verify-refactor-boundaries.ps1"
+      ],
+      "exitCode": 0,
+      "seconds": 1.9475171430967748
+    }
+  ],
+  "coverageCheck": "COVERAGE_OK data=529 fixtures=479 groups=37 errors=0",
+  "deployment": {
+    "status": "Passed",
+    "upstream": "9a4489d840a3772aef451d5c6dc42dd79719f380",
+    "version": "0.50.0",
+    "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver",
+    "files": [
+      "CombatSolver.json",
+      "CombatSolver.dll",
+      "CombatSolver.MemoryCleaner.exe",
+      "LICENSE",
+      "THIRD_PARTY_NOTICES.md"
+    ],
+    "backup": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-pr213-sync-20261006/installed-before-sync",
+    "candidateDllSha256": "2aa06f3e5adfc9e82492d2a43c806f2b3aa1964e92b9c250da013ffa2d68e45e",
+    "memoryCleaner": "Reused unchanged helper from prior successful installation via backup",
+    "releaseOrVisibleGameLaunch": false
+  },
+  "scope": [
+    "Pulled upstream and merged PR #213 implementation; existing runtime optimizations retained",
+    "Research prototypes remain withdrawn; sparse hook research evidence refers to pre-merge source",
+    "Native contract requests used 120s launcher caps and cleanup-instance-on-exit; both isolated directories removed"
+  ],
+  "notVerified": [
+    "No new whole-request speed/RSS acceptance, final broad quality regression, Soul long test, or visible Steam session",
+    "Upstream Q002 paired results remain author evidence; they were not repeated here"
+  ],
+  "publication": {
+    "versionBumped": false,
+    "release": false,
+    "prCreated": false,
+    "pushed": false
+  }
+}

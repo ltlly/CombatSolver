@@ -20,6 +20,7 @@
              LinkBase="Projection" />
     <Compile Include="$(CombatSolverRepositoryRoot)src/Search/PowerCardValuation/Commitments/PowerCommitment.cs" LinkBase="Commitments" />
     <Compile Include="$(CombatSolverRepositoryRoot)src/Search/PowerCardValuation/Commitments/PowerCommitmentLifecycle.cs" LinkBase="Commitments" />
+    <Compile Include="$(CombatSolverRepositoryRoot)src/Search/PowerCardValuation/Commitments/PowerCommitmentRetention.cs" LinkBase="Commitments" />
     <Compile Include="$(CombatSolverRepositoryRoot)src/Search/PowerCardValuation/Commitments/PowerCommitmentSeatPolicy.cs" LinkBase="Commitments" />
     <Compile Include="$(CombatSolverRepositoryRoot)src/Search/PowerCardValuation/Commitments/PowerActivationInvestmentPolicy.cs" LinkBase="Commitments" />
     <Compile Include="$(CombatSolverRepositoryRoot)src/Search/PowerCardValuation/Cards/**/*.cs"

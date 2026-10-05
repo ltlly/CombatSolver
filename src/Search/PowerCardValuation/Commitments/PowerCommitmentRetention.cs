@@ -15,7 +15,8 @@ internal static class PowerCommitmentRetention
             .GroupBy(node => (
                 node.PowerCommitment!.Family,
                 node.PotionCount,
-                node.Turn))
+                node.Turn,
+                node.PowerCommitment.Cards), CapabilityComparer.Instance)
             .Select(group => group
                 .OrderByDescending(node => node.PowerCommitment!.RealizedEvidence)
                 .ThenByDescending(node => node.PowerCommitment!.Priority)
@@ -39,5 +40,29 @@ internal static class PowerCommitmentRetention
             .ThenBy(node => node.PowerCommitment!.Family)
             .Take(quota)
             .ToArray();
+    }
+
+    // Activation order is history, while the registered capability set is a retention
+    // feature. Compare sets without sorting or allocating a string for every pool node.
+    private sealed class CapabilityComparer : IEqualityComparer<(
+        PowerCommitmentFamily Family, int PotionCount, int Turn, IReadOnlyList<string> Cards)>
+    {
+        internal static readonly CapabilityComparer Instance = new();
+
+        public bool Equals(
+            (PowerCommitmentFamily Family, int PotionCount, int Turn, IReadOnlyList<string> Cards) left,
+            (PowerCommitmentFamily Family, int PotionCount, int Turn, IReadOnlyList<string> Cards) right)
+            => left.Family == right.Family && left.PotionCount == right.PotionCount
+                && left.Turn == right.Turn && left.Cards.Count == right.Cards.Count
+                && left.Cards.All(card => right.Cards.Contains(card, StringComparer.Ordinal));
+
+        public int GetHashCode((PowerCommitmentFamily Family, int PotionCount, int Turn,
+            IReadOnlyList<string> Cards) value)
+        {
+            int cards = 0;
+            foreach (string card in value.Cards)
+                cards ^= StringComparer.Ordinal.GetHashCode(card);
+            return HashCode.Combine(value.Family, value.PotionCount, value.Turn, value.Cards.Count, cards);
+        }
     }
 }

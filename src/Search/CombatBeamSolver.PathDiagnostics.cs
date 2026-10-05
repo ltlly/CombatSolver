@@ -132,7 +132,12 @@ internal sealed partial class CombatBeamSolver
             node.Snapshot.ShufflesCrossed,
             node.CumulativeEnemyHpLost,
             Array.AsReadOnly(actions),
-            CopyObservedChoices(rootChoices));
+            CopyObservedChoices(rootChoices))
+        {
+            PowerCommitment = node.PowerCommitment is { } commitment
+                ? commitment with { Cards = Array.AsReadOnly(commitment.Cards.ToArray()) }
+                : null,
+        };
     }
 
     private static SearchPathPolicyLabel ObservedPolicyLabel(SearchNode node) => new(

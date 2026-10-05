@@ -236,7 +236,7 @@ internal sealed partial class CombatBeamSolver
                 continue;
             retainedAttackValue += Math.Max(
                 1,
-                (int)Math.Round(CardChoiceSupport.CardValue(liveCard.Preview)));
+                (int)Math.Round(BranchCardValue(simulator, combat, liveCard)));
         }
         ThreatFocus focus = BuildThreatFocus(simulator, combat);
         IReadOnlyList<PowerModel> effectivePowers = combat.EffectivePowers();
@@ -381,7 +381,7 @@ internal sealed partial class CombatBeamSolver
                 latentSetupValue += LatentCardSetupValue(preview);
             }
         }
-        int replayPotentialValue = ReplayPotentialValue(liveCards);
+        int replayPotentialValue = ReplayPotentialValue(simulator, combat, liveCards);
         int retainedHandValue = 0;
         IReadOnlyList<PredictedCard> handCards = playerState.Hand.Cards;
         for (int cardIndex = 0; cardIndex < handCards.Count; cardIndex++)
@@ -720,7 +720,9 @@ internal sealed partial class CombatBeamSolver
                 continue;
             energyCost = Math.Max(0, energyCost);
             starCost = Math.Max(0, starCost);
-            int value = Math.Max(1, (int)Math.Ceiling(CardChoiceSupport.CardValue(card.Preview)));
+            double cardValue = BranchCardValue(simulator, combat, card)
+                * (1 + Math.Max(0, card.Preview.GetEnchantedReplayCount()));
+            int value = Math.Max(1, (int)Math.Ceiling(cardValue));
             playable[playableCount++] = (energyCost, starCost, value);
             if (energyCost == 0
                 && starCost == 0
@@ -928,7 +930,30 @@ internal sealed partial class CombatBeamSolver
         cards.UnstableShuffle(rng);
     }
 
-    private static int ReplayPotentialValue(IEnumerable<PredictedCard> cards)
+    // The static choice value omits CalculatedDamage. Use only registered branch-local
+    // calculations here: an upgrade must also change attack and replay setup values.
+    // This is intermediate guidance, not a damage prediction or a final-plan policy.
+    private static double BranchCardValue(
+        CombatPredictionSimulator simulator, SimulatedCombatState combat, PredictedCard card)
+    {
+        double value = CardChoiceSupport.CardValue(card.Preview);
+        if (card.Preview.Type != CardType.Attack
+            || !card.Preview.DynamicVars.TryGetValue("CalculatedDamage", out var variable)
+            || variable is not MegaCrit.Sts2.Core.Localization.DynamicVars.CalculatedVar calculated
+            || !CalculatedVarSpecRegistry.SupportedTypes.Contains(card.Preview.GetType()))
+            return value;
+        decimal damage = 0m;
+        foreach (Creature enemy in combat.Enemies)
+        {
+            if (simulator.State.IsHittable(enemy)
+                && CalculatedVarSpecRegistry.TryCalculate(calculated, simulator, card, enemy, out decimal candidate))
+                damage = Math.Max(damage, candidate);
+        }
+        return value + (double)damage - CardChoiceSupport.DynamicVarBaseValue(card.Preview.DynamicVars, "Damage");
+    }
+
+    private static int ReplayPotentialValue(
+        CombatPredictionSimulator simulator, SimulatedCombatState combat, IEnumerable<PredictedCard> cards)
     {
         int total = 0;
         foreach (PredictedCard card in cards)
@@ -940,7 +965,7 @@ internal sealed partial class CombatBeamSolver
                 continue;
             }
 
-            double perPlayValue = Math.Max(4d, CardChoiceSupport.CardValue(card.Preview));
+            double perPlayValue = Math.Max(4d, BranchCardValue(simulator, combat, card));
             total += (int)Math.Ceiling(perPlayValue * replayCount);
             if (total >= SolverWeights.ReplayPotentialBeamCap)
                 return SolverWeights.ReplayPotentialBeamCap;
@@ -1327,6 +1352,15 @@ internal sealed partial class CombatBeamSolver
         int hp = player.CurrentHp;
         int block = player.Block;
         SimulatedCombatState simulatedCombat = (SimulatedCombatState)simulator.State.CombatState;
+        // Sandpit expires after enemy turn start and forces death before the attack intent.
+        // Block and one-shot death saves cannot make standing pat survive that boundary.
+        foreach (PowerModel power in simulatedCombat.EffectivePowers())
+        {
+            if (power is SandpitPower { Amount: 1 } sandpit
+                && ReferenceEquals(sandpit.Target, _player.Creature)
+                && simulator.State.GetCreature(sandpit.Owner).IsAlive)
+                return new ThreatProjection(0, 0, 0);
+        }
         Creature? osty = simulatedCombat.GetOsty(_player);
         int ostyHp = osty == null ? 0 : simulator.State.GetCreature(osty).CurrentHp;
         ProjectedHpLossModifiers? projectedModifiers =
@@ -1394,6 +1428,13 @@ internal sealed partial class CombatBeamSolver
 
     internal int ProjectDiagnosticHits(SimulationSnapshot snapshot, Creature attacker, params int[] hits)
         => ProjectDiagnosticThreat(snapshot, attacker, hits).Hp;
+
+    internal (int Hp, int DeathSaveUseCount, int DeathSaveHpRestored) ProjectDiagnosticEnemyTurn(SimulationSnapshot snapshot)
+    {
+        ThreatProjection threat = ProjectHpAfterThreat((CombatPredictionSimulator)snapshot.Simulator,
+            snapshot.Simulator.State.GetCreature(_player.Creature));
+        return (threat.Hp, threat.DeathSaveUseCount, threat.DeathSaveHpRestored);
+    }
 
     internal (int Hp, int DeathSaveUseCount, int DeathSaveHpRestored) ProjectDiagnosticThreat(
         SimulationSnapshot snapshot,

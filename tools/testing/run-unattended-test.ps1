@@ -671,20 +671,7 @@ if ($StopInstance) {
 
 New-Item -ItemType Directory -Path $dataDir -Force | Out-Null
 New-Item -ItemType Directory -Path $headlessLocal -Force | Out-Null
-if (-not (Test-Path -LiteralPath (Join-Path $dataDir "default") -PathType Container)) {
-    foreach ($directory in @("default", "ModConfig", "mod_configs")) {
-        $source = Join-Path $interactiveDataDir $directory
-        if (Test-Path -LiteralPath $source -PathType Container) {
-            Copy-HeadlessProfileTree $source $dataDir
-        }
-    }
-    $sourceModConfig = Join-Path $interactiveDataDir "mods\config"
-    if (Test-Path -LiteralPath $sourceModConfig -PathType Container) {
-        $targetMods = Join-Path $dataDir "mods"
-        New-Item -ItemType Directory -Path $targetMods -Force | Out-Null
-        Copy-HeadlessProfileTree $sourceModConfig $targetMods
-    }
-}
+Initialize-HeadlessProfile $interactiveDataDir $dataDir
 $settingsPath = Join-Path $dataDir "default\1\settings.save"
 if (-not (Test-Path -LiteralPath $settingsPath -PathType Leaf)) {
     throw "Headless settings save not found after profile initialization: $settingsPath"

@@ -520,10 +520,11 @@ internal static partial class SolverController
                 $"搜索并行度必须在 1..{SolverWeights.MaximumSearchMaxDegreeOfParallelism} 之间，" +
                 $"实际为 {maxDegreeOfParallelism}。");
         }
+        SolverSearchProfile profile = UnattendedTestRunner.CheckpointProfileOverride ?? settings.Profile;
         SearchPolicySnapshot policy = new(
             UnattendedTestRunner.BeamWeightPerturbationOverride is { } beamWeightPerturbation
-                ? settings.Profile with { BeamWeightPerturbation = beamWeightPerturbation }
-                : settings.Profile,
+                ? profile with { BeamWeightPerturbation = beamWeightPerturbation }
+                : profile,
             settings.PotionPolicy,
             CapturePotionStrategy(state, settings.PotionPolicy),
             settings.EnableDetailedDiagnosticLogs,

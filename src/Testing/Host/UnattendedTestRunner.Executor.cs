@@ -39,6 +39,16 @@ internal sealed partial class UnattendedTestRunner
             bool expectedCardPlayed = request.ExpectedPlayedCardId == null;
             bool expectedPotionUsed = request.ExpectedUsedPotionId == null;
             bool expectedPlayerPowerObserved = request.ExpectedObservedPlayerPowerId == null;
+            if (request.ScenarioId == "CHECKPOINT-PROFILE-CONTRACT")
+            {
+                runner.AssertCheckpointProfileContract(combatState);
+                return Observation(combatEnded: false);
+            }
+            if (request.ScenarioId == "CHECKPOINT-RECORDED-PLAN-PATH")
+            {
+                await runner.PrepareRecordedPlanDeploymentAsync(combatState, deploy: false);
+                return Observation(combatEnded: false);
+            }
             if (request.ScenarioId == "CALCULATED-HISTORY-FREEZE")
             {
                 await runner.AssertCalculatedHistoryFreezeAsync(combatState, player);
@@ -1440,6 +1450,8 @@ internal sealed partial class UnattendedTestRunner
             if (SolverController.LastTurnSetupResultForTesting == null
                 && !request.PreserveNativeCombatStateForTest && !runner.HasNativeRecording)
                 SolverController.BeginCombat(combatState);
+            if (request.ScenarioId == "CHECKPOINT-RECORDED-PLAN-DEPLOYMENT")
+                await runner.PrepareRecordedPlanDeploymentAsync(combatState);
             if (request.TheftPolicyForTest is { } theftPolicy)
                 SolverController.SetTheftPolicyForTesting(combatState, theftPolicy);
             SolverController.SetStopFullAutoOnCombatEnd(false, persist: false);
@@ -1948,6 +1960,8 @@ internal sealed partial class UnattendedTestRunner
                 && !stoppedAfterWorseRecalculationPause
                 && !stoppedAfterLiveRiskPause
                 && !stoppedAfterExpectedUnexpectedReplan;
+            if (request.ScenarioId == "CHECKPOINT-RECORDED-PLAN-DEPLOYMENT")
+                runner.AssertRecordedPlanDeployment(combatState);
             return Observation(combatEnded);
 
             ExecutionOutcome Observation(bool combatEnded, bool initialSearchHeld = false)

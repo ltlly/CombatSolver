@@ -12,7 +12,7 @@ internal enum PowerCardPool
 
 /// <summary>
 /// 能力承诺的机制族。所有角色共用同一组族标签，具体到卡牌的归属由各卡池目录登记；
-/// 公共搜索层只按族与优先级做有界保路，不区分具体卡牌。
+/// 公共搜索层按族、登记的能力集合与优先级做有界保路，不按具体卡牌编写路线。
 /// </summary>
 [Flags]
 internal enum PowerCommitmentFamily

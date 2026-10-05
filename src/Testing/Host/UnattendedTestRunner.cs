@@ -62,6 +62,7 @@ internal sealed partial class UnattendedTestRunner
     public static int EarlyTurnExplorationBudgetMilliseconds => Host.EarlyTurnExplorationBudgetMilliseconds;
     public static int? SearchMaxDegreeOfParallelismOverride => Host.SearchMaxDegreeOfParallelismOverride;
     public static BeamWeightPerturbation? BeamWeightPerturbationOverride => Host.BeamWeightPerturbationOverride;
+    internal static SolverSearchProfile? CheckpointProfileOverride => Host.CheckpointProfileOverride;
     public static bool UseNoveltyPortfolioOverride => Host.UseNoveltyPortfolioOverride;
     public static bool UseBeamWidthPortfolioOverride => Host.UseBeamWidthPortfolioOverride;
     public static IReadOnlyList<int>? BeamWidthPortfolioWidthsOverride => Host.BeamWidthPortfolioWidthsOverride;

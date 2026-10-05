@@ -14,6 +14,10 @@
 
 历史记录见 [归档索引](archive/testing/README.md)，0.48.1 的验证、失败与未验证项见 [历史卷 12](archive/testing/volume-12.md)。
 
+PR #213 的贡献者分阶段验证见 [Q002 历史入口](issues/q002-route-quality.md#0494-重新验证2026-10-05)。当前 0.50.0 主线整合使用 O003、O004、O005 同根、同政策对照，结果与复跑预算见 [当前验收](issues/q002-route-quality.md#0500-主线整合2026-10-05)。
+
+2026-10-06 [性能分支上游同步](performance/upstream-pr213-sync-20261006.md)直接运行Linux固定前缀合同`a70fcff495184d6898a51c0623837b97`、录制profile合同`f54db6fd731645f6bfe1d729e96b0cc1`均Passed；两实例清理完成。能力估值、两平台职责及覆盖材料门禁通过，Release与本地部署完成；没有新增整请求性能/全根质量结论。
+
 0.49.4 的额外回合镜像顺序、同根成长胜利续用、整场自动部署与上传引导验证见 [历史卷 16](archive/testing/volume-16.md)。
 
 0.49.0 的行为验证沿用本页 PR #203、#204 合并验收与 [战斗状态修复验证](archive/testing/volume-13.md)。版本及发布文档调整采用 L0 检查和发布构建；原有未验证项保留。
@@ -183,6 +187,8 @@ L0：原生回复审计工具迁入tools/inspection后构建和真实DLL扫描�
 
 
 ## 性能研究分支
+
+2026-10-06 [稀疏回调位置研究](performance/sparse-hook-positions-research-20261006.md)六次原生请求、36次Evaluate、14次完整Coordinator；大牌组首版1.043倍但峰值+12.673%，逐回调及调度扩展未证明收益，三版撤回。结果仅对应PR #213之前的源码；完整14维与未获胜控制的范围分别保留，未追加最终回归。
 
 既有组件、药水、魂枢及未达标原型的合同与历史结果见[历史卷18](archive/testing/volume-18.md)。PR #207最新上游整合、逐次ABBA、23根品质回归及NoGC波动/超时限制见[当前验收](performance/pr207-upstream-0494-integration-20261005.md)。
 

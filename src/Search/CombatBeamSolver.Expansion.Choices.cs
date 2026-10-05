@@ -261,6 +261,12 @@ internal sealed partial class CombatBeamSolver
         }
         else
         {
+            // A live forced-death countdown makes later pile order a survival decision.
+            // Keep ordinary routing's existing semantic representatives outside that context.
+            choiceSpec = choiceSpec with
+            {
+                PreserveOrderedRoutingResidues = probeSnapshot.SandpitRemaining > 0,
+            };
             IReadOnlyList<PlanCardChoice> builtChoices = CardChoiceSupport.BuildChoices(
                 choiceSpec,
                 displayNames,

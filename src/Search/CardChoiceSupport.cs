@@ -19,7 +19,8 @@ internal sealed record CardChoiceSpec(
     double ReplacementValue,
     string ContextId = "",
     int? MaxBranches = null,
-    bool IsImplicitAllSelection = false);
+    bool IsImplicitAllSelection = false,
+    bool PreserveOrderedRoutingResidues = false);
 
 internal static partial class CardChoiceSupport
 {
@@ -256,6 +257,26 @@ internal static partial class CardChoiceSupport
         string[] orderedSemanticKeys = ordered
             .Select(ChoiceCardKey)
             .ToArray();
+        // Removing equal cards from separate runs changes the remaining ordered pile.
+        // Adjacent equal copies still produce the same routing result and can share a branch.
+        Dictionary<PredictedCard, int>? routingRuns = null;
+        if (spec.PreserveOrderedRoutingResidues && exactSingleCardRouting
+            && spec.Effect is PlanChoiceEffect.MoveToHand or PlanChoiceEffect.MoveToDrawTop
+                or PlanChoiceEffect.MoveToHandFreeThisTurn
+            && spec.SourcePile is PileType.Draw or PileType.Discard or PileType.Exhaust)
+        {
+            routingRuns = new(ReferenceEqualityComparer.Instance);
+            string? previousKey = null;
+            int run = -1;
+            foreach (PredictedCard card in spec.SourceCards)
+            {
+                string key = ChoiceCardKey(card);
+                if (key != previousKey) run++;
+                // Repeated references in diagnostic specs resolve to their first source position.
+                routingRuns.TryAdd(card, run);
+                previousKey = key;
+            }
+        }
         // The nearest equal semantic key answers the recursion's original [start, i)
         // duplicate test without rescanning that range at every combination depth.
         Span<int> previousEqualIndex = ordered.Count <= 128
@@ -267,6 +288,8 @@ internal static partial class CardChoiceSupport
             for (int prior = index - 1; prior >= 0; prior--)
             {
                 if (!string.Equals(orderedSemanticKeys[prior], orderedSemanticKeys[index], StringComparison.Ordinal))
+                    continue;
+                if (routingRuns != null && routingRuns[ordered[prior]] != routingRuns[ordered[index]])
                     continue;
                 previousEqualIndex[index] = prior;
                 hasRepeatedOptions = true;

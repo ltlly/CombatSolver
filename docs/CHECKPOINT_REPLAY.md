@@ -38,13 +38,17 @@ Linux：
 
 ## 旧包
 
+0.48.0 前录制的选牌/continuation 可能缺少派生 `cost-state` 文本，而详细 `replay-state` 已保存完整费用层。仅在游戏模块匹配、目标材料包含全部有序费用字段时，允许按旧格式比较选择的已记录字段；目标必须同时通过原始 native-state、全部 continuation 和逐牌有序能量/星能费用对账。缺失字段、错误费用或失效条件仍失败；新格式始终精确比较，不修改原 ZIP 或生产状态键。结果用 `legacyCostLayersVerified`、`legacyChoiceCostEvents` 明确迁移范围。临时星能费用的嵌套字段单独解析费用值及出牌/回合末清除标志，保留顺序。
+
 兼容旧 v1 索引、无索引 ZIP、已解压包和汇总 ZIP。保持 metadata、replay-state、native-state、run-state 原有目录，分别校验，不再同名覆盖。旧开战包从原生跑局存档加载，在首次抽牌前恢复检查点，到原始导出生命周期再对账。
 
 0.33.8 起外层问题包采用 [报告协议 v2](BUG_REPORT_PROTOCOL.md)：根目录 report.json、diagnostics/、replay/。索引入口为 replay/checkpoint.json，旧包仍从 combat-solver/checkpoint.json 读取。检查点索引自身仍为 schemaVersion 2；路径变化不改变原生事件或恢复语义。批量下载含 index.json、反馈汇总.csv 和 reports/<报告ID>.zip；CheckpointTool 同时接受新旧汇总包与解压目录。
 
 旧包没有完整输入记录时 `ReplayRecorded` 返回 `missing_native_event_recording`，仍可尝试 RestoreOnly、SearchOnly、DeploySolver。缺失的历史或复杂内部状态不能凭计数补造；导入不一致时保留首个差异。旧包兼容不代表所有历史包都已逐包验证。
 
-旧包政策从 settings 和 searchProfiles 恢复。`missingPolicyFields` 列明缺项，搜索/部署需用 `-ReplayPolicyOverridePath <JSON>` / `--policy <JSON>` 明确补齐。允许字段：`potionPolicy`、`potionDirectives`、`actTransitionBossHpStrategy`、`finalBossHpStrategy`、`acceptableBattleHpLoss`、`searchMaxDegreeOfParallelism`、`shortProfile`、`deepProfile`、`forceShortOnly`。覆盖文件保留在结果目录；原值、覆盖值和实际执行值分别记录。
+旧包政策从 settings 和 searchProfiles 恢复。`missingPolicyFields` 列明缺项，搜索/部署需用 `-ReplayPolicyOverridePath <JSON>` / `--policy <JSON>` 明确补齐。当前覆盖字段：`potionPolicy`、`potionDirectives`、`growthBudgets`、`relicStrategyEnabled`、`relicCounterRules`、`brightestFlameMaxHpLossLimit`、`actTransitionBossHpStrategy`、`finalBossHpStrategy`、`acceptableBattleHpLoss`、`stopAtAcceptableBattleHpLoss`、`searchMaxDegreeOfParallelism`、`profile`、`fixedBudget`、`act3BossStrategy`、`useNoveltyPortfolio`、`useBeamWidthPortfolio`、`useEarlyTurnExploration`、`predictPotionReward`。旧政策中的 `shortProfile`、`deepProfile`、`forceShortOnly` 由兼容读取器归一化；不要将它们当作当前覆盖文件字段。覆盖文件保留在结果目录；原值、覆盖值和实际执行值分别记录。
+
+`profile` 按完整不可变记录注入冻结搜索政策，包括排序与组合字段，不仅恢复 Beam、节点和时间。显式无人测试 CLI 的能量权重扰动仍优先于 profile 内的同项设置。profile 由当前请求持有，结束、失败或下一请求前清除；普通游戏政策不受影响。搜索组合、早期探索和药水奖励预测的已记录开关同时恢复，显式 false 不被本机默认值覆盖；未记录这些字段的旧包保留原有本机设置回退，不能据此宣称已补齐缺失政策。覆盖文件可显式补齐或选择诊断政策。检查实验是否生效时读取 `executedPolicy`，不能仅以 `policyOverrides` 中存在参数为依据。
 
 ## 批量与证据
 
@@ -71,6 +75,12 @@ v2 索引保存稳定战斗/检查点 ID、永久递增编号、原生事件位�
 采集失败、超限和截断显式写入索引及 manifest；已有材料仍可导出，但标记 diagnosticOnly，预检拒绝称为完整可恢复包。联系人字段采用统一设置白名单排除。现有上传 128 MiB 限制保留。
 
 ## 验证
+
+完整预测路线可用无人测试场景 `CHECKPOINT-RECORDED-PLAN-DEPLOYMENT` 验证：传原 ZIP、含获胜预测的检查点 selector、`ReplayMode=DeploySolver`、显式政策文件和 EvidenceDirectory。测试按事件游标及起始回合选择最后一条完整获胜预测，保留所有动作、完整牌身份与选择，逐步对账增量/完整回放，再通过正常原生部署入口执行。断言真实胜负、战损、药水数量/身份及终局回合；后台搜索代次跨战斗结束保留，用于确认执行期间没有额外搜索。此模式证明保存预测的可执行性，不能称为纯玩家录制通关或搜索自主发现。
+
+同一输入使用 `CHECKPOINT-RECORDED-PLAN-PATH`、`ReplayMode=SearchOnly`，将冻结路线作为只读观察目标运行正常协调器；不把参照动作注入候选或评分。`RecordedPrediction-path-trace.json` 保存准确动作和完整状态的生成、转置、保留与展开事件，观察器丢事件时显式失败。路径诊断耗时不能作正常性能证据。两种模式都要求原生录制和对应检查点的完整获胜预测，旧身份不匹配时失败，不删去费用层或改写录制内容。Power Potion 等已录制前缀与未来预测用药分别计算，不能漏掉前缀消耗。
+
+Q002 专属固定路线/成员诊断已在任务收尾移除；失败证据与[历史用法](archive/testing/q002-pre-0492-validation-20261004.md#一次性诊断入口的历史用法)保留，当前使用上述通用保存预测及正常搜索/部署入口。
 
 包协议与顺序文件：`dotnet run --project tools/replay/CheckpointTool/CheckpointTool.csproj -c Release -- self-test`。边界门禁使用 `verify-refactor-boundaries.ps1` / `.sh`。
 

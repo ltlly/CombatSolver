@@ -432,6 +432,35 @@ Require(PowerCommitmentSeatPolicy.SeatQuota(24, aggressive: false)
         < PowerCommitmentSeatPolicy.SeatQuota(24, aggressive: true),
     "能力偏好成员没有获得更高的承诺席位。");
 
+// Equal family masks do not imply equal capabilities; activation order does.
+SearchNode RetentionNode(string[] cards, int realized = 0) => new()
+{
+    PowerCommitment = new(PowerCommitmentFamily.ShivEngine, PowerRoutePriority.Core,
+        cards, 1, 1, 0, 0, 1, 1, 10, 0, realized, cards.Length),
+};
+SearchNode oneCapability = RetentionNode(["TEST_A"]);
+SearchNode twoCapabilities = RetentionNode(["TEST_A", "TEST_B"]);
+SearchNode reordered = RetentionNode(["TEST_B", "TEST_A"], realized: 1);
+SearchNode otherCapabilities = RetentionNode(["TEST_A", "TEST_C"]);
+SearchNode otherPotion = oneCapability with { PotionCount = 1 };
+SearchNode otherTurn = oneCapability with { Turn = 2 };
+SearchNode[] retentionPool = [oneCapability, twoCapabilities, reordered,
+    otherCapabilities, otherPotion, otherTurn,
+    RetentionNode(["TERMINAL"]) with { IsTerminal = true },
+    RetentionNode(["DEAD"]) with { Snapshot = new() { PlayerDead = true } }];
+SearchNode[] originalRetentionPool = retentionPool.ToArray();
+var representatives = PowerCommitmentRetention.RankRepresentatives(retentionPool, quota: 20);
+Require(representatives.Count == 5 && representatives.Contains(reordered)
+    && !representatives.Contains(twoCapabilities) && representatives.Contains(oneCapability)
+    && representatives.Contains(otherCapabilities) && representatives.Contains(otherPotion)
+    && representatives.Contains(otherTurn),
+    "能力集合被粗家族合并、激活顺序重复占席，或药水/回合代表被混合。");
+Require(PowerCommitmentRetention.RankRepresentatives(retentionPool, quota: 2).Count == 2
+    && PowerCommitmentRetention.RankRepresentatives(retentionPool, quota: 0).Count == 0
+    && retentionPool.SequenceEqual(originalRetentionPool)
+    && twoCapabilities.PowerCommitment!.Cards.SequenceEqual(["TEST_A", "TEST_B"]),
+    "能力代表选择超出配额或修改了候选池/激活历史。");
+
 // 11. 逐卡估值合同：升级差异、零触发稀缺、机制取值。
 PowerCardValuationResult inflameNormal = Evaluate(new Inflame(), Context());
 PowerCardValuationResult inflameUpgraded = Evaluate(new Inflame { IsUpgraded = true }, Context());

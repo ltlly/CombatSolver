@@ -848,6 +848,24 @@ internal sealed partial class CombatBeamSolver
         return ApplyFixedPrefix(seed, prefix);
     }
 
+    internal bool CanContinueAtPrefix(IReadOnlyList<PlanAction> prefix)
+    {
+        SearchNode? applied = TryCreateOpeningFollowUpSeed(prefix, SearchRouteTraits.None);
+        if (applied == null)
+            return false;
+        try
+        {
+            return applied.ActionCount == prefix.Count
+                && !applied.Snapshot.PlayerDead && !applied.Snapshot.AllEnemiesDead
+                && !applied.Snapshot.HasRisk
+                && applied.Snapshot.BoundaryReason == SearchBoundaryReason.None;
+        }
+        finally
+        {
+            applied.Snapshot.ReleaseSimulator();
+        }
+    }
+
     internal bool CanReplayOpeningPrefix(IReadOnlyList<PlanAction> prefix)
     {
         if (prefix.Any(action => action.EndsPlayerTurn))

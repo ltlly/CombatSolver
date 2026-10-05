@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
@@ -9,7 +10,8 @@ using CombatSolver.Engine.InCombat.Simulation;
 
 namespace CombatSolver;
 
-// Frozen pre-optimization enumeration; unchanged scoring/identity helpers are shared.
+// Pre-optimization enumeration, with an independent ordered-routing residue oracle.
+// Unchanged scoring/identity helpers are shared.
 internal static partial class CardChoiceSupport
 {
     internal static IReadOnlyList<PlanCardChoice> BuildChoicesBaselineForTesting(
@@ -55,6 +57,19 @@ internal static partial class CardChoiceSupport
         string[] orderedSemanticKeys = ordered
             .Select(ChoiceCardKey)
             .ToArray();
+        if (spec.PreserveOrderedRoutingResidues && exactSingleCardRouting
+            && spec.Effect is PlanChoiceEffect.MoveToHand or PlanChoiceEffect.MoveToDrawTop
+                or PlanChoiceEffect.MoveToHandFreeThisTurn
+            && spec.SourcePile is PileType.Draw or PileType.Discard or PileType.Exhaust)
+        {
+            orderedSemanticKeys = ordered.Select(selected =>
+            {
+                int removed = spec.SourceCards.ToList().FindIndex(card => ReferenceEquals(card, selected));
+                if (removed < 0) throw new InvalidOperationException("Routing option is absent from its source.");
+                return ChoiceCardKey(selected) + JsonSerializer.Serialize(spec.SourceCards
+                    .Where((_, index) => index != removed).Select(ChoiceCardKey));
+            }).ToArray();
+        }
         List<IReadOnlyList<PredictedCard>> selections = [];
         List<IReadOnlyList<PredictedCard>> cardinalityRepresentatives = [];
         for (int take = minTake; take <= maxTake; take++)

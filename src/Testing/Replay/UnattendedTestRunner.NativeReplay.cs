@@ -96,7 +96,7 @@ internal sealed partial class UnattendedTestRunner
 
         Player player = state.Players.Single();
         EncounterModel encounter = ResolveUnique(ModelDb.All.OfType<EncounterModel>(), _request.EncounterId, "遭遇");
-        using NativeReplayDriver driver = new(this, events, target, player);
+        using NativeReplayDriver driver = new(this, events, target, player, HasLegacyCostReplayEvidence());
         bool openingVerified = false;
         bool endingVerified = false;
         CombatReplayRecording.TestCombatStartObserver = combat => driver.ObserveBoundary(() =>
@@ -153,6 +153,13 @@ internal sealed partial class UnattendedTestRunner
                 allowLegacyBattleStart: target == 0 && player.PlayerCombatState?.TurnNumber == 1);
             _writer.ReplayVerification!["readyCheckpointVerified"] = true;
         }
+        if (driver.LegacyCostChoices.Count > 0)
+        {
+            if (_writer.ReplayVerification!["nativeStateVerified"]?.GetValue<bool>() != true
+                || _writer.ReplayVerification["legacyCostLayersVerified"]?.GetValue<bool>() != true)
+                throw new InvalidDataException("legacy_choice_costs_require_verified_checkpoint");
+            _writer.ReplayVerification["legacyChoiceCostEvents"] = JsonSerializer.SerializeToNode(driver.LegacyCostChoices);
+        }
         if (!combatEnd && !combatStart && player.PlayerCombatState?.Phase.ToString() != "Play")
             throw new InvalidDataException("checkpoint_is_not_searchable");
         _writer.ReplayVerification!["replayedEvents"] = driver.Cursor;
@@ -185,14 +192,20 @@ internal sealed partial class UnattendedTestRunner
         // for legacy reports whose derived zero counter was not serialized yet.
         IReadOnlyDictionary<char, IReadOnlyList<string>>? legacyCardKeywords =
             LoadLegacyReplayCardKeywords(expected, replayStatePath);
+        IReadOnlyDictionary<char, IReadOnlyList<string>>? legacyCardCosts =
+            nativeVerified && HasLegacyCostReplayEvidence() && replayStatePath != null
+                ? LoadLegacyReplayCardCosts(state, replayStatePath) : null;
         if (ReplayContinuationMatches(
                 expected,
                 actual,
                 allowLegacyBattleStart || nativeVerified,
-                legacyCardKeywords))
+                legacyCardKeywords,
+                legacyCardCosts))
         {
             _writer.ReplayVerification["continuationVerified"] = true;
             _writer.ReplayVerification["nativeStateVerified"] = nativeVerified;
+            if (legacyCardCosts != null)
+                _writer.ReplayVerification["legacyCostLayersVerified"] = true;
             if (!nativeVerified && differentEncoding && !string.IsNullOrWhiteSpace(nativePath))
             {
                 _writer.ReplayVerification["nativeStateVerification"] = new JsonObject
@@ -232,14 +245,18 @@ internal sealed partial class UnattendedTestRunner
         private Exception? _failure;
         private bool _disposed;
         private bool _openingTakeoverRequested;
+        private readonly bool _allowLegacyCosts;
+        public List<int> LegacyCostChoices { get; } = [];
         public int Cursor { get; private set; }
 
-        public NativeReplayDriver(UnattendedTestRunner runner, RecordedCombatEvent[] events, int target, Player player)
+        public NativeReplayDriver(UnattendedTestRunner runner, RecordedCombatEvent[] events, int target, Player player,
+            bool allowLegacyCosts = false)
         {
             _runner = runner;
             _events = events;
             _target = target;
             _player = player;
+            _allowLegacyCosts = allowLegacyCosts;
             CombatReplayRecording.TestObserver = Observe;
             _selector = CardSelectCmd.PushSelector(this, localOnly: true);
             _executor = RunManager.Instance.ActionExecutor;
@@ -258,8 +275,11 @@ internal sealed partial class UnattendedTestRunner
         {
             if (_failure != null)
                 return;
+            bool migrated = false;
+            bool choiceMatches = Cursor < _target && RecordedChoiceMatches(
+                _events[Cursor].ChoiceContext, actual.ChoiceContext, _allowLegacyCosts, out migrated);
             if (Cursor >= _target || !_events[Cursor].Payload.AsSpan().SequenceEqual(actual.Payload)
-                || _events[Cursor].ChoiceContext != null && JsonSerializer.Serialize(_events[Cursor].ChoiceContext) != JsonSerializer.Serialize(actual.ChoiceContext))
+                || !choiceMatches)
             {
                 _runner._writer.ReplayVerification!["status"] = "recorded_action_mismatch";
                 _runner._writer.ReplayVerification["firstDifference"] = new JsonObject
@@ -276,6 +296,7 @@ internal sealed partial class UnattendedTestRunner
                 _failure = new InvalidDataException($"recorded_action_mismatch:{Cursor}");
                 return;
             }
+            if (migrated) LegacyCostChoices.Add(Cursor);
             Cursor++;
         }
 

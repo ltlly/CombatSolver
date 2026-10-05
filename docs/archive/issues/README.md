@@ -22,3 +22,14 @@
 - [shadow-damage-dealer-liveness-20260910](shadow-damage-dealer-liveness-20260910.md)
 - [test-subject-reports-20260909](test-subject-reports-20260909.md)
 - [unexpected-replans-20260909](unexpected-replans-20260909.md)
+- [Q002 O005 固定预算阶段验收](q002-o005-validation-20261004.md)
+
+- [Q002 0.48.0 基线阶段](q002-pre-0492-validation-20261004.md)
+
+- [Q002 0.49.2 阶段验收](q002-0492-validation-20261004.md)
+
+- [Q002 0.49.2 收尾验证](q002-0492-completion-20261005.md)
+
+- [Q002 0.49.4 首次集成与撤回](q002-0494-integration-20261005.md)
+
+- [Q002 0.49.4 原生验证与最终性能证据](q002-0494-validation-20261005.md)

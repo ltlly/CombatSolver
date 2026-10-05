@@ -1,3 +1,25 @@
+// Value-only nodes let the real representative selector run without game models.
+namespace CombatSolver
+{
+    internal sealed record SearchNode
+    {
+        public PowerCommitment? PowerCommitment { get; init; }
+        public SimulationSnapshot Snapshot { get; init; } = new();
+        public bool IsTerminal { get; init; }
+        public int PotionCount { get; init; }
+        public int Turn { get; init; } = 1;
+        public int ActionCount { get; init; }
+        public double Score { get; init; }
+    }
+
+    internal sealed record SimulationSnapshot
+    {
+        public bool PlayerDead { get; init; }
+        public int ProjectedPlayerHp { get; init; } = 50;
+        public int OffensiveProgressValue { get; init; }
+    }
+}
+
 namespace MegaCrit.Sts2.Core.Models
 {
     public abstract class CardModel

@@ -146,6 +146,38 @@ internal sealed partial class UnattendedTestRunner
             throw new InvalidOperationException($"Native counter-bound pruning did not execute or admitted a paid objective: "
                 + $"pruned={candidate.PrimaryIncumbentBranchesPruned}.");
 
+        if (allNative)
+        {
+            // The enemy dies before nine attacks, so no completed witness can
+            // satisfy this mask. Disable shared buckets to exercise the scalar
+            // zero-allowance path rather than a same-mask shared incumbent.
+            SearchPolicySnapshot counterPolicy = policy with
+            {
+                RelicTargets = [new(RelicCounterId.PenNib, 9, 9, 0, 10)],
+                DisableSharedPrimaryIncumbentsForTesting = true,
+            };
+            SolverResult counterControl = await Task.Run(() => CombatSearchCoordinator.Solve(root,
+                displayNames, damage, counterPolicy with { DisableRefinementIncumbentForTesting = true },
+                deadline.Token, null));
+            SolverResult counterCandidate = await Task.Run(() => CombatSearchCoordinator.Solve(root,
+                displayNames, damage, counterPolicy, deadline.Token, null));
+            if (!counterControl.Snapshot.AllEnemiesDead || !counterCandidate.Snapshot.AllEnemiesDead
+                || counterCandidate.Snapshot.PlayerDead || counterCandidate.Snapshot.HasRisk
+                || counterControl.Snapshot.RelicCounters.Satisfied
+                || counterCandidate.Snapshot.RelicCounters.Satisfied
+                || counterCandidate.ProjectedBattleHpLost != counterControl.ProjectedBattleHpLost
+                || counterCandidate.ExplicitPotionCount != 0
+                || counterCandidate.PrimaryIncumbentBranchesPruned <= 0
+                || CombatBeamSolver.ShouldPruneByPrimaryIncumbent(counterCandidate.ProjectedBattleHpLost,
+                    99, new(counterCandidate.ProjectedBattleHpLost, 1), allowTurnTieBound: false)
+                || ContinuationStamp.CaptureLive(live).StateText != before)
+                throw new InvalidOperationException("Zero-allowance scalar pruning did not preserve an unfulfilled counter witness: "
+                    + $"loss={counterControl.ProjectedBattleHpLost}/{counterCandidate.ProjectedBattleHpLost}, "
+                    + $"pruned={counterCandidate.PrimaryIncumbentBranchesPruned}.");
+            _completedChecks.Add($"ZeroAllowanceCounter:UnfulfilledMask:ScalarOnly:StrictIncremental:"
+                + $"loss={counterCandidate.ProjectedBattleHpLost}:pruned={counterCandidate.PrimaryIncumbentBranchesPruned}");
+        }
+
         await InjectCardAsync(live, player, new() { CardId = "STRIKE_IRONCLAD", Pile = "Exhaust" });
         CombatRootSnapshot unknown = CombatRootSnapshot.Capture(live);
         if (unknown.CanCertifyRemainingHealing || !unknown.UsesKnownNativeHealingPolicy

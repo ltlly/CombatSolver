@@ -154,6 +154,7 @@ internal sealed record SearchPathObservation(
     IReadOnlyList<PlanCardChoice> RootTurnSetupChoices)
 {
     public SearchPathRetentionDetails? Retention { get; init; }
+    public PowerCommitment? PowerCommitment { get; init; }
 
     public int PotionCount => PolicyLabel.PotionCount;
     public int PotionStrategicCost => PolicyLabel.PotionStrategicCost;

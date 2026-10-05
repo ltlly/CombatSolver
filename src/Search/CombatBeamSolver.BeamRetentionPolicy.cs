@@ -1779,30 +1779,27 @@ internal sealed partial class CombatBeamSolver
                 limit,
                 _profile.AggressivePowerCommitment);
             _run.PowerValuationCandidates += pool.Count(node => node.PowerCommitment != null);
-            int retained = selected.Count(node => node.PowerCommitment != null);
-            _run.PowerCommitmentSeatsPeak = Math.Max(
-                _run.PowerCommitmentSeatsPeak,
-                Math.Min(retained, quota));
-            if (retained >= quota)
-                return;
-
-            foreach (SearchNode candidate in PowerCommitmentRetention.RankRepresentatives(pool, quota))
+            IReadOnlyList<SearchNode> representatives = PowerCommitmentRetention.RankRepresentatives(pool, quota);
+            int retained = 0;
+            foreach (SearchNode candidate in representatives)
             {
-                if (retained >= quota || ContainsReference(selected, candidate))
+                if (ContainsReference(selected, candidate))
+                {
+                    AddRequired(required, candidate, limit);
+                    retained++;
                     continue;
+                }
                 int replaceIndex = selected.FindLastIndex(node =>
-                    node.PowerCommitment == null
-                    && !ContainsReference(required, node));
+                    !ContainsReference(required, node)
+                    && !ContainsReference(representatives, node));
                 if (replaceIndex < 0)
-                    return;
+                    continue;
                 selected[replaceIndex] = candidate;
                 AddRequired(required, candidate, limit);
                 retained++;
                 _run.PowerCommitmentsAdmitted++;
-                _run.PowerCommitmentSeatsPeak = Math.Max(
-                    _run.PowerCommitmentSeatsPeak,
-                    retained);
             }
+            _run.PowerCommitmentSeatsPeak = Math.Max(_run.PowerCommitmentSeatsPeak, retained);
         }
 
         private void AdmitPlanCommitmentRepresentatives(

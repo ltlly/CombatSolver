@@ -144,6 +144,45 @@ internal sealed partial class UnattendedTestRunner
         finally { snapshot.ReleaseSimulator(); }
     }
 
+    private static string AssertProjectedSandpitBoundary(CombatState combat, Player player)
+    {
+        CombatRootSnapshot root = CombatRootSnapshot.Capture(combat);
+        var driver = new CombatBeamSolver(root, SolverDisplayNames.Capture(combat), BattleDamageTracker.Observe(combat),
+            SolverController.CaptureSearchPolicy(SolverSettings.Capture(),combat,false,null));
+        using IDisposable isolation = SimulationNotificationIsolation.Enter();
+        foreach ((int amount,bool playerTarget,bool ownerAlive) in new[]
+                 {(1,true,true),(2,true,true),(0,true,true),(1,false,true),(1,true,false)})
+        {
+            SimulationSnapshot snapshot = driver.ReplayDiagnosticPrefix([]);
+            try
+            {
+                var simulator = (CombatPredictionSimulator)snapshot.Simulator;
+                var state = (SimulatedCombatState)simulator.State.CombatState;
+                Creature owner = combat.Enemies[0];
+                simulator.GainBlock(player.Creature,1000,ValueProp.Unpowered);
+                state.ApplyTargeted<SandpitPower>(owner,playerTarget?player.Creature:owner,amount,owner);
+                if(!ownerAlive) simulator.State.GetCreature(owner).CurrentHp=0;
+                string before = driver.CaptureDiagnosticContinuation(snapshot).StateText;
+                var threat = driver.ProjectDiagnosticEnemyTurn(snapshot);
+                bool expires = amount==1 && playerTarget && ownerAlive;
+                int expected = expires?0:simulator.State.GetCreature(player.Creature).CurrentHp;
+                if(threat.Hp!=expected || threat.DeathSaveUseCount!=0 || threat.DeathSaveHpRestored!=0
+                    || driver.CaptureDiagnosticContinuation(snapshot).StateText!=before)
+                    throw new InvalidOperationException("Sandpit threat changed state or ignored its exact target/deadline/owner.");
+                var fork = simulator.Fork();
+                var forkState = (SimulatedCombatState)fork.State.CombatState;
+                if(!TurnStartPowerSupport.TriggerAfterSideTurnStart(fork,forkState,CombatSide.Enemy,[owner]))
+                    throw new InvalidOperationException("Sandpit boundary unexpectedly requested a choice.");
+                if((fork.State.GetCreature(player.Creature).CurrentHp==0)!=expires
+                    || LizardTailMirrors.WasUsed(forkState.RelicsOf(player).OfType<LizardTail>().Single(),fork)
+                    || driver.CaptureDiagnosticContinuation(snapshot).StateText!=before)
+                    throw new InvalidOperationException("Sandpit forced death did not match projection or leaked through Fork.");
+            }
+            finally {snapshot.ReleaseSimulator();}
+        }
+        return "SandpitThreat:FiveBoundaries:ForcedDeathBypassesBlockAndTail:Targets:DeadOwner:Deadline:FullStateUnchanged:ForkIsolated";
+    }
+
     // Frozen eager-list and four-phase pipeline from bcc15da. The fixture uses native
     // models: default callbacks are identity operations, so enumerating the full source
     // supplies an independent reference for the production mask-filtered iteration.

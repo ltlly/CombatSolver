@@ -43,6 +43,46 @@ function Copy-HeadlessProfileTree([string]$Source, [string]$Destination) {
     Copy-Item -LiteralPath $Source -Destination $Destination -Recurse -Force
 }
 
+function Initialize-HeadlessProfile([string]$Source, [string]$Destination) {
+    $defaultDestination = Join-Path $Destination 'default'
+    if (Test-Path -LiteralPath $defaultDestination -PathType Container) { return }
+    Assert-HeadlessNoReparsePoint $Source
+    Assert-HeadlessNoReparsePoint $Destination
+    $defaultSource = Join-Path $Source 'default'
+    if (Test-Path -LiteralPath $defaultSource -PathType Container) {
+        Copy-HeadlessProfileTree $defaultSource $Destination
+    } else {
+        $steamSource = Join-Path $Source 'steam'
+        $accounts = @()
+        if (Test-Path -LiteralPath $steamSource -PathType Container) {
+            Assert-HeadlessNoReparsePoint $steamSource
+            $accounts = @(Get-ChildItem -LiteralPath $steamSource -Directory | Where-Object {
+                Test-Path -LiteralPath (Join-Path $_.FullName 'settings.save') -PathType Leaf
+            })
+        }
+        if ($accounts.Count -eq 0) {
+            throw "No interactive settings.save was found below $Source"
+        }
+        if ($accounts.Count -ne 1) {
+            throw "Multiple Steam profiles contain settings.save below $Source; provide a default/1 profile to select the test account."
+        }
+        New-Item -ItemType Directory -Path $defaultDestination -Force | Out-Null
+        Copy-HeadlessProfileTree $accounts[0].FullName (Join-Path $defaultDestination '1')
+    }
+    foreach ($directory in @('ModConfig', 'mod_configs')) {
+        $configSource = Join-Path $Source $directory
+        if (Test-Path -LiteralPath $configSource -PathType Container) {
+            Copy-HeadlessProfileTree $configSource $Destination
+        }
+    }
+    $modConfigSource = Join-Path $Source 'mods/config'
+    if (Test-Path -LiteralPath $modConfigSource -PathType Container) {
+        $targetMods = Join-Path $Destination 'mods'
+        New-Item -ItemType Directory -Path $targetMods -Force | Out-Null
+        Copy-HeadlessProfileTree $modConfigSource $targetMods
+    }
+}
+
 function New-HeadlessRuntimeContext(
     [string]$RepositoryRoot,
     [string]$SourceGameRoot,

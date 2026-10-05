@@ -246,6 +246,22 @@ internal static partial class CombatSearchCoordinator
             Math.Max(
                 MinimumPowerRouteMilliseconds,
                 profile.SoftTimeBudgetMilliseconds / totalMembers));
+        // Replace two ordinary compound-prefix pairs, retaining the same member
+        // count, total widths and per-member allowances. Forced potion layers have
+        // no eligible potion-free incumbent; their generated windows stay separate.
+        PlanAction[]? revealedPowerPrefix = profile.ReallocatedRefinementPortfolio
+            && potionPolicyOverride == null && policy.PotionStrategy.HasForcedDirectives
+            && variants.Length == 2 && prefixes.Count > 3
+            && prefixes.TakeLast(2).All(prefix => prefix.Length == 2
+                && !powerUpgradePrefixes.Contains(PowerPrefixKey(prefix))
+                && prefix.All(action => action.Kind == PlanActionKind.PlayCard
+                    && PowerCardValuationModels.Registry.ContainsCardId(action.CardId!)))
+                ? BuildRevealedPowerRepairPrefix(prefixBuilder, openingPowers, profile) : null;
+        int forcedRepairFirstMember = totalMembers - 4;
+        PlanAction[]? forcedTurnBoundary = null;
+        PlanAction[]? forcedLossRepairPrefix = null;
+        bool forcedWarmStarted = false;
+        int forcedWarmPrefixCount = 0;
         policy.Diagnostics.Info(
             $"[CombatSolver/Test] POWER_ROUTE_PORTFOLIO start singles={openingPowers.Length} " +
             $"prefixes={prefixes.Count} variants={variants.Length} members={totalMembers} " +
@@ -254,6 +270,7 @@ internal static partial class CombatSearchCoordinator
         SolverResult selected = baseline;
         FrontierContinuationScheduler continuationScheduler = new(context);
         int memberIndex = 0;
+        bool boundaryContinuationStarted = false;
         foreach (PlanAction[] prefix in prefixes)
         {
             bool upgradedPower = powerUpgradePrefixes.Contains(PowerPrefixKey(prefix));
@@ -281,13 +298,82 @@ internal static partial class CombatSearchCoordinator
                         "opening_power_route_member");
                 }
 
+                PlanAction[] continuationPrefix = prefix;
+                string? forcedRepairStage = null;
+                if (revealedPowerPrefix != null && memberIndex >= forcedRepairFirstMember)
+                {
+                    int repairMember = memberIndex - forcedRepairFirstMember;
+                    if (repairMember < 2)
+                    {
+                        continuationPrefix = revealedPowerPrefix;
+                        forcedRepairStage = "revealed_power";
+                    }
+                    else if (repairMember == 2 && forcedTurnBoundary != null)
+                    {
+                        PlanAction? power = prefixBuilder.BuildPowerActionsAfterPrefix(forcedTurnBoundary)
+                            .FirstOrDefault(action => PowerCardValuationModels.Registry.ContainsCardId(action.CardId!));
+                        continuationPrefix = power == null ? forcedTurnBoundary : [.. forcedTurnBoundary, power];
+                        variant = new(BeamWidthPortfolio.ScaledWidth(profile.BeamWidth,
+                            BeamWidthPortfolio.WideRefinementRatio));
+                        forcedWarmStarted = true;
+                        forcedWarmPrefixCount = continuationPrefix.Length;
+                        forcedRepairStage = "forced_turn_boundary";
+                    }
+                    else if (repairMember == 3 && forcedWarmStarted)
+                    {
+                        variant = new(profile.BeamWidth);
+                        if (forcedLossRepairPrefix != null)
+                        {
+                            continuationPrefix = forcedLossRepairPrefix;
+                            forcedRepairStage = "first_later_loss";
+                        }
+                    }
+                }
+                bool continueSelectedTurn = false;
+                bool deferredPowerMember = variants.Length == 4 && memberIndex == 1
+                    && configuredVariant.BeamWidth > profile.BeamWidth;
+                bool boundaryBandMember = variants.Length == 4 && memberIndex == 2
+                    && configuredVariant.SecondRankBand && boundaryContinuationStarted;
+                if (!upgradedPower
+                    && (configuredVariant.BaseScoreOnly && memberIndex == variants.Length - 1
+                        || deferredPowerMember || boundaryBandMember)
+                    && IsCompleteVictory(selected) && !selected.Snapshot.HasRisk
+                    && selected.ExplicitPotionCount == 0
+                    && !policy.PotionStrategy.HasForcedDirectives
+                    && (selected.ProjectedBattleHpLost >= SolverWeights.PotionMinimumHpSaved
+                        || boundaryContinuationStarted))
+                {
+                    PlanAction[] opening = selected.BestNode.Actions
+                        .TakeWhile(action => action.Turn == root.StartTurnNumber).ToArray();
+                    if (opening.LastOrDefault()?.Kind == PlanActionKind.EndTurn
+                        && opening.Any(action => action.Kind == PlanActionKind.PlayCard
+                            && PowerCardValuationModels.Registry.ContainsCardId(action.CardId)))
+                    {
+                        // Reuse this existing member's allowance for the selected turn boundary.
+                        // The scheduler resets heuristic history while replaying exact combat state.
+                        continuationPrefix = opening;
+                        if (deferredPowerMember || perRouteMilliseconds < MinimumPowerRouteMilliseconds)
+                        {
+                            PlanAction? nextTurnPower = prefixBuilder.BuildPowerActionsAfterPrefix(opening)
+                                .Where(action => PowerCardValuationModels.Registry.ContainsCardId(action.CardId!))
+                                .OrderByDescending(action => PowerCardValuationModels.Registry
+                                    .TryGetCommitmentDescriptor(action.CardId!, out PowerCommitmentDescriptor descriptor)
+                                        ? descriptor.Priority : 0)
+                                .FirstOrDefault();
+                            if (nextTurnPower != null)
+                                continuationPrefix = [.. opening, nextTurnPower];
+                        }
+                        continueSelectedTurn = true;
+                        boundaryContinuationStarted = true;
+                    }
+                }
                 SolverSearchProfile routeProfile = profile with
                 {
                     // 前缀已经保证能力真实在场；后续不再用激进承诺干扰普通剪枝。
                     AggressivePowerCommitment = false,
                     BeamWidth = variant.BeamWidth,
                     SecondRankBand = variant.SecondRankBand,
-                    BaseScoreOnly = variant.BaseScoreOnly,
+                    BaseScoreOnly = continueSelectedTurn ? false : variant.BaseScoreOnly,
                     MaxExpandedNodes = perRouteNodes,
                     SoftTimeBudgetMilliseconds = perRouteMilliseconds,
                 };
@@ -297,7 +383,7 @@ internal static partial class CombatSearchCoordinator
                 SolverResult candidate = continuationScheduler.Dispatch(
                     new ContinuationSearchRequest(context,
                         ContinuationPurpose.OpeningPowerRouteMember,
-                        prefix, routeProfile, potionPolicyOverride, null, null)
+                        continuationPrefix, routeProfile, potionPolicyOverride, null, null)
                     {
                         // A known potion-free victory remains available to the caller.
                         // Only seed the existing bound where it is eligible in this member's
@@ -319,6 +405,19 @@ internal static partial class CombatSearchCoordinator
 
                 PopulateSingleSessionTotals(candidate);
                 bool won = IsCompleteVictory(candidate);
+                if (revealedPowerPrefix != null)
+                {
+                    int repairMember = memberIndex - forcedRepairFirstMember;
+                    if (repairMember is 0 or 1)
+                    {
+                        PlanAction[]? boundary = FindForcedPowerTurnBoundary(root, policy, prefixBuilder, candidate);
+                        if (boundary != null && (forcedTurnBoundary == null
+                            || boundary[^1].Turn < forcedTurnBoundary[^1].Turn))
+                            forcedTurnBoundary = boundary;
+                    }
+                    else if (repairMember == 2 && forcedWarmStarted)
+                        forcedLossRepairPrefix = FindFirstLaterLossRepairPrefix(candidate, forcedWarmPrefixCount);
+                }
                 bool improved = IsBetterPotionPolicyResult(root, policy, candidate, selected);
                 if (improved)
                     selected = candidate;
@@ -327,7 +426,7 @@ internal static partial class CombatSearchCoordinator
                 long allocated = Math.Max(
                     0,
                     GC.GetTotalAllocatedBytes(precise: false) - allocatedBefore);
-                string prefixText = string.Join('+', prefix.Select(action =>
+                string prefixText = string.Join('+', continuationPrefix.Select(action =>
                     action.Kind == PlanActionKind.UsePotion
                         ? $"POTION:{action.PotionId}@{action.PotionSlot}"
                         : action.CardId));
@@ -335,7 +434,7 @@ internal static partial class CombatSearchCoordinator
                     prefixText,
                     variant.BeamWidth,
                     variant.SecondRankBand,
-                    variant.BaseScoreOnly,
+                    routeProfile.BaseScoreOnly,
                     perRouteNodes,
                     perRouteMilliseconds,
                     after.ExpandedNodes - before.ExpandedNodes,
@@ -348,9 +447,11 @@ internal static partial class CombatSearchCoordinator
                     allocated,
                     GC.GetTotalMemory(forceFullCollection: false)));
                 policy.Diagnostics.Info(
+                    $"[CombatSolver/Test] POWER_ROUTE_REPAIR member={memberIndex} stage={forcedRepairStage ?? "ordinary"}");
+                policy.Diagnostics.Info(
                     $"[CombatSolver/Test] POWER_ROUTE_PORTFOLIO_MEMBER index={memberIndex++} " +
                     $"prefix={prefixText} beam={variant.BeamWidth} " +
-                    $"second_rank_band={variant.SecondRankBand} base_score_only={variant.BaseScoreOnly} " +
+                    $"second_rank_band={variant.SecondRankBand} base_score_only={routeProfile.BaseScoreOnly} " +
                     $"won={won} boundary={candidate.BoundaryReason} " +
                     $"expanded={candidate.ExpandedNodes} " +
                     $"battle_hp_lost={(won ? candidate.ProjectedBattleHpLost.ToString() : "-")} " +

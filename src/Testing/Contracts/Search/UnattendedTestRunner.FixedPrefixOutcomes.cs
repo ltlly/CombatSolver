@@ -228,6 +228,21 @@ internal sealed partial class UnattendedTestRunner
               && immediateVictory.CombatEndedTurn == firstTurn,
             "opening terminal suffix preserves the victory action and combat end turn");
 
+        PlanAction[] deathPrefix = Enumerable.Range(firstTurn, 30)
+            .Select(turn => new PlanAction(PlanActionKind.EndTurn, turn)).ToArray();
+        SolverResult laterDeath = await Task.Run(() => Solve(deathPrefix));
+        Check(laterDeath.Snapshot.PlayerDead, "continuation fixture reaches a later death");
+        MethodInfo forcedBoundary = typeof(CombatSearchCoordinator).GetMethod("FindForcedPowerTurnBoundary",
+            BindingFlags.Static | BindingFlags.NonPublic)!;
+        PlanAction[]? safeBoundary = await Task.Run(() => (PlanAction[]?)forcedBoundary.Invoke(null,
+            [root, policy, prefixProbe, laterDeath]));
+        Check(safeBoundary is { Length: 2 } && safeBoundary[^1].Turn == firstTurn + 1,
+            "safe turn boundary remains available before a later death");
+        Check(!prefixProbe.CanContinueAtPrefix(deathPrefix), "terminal death rejects continuation");
+        Check(!prefixProbe.CanContinueAtPrefix([immediateStrike]), "terminal victory rejects continuation");
+        Check(ContinuationStamp.CaptureLive(combat).StateText == liveBefore,
+            "continuation boundary probes preserve live state");
+
         CombatBeamSolver inspection = new(root, names, damage, policy, searchProfile: policy.Profile);
         SimulationSnapshot seedSnapshot = InvokeForcedTerminalReplay(inspection, [], null, 0, null);
         SearchNode seed = new(null, 0, 0, 0, firstTurn, SearchRouteTraits.None, 0,

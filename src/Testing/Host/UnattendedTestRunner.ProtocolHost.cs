@@ -54,6 +54,8 @@ internal sealed partial class UnattendedTestRunner
         public bool MeasureSearchPhases { get; private set; }
         public int? SearchMaxDegreeOfParallelismOverride { get; private set; }
         public BeamWeightPerturbation? BeamWeightPerturbationOverride { get; private set; }
+        public SolverSearchProfile? CheckpointProfileOverride { get; private set; }
+        public void ApplyRecordedSearchProfile(SolverSearchProfile? profile) => CheckpointProfileOverride = profile;
         public bool UseNoveltyPortfolioOverride { get; private set; }
         public bool UseBeamWidthPortfolioOverride { get; private set; }
         public IReadOnlyList<int>? BeamWidthPortfolioWidthsOverride { get; private set; }
@@ -458,6 +460,7 @@ internal sealed partial class UnattendedTestRunner
             MeasureSearchPhases = false;
             SearchMaxDegreeOfParallelismOverride = null;
             BeamWeightPerturbationOverride = null;
+            CheckpointProfileOverride = null;
             UseNoveltyPortfolioOverride = false;
             UseBeamWidthPortfolioOverride = false;
             BeamWidthPortfolioWidthsOverride = null;
