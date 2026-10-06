@@ -1,6 +1,6 @@
 # GC 与并发决策检查
 
-`portable-runtime` 注入 .NET 9 Mono 按类型查询 GC 信息时的 `PlatformNotSupportedException`，直接执行生产回收路径。5 项合同覆盖检测后 API 不再调用、默认 GC 检查点及不可分割提交续行、取消后完整回收和准入释放、自动及手动阻塞回收、暂停观测不可用以及其他异常继续传播；共享 20 秒截止时间。实际回收使用本机 CLR，Android 原机执行仍须单独验证。
+`portable-runtime` 注入 .NET 9 Mono 按类型查询 GC 信息时的 `PlatformNotSupportedException`，直接执行生产回收路径。6 项合同覆盖检测后 API 不再调用、默认 GC 检查点及不可分割提交续行、取消后完整回收和准入释放、自动及手动阻塞回收、暂停观测不可用以及其他异常继续传播；共享 20 秒截止时间。新增夹具在本机真实建立1GB No-GC区域并穿过重建，证明No-GC可用不能作为详细GC信息可用的依据。实际回收使用本机 CLR，Android 原机执行仍须单独验证；不要与性能验收同时运行。
 
 ```bash
 dotnet run --project tools/testing/checks/CombatSolver.GcPolicyChecks/CombatSolver.GcPolicyChecks.csproj -c Release -- portable-runtime
