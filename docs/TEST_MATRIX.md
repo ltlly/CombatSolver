@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-07 [证明与阶段资格分离](performance/pruning-certificate-schedule-separation-20261007.md)：两原生/四张实际卡、16并行Fork全状态/RNG/父/live及已有再生/未知拒绝通过，11根戳相同、扩展仍6/11；未新增性能验收，原型撤回，失败/门禁限制保留、实例清理。[纯值复用](performance/request-stand-pat-memo-research-20261007.md)及未完成目标保持。
+2026-10-07 [零额度成长战损证明](performance/zero-credit-growth-hp-pruning-research-20261007.md)：两原生/六卡、16Fork状态/RNG/隔离及再生/未知拒绝通过，认证10/11、根戳一致；24次对照，广版内存失败，窄版三根质量/峰值通过、亡灵1.302倍。成长/成本与全回归待验，原型撤回、实例清理。[阶段资格分离](performance/pruning-certificate-schedule-separation-20261007.md)及原目标保持。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 
