@@ -13,11 +13,24 @@ MethodDefinition[] methods = types.SelectMany(type => type.Methods).ToArray();
 var references = new List<Reference>();
 var fieldWrites = new List<Reference>();
 var fieldAddresses = new List<Reference>();
+var potionSlotFieldReferences = new List<Reference>();
 var asyncMappings = new List<Reference>();
 var sinks = new HashSet<string>(StringComparer.Ordinal);
+var potionInventoryEntries = new HashSet<string>(StringComparer.Ordinal);
+TypeDefinition? playerType = types.FirstOrDefault(type =>
+    type.FullName == "MegaCrit.Sts2.Core.Entities.Players.Player");
+EventDefinition[] potionInventoryEvents = playerType?.Events.Where(@event =>
+    @event.Name.Contains("Potion", StringComparison.Ordinal)).ToArray() ?? [];
+EventDefinition[] potionUseEvents = types.FirstOrDefault(type =>
+    type.FullName == "MegaCrit.Sts2.Core.Models.PotionModel")?.Events.ToArray() ?? [];
+potionInventoryEvents = potionInventoryEvents.Concat(potionUseEvents).ToArray();
+var potionEventAccessors = potionInventoryEvents.SelectMany(@event =>
+    new[] { @event.AddMethod, @event.RemoveMethod }).Where(method => method is not null)
+    .Select(method => method!.FullName).ToHashSet(StringComparer.Ordinal);
 foreach (MethodDefinition method in methods)
 {
     if (IsHealthEntry(method)) sinks.Add(method.FullName);
+    if (IsPotionInventoryEntry(method)) potionInventoryEntries.Add(method.FullName);
     foreach (CustomAttribute attribute in method.CustomAttributes)
     {
         if (attribute.AttributeType.FullName == "System.Runtime.CompilerServices.AsyncStateMachineAttribute"
@@ -53,6 +66,13 @@ foreach (MethodDefinition method in methods)
             && address.Name is "_currentHp" or "_maxHp")
             fieldAddresses.Add(new(method.FullName, address.FullName, instruction.OpCode.Name,
                 instruction.Offset, Owner(method.DeclaringType)));
+        // Read access matters too: callers can mutate the List after ldfld, or
+        // expose its alias through PotionSlots. A write-only scan misses both.
+        if (instruction.Operand is FieldReference potionField
+            && potionField.DeclaringType.FullName == "MegaCrit.Sts2.Core.Entities.Players.Player"
+            && potionField.Name == "_potionSlots")
+            potionSlotFieldReferences.Add(new(method.FullName, potionField.FullName,
+                instruction.OpCode.Name, instruction.Offset, Owner(method.DeclaringType)));
     }
 }
 Reference[] directHealthReferences = references.Where(reference => sinks.Contains(reference.Target))
@@ -62,7 +82,7 @@ Reference[] directHealthReferences = references.Where(reference => sinks.Contain
 // cannot resolve virtual hook dispatch or prove a target, condition or HP amount.
 var audit = new
 {
-    schemaVersion = 2,
+    schemaVersion = 3,
     assembly = module.Assembly.Name.FullName,
     mvid = module.Mvid,
     dllSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dll))).ToLowerInvariant(),
@@ -74,6 +94,24 @@ var audit = new
     directHealthReferences,
     directCreatureFieldWrites = fieldWrites,
     creatureHealthFieldAddresses = fieldAddresses,
+    potionInventoryEntries = potionInventoryEntries.Order(StringComparer.Ordinal).ToArray(),
+    directPotionInventoryReferences = references.Where(reference =>
+        potionInventoryEntries.Contains(reference.Target)).ToArray(),
+    potionSlotFieldDefinitions = playerType?.Fields.Where(field => field.Name == "_potionSlots")
+        .Select(field => new { field = field.FullName, field.IsInitOnly, field.IsStatic }).ToArray() ?? [],
+    potionSlotFieldReferences,
+    potionInventoryEventDefinitions = potionInventoryEvents.Select(@event => new
+        { owner = @event.DeclaringType.FullName, @event.Name, type = @event.EventType.FullName, add = @event.AddMethod?.FullName,
+            remove = @event.RemoveMethod?.FullName }).ToArray(),
+    potionInventoryEventReferences = references.Where(reference =>
+        potionEventAccessors.Contains(reference.Target)).ToArray(),
+    potionCallbackDefinitions = methods.Where(method => method.IsVirtual
+        && method.DeclaringType.Namespace.StartsWith("MegaCrit.Sts2.Core.Models", StringComparison.Ordinal)
+        && method.Name is "BeforePotionUsed" or "AfterPotionUsed" or "AfterPotionDiscarded"
+            or "AfterPotionProcured" or "ShouldProcurePotion" or "ShouldForcePotionReward")
+        .Select(method => new { owner = Owner(method.DeclaringType), method = method.FullName,
+            method.HasBody, method.IsAbstract, baseType = method.DeclaringType.BaseType?.FullName })
+        .ToArray(),
     sourceOwners = directHealthReferences.Select(reference => reference.Owner)
         .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
     healthCallbackDefinitions = methods.Where(method => method.Name is "ShouldDie"
@@ -108,6 +146,7 @@ var audit = new
         "Health setters include damage, initialization, save restoration and network sync.",
         "Static calls/delegate creation cannot resolve virtual hooks, reflection or third-party extensions.",
         "HP amounts, callback dispatch and generation closure require source and native differential review.",
+        "Potion slot reads include mutable List aliases; event subscribers and indirect relic acquisition require review.",
     },
 };
 string output = Path.GetFullPath(args[1]);
@@ -118,6 +157,9 @@ Console.WriteLine(JsonSerializer.Serialize(new
     audit.dllSha256, audit.typeCount, audit.methodCount, audit.methodsWithBody,
     healthEntryCount = sinks.Count, healthReferenceCount = directHealthReferences.Length,
     sourceOwnerCount = audit.sourceOwners.Length, fieldWriteCount = fieldWrites.Count,
+    potionEntryCount = potionInventoryEntries.Count,
+    potionSlotFieldReferenceCount = potionSlotFieldReferences.Count,
+    potionEventReferenceCount = audit.potionInventoryEventReferences.Length,
 }));
 
 static IEnumerable<TypeDefinition> Flatten(IEnumerable<TypeDefinition> types)
@@ -142,6 +184,18 @@ static bool IsHealthEntry(MethodDefinition method)
         || method.DeclaringType.FullName == "MegaCrit.Sts2.Core.Entities.Creatures.Creature"
         && method.Name is "HealInternal" or "SetCurrentHpInternal" or "SetMaxHpInternal"
             or "set_CurrentHp" or "set_MaxHp";
+
+static bool IsPotionInventoryEntry(MethodDefinition method)
+    => method.DeclaringType.FullName == "MegaCrit.Sts2.Core.Commands.PotionCmd"
+        && method.Name is "TryToProcure" or "Discard"
+        || method.DeclaringType.FullName == "MegaCrit.Sts2.Core.Entities.Players.Player"
+        && method.Name is "AddPotionInternal" or "DiscardPotionInternal" or "RemoveUsedPotionInternal"
+            or "RemovePotionInternal" or "SetMaxPotionCountInternal" or "AddToMaxPotionCount"
+            or "SubtractFromMaxPotionCount" or "LoadPotions" or "PopulateStartingInventory"
+        || method.DeclaringType.FullName == "MegaCrit.Sts2.Core.Commands.PlayerCmd"
+        && method.Name is "GainMaxPotionCount" or "LoseMaxPotionCount"
+        || method.DeclaringType.FullName == "MegaCrit.Sts2.Core.Models.PotionModel"
+        && method.Name is "Discard" or "RemoveBeforeUse" or "OnUseWrapper" or "EnqueueManualUse";
 
 sealed record Reference(string Caller, string Target, string Kind, int Offset, string Owner,
     string[]? GenericArguments = null);

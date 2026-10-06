@@ -1,5 +1,7 @@
 # CombatSolver 测试入口
 
+2026-10-06 [库存边界与后续计划见证](performance/potion-inventory-pruning-research-20261006.md)：IL工具构建/扫描通过，18入口/45引用/29字段访问/7事件/20订阅引用/13Hook定义，13项既有输出不变；有限成本枚举及两次完整只读Coordinator同根/政策/预算/14项质量/工作通过。未实际删除分支，未跑新增原生/Fork合同、纯交错性能或最终回归；观察器撤回，同源码部署复用。
+
 2026-10-06 [Smart 已花成本界实验](performance/smart-branch-cost-bound-research-20261006.md)：`COMPONENT-SMART-BOUND`/`b06e13bcf2fd4e6c8914f0cca73dec58`通过原DOP2完整协调器/政策门禁，以及实际完整无药见证、高价新增剪枝、便宜/未知保留、完整回放、16Fork、父/live/RNG和原生潜能药水状态；实例清理。八次完整交错未证明收益，源码撤回；未做新DOP1/16整搜和最终全部固定回归。
 
 2026-10-06 [分支用药成本与额度研究](performance/policy-aware-pruning-research-20261006.md)：隔离只读DLL两根完整Coordinator/DOP16正常完成，潜在新增否证访问1828/0，未删除新候选。有限数学核对覆盖成本13312、剂量额度8748、错开使用44604、净生命6426、组合1792项；不冒充新原生完整状态/Fork/RNG、最终交错或回归通过。源码清理、原始数据与一次性脚本归档，已有有限回复原生合同按原前提复用。
