@@ -174,3 +174,5 @@ pwsh -NoProfile -File tools\testing\run-unattended-test.ps1 -ScenarioId RADIANT-
 已结束的原型、诊断、失败和未验证项归入[历史卷22](archive/testing/volume-22.md)，详细结果保留在[性能专题](performance/README.md)。
 
 2026-10-06 [回合子路径与编译线程](performance/unresolved-roots-cpu-20261006.md#回合子路径与编译线程2026-10-06同trace重解析)：两份原trace新增线程导出，样本与加权cycles严格保持；回合阶段和编译线程分别归因，临时解析源码保存后清理。只有L0数据处理及文档检查，没有新搜索、原生合同、运行时候选、整请求提速或RSS验收。
+
+2026-10-06 [计数指纹缓存](performance/int-map-fingerprint-research-20261006.md)：`CARD-CONTINUATION-CONTRACT`原生`29a7e7edc13444ed92f3dcd59e3e560f`通过逐位值、getter真实补丁及副作用／异常、COW、16发布者和完整父／子／live／历史／RNG合同，实例删除；两次失败保留。12次Evaluate没有稳定收益，观察只属诊断，原型撤回。未追加整请求、最终全根、DOP或新部署。
