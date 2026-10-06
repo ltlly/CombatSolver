@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-06 [计划续搜](performance/plan-witness-propagation-20261006.md)：原生与GC合同、11根44次纯交错质量/峰值通过，#229已交付。[覆盖与阶段资格研究](performance/recovery-proof-coverage-research-20261006.md)新增原生合同通过，三根12次无收益；另11次根诊断暴露窄搜索资格待拆开，原型撤回。完整原始目标、历史战损和可见性能缺口保留。
+2026-10-06 [计划续搜](performance/plan-witness-propagation-20261006.md)：原生/GC及11根44次质量/峰值通过，#229已交付。[覆盖与阶段](performance/recovery-proof-coverage-research-20261006.md)原生通过、12次无收益，诊断暴露调度耦合；[最终用药桶](performance/exact-final-potion-pruning-research-20261006.md)三根只读质量相同，无新胜利界。研究撤回，原始目标及历史缺口保留。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 
