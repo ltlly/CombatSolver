@@ -1,5 +1,6 @@
 # 性能工作入口
 
+- [仅Power映射的监听后缀复用](power-only-listener-suffix-research-20261006.md)：原生见证失效/实际Power克隆通过，12次短测无共同收益并撤回；两根完整CPU新解析支持优先降低每个增量动作成本。
 - [Fork模型映射负证据](fork-model-negative-map-research-20261006.md)：两版最小原生合同与24次交错短测，无共同收益并撤回；三根实际映射主要为Power，非Power分段仅保留后续证明方向。
 - [跨成员评估重复机会](cross-member-snapshot-opportunity-20261006.md)：同根完整请求储君跨成员28.923%、亡灵至少16.750%；累计战损/评分反例禁止整快照复用，有界排序排列缓存原生通过但12次短测无收益，撤回。
 
