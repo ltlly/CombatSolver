@@ -1,5 +1,7 @@
 # CombatSolver 测试入口
 
+2026-10-06 [Smart 已花成本界实验](performance/smart-branch-cost-bound-research-20261006.md)：`COMPONENT-SMART-BOUND`/`b06e13bcf2fd4e6c8914f0cca73dec58`通过原DOP2完整协调器/政策门禁，以及实际完整无药见证、高价新增剪枝、便宜/未知保留、完整回放、16Fork、父/live/RNG和原生潜能药水状态；实例清理。八次完整交错未证明收益，源码撤回；未做新DOP1/16整搜和最终全部固定回归。
+
 2026-10-06 [分支用药成本与额度研究](performance/policy-aware-pruning-research-20261006.md)：隔离只读DLL两根完整Coordinator/DOP16正常完成，潜在新增否证访问1828/0，未删除新候选。有限数学核对覆盖成本13312、剂量额度8748、错开使用44604、净生命6426、组合1792项；不冒充新原生完整状态/Fork/RNG、最终交错或回归通过。源码清理、原始数据与一次性脚本归档，已有有限回复原生合同按原前提复用。
 
 2026-10-06 [构造时监听类型证明](performance/listener-producer-type-proof-research-20261006.md)：`CARD-CONTINUATION-CONTRACT`原生`884555a56a234f2fb86b6baffeabc875`通过1674模型、16已知组合、未知资格拒绝、重映射撤销、16路两代Fork及完整状态／历史／RNG、父/live隔离；续接与原生抽弃牌合同保持。首轮不适用锚点夹具失败修正，两实例删除。12次Evaluate保存，亡灵A2并行解析干扰被排除；两个干净交错组无稳定收益，源码撤回。未做完整Coordinator／全根回归／新未知异常前缀；复用原CPU及部署。
