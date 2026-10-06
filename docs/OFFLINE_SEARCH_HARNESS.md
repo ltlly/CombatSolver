@@ -68,7 +68,9 @@ dotnet .local/tool-build/OfflineSearchHarness/bin/Release/net9.0/OfflineSearchHa
 
 ## 批量用法
 
-`OFFLINE_HARNESS_SNAPSHOT_PROBE=worker-families` 观察同一coordinator及其实际创建的并行workers，以状态指纹、动作数和边界统计重复评估输入，输出 `snapshot-worker-families.json`。每组最多保留100,000个纯值输入和15项选定特征，不持有模型／模拟器图；同／跨worker计数相对首次出现的实例，容量旁路后的重复率只作下限。相同输入可有不同历史偏移，因此这些计数不能当作共享整份Snapshot的证明。该模式只用于小预算诊断，关闭后再做性能验收；实际范围见[当前证据](performance/upstream-common-cpu-20261006.md)。原 `OFFLINE_HARNESS_SNAPSHOT_PROBE=1` 的逐solver计数保持。
+`OFFLINE_HARNESS_SNAPSHOT_PROBE=worker-families` 观察同一coordinator及其实际创建的并行workers，以状态指纹、动作数和边界统计重复评估输入，输出 `snapshot-worker-families.json`。每组最多保留100,000个纯值输入和17项选定特征，不持有模型／模拟器图；同／跨worker计数相对首次出现的实例，容量旁路后的重复率只作下限。相同输入可有不同历史偏移及累计战损，因此这些计数不能当作共享整份Snapshot或评分的证明。该模式只用于诊断，关闭后再做性能验收；已有15字段版本范围见[原证据](performance/upstream-common-cpu-20261006.md)。原 `OFFLINE_HARNESS_SNAPSHOT_PROBE=1` 的逐solver计数保持。
+
+`OFFLINE_HARNESS_SNAPSHOT_PROBE=request-families` 进一步按同一冻结根的对象身份，在整个协调器请求中统计同／跨搜索成员的重复输入，输出 `snapshot-request-families.json`。请求表最多250,000个纯值条目，成员按实际worker拥有者归组，计数相对该输入首次出现的成员；重复百分比不是CPU或整请求提速。保留至多12份一般差异和12份非历史偏移差异，另计全部已观察差异及仅历史差异。输入键不含累计战损，特征显式记录累计战损和实际回复量；不同政策、未覆盖的快照字段及回调副作用仍未构成缓存证明。私有根字段只在启用family诊断时解析，结构不匹配则显式失败，不影响关闭探针的普通请求。实际使用、分支累计战损反例和容量下限见[跨成员证据](performance/cross-member-snapshot-opportunity-20261006.md)。
 
 `OFFLINE_HARNESS_SNAPSHOT_PROBE=pile-lookups` 观察生产原生牌堆查询的实际返回值，输出 `native-pile-lookup-opportunities.json`。按类型、helper来源标签及Snapshot包含阶段记录次数，每行保留一个首次路径；标签不是离场证书，次数不是CPU权重。该模式在搜索前用离线原生AddInternal/RemoveInternal构造加入／移除见证并核对完整live续用戳恢复；见证计数单列。弱标签与结果不强留模型图，原查询始终执行。仅用于小预算诊断，性能验收须关闭，来源、边界和结果见[牌堆查询证据](performance/native-pile-lookup-opportunities-20261006.md)。
 

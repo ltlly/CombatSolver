@@ -23,8 +23,31 @@ internal static class SnapshotOpportunityProbe
     private static readonly ConditionalWeakTable<CombatBeamSolver, SolverIdentity> Identities = new();
     private static int _nextSolver;
     private sealed record SolverIdentity(int Id);
+    private const int MaximumRequestInputs = 250_000;
+    private static readonly ConditionalWeakTable<CombatRootSnapshot, SolverIdentity> RootIdentities = new();
+    // Resolve the private field only when a family probe is enabled. A probe ABI
+    // mismatch must not prevent ordinary, uninstrumented harness requests.
+    private static class RootMetadata
+    {
+        internal static readonly System.Reflection.FieldInfo Field = typeof(CombatBeamSolver)
+            .GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            .Single(field => field.FieldType == typeof(CombatRootSnapshot));
+    }
+    private static int _nextRoot;
+    private static bool _observeRequest;
+    private static readonly RequestCounts Request = new();
+    private sealed class RequestCounts
+    {
+        public long Total, SameMemberRepeats, CrossMemberRepeats, LimitBypasses,
+            FeatureMismatches, HistoryOnlyMismatches;
+        public readonly Dictionary<(int Root, StateFingerprint State, int Actions, SearchBoundaryReason Boundary),
+            (int Member, FeatureSignature Features)> Inputs = [];
+        public readonly List<object> Mismatches = [];
+        public readonly List<object> NonHistoryMismatches = [];
+    }
     private sealed class Family
     {
+        public int Id, Root;
         public long Total, SameWorkerRepeats, CrossWorkerRepeats, LimitBypasses, FeatureMismatches;
         public int Workers;
         public readonly Dictionary<(StateFingerprint, int, SearchBoundaryReason),
@@ -36,7 +59,7 @@ internal static class SnapshotOpportunityProbe
         long ScoreBits, int ProjectedHp, StateFingerprint ShuffleKey, int ShuffleValue,
         int PersistentBuff, int LatentSetup, int RetainedAttack, int ReachableHand,
         int FutureHeal, int GrowthCredit, int RelicCredit, int PotionCost, int HistoryCount,
-        int Shuffles, bool Risk)
+        int Shuffles, bool Risk, int CumulativeHpLost, int RecoveredHp)
     {
         public static FeatureSignature Capture(SimulationSnapshot s) => new(
             BitConverter.DoubleToInt64Bits(s.Score), s.ProjectedPlayerHp,
@@ -44,7 +67,7 @@ internal static class SnapshotOpportunityProbe
             s.PersistentBuffValue, s.LatentSetupValue, s.RetainedAttackValue,
             s.ReachableHandValue, s.FutureHealPotential, s.GrowthHpCredit,
             s.RelicCounters.HpCredit, s.PotionStrategicCost, s.HistoryEntryCount,
-            s.ShufflesCrossed, s.HasRisk);
+            s.ShufflesCrossed, s.HasRisk, s.CumulativePlayerHpLost, s.RecoveredPlayerHp);
     }
     private sealed class Counts
     {
@@ -66,21 +89,32 @@ internal static class SnapshotOpportunityProbe
             PileLookupProbe.Install(output);
             return;
         }
-        if (mode == "worker-families")
+        if (mode is "worker-families" or "request-families")
         {
+            _observeRequest = mode == "request-families";
             GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(CombatBeamSolver), "CreateExpansionWorker"),
                 postfix: new HarmonyMethod(typeof(SnapshotOpportunityProbe), nameof(ObserveWorker)));
             GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(CombatBeamSolver), "Snapshot"),
                 postfix: new HarmonyMethod(typeof(SnapshotOpportunityProbe), nameof(ObserveFamily)));
             AppDomain.CurrentDomain.ProcessExit += (_, _) =>
             {
-                lock (Gate) File.WriteAllText(Path.Combine(output, "snapshot-worker-families.json"),
+                lock (Gate) File.WriteAllText(Path.Combine(output, _observeRequest
+                    ? "snapshot-request-families.json" : "snapshot-worker-families.json"),
                     JsonSerializer.Serialize(new
                     {
                         observationOnly = true, maximumKeysPerFamily = MaximumKeysPerSolver,
-                        scope = "Worker families follow actual CreateExpansionWorker ownership. Keys and selected feature equality are not a cache-safety proof. No snapshot/model graphs retained.",
+                        scope = "Worker families follow actual CreateExpansionWorker ownership. Request mode additionally partitions members by exact frozen root identity. Keys and selected feature equality are not a cache-safety proof. No snapshot/model graphs retained.",
+                        request = !_observeRequest ? null : new
+                        {
+                            maximumInputs = MaximumRequestInputs, roots = _nextRoot,
+                            Request.Total, retainedInputs = Request.Inputs.Count,
+                            Request.SameMemberRepeats, Request.CrossMemberRepeats,
+                            Request.LimitBypasses, Request.FeatureMismatches,
+                            Request.HistoryOnlyMismatches, Request.Mismatches, Request.NonHistoryMismatches,
+                        },
                         families = FamilyResults.Select(f => new
                         {
+                            f.Id, f.Root,
                             f.Total, f.Workers, retainedInputs = f.Inputs.Count, f.SameWorkerRepeats,
                             f.CrossWorkerRepeats, f.LimitBypasses, f.FeatureMismatches, f.Mismatches,
                         }),
@@ -104,7 +138,13 @@ internal static class SnapshotOpportunityProbe
 
     private static Family FamilyFor(CombatBeamSolver solver) => Families.GetValue(solver, _ =>
     {
-        Family family = new();
+        CombatRootSnapshot root = (CombatRootSnapshot)(RootMetadata.Field.GetValue(solver)
+            ?? throw new InvalidOperationException("Snapshot probe requires the captured root."));
+        Family family = new()
+        {
+            Id = FamilyResults.Count + 1,
+            Root = RootIdentities.GetValue(root, _ => new(++_nextRoot)).Id,
+        };
         FamilyResults.Add(family);
         return family;
     });
@@ -128,6 +168,8 @@ internal static class SnapshotOpportunityProbe
             family.Total++;
             var key = (__result.StateKey, actionCount, __result.BoundaryReason);
             FeatureSignature features = FeatureSignature.Capture(__result);
+            if (_observeRequest)
+                ObserveRequest(family, key, features);
             if (family.Inputs.TryGetValue(key, out var prior))
             {
                 if (prior.Solver == solver) family.SameWorkerRepeats++;
@@ -143,6 +185,37 @@ internal static class SnapshotOpportunityProbe
                 family.Inputs.Add(key, (solver, features));
             else family.LimitBypasses++;
         }
+    }
+
+    private static void ObserveRequest(Family family,
+        (StateFingerprint State, int Actions, SearchBoundaryReason Boundary) input,
+        FeatureSignature features)
+    {
+        Request.Total++;
+        var key = (family.Root, input.State, input.Actions, input.Boundary);
+        if (Request.Inputs.TryGetValue(key, out var prior))
+        {
+            if (prior.Member == family.Id) Request.SameMemberRepeats++;
+            else Request.CrossMemberRepeats++;
+            if (prior.Features != features)
+            {
+                Request.FeatureMismatches++;
+                bool historyOnly = prior.Features with { HistoryCount = 0 }
+                    == features with { HistoryCount = 0 };
+                if (historyOnly) Request.HistoryOnlyMismatches++;
+                var mismatch = new { root = key.Root, state = key.State,
+                    actions = key.Actions, boundary = key.Boundary,
+                    firstMember = prior.Member, currentMember = family.Id,
+                    first = prior.Features, current = features, historyOnly };
+                if (Request.Mismatches.Count < 12)
+                    Request.Mismatches.Add(mismatch);
+                if (!historyOnly && Request.NonHistoryMismatches.Count < 12)
+                    Request.NonHistoryMismatches.Add(mismatch);
+            }
+        }
+        else if (Request.Inputs.Count < MaximumRequestInputs)
+            Request.Inputs.Add(key, (family.Id, features));
+        else Request.LimitBypasses++;
     }
 
     private static void Observe(CombatBeamSolver __instance, int actionCount, SimulationSnapshot __result)
