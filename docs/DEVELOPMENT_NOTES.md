@@ -61,3 +61,5 @@
 2026-10-06 [战略上下文枚举](performance/strategic-context-enumerator-research-20261006.md)：603原生卡/16Fork、自定义枚举与真实getter修改List严格对照通过；12次Evaluate和实际JIT未建立共同收益，原型及临时接入撤回，生产与已验证部署保持。
 
 2026-10-06 [未达标首领CPU](performance/unresolved-roots-cpu-20261006.md)：两根完整生产预算请求独立perf采样，回放/快照/Fork共同成本明确；战略上下文占比低，后续先量化同层胜利发布后尚未准入父节点的回复界机会。仅诊断，未改运行时或宣称提速。
+
+2026-10-06 [展开前胜利界机会](performance/pre-expansion-incumbent-opportunity-20261006.md)：真实药水成本、状态/RNG与计数观察合同通过，三根诊断仅储君261/74175可提前排除，亡灵/大牌堆0；计数容器历史分配栈3.329%单列。观察及临时接入已清理，没有新运行时优化或部署。

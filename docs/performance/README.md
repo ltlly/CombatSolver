@@ -1,5 +1,7 @@
 # 性能工作入口
 
+- [展开前胜利界机会](pre-expansion-incumbent-opportunity-20261006.md)：新原生状态/代价合同与三根观察，储君仅261/74175、其余0；计数容器分配边界，未实施提前剪枝。
+
 - [未达标首领根CPU](unresolved-roots-cpu-20261006.md)：两根完整生产预算独立采样，回放/快照/Fork共同成本及回合推进机会；没有新候选性能验收。
 
 - [战略上下文枚举](strategic-context-enumerator-research-20261006.md)：603卡/16Fork与原生回调边界通过；12次交错短搜、实际JIT未建立共同收益，原型撤回。

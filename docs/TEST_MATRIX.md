@@ -194,3 +194,5 @@ pwsh -NoProfile -File tools\testing\run-unattended-test.ps1 -ScenarioId RADIANT-
 2026-10-06 [战略上下文枚举](performance/strategic-context-enumerator-research-20261006.md)：`STRATEGIC-CONTEXT-DEMAND`原生`202f7281e44a43f79143a018f4eb908a`通过603卡、需求/集合/异常/Dispose/Count顺序、真实getter版本错误、16Fork与完整父/live/RNG，实例删除；两次准备失败保留。12次Evaluate仅小幅浮动，撤回原型，未做整请求性能或最终固定回归。
 
 2026-10-06 [未达标首领CPU](performance/unresolved-roots-cpu-20261006.md)：储君/亡灵完整Coordinator、FixedBudget=false、VeryHigh/DOP16各一份新perf诊断正常完成，窗口23428/27540样本、丢失0；政策、根与14项质量单列，不能当候选A/B性能或原始质量验收。源码/部署不变，未执行新原生或固定回归。
+
+2026-10-06 [展开前胜利界观察](performance/pre-expansion-incumbent-opportunity-20261006.md)：原生`POTION-COST-INCUMBENT`／`d7f2e6305746405f9ab47e5f78b998de`通过现有完整原生合同与额外查询状态/计数断言，实例删除。两根完整Coordinator及大牌堆Evaluate诊断分别261/74175、0/78635、0/11111机会；亡灵工作变化未归因，不作性能验收，临时观察清理。
