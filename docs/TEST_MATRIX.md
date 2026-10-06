@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-07 [零额度成长剪枝](performance/zero-credit-growth-hp-pruning-20261007.md)：两项最终原生合同含真实成长胜利/成本14对9、16读者及父/live/RNG隔离通过；11根44次完整交错14质量/根/政策/预算一致，峰值最大+0.353%，亡灵1.305倍。独立剪枝2635/1064及查询开销另测；[前轮研究](performance/zero-credit-growth-hp-pruning-research-20261007.md)保留，候选保留、实例清理，原目标未完成。
+2026-10-07 [有限回复Smart研究](performance/smart-finite-recovery-pruning-research-20261007.md)：三原生起点合同/16次纯请求质量和峰值通过，355处剪枝仅约1%差异，原型撤回，未追加最终回归。[已交付剪枝](performance/zero-credit-growth-hp-pruning-20261007.md)及五文件部署复用5f47de56。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 
