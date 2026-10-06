@@ -1,5 +1,7 @@
 # CombatSolver 测试入口
 
+2026-10-06 [Fork模型映射负证据](performance/fork-model-negative-map-research-20261006.md)：两版`CARD-CONTINUATION-CONTRACT`（`227d0b1fd3974fd291375b7a3c753afd`／`9e2123e9b2294a0dbe6121fe602c03ca`）通过显式映射矩阵、未知getter/空源/异常读取前缀、16路及两代Fork、完整状态/历史/RNG与父/live隔离，实例清理；实际最小夹具映射接收者0，不冒充重根覆盖。24次Evaluate交错根/政策/九项质量/逻辑工作一致、峰值门槛通过但无共同提速。三次独立类别诊断证明主要为Power映射，仅定位后续机会；源码和临时入口撤回，未做完整Coordinator及最终固定回归，生产/部署复用。
+
 2026-10-06 [跨成员评估机会](performance/cross-member-snapshot-opportunity-20261006.md)：两根完整Coordinator观察及储君新增累计战损字段诊断正常退出，17字段/12份非历史反例精确解释±150000/−180000评分差；该诊断不能证明整快照复用安全。后续排序排列原型合同`bcf768ce45f74969b75204ca5cfcd2f5`通过36组完整顺序/RNG、未知来源/补丁副作用与异常回退、16路并发及父/live隔离，实例清理；未直接覆盖同缓存升级失效。原生/普通候选构建零警告/错误。12次Evaluate交错同根/政策/九项质量/逻辑工作一致但均无提速，原型撤回；完整Coordinator、全部资源目标及最终固定回归未做。生产及既有部署未变。
 
 2026-10-06 [原生空判定认证](performance/native-noop-guard-research-20261006.md)：范围内合同`000236e700ac4f31b0b35a65361a5564`通过；新增`0045993cec824efba5e7188fbd2bd094`成功复现未知来源读取1→2、分支HP79→78，父/live保持，Passed表示反例复现而非候选安全。两实例清理。12次Evaluate/8次完整Coordinator全样本保留；猎手完整基线120秒超时、候选未启动，原型撤回，未做最终固定回归或新部署。
