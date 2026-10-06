@@ -1,5 +1,7 @@
 # 性能工作入口
 
+- [未达标首领根CPU](unresolved-roots-cpu-20261006.md)：两根完整生产预算独立采样，回放/快照/Fork共同成本及回合推进机会；没有新候选性能验收。
+
 - [战略上下文枚举](strategic-context-enumerator-research-20261006.md)：603卡/16Fork与原生回调边界通过；12次交错短搜、实际JIT未建立共同收益，原型撤回。
 
 - [空共享见证表的回复查询](shared-incumbent-empty-research-20261006.md)：复用同一CPU，原生发布边界与药水成本合同通过；12次交错短搜未建立共同收益，原型撤回。

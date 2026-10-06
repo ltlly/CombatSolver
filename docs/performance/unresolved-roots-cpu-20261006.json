@@ -1,0 +1,2032 @@
+{
+  "schemaVersion": 1,
+  "scope": "Two new baseline full production-budget Coordinator CPU diagnoses; no performance candidate, no A/B time or RSS acceptance",
+  "sourceCommit": "fac18c84",
+  "runtimeBaseline": "bb004176",
+  "upstream": "9a4489d8",
+  "gameSha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+  "gameMvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+  "environment": "7840H, 8 cores/16 threads, approximately 58 GiB, CoreCLR 9.0.19",
+  "runs": [
+    {
+      "scene": "dev-08-regent-boss",
+      "command": {
+        "diagnosticOnly": true,
+        "command": [
+          "perf",
+          "record",
+          "-e",
+          "cycles:u",
+          "-F",
+          "199",
+          "--call-graph",
+          "fp",
+          "-k",
+          "1",
+          "-o",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/unresolved-roots-cpu-20261006/dev-08-regent-boss/perf.data",
+          "--",
+          "dotnet",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/intrinsic-card-value-20261006/updated-harness/OfflineSearchHarness.dll",
+          "--request",
+          "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-08-regent-boss.json",
+          "--label",
+          "unresolved-full-cpu-dev-08-regent-boss",
+          "--out",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/unresolved-roots-cpu-20261006/dev-08-regent-boss/run",
+          "--profile",
+          "VeryHigh",
+          "--dop",
+          "16",
+          "--budget-ms",
+          "300000",
+          "--search-mode",
+          "Coordinator",
+          "--nodes",
+          "500000",
+          "--beam",
+          "135",
+          "--card-branches",
+          "72",
+          "--pile-branches",
+          "42",
+          "--hand-branches",
+          "54",
+          "--enable-no-gc-region",
+          "--no-gc-region-budget-gigabytes",
+          "16",
+          "--use-portfolio",
+          "--production-budget"
+        ],
+        "dll": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-pr213-sync-20261006/build/CombatSolver.dll",
+        "envExtra": {
+          "DOTNET_PerfMapEnabled": "3"
+        },
+        "outerTimeoutSeconds": 120,
+        "sourceBase": "fac18c84",
+        "runtimeBaseline": "bb004176",
+        "dllSha256": "2aa06f3e5adfc9e82492d2a43c806f2b3aa1964e92b9c250da013ffa2d68e45e",
+        "scope": "Independent full production-budget Coordinator CPU diagnosis of unresolved roots; not timing or RSS acceptance"
+      },
+      "requestSha256": "d4a47c345404c8f1f7b499c8c8c0311ed0cfb7a403cebec4ec916554347b99f5",
+      "resultSha256": "1cae5e1dde9f1f015e8ba7cd6a20cfb62c471fad77889b631a47c6e69bf6d886",
+      "rootStampSha256": "3551c3433120ea1084e3ebb0438af4765ebe048dcbf537bc1076b77f513cca82",
+      "policy": {
+        "profile": {
+          "beamWidth": 135,
+          "maxExpandedNodes": 500000,
+          "maxCardBranchesPerNode": 72,
+          "maxPileChoiceBranchesPerAction": 42,
+          "maxHandChoiceBranchesPerAction": 54,
+          "softTimeBudgetMilliseconds": 600000,
+          "secondRankBand": false,
+          "contextualRanking": null,
+          "continuousThreatRanking": false,
+          "baseScoreTacticalTies": false,
+          "adaptiveNoveltyRefinement": false,
+          "beamWeightPerturbation": null,
+          "offensiveRefinementPortfolio": false,
+          "boundedOffensiveRefinementPortfolio": false,
+          "reallocatedRefinementPortfolio": true,
+          "stopPortfolioAtHpTarget": true,
+          "baseScoreOnly": false,
+          "aggressivePowerCommitment": false
+        },
+        "potionPolicy": "Smart",
+        "potionStrategy": {
+          "defaultPolicy": "Smart",
+          "directives": [],
+          "hasForcedDirectives": false,
+          "forcedDirectiveCount": 0
+        },
+        "fixedBudget": false,
+        "maxDegreeOfParallelism": 16,
+        "includeTurnSetup": false,
+        "theftPolicy": null,
+        "actTransitionBossHpStrategy": "ProgressionFirst",
+        "finalBossHpStrategy": "ProgressionFirst",
+        "acceptableBattleHpLoss": 0,
+        "stopAtAcceptableBattleHpLoss": false,
+        "act3BossStrategy": false,
+        "growthBudgets": {
+          "handOfGreed": 0,
+          "theHunt": 0,
+          "feed": 0,
+          "royalties": 0,
+          "alchemize": 0,
+          "geneticAlgorithm": 0,
+          "theScythe": 0,
+          "goopy": 0,
+          "forbiddenGrimoire": 0,
+          "madScience": 0
+        },
+        "relicTargets": [],
+        "brightestFlameMaxHpLossLimit": null,
+        "hasGrowthTargets": false,
+        "ignoreLongTermRewards": false,
+        "verifyIncrementalSearch": false,
+        "detailedDiagnostics": false,
+        "measurePhasePerformance": false,
+        "useBeamWidthPortfolio": true,
+        "beamWidthPortfolioPlainBaselineMember": true,
+        "useNoveltyPortfolio": false,
+        "beamWidthPortfolioWidths": null,
+        "portfolioSelector": null,
+        "observePortfolio": false
+      },
+      "budget": {
+        "profile": "VeryHigh",
+        "beamWidth": 135,
+        "maxExpandedNodes": 500000,
+        "maxCardBranchesPerNode": 72,
+        "maxPileChoiceBranchesPerAction": 42,
+        "maxHandChoiceBranchesPerAction": 54,
+        "maxDegreeOfParallelism": 16,
+        "budgetMilliseconds": 300000,
+        "earlyTurnExplorationDepth": 0,
+        "earlyTurnExplorationBudgetMilliseconds": 0,
+        "potionPolicy": "Smart",
+        "searchMode": "Coordinator",
+        "usePortfolio": true,
+        "fixedSearchBudget": false,
+        "enableNoGcRegion": true,
+        "noGcRegionBudgetGigabytes": 16
+      },
+      "comparisonQuality": {
+        "won": true,
+        "outstandingStolenResource": 0,
+        "projectedBattleHpLost": 40,
+        "strategicHpDeficit": 40,
+        "potionStrategicCost": 0,
+        "projectedBattlePotionCount": 0,
+        "enemyHp": 0,
+        "score": 9999793960,
+        "combatEndedTurn": 6,
+        "theftPolicy": null,
+        "survives": true,
+        "deathSaveUseCount": 0,
+        "growthHpCredit": 0,
+        "growthRewardCount": 0
+      },
+      "solverMetrics": {
+        "gcLifecycle": {
+          "forcedCollections": 0,
+          "noGcStartAttempts": 0,
+          "noGcStarts": 0,
+          "noGcEndAttempts": 0,
+          "noGcEnds": 0,
+          "noGcRestarts": 0,
+          "noGcLosses": 0
+        },
+        "gcLifecycleAttribution": null,
+        "boundary": "None",
+        "selectedExpanded": 4962,
+        "selectedTransitions": 20633,
+        "selectedChoiceBranches": 1154,
+        "roundReplayPrefixCaptures": 0,
+        "roundReplayPrefixReuses": 0,
+        "executionChoiceCaptures": 0,
+        "executionChoiceReuses": 0,
+        "cardChoicePrefixAttempts": 185,
+        "cardChoicePrefixCaptures": 0,
+        "cardChoicePrefixReuses": 0,
+        "cardChoicePrefixFallbacks": 0,
+        "potionChoicePrefixForks": 0,
+        "potionChoicePrefixCaptures": 0,
+        "potionChoicePrefixReuses": 0,
+        "potionChoicePrefixFallbacks": 0,
+        "choiceReplayAttempts": 1154,
+        "choiceReplayBudgetExhaustions": 0,
+        "choiceBranchesDroppedByBudget": 0,
+        "cycleReplayAttempts": 0,
+        "cycleReplayActions": 0,
+        "totalCycleReplayActions": 0,
+        "cycleReplayVictories": 0,
+        "cycleReplayContinuations": 0,
+        "cycleStoppedUnproductive": 0,
+        "cycleStoppedRepetitionBudget": 0,
+        "cycleStoppedFamilyBudget": 0,
+        "cycleStoppedExitBudget": 0,
+        "turnLayerBudgetStops": 0,
+        "turnLayerTimeBudgetStops": 0,
+        "turnLayerNodeBudgetStops": 0,
+        "cycleRegionsDetected": 0,
+        "cycleRegionCandidatesConsidered": 0,
+        "cycleRegionCandidatesAdmitted": 0,
+        "cycleRegionCandidatesDropped": 0,
+        "cycleRegionProgressEpochs": 0,
+        "cycleRegionProbeCandidatesAdmitted": 0,
+        "cycleRegionProgressCandidatesAdmitted": 0,
+        "cycleRegionMaxActionFamilies": 0,
+        "orderedMutationCandidatesAdmitted": 0,
+        "orderedMutationLeaseExpiredBudget": 0,
+        "orderedMutationOrdinaryFallbacks": 0,
+        "orderedMutationColdAtomicCommitted": 0,
+        "orderedMutationColdAtomicRejected": 0,
+        "totalExpanded": 74175,
+        "totalTransitions": 297117,
+        "totalChoiceBranches": 4086,
+        "elapsedMilliseconds": 1364.8196,
+        "totalElapsedMilliseconds": 15867.1329,
+        "searchWorkAttributions": [
+          {
+            "mechanism": "DeferredOpeningPower",
+            "expandedNodes": 2237,
+            "transitions": 8814,
+            "choiceBranches": 0,
+            "elapsedMilliseconds": 1240.4509,
+            "workerAllocatedBytes": 314280888,
+            "gen0Collections": 3,
+            "gen1Collections": 2,
+            "gen2Collections": 2,
+            "gcPauseMilliseconds": 1039.471,
+            "maxObservedGcPauseMilliseconds": 1036.238,
+            "recordedSolverCount": 1
+          },
+          {
+            "mechanism": "OpeningPowerRouteMember",
+            "expandedNodes": 37805,
+            "transitions": 148830,
+            "choiceBranches": 644,
+            "elapsedMilliseconds": 5582.0536999999995,
+            "workerAllocatedBytes": 6144126384,
+            "gen0Collections": 0,
+            "gen1Collections": 0,
+            "gen2Collections": 0,
+            "gcPauseMilliseconds": 0,
+            "maxObservedGcPauseMilliseconds": 0,
+            "recordedSolverCount": 10
+          },
+          {
+            "mechanism": "PlanCommitment",
+            "expandedNodes": 10575,
+            "transitions": 47084,
+            "choiceBranches": 698,
+            "elapsedMilliseconds": 908.9689999999999,
+            "workerAllocatedBytes": 1756669832,
+            "gen0Collections": 0,
+            "gen1Collections": 0,
+            "gen2Collections": 0,
+            "gcPauseMilliseconds": 0,
+            "maxObservedGcPauseMilliseconds": 0,
+            "recordedSolverCount": 2
+          },
+          {
+            "mechanism": "PrimaryBeam",
+            "expandedNodes": 4591,
+            "transitions": 18057,
+            "choiceBranches": 845,
+            "elapsedMilliseconds": 2249.4312,
+            "workerAllocatedBytes": 892112032,
+            "gen0Collections": 0,
+            "gen1Collections": 0,
+            "gen2Collections": 0,
+            "gcPauseMilliseconds": 0,
+            "maxObservedGcPauseMilliseconds": 0,
+            "recordedSolverCount": 1
+          },
+          {
+            "mechanism": "RefinementBeam",
+            "expandedNodes": 18967,
+            "transitions": 74332,
+            "choiceBranches": 1899,
+            "elapsedMilliseconds": 5886.2281,
+            "workerAllocatedBytes": 3476304672,
+            "gen0Collections": 0,
+            "gen1Collections": 0,
+            "gen2Collections": 0,
+            "gcPauseMilliseconds": 0,
+            "maxObservedGcPauseMilliseconds": 0,
+            "recordedSolverCount": 5
+          }
+        ],
+        "workerAllocatedBytes": 945867552,
+        "totalWorkerAllocatedBytes": 12583493808,
+        "totalGen0Collections": 3,
+        "totalGen1Collections": 2,
+        "totalGen2Collections": 2,
+        "totalGcPauseMilliseconds": 1039.471,
+        "maxGcPauseMilliseconds": 1036.238,
+        "maxParallelConcurrency": 16,
+        "parallelActionReplayWaves": 175,
+        "parallelActionReplayWorkItems": 12171,
+        "maxParallelActionReplayConcurrency": 16,
+        "deferredRoundChoiceActions": 185,
+        "deferredRoundChoiceLayerWidthTotal": 1154,
+        "maxDeferredRoundChoiceLayerWidth": 28,
+        "deferredRoundChoiceFiniteQuotaFallbacks": 0,
+        "deferredRoundChoiceFinitePrimaryLayers": 185,
+        "deferredRoundChoiceFinitePendingFallbacks": 0,
+        "parallelRoundChoiceReplayWaves": 39,
+        "parallelRoundChoiceReplayWorkItems": 1524,
+        "maxParallelRoundChoiceReplayConcurrency": 16,
+        "searchedTurns": 6,
+        "shufflesCrossed": 1,
+        "score": 9999793960,
+        "projectedBattleHpLost": 40,
+        "unavoidableHpLost": 40,
+        "potionCount": 0,
+        "potionUses": [],
+        "onlyDeathRoutes": false,
+        "finalHp": 35,
+        "finalEnemyHp": 0,
+        "combatEndedTurn": 6,
+        "capturedAtElapsedMilliseconds": 16636.5082,
+        "firstRoutePublishedMilliseconds": 2280.2916,
+        "portfolioMembers": [
+          {
+            "beamWidth": 135,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "aggressivePowerCommitment": true,
+            "nodeBudget": 500000,
+            "ran": true,
+            "selected": false,
+            "compared": true,
+            "skippedReason": null,
+            "expandedNodes": 4591,
+            "transitionCount": 18057,
+            "termination": "None",
+            "terminal": true,
+            "won": true,
+            "battleHpLost": 48,
+            "potionCount": 0,
+            "elapsedMilliseconds": 2258,
+            "allocatedBytes": 896046840,
+            "managedHeapBytesAfter": 921112568,
+            "offensiveRefinement": false,
+            "boundedRefinement": false
+          },
+          {
+            "beamWidth": 90,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "aggressivePowerCommitment": false,
+            "nodeBudget": 495409,
+            "ran": true,
+            "selected": false,
+            "compared": true,
+            "skippedReason": null,
+            "expandedNodes": 2737,
+            "transitionCount": 10636,
+            "termination": "None",
+            "terminal": true,
+            "won": false,
+            "battleHpLost": 40,
+            "potionCount": 0,
+            "elapsedMilliseconds": 970,
+            "allocatedBytes": 508102296,
+            "managedHeapBytesAfter": 1429418720,
+            "offensiveRefinement": false,
+            "boundedRefinement": false
+          },
+          {
+            "beamWidth": 203,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "aggressivePowerCommitment": false,
+            "nodeBudget": 492672,
+            "ran": true,
+            "selected": false,
+            "compared": true,
+            "skippedReason": null,
+            "expandedNodes": 6957,
+            "transitionCount": 26850,
+            "termination": "None",
+            "terminal": true,
+            "won": true,
+            "battleHpLost": 45,
+            "potionCount": 0,
+            "elapsedMilliseconds": 2738,
+            "allocatedBytes": 1352408432,
+            "managedHeapBytesAfter": 2782164048,
+            "offensiveRefinement": false,
+            "boundedRefinement": false
+          },
+          {
+            "beamWidth": 135,
+            "secondRankBand": true,
+            "baseScoreOnly": false,
+            "aggressivePowerCommitment": false,
+            "nodeBudget": 485715,
+            "ran": true,
+            "selected": true,
+            "compared": true,
+            "skippedReason": null,
+            "expandedNodes": 4962,
+            "transitionCount": 20633,
+            "termination": "None",
+            "terminal": true,
+            "won": true,
+            "battleHpLost": 40,
+            "potionCount": 0,
+            "elapsedMilliseconds": 1368,
+            "allocatedBytes": 949910048,
+            "managedHeapBytesAfter": 3732369336,
+            "offensiveRefinement": false,
+            "boundedRefinement": false
+          },
+          {
+            "beamWidth": 135,
+            "secondRankBand": false,
+            "baseScoreOnly": true,
+            "aggressivePowerCommitment": false,
+            "nodeBudget": 480753,
+            "ran": true,
+            "selected": false,
+            "compared": true,
+            "skippedReason": null,
+            "expandedNodes": 2917,
+            "transitionCount": 10375,
+            "termination": "None",
+            "terminal": true,
+            "won": false,
+            "battleHpLost": 27,
+            "potionCount": 0,
+            "elapsedMilliseconds": 534,
+            "allocatedBytes": 436469248,
+            "managedHeapBytesAfter": 4169038208,
+            "offensiveRefinement": false,
+            "boundedRefinement": false
+          },
+          {
+            "beamWidth": 54,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "aggressivePowerCommitment": false,
+            "nodeBudget": 2770,
+            "ran": true,
+            "selected": false,
+            "compared": true,
+            "skippedReason": null,
+            "expandedNodes": 1394,
+            "transitionCount": 5838,
+            "termination": "None",
+            "terminal": true,
+            "won": false,
+            "battleHpLost": 32,
+            "potionCount": 0,
+            "elapsedMilliseconds": 278,
+            "allocatedBytes": 245565400,
+            "managedHeapBytesAfter": 4414747312,
+            "offensiveRefinement": true,
+            "boundedRefinement": true
+          }
+        ],
+        "powerRouteMembers": [
+          {
+            "prefix": "PREP_TIME",
+            "beamWidth": 135,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "nodeBudget": 50000,
+            "timeBudgetMilliseconds": 30000,
+            "expandedNodes": 2730,
+            "transitionCount": 10724,
+            "termination": "None",
+            "won": false,
+            "battleHpLost": null,
+            "improvedIncumbent": false,
+            "elapsedMilliseconds": 475,
+            "allocatedBytes": 443797488,
+            "managedHeapBytesAfter": 4859316400
+          },
+          {
+            "prefix": "PREP_TIME",
+            "beamWidth": 203,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "nodeBudget": 50000,
+            "timeBudgetMilliseconds": 30000,
+            "expandedNodes": 3977,
+            "transitionCount": 15061,
+            "termination": "None",
+            "won": false,
+            "battleHpLost": null,
+            "improvedIncumbent": false,
+            "elapsedMilliseconds": 572,
+            "allocatedBytes": 621829984,
+            "managedHeapBytesAfter": 5481355512
+          },
+          {
+            "prefix": "CALAMITY",
+            "beamWidth": 135,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "nodeBudget": 50000,
+            "timeBudgetMilliseconds": 30000,
+            "expandedNodes": 3772,
+            "transitionCount": 15625,
+            "termination": "None",
+            "won": false,
+            "battleHpLost": null,
+            "improvedIncumbent": false,
+            "elapsedMilliseconds": 658,
+            "allocatedBytes": 723681200,
+            "managedHeapBytesAfter": 6205239560
+          },
+          {
+            "prefix": "CALAMITY",
+            "beamWidth": 203,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "nodeBudget": 50000,
+            "timeBudgetMilliseconds": 30000,
+            "expandedNodes": 5595,
+            "transitionCount": 21924,
+            "termination": "None",
+            "won": false,
+            "battleHpLost": null,
+            "improvedIncumbent": false,
+            "elapsedMilliseconds": 958,
+            "allocatedBytes": 1005829184,
+            "managedHeapBytesAfter": 7211305120
+          },
+          {
+            "prefix": "FURNACE",
+            "beamWidth": 135,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "nodeBudget": 50000,
+            "timeBudgetMilliseconds": 30000,
+            "expandedNodes": 3042,
+            "transitionCount": 11943,
+            "termination": "None",
+            "won": false,
+            "battleHpLost": null,
+            "improvedIncumbent": false,
+            "elapsedMilliseconds": 410,
+            "allocatedBytes": 461209936,
+            "managedHeapBytesAfter": 7672664608
+          },
+          {
+            "prefix": "FURNACE",
+            "beamWidth": 203,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "nodeBudget": 50000,
+            "timeBudgetMilliseconds": 30000,
+            "expandedNodes": 4453,
+            "transitionCount": 17013,
+            "termination": "None",
+            "won": false,
+            "battleHpLost": null,
+            "improvedIncumbent": false,
+            "elapsedMilliseconds": 571,
+            "allocatedBytes": 654680224,
+            "managedHeapBytesAfter": 8327542400
+          },
+          {
+            "prefix": "PREP_TIME+FURNACE",
+            "beamWidth": 135,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "nodeBudget": 50000,
+            "timeBudgetMilliseconds": 30000,
+            "expandedNodes": 2905,
+            "transitionCount": 11624,
+            "termination": "None",
+            "won": false,
+            "battleHpLost": null,
+            "improvedIncumbent": false,
+            "elapsedMilliseconds": 415,
+            "allocatedBytes": 463519048,
+            "managedHeapBytesAfter": 8791215560
+          },
+          {
+            "prefix": "PREP_TIME+FURNACE",
+            "beamWidth": 203,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "nodeBudget": 50000,
+            "timeBudgetMilliseconds": 30000,
+            "expandedNodes": 4213,
+            "transitionCount": 16646,
+            "termination": "None",
+            "won": false,
+            "battleHpLost": null,
+            "improvedIncumbent": false,
+            "elapsedMilliseconds": 570,
+            "allocatedBytes": 671220800,
+            "managedHeapBytesAfter": 9462607896
+          },
+          {
+            "prefix": "FURNACE+PREP_TIME",
+            "beamWidth": 135,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "nodeBudget": 50000,
+            "timeBudgetMilliseconds": 30000,
+            "expandedNodes": 2905,
+            "transitionCount": 11624,
+            "termination": "None",
+            "won": false,
+            "battleHpLost": null,
+            "improvedIncumbent": false,
+            "elapsedMilliseconds": 399,
+            "allocatedBytes": 463546408,
+            "managedHeapBytesAfter": 9926308088
+          },
+          {
+            "prefix": "FURNACE+PREP_TIME",
+            "beamWidth": 203,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "nodeBudget": 50000,
+            "timeBudgetMilliseconds": 30000,
+            "expandedNodes": 4213,
+            "transitionCount": 16646,
+            "termination": "None",
+            "won": false,
+            "battleHpLost": null,
+            "improvedIncumbent": false,
+            "elapsedMilliseconds": 555,
+            "allocatedBytes": 660583920,
+            "managedHeapBytesAfter": 10587068560
+          }
+        ],
+        "peakManagedHeapBytes": 10587068560,
+        "managedLiveBytes": 2120870920,
+        "managedHeapBytes": 104942192,
+        "managedFragmentedBytes": 60036328,
+        "workingSetBytes": 9168084992,
+        "earlyTurnExploration": null,
+        "privateMemoryBytes": 17279205376,
+        "configuredNoGcRegionEnabled": true,
+        "configuredNoGcRegionBudgetBytes": 16000000000,
+        "gcLatencyMode": "NoGCRegion",
+        "noGcRegionActive": true,
+        "noGcRegionBudgetBytes": 16000000000,
+        "noGcRegionRolloverCount": 0
+      },
+      "pruneCounters": {
+        "boundary": "None",
+        "selectedExpanded": 4962,
+        "selectedTransitions": 20633,
+        "selectedChoiceBranches": 1154,
+        "totalExpanded": 74175,
+        "totalTransitions": 297117,
+        "totalChoiceBranches": 4086,
+        "choiceReplayAttempts": 1154,
+        "choiceReplayBudgetExhaustions": 0,
+        "choiceBranchesDroppedByBudget": 0,
+        "roundReplayPrefixCaptures": 0,
+        "dominatedActionsPruned": 57,
+        "topQueueActionsDropped": 0,
+        "actionAdmissionRepresentativesProtected": 0,
+        "duplicateCardBranchesPruned": 841,
+        "shuffleBranchesPruned": 0,
+        "soldHpBranchesPruned": 0,
+        "primaryIncumbentBranchesPruned": 389,
+        "primaryIncumbentUpdates": 1,
+        "replayCount": 2,
+        "forkCount": 20633,
+        "reusedNodeSnapshots": 5084,
+        "transpositionBranchesPruned": 550,
+        "repeatableNoProgressBranchesPruned": 0,
+        "standPatProbes": 2346,
+        "transitionCacheHits": 0,
+        "roundReplayPrefixReuses": 0,
+        "cycleRegionsDetected": 0,
+        "cycleRegionCandidatesConsidered": 0,
+        "cycleRegionCandidatesAdmitted": 0,
+        "cycleRegionCandidatesDropped": 0,
+        "cycleRegionProgressEpochs": 0,
+        "cycleRegionProbeCandidatesAdmitted": 0,
+        "cycleRegionProgressCandidatesAdmitted": 0,
+        "cycleRegionMaxActionFamilies": 0,
+        "orderedMutationCandidatesAdmitted": 0,
+        "orderedMutationLeaseExpiredBudget": 0,
+        "orderedMutationOrdinaryFallbacks": 0,
+        "orderedMutationColdAtomicCommitted": 0,
+        "orderedMutationColdAtomicRejected": 0,
+        "deferredRoundChoiceActions": 185,
+        "deferredRoundChoiceLayerWidthTotal": 1154,
+        "maxDeferredRoundChoiceLayerWidth": 28,
+        "deferredRoundChoiceFiniteQuotaFallbacks": 0,
+        "deferredRoundChoiceFinitePrimaryLayers": 185,
+        "deferredRoundChoiceFinitePendingFallbacks": 0,
+        "parallelActionReplayWaves": 175,
+        "parallelActionReplayWorkItems": 12171,
+        "maxParallelActionReplayConcurrency": 16,
+        "parallelRoundChoiceReplayWaves": 39,
+        "parallelRoundChoiceReplayWorkItems": 1524,
+        "maxParallelRoundChoiceReplayConcurrency": 16,
+        "maxParallelConcurrency": 16,
+        "searchedTurns": 6,
+        "shufflesCrossed": 1,
+        "score": 9999793960,
+        "projectedBattleHpLost": 40,
+        "potionCount": 0,
+        "onlyDeathRoutes": false,
+        "finalHp": 35,
+        "finalEnemyHp": 0,
+        "combatEndedTurn": 6,
+        "transpositionCount": 17553,
+        "expandedTranspositionCount": 4962,
+        "transpositionLimitBypasses": 0,
+        "standPatCacheCount": 2346,
+        "threatProjectionCacheCount": 8,
+        "coverageCacheCount": 8
+      },
+      "cpu": {
+        "scope": "PR213 baseline unresolved-root complete production-budget Coordinator CPU diagnosis, not performance acceptance; inclusive paths overlap; nearest managed frame is attribution, not leaf resolution",
+        "startMonotonic": 1276295.884962082,
+        "endMonotonic": 1276311.8749620914,
+        "includedSamples": 23428,
+        "estimatedCycles": 367805022801,
+        "listenerUnionPercent": 9.493707423863126,
+        "inclusive": [
+          {
+            "path": "::Snapshot(",
+            "percent": 28.83667780045108
+          },
+          {
+            "path": "::BuildProjectedShuffleOrder(",
+            "percent": 3.4423015413387055
+          },
+          {
+            "path": "::StableShuffleProjection(",
+            "percent": 1.1415240988352768
+          },
+          {
+            "path": "::CompareTo(",
+            "percent": 1.2606072743896726
+          },
+          {
+            "path": "::LeavesHandAtTurnEnd(",
+            "percent": 0.7348270160688659
+          },
+          {
+            "path": "::CalculateReachableHandPotential(",
+            "percent": 2.3005824413600133
+          },
+          {
+            "path": "StrategicEffectContext::Build(",
+            "percent": 1.1094116662478883
+          },
+          {
+            "path": "::CardValue(",
+            "percent": 0.9113209076031374
+          },
+          {
+            "path": "::DynamicVarBaseValue(",
+            "percent": 0.6383751782722028
+          },
+          {
+            "path": "::BuildStateKey(",
+            "percent": 4.926732238184848
+          },
+          {
+            "path": "::Filter(",
+            "percent": 6.119004005602397
+          },
+          {
+            "path": "::Matches(",
+            "percent": 1.6288655463091493
+          },
+          {
+            "path": "::GetBaseHookListeners(",
+            "percent": 1.870397866676794
+          },
+          {
+            "path": "::GetEffectiveHookListeners(",
+            "percent": 2.9321236400936606
+          },
+          {
+            "path": "::GetMirroredHookListeners(",
+            "percent": 4.947973079977884
+          },
+          {
+            "path": "::TryBuildMirroredListenerProjections(",
+            "percent": 0.0
+          },
+          {
+            "path": "::GetHookProjection(",
+            "percent": 0.0
+          },
+          {
+            "path": "::Fork(",
+            "percent": 10.454581321420566
+          }
+        ],
+        "stages": {
+          "Other": 20.185822650706374,
+          "Fork": 10.454581321420566,
+          "Replay": 40.52291822742198,
+          "Snapshot": 28.83667780045108
+        },
+        "nearestOwned": [
+          {
+            "path": "CombatSolver.Engine.Common.MirroredHookListenerFilter::Filter",
+            "percent": 3.6078932070973124
+          },
+          {
+            "path": "CombatSolver.SimulationSnapshot [CombatSolver] CombatSolver.CombatBeamSolver::Snapshot",
+            "percent": 2.6640332884473485
+          },
+          {
+            "path": "CombatSolver.Engine.Common.PredictionUtils::CloneModelForSimulation",
+            "percent": 2.281264094519915
+          },
+          {
+            "path": "CombatSolver.StateFingerprint,int32> [CombatSolver] CombatSolver.CombatBeamSolver::BuildProjectedShuffleOrder",
+            "percent": 1.6977720770220603
+          },
+          {
+            "path": "CombatSolver.Engine.Common.PredictionForkContext::Find",
+            "percent": 1.5728532927430896
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::GetBaseHookListeners",
+            "percent": 1.4310162900759849
+          },
+          {
+            "path": "CombatSolver.SearchGcRuntimeInfo::GetDetailedMemoryInfo",
+            "percent": 1.3404969174843457
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState+ConcatenatedListenerView+<GetEnumerator>d__13::MoveNext",
+            "percent": 1.3276800248163232
+          },
+          {
+            "path": "CombatSolver.Engine.Common.MirroredHookListenerLayout::Matches",
+            "percent": 1.2718142439645013
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::CombatSolver.Engine.Common.ICombatPredictionForkableState.Fork",
+            "percent": 1.2690896340818838
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator::IsCombatEnding",
+            "percent": 1.2268477585314073
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::GetAmount",
+            "percent": 1.1671998920261424
+          },
+          {
+            "path": "CombatSolver.StateFingerprintBuilder::Add",
+            "percent": 1.0022558076903938
+          },
+          {
+            "path": "CombatSolver.CombatBeamSolver+ParallelExpansionExecutor+ExpansionLane::Run",
+            "percent": 0.9955508881076771
+          },
+          {
+            "path": "CombatSolver.SimulationCardPileLookupFastPath::Find",
+            "percent": 0.8960138694960312
+          },
+          {
+            "path": "CombatSolver.StrategicEffectContext [CombatSolver] CombatSolver.StrategicEffectContext::Build",
+            "percent": 0.8323049040187488
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::RemapCachedModels",
+            "percent": 0.8195098824495457
+          },
+          {
+            "path": "CombatSolver.Engine.Common.PredictedCard::CompareTo",
+            "percent": 0.8108453126301057
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::NormalizeCardAfflictions",
+            "percent": 0.7844634418059816
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictedCardExtensions::HasKeyword",
+            "percent": 0.7789438189782684
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictionState [CombatSolver] CombatSolver.Engine.InCombat.Simulation.CombatPredictionState::Fork",
+            "percent": 0.7689921283457551
+          },
+          {
+            "path": "CombatSolver.Engine.Common.PredictedCard::get_Preview",
+            "percent": 0.7584071984001236
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState+ConcatenatedListenerView::get_Item",
+            "percent": 0.7520299507972026
+          },
+          {
+            "path": "CombatSolver.Engine.Common.SimCardPile [CombatSolver] CombatSolver.Engine.Common.SimCardPile::Fork",
+            "percent": 0.7221040459898741
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Mirrors.HookMirrors+HookListenerEnumerable+Enumerator::MoveNext",
+            "percent": 0.7186589785724953
+          }
+        ]
+      },
+      "detail": {
+        "scope": "Reanalysis of the same captured full-request cycles; no new search or samples; inclusive paths overlap and inlining may hide callees",
+        "samples": 23428,
+        "estimatedCycles": 367805022801,
+        "hasAnyJitResolvedFramePct": 99.49892309219574,
+        "inclusive": [
+          {
+            "path": "PredictionForkContext::Find(",
+            "percent": 1.636640250629996
+          },
+          {
+            "path": "PredictionForkContext::FindIndexed(",
+            "percent": 0.11195672312033485
+          },
+          {
+            "path": "PredictionForkContext::Register(",
+            "percent": 0.6360035010358319
+          },
+          {
+            "path": "PredictionForkContext::BuildHashIndex(",
+            "percent": 0.02663727299151327
+          },
+          {
+            "path": "PredictionUtils::CloneModelForSimulation(",
+            "percent": 2.323593956362024
+          },
+          {
+            "path": "PowerModel::DeepCloneFields(",
+            "percent": 1.0878646684944404
+          },
+          {
+            "path": "CardModel::DeepCloneFields(",
+            "percent": 0.8334993953192052
+          },
+          {
+            "path": "DynamicVarSet::Clone(",
+            "percent": 1.4191160678694812
+          },
+          {
+            "path": "CombatBeamSolver::AdvanceRound(",
+            "percent": 22.749620176142006
+          },
+          {
+            "path": "CombatBeamSolver::BuildStateKey(",
+            "percent": 4.926732238184848
+          },
+          {
+            "path": "SimulatedCombatState::AppendFingerprint(",
+            "percent": 3.2372110465827024
+          },
+          {
+            "path": "CombatBeamSolver::CalculateReachableHandPotential(",
+            "percent": 2.3005824413600133
+          },
+          {
+            "path": "CombatPredictionSimulator::CanPlay(",
+            "percent": 3.068294486860748
+          },
+          {
+            "path": "SimulatedCombatState::CanPlayCard(",
+            "percent": 0.8321516429252196
+          }
+        ],
+        "nearestAnyJit": [
+          {
+            "path": "valuetype MonoMod.Core.Interop.CoreCLR/CorJitResult [0Harmony] MonoMod.Core.Interop.CoreCLR+V60::InvokeCompileMethod(native int,native int,native int,valuetype MonoMod.Core.Interop.CoreCLR/V21/CORINFO_METHOD_INFO*,uint32,uint8**,uint32*)[OptimizedTier1]",
+            "percent": 4.897798136581353
+          },
+          {
+            "path": "System.Runtime]System.Collections.Generic.IReadOnlyList`1<class [sts2]MegaCrit.Sts2.Core.Models.AbstractModel> [CombatSolver] CombatSolver.Engine.Common.MirroredHookListenerFilter::Filter",
+            "percent": 2.8254880637186734
+          },
+          {
+            "path": "System.Private.CoreLib] System.Collections.Generic.Dictionary`2[System.__Canon,System.__Canon]::FindValue",
+            "percent": 2.0892044324140504
+          },
+          {
+            "path": "System.Private.CoreLib] System.Runtime.CompilerServices.CastHelpers::IsInstanceOfClass",
+            "percent": 2.0701437579659117
+          },
+          {
+            "path": "CombatSolver.Engine.Common.PredictionForkContext::Find",
+            "percent": 1.5728532927430896
+          },
+          {
+            "path": "valuetype MonoMod.Core.Interop.CoreCLR/CorJitResult [0Harmony] MonoMod.Core.Interop.CoreCLR+V60::InvokeCompileMethod(native int,native int,native int,valuetype MonoMod.Core.Interop.CoreCLR/V21/CORINFO_METHOD_INFO*,uint32,uint8**,uint32*)[InstrumentedTier]",
+            "percent": 1.366569252840104
+          },
+          {
+            "path": "System.GCMemoryInfo [System.Private.CoreLib] System.GC::GetGCMemoryInfo",
+            "percent": 1.3404969174843457
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState+ConcatenatedListenerView+<GetEnumerator>d__13::MoveNext",
+            "percent": 1.289736962501074
+          },
+          {
+            "path": "CombatSolver.Engine.Common.MirroredHookListenerLayout::Matches",
+            "percent": 1.2406111399051818
+          },
+          {
+            "path": "CombatSolver.SimulationSnapshot [CombatSolver] CombatSolver.CombatBeamSolver::Snapshot",
+            "percent": 1.226179319318349
+          },
+          {
+            "path": "System.Private.CoreLib] System.Runtime.CompilerServices.CastHelpers::IsInstanceOfInterface",
+            "percent": 1.1216173315371005
+          },
+          {
+            "path": "CombatSolver.StateFingerprintBuilder::Add",
+            "percent": 1.0022558076903938
+          },
+          {
+            "path": "System.Runtime]System.Collections.Generic.IReadOnlyList`1<class [sts2]MegaCrit.Sts2.Core.Models.AbstractModel> [CombatSolver] CombatSolver.SimulatedCombatState::GetBaseHookListeners",
+            "percent": 0.8636289001193498
+          },
+          {
+            "path": "valuetype MonoMod.Core.Interop.CoreCLR/CorJitResult [0Harmony] MonoMod.Core.Interop.CoreCLR+V60::InvokeCompileMethod(native int,native int,native int,valuetype MonoMod.Core.Interop.CoreCLR/V21/CORINFO_METHOD_INFO*,uint32,uint8**,uint32*)[QuickJitted]",
+            "percent": 0.8630174174422313
+          },
+          {
+            "path": "MegaCrit.Sts2.Core.Combat.ICombatState [CombatSolver] CombatSolver.SimulatedCombatState::CombatSolver.Engine.Common.ICombatPredictionForkableState.Fork",
+            "percent": 0.7879778565634423
+          },
+          {
+            "path": "MegaCrit.Sts2.Core.Models.CardModel [CombatSolver] CombatSolver.Engine.Common.PredictedCard::get_Preview",
+            "percent": 0.7584071984001236
+          },
+          {
+            "path": "System.Runtime]System.Collections.Generic.IReadOnlyList`1<class [sts2]MegaCrit.Sts2.Core.Models.AbstractModel> [CombatSolver] CombatSolver.SimulatedCombatState::RemapCachedModels",
+            "percent": 0.7335147319235209
+          },
+          {
+            "path": "System.Private.CoreLib] System.Runtime.CompilerServices.ConditionalWeakTable`2+Container[System.__Canon,System.__Canon]::FindEntry",
+            "percent": 0.7233812648174544
+          },
+          {
+            "path": "System.Private.CoreLib] System.Threading.WaitHandle::WaitOneNoCheck",
+            "percent": 0.7149551996256345
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator::IsCombatEnding",
+            "percent": 0.6786818292991548
+          },
+          {
+            "path": "MegaCrit.Sts2.Core.Models.AbstractModel [CombatSolver] CombatSolver.SimulatedCombatState+ConcatenatedListenerView::get_Item",
+            "percent": 0.6681423345677373
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::GetAmount",
+            "percent": 0.6533148924124662
+          },
+          {
+            "path": "System.Private.CoreLib] System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon]::GetHashCode",
+            "percent": 0.6430129898687098
+          },
+          {
+            "path": "CombatSolver.Engine.Common.SimCardPile [CombatSolver] CombatSolver.Engine.Common.SimCardPile::Fork",
+            "percent": 0.6247595115750422
+          },
+          {
+            "path": "System.Runtime]System.ValueTuple`2<valuetype CombatSolver.StateFingerprint,int32> [CombatSolver] CombatSolver.CombatBeamSolver::BuildProjectedShuffleOrder",
+            "percent": 0.6134167621796452
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Mirrors.HookMirrors+HookListenerEnumerable+Enumerator::MoveNext",
+            "percent": 0.6030456648222721
+          },
+          {
+            "path": "CombatSolver.StrategicEffectContext [CombatSolver] CombatSolver.StrategicEffectContext::Build",
+            "percent": 0.5952584389214729
+          },
+          {
+            "path": "System.Private.CoreLib] System.Runtime.CompilerServices.CastHelpers::StelemRef_Helper",
+            "percent": 0.551249422468324
+          },
+          {
+            "path": "System.Private.CoreLib] System.Collections.Generic.List`1+Enumerator[System.__Canon]::MoveNext",
+            "percent": 0.546081668679849
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictedCardExtensions::HasKeyword",
+            "percent": 0.544402467848668
+          }
+        ]
+      },
+      "rawResultPath": ".local/tool-tasks/unresolved-roots-cpu-20261006/dev-08-regent-boss/run/result.json",
+      "rawPerfPath": ".local/tool-tasks/unresolved-roots-cpu-20261006/dev-08-regent-boss/perf.data",
+      "zeroLostSamplesReported": true,
+      "gcLifecycleScope": "Selected-result lifecycle counters all zero; not proof the full host did not collect or enter NoGC."
+    },
+    {
+      "scene": "dev-09-necrobinder-boss",
+      "command": {
+        "diagnosticOnly": true,
+        "command": [
+          "perf",
+          "record",
+          "-e",
+          "cycles:u",
+          "-F",
+          "199",
+          "--call-graph",
+          "fp",
+          "-k",
+          "1",
+          "-o",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/unresolved-roots-cpu-20261006/dev-09-necrobinder-boss/perf.data",
+          "--",
+          "dotnet",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/intrinsic-card-value-20261006/updated-harness/OfflineSearchHarness.dll",
+          "--request",
+          "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-09-necrobinder-boss.json",
+          "--label",
+          "unresolved-full-cpu-dev-09-necrobinder-boss",
+          "--out",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/unresolved-roots-cpu-20261006/dev-09-necrobinder-boss/run",
+          "--profile",
+          "VeryHigh",
+          "--dop",
+          "16",
+          "--budget-ms",
+          "300000",
+          "--search-mode",
+          "Coordinator",
+          "--nodes",
+          "500000",
+          "--beam",
+          "135",
+          "--card-branches",
+          "72",
+          "--pile-branches",
+          "42",
+          "--hand-branches",
+          "54",
+          "--enable-no-gc-region",
+          "--no-gc-region-budget-gigabytes",
+          "16",
+          "--use-portfolio",
+          "--production-budget"
+        ],
+        "dll": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-pr213-sync-20261006/build/CombatSolver.dll",
+        "envExtra": {
+          "DOTNET_PerfMapEnabled": "3"
+        },
+        "outerTimeoutSeconds": 120,
+        "sourceBase": "fac18c84",
+        "runtimeBaseline": "bb004176",
+        "dllSha256": "2aa06f3e5adfc9e82492d2a43c806f2b3aa1964e92b9c250da013ffa2d68e45e",
+        "scope": "Independent full production-budget Coordinator CPU diagnosis of unresolved roots; not timing or RSS acceptance"
+      },
+      "requestSha256": "b23a21a9103b1d3ceac381f09353e91c6d42bdc695db8244bf7c4580fc95a398",
+      "resultSha256": "8cdca1ba66f1377c6e17e1e81dc534ee895ce6ed6f2b0aeee68cb64fdc3314b0",
+      "rootStampSha256": "01f40b86e913845ba01eb08473b20fd152c19e3767ed8d9a910abfea10454e0b",
+      "policy": {
+        "profile": {
+          "beamWidth": 135,
+          "maxExpandedNodes": 500000,
+          "maxCardBranchesPerNode": 72,
+          "maxPileChoiceBranchesPerAction": 42,
+          "maxHandChoiceBranchesPerAction": 54,
+          "softTimeBudgetMilliseconds": 600000,
+          "secondRankBand": false,
+          "contextualRanking": null,
+          "continuousThreatRanking": false,
+          "baseScoreTacticalTies": false,
+          "adaptiveNoveltyRefinement": false,
+          "beamWeightPerturbation": null,
+          "offensiveRefinementPortfolio": false,
+          "boundedOffensiveRefinementPortfolio": false,
+          "reallocatedRefinementPortfolio": true,
+          "stopPortfolioAtHpTarget": true,
+          "baseScoreOnly": false,
+          "aggressivePowerCommitment": false
+        },
+        "potionPolicy": "Smart",
+        "potionStrategy": {
+          "defaultPolicy": "Smart",
+          "directives": [],
+          "hasForcedDirectives": false,
+          "forcedDirectiveCount": 0
+        },
+        "fixedBudget": false,
+        "maxDegreeOfParallelism": 16,
+        "includeTurnSetup": false,
+        "theftPolicy": null,
+        "actTransitionBossHpStrategy": "ProgressionFirst",
+        "finalBossHpStrategy": "ProgressionFirst",
+        "acceptableBattleHpLoss": 0,
+        "stopAtAcceptableBattleHpLoss": false,
+        "act3BossStrategy": false,
+        "growthBudgets": {
+          "handOfGreed": 0,
+          "theHunt": 0,
+          "feed": 0,
+          "royalties": 0,
+          "alchemize": 0,
+          "geneticAlgorithm": 0,
+          "theScythe": 0,
+          "goopy": 0,
+          "forbiddenGrimoire": 0,
+          "madScience": 0
+        },
+        "relicTargets": [],
+        "brightestFlameMaxHpLossLimit": null,
+        "hasGrowthTargets": false,
+        "ignoreLongTermRewards": false,
+        "verifyIncrementalSearch": false,
+        "detailedDiagnostics": false,
+        "measurePhasePerformance": false,
+        "useBeamWidthPortfolio": true,
+        "beamWidthPortfolioPlainBaselineMember": true,
+        "useNoveltyPortfolio": false,
+        "beamWidthPortfolioWidths": null,
+        "portfolioSelector": null,
+        "observePortfolio": false
+      },
+      "budget": {
+        "profile": "VeryHigh",
+        "beamWidth": 135,
+        "maxExpandedNodes": 500000,
+        "maxCardBranchesPerNode": 72,
+        "maxPileChoiceBranchesPerAction": 42,
+        "maxHandChoiceBranchesPerAction": 54,
+        "maxDegreeOfParallelism": 16,
+        "budgetMilliseconds": 300000,
+        "earlyTurnExplorationDepth": 0,
+        "earlyTurnExplorationBudgetMilliseconds": 0,
+        "potionPolicy": "Smart",
+        "searchMode": "Coordinator",
+        "usePortfolio": true,
+        "fixedSearchBudget": false,
+        "enableNoGcRegion": true,
+        "noGcRegionBudgetGigabytes": 16
+      },
+      "comparisonQuality": {
+        "won": true,
+        "outstandingStolenResource": 0,
+        "projectedBattleHpLost": 22,
+        "strategicHpDeficit": 22,
+        "potionStrategicCost": 0,
+        "projectedBattlePotionCount": 0,
+        "enemyHp": 0,
+        "score": 10000171924,
+        "combatEndedTurn": 11,
+        "theftPolicy": null,
+        "survives": true,
+        "deathSaveUseCount": 0,
+        "growthHpCredit": 0,
+        "growthRewardCount": 0
+      },
+      "solverMetrics": {
+        "gcLifecycle": {
+          "forcedCollections": 0,
+          "noGcStartAttempts": 0,
+          "noGcStarts": 0,
+          "noGcEndAttempts": 0,
+          "noGcEnds": 0,
+          "noGcRestarts": 0,
+          "noGcLosses": 0
+        },
+        "gcLifecycleAttribution": null,
+        "boundary": "None",
+        "selectedExpanded": 11098,
+        "selectedTransitions": 70079,
+        "selectedChoiceBranches": 29466,
+        "roundReplayPrefixCaptures": 0,
+        "roundReplayPrefixReuses": 0,
+        "executionChoiceCaptures": 49,
+        "executionChoiceReuses": 288,
+        "cardChoicePrefixAttempts": 1148,
+        "cardChoicePrefixCaptures": 1133,
+        "cardChoicePrefixReuses": 29123,
+        "cardChoicePrefixFallbacks": 0,
+        "potionChoicePrefixForks": 0,
+        "potionChoicePrefixCaptures": 0,
+        "potionChoicePrefixReuses": 0,
+        "potionChoicePrefixFallbacks": 0,
+        "choiceReplayAttempts": 29466,
+        "choiceReplayBudgetExhaustions": 0,
+        "choiceBranchesDroppedByBudget": 0,
+        "cycleReplayAttempts": 0,
+        "cycleReplayActions": 0,
+        "totalCycleReplayActions": 0,
+        "cycleReplayVictories": 0,
+        "cycleReplayContinuations": 0,
+        "cycleStoppedUnproductive": 0,
+        "cycleStoppedRepetitionBudget": 0,
+        "cycleStoppedFamilyBudget": 0,
+        "cycleStoppedExitBudget": 0,
+        "turnLayerBudgetStops": 0,
+        "turnLayerTimeBudgetStops": 0,
+        "turnLayerNodeBudgetStops": 0,
+        "cycleRegionsDetected": 0,
+        "cycleRegionCandidatesConsidered": 0,
+        "cycleRegionCandidatesAdmitted": 0,
+        "cycleRegionCandidatesDropped": 0,
+        "cycleRegionProgressEpochs": 0,
+        "cycleRegionProbeCandidatesAdmitted": 0,
+        "cycleRegionProgressCandidatesAdmitted": 0,
+        "cycleRegionMaxActionFamilies": 0,
+        "orderedMutationCandidatesAdmitted": 2027,
+        "orderedMutationLeaseExpiredBudget": 543,
+        "orderedMutationOrdinaryFallbacks": 372,
+        "orderedMutationColdAtomicCommitted": 47,
+        "orderedMutationColdAtomicRejected": 98,
+        "totalExpanded": 73006,
+        "totalTransitions": 424147,
+        "totalChoiceBranches": 164007,
+        "elapsedMilliseconds": 2424.8534,
+        "totalElapsedMilliseconds": 17749.0169,
+        "searchWorkAttributions": [
+          {
+            "mechanism": "DeferredOpeningPower",
+            "expandedNodes": 4814,
+            "transitions": 31220,
+            "choiceBranches": 15169,
+            "elapsedMilliseconds": 542.6493,
+            "workerAllocatedBytes": 1111109864,
+            "gen0Collections": 0,
+            "gen1Collections": 0,
+            "gen2Collections": 0,
+            "gcPauseMilliseconds": 0,
+            "maxObservedGcPauseMilliseconds": 0,
+            "recordedSolverCount": 1
+          },
+          {
+            "mechanism": "PrimaryBeam",
+            "expandedNodes": 16494,
+            "transitions": 103044,
+            "choiceBranches": 41232,
+            "elapsedMilliseconds": 7825.1104,
+            "workerAllocatedBytes": 3882226712,
+            "gen0Collections": 0,
+            "gen1Collections": 0,
+            "gen2Collections": 0,
+            "gcPauseMilliseconds": 0,
+            "maxObservedGcPauseMilliseconds": 0,
+            "recordedSolverCount": 1
+          },
+          {
+            "mechanism": "RefinementBeam",
+            "expandedNodes": 51698,
+            "transitions": 289883,
+            "choiceBranches": 107606,
+            "elapsedMilliseconds": 9381.2572,
+            "workerAllocatedBytes": 10646540224,
+            "gen0Collections": 3,
+            "gen1Collections": 2,
+            "gen2Collections": 2,
+            "gcPauseMilliseconds": 1306.508,
+            "maxObservedGcPauseMilliseconds": 1303.944,
+            "recordedSolverCount": 5
+          }
+        ],
+        "workerAllocatedBytes": 2590355088,
+        "totalWorkerAllocatedBytes": 15639876800,
+        "totalGen0Collections": 3,
+        "totalGen1Collections": 2,
+        "totalGen2Collections": 2,
+        "totalGcPauseMilliseconds": 1306.508,
+        "maxGcPauseMilliseconds": 1303.944,
+        "maxParallelConcurrency": 16,
+        "parallelActionReplayWaves": 371,
+        "parallelActionReplayWorkItems": 27542,
+        "maxParallelActionReplayConcurrency": 16,
+        "deferredRoundChoiceActions": 1146,
+        "deferredRoundChoiceLayerWidthTotal": 29178,
+        "maxDeferredRoundChoiceLayerWidth": 42,
+        "deferredRoundChoiceFiniteQuotaFallbacks": 0,
+        "deferredRoundChoiceFinitePrimaryLayers": 1146,
+        "deferredRoundChoiceFinitePendingFallbacks": 0,
+        "parallelRoundChoiceReplayWaves": 133,
+        "parallelRoundChoiceReplayWorkItems": 18207,
+        "maxParallelRoundChoiceReplayConcurrency": 16,
+        "searchedTurns": 11,
+        "shufflesCrossed": 3,
+        "score": 10000171924,
+        "projectedBattleHpLost": 22,
+        "unavoidableHpLost": 0,
+        "potionCount": 0,
+        "potionUses": [],
+        "onlyDeathRoutes": false,
+        "finalHp": 44,
+        "finalEnemyHp": 0,
+        "combatEndedTurn": 11,
+        "capturedAtElapsedMilliseconds": 18518.1055,
+        "firstRoutePublishedMilliseconds": 7855.1134,
+        "portfolioMembers": [
+          {
+            "beamWidth": 135,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "aggressivePowerCommitment": true,
+            "nodeBudget": 500000,
+            "ran": true,
+            "selected": false,
+            "compared": true,
+            "skippedReason": null,
+            "expandedNodes": 16494,
+            "transitionCount": 103044,
+            "termination": "None",
+            "terminal": true,
+            "won": false,
+            "battleHpLost": 0,
+            "potionCount": 0,
+            "elapsedMilliseconds": 7834,
+            "allocatedBytes": 3901007296,
+            "managedHeapBytesAfter": 3925815272,
+            "offensiveRefinement": false,
+            "boundedRefinement": false
+          },
+          {
+            "beamWidth": 90,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "aggressivePowerCommitment": false,
+            "nodeBudget": 483506,
+            "ran": true,
+            "selected": true,
+            "compared": true,
+            "skippedReason": null,
+            "expandedNodes": 11098,
+            "transitionCount": 70079,
+            "termination": "None",
+            "terminal": true,
+            "won": true,
+            "battleHpLost": 22,
+            "potionCount": 0,
+            "elapsedMilliseconds": 2431,
+            "allocatedBytes": 2600577048,
+            "managedHeapBytesAfter": 6527216200,
+            "offensiveRefinement": false,
+            "boundedRefinement": false
+          },
+          {
+            "beamWidth": 203,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "aggressivePowerCommitment": false,
+            "nodeBudget": 472408,
+            "ran": true,
+            "selected": false,
+            "compared": true,
+            "skippedReason": null,
+            "expandedNodes": 14610,
+            "transitionCount": 97246,
+            "termination": "None",
+            "terminal": true,
+            "won": false,
+            "battleHpLost": 0,
+            "potionCount": 0,
+            "elapsedMilliseconds": 2786,
+            "allocatedBytes": 3354847960,
+            "managedHeapBytesAfter": 9882907184,
+            "offensiveRefinement": false,
+            "boundedRefinement": false
+          },
+          {
+            "beamWidth": 135,
+            "secondRankBand": true,
+            "baseScoreOnly": false,
+            "aggressivePowerCommitment": false,
+            "nodeBudget": 457798,
+            "ran": true,
+            "selected": false,
+            "compared": true,
+            "skippedReason": null,
+            "expandedNodes": 9178,
+            "transitionCount": 39000,
+            "termination": "None",
+            "terminal": true,
+            "won": false,
+            "battleHpLost": 0,
+            "potionCount": 0,
+            "elapsedMilliseconds": 2468,
+            "allocatedBytes": 1524076480,
+            "managedHeapBytesAfter": 876436032,
+            "offensiveRefinement": false,
+            "boundedRefinement": false
+          },
+          {
+            "beamWidth": 135,
+            "secondRankBand": false,
+            "baseScoreOnly": true,
+            "aggressivePowerCommitment": false,
+            "nodeBudget": 448620,
+            "ran": true,
+            "selected": false,
+            "compared": true,
+            "skippedReason": null,
+            "expandedNodes": 10228,
+            "transitionCount": 44442,
+            "termination": "None",
+            "terminal": true,
+            "won": false,
+            "battleHpLost": 0,
+            "potionCount": 0,
+            "elapsedMilliseconds": 911,
+            "allocatedBytes": 1717022576,
+            "managedHeapBytesAfter": 2593985680,
+            "offensiveRefinement": false,
+            "boundedRefinement": false
+          },
+          {
+            "beamWidth": 54,
+            "secondRankBand": false,
+            "baseScoreOnly": false,
+            "aggressivePowerCommitment": false,
+            "nodeBudget": 7701,
+            "ran": true,
+            "selected": false,
+            "compared": true,
+            "skippedReason": null,
+            "expandedNodes": 6584,
+            "transitionCount": 39116,
+            "termination": "None",
+            "terminal": true,
+            "won": false,
+            "battleHpLost": 0,
+            "potionCount": 0,
+            "elapsedMilliseconds": 785,
+            "allocatedBytes": 1491557144,
+            "managedHeapBytesAfter": 4086061112,
+            "offensiveRefinement": true,
+            "boundedRefinement": true
+          }
+        ],
+        "powerRouteMembers": [],
+        "peakManagedHeapBytes": 9882907184,
+        "managedLiveBytes": 5202818392,
+        "managedHeapBytes": 362492952,
+        "managedFragmentedBytes": 300874008,
+        "workingSetBytes": 9150164992,
+        "earlyTurnExploration": null,
+        "privateMemoryBytes": 17541455872,
+        "configuredNoGcRegionEnabled": true,
+        "configuredNoGcRegionBudgetBytes": 16000000000,
+        "gcLatencyMode": "NoGCRegion",
+        "noGcRegionActive": true,
+        "noGcRegionBudgetBytes": 16000000000,
+        "noGcRegionRolloverCount": 0
+      },
+      "pruneCounters": {
+        "boundary": "None",
+        "selectedExpanded": 11098,
+        "selectedTransitions": 70079,
+        "selectedChoiceBranches": 29466,
+        "totalExpanded": 73006,
+        "totalTransitions": 424147,
+        "totalChoiceBranches": 164007,
+        "choiceReplayAttempts": 29466,
+        "choiceReplayBudgetExhaustions": 0,
+        "choiceBranchesDroppedByBudget": 0,
+        "roundReplayPrefixCaptures": 0,
+        "dominatedActionsPruned": 4,
+        "topQueueActionsDropped": 0,
+        "actionAdmissionRepresentativesProtected": 0,
+        "duplicateCardBranchesPruned": 3418,
+        "shuffleBranchesPruned": 0,
+        "soldHpBranchesPruned": 0,
+        "primaryIncumbentBranchesPruned": 118,
+        "primaryIncumbentUpdates": 3,
+        "replayCount": 2,
+        "forkCount": 70079,
+        "reusedNodeSnapshots": 11458,
+        "transpositionBranchesPruned": 6074,
+        "repeatableNoProgressBranchesPruned": 0,
+        "standPatProbes": 1973,
+        "transitionCacheHits": 0,
+        "roundReplayPrefixReuses": 0,
+        "cycleRegionsDetected": 0,
+        "cycleRegionCandidatesConsidered": 0,
+        "cycleRegionCandidatesAdmitted": 0,
+        "cycleRegionCandidatesDropped": 0,
+        "cycleRegionProgressEpochs": 0,
+        "cycleRegionProbeCandidatesAdmitted": 0,
+        "cycleRegionProgressCandidatesAdmitted": 0,
+        "cycleRegionMaxActionFamilies": 0,
+        "orderedMutationCandidatesAdmitted": 2027,
+        "orderedMutationLeaseExpiredBudget": 543,
+        "orderedMutationOrdinaryFallbacks": 372,
+        "orderedMutationColdAtomicCommitted": 47,
+        "orderedMutationColdAtomicRejected": 98,
+        "deferredRoundChoiceActions": 1146,
+        "deferredRoundChoiceLayerWidthTotal": 29178,
+        "maxDeferredRoundChoiceLayerWidth": 42,
+        "deferredRoundChoiceFiniteQuotaFallbacks": 0,
+        "deferredRoundChoiceFinitePrimaryLayers": 1146,
+        "deferredRoundChoiceFinitePendingFallbacks": 0,
+        "parallelActionReplayWaves": 371,
+        "parallelActionReplayWorkItems": 27542,
+        "maxParallelActionReplayConcurrency": 16,
+        "parallelRoundChoiceReplayWaves": 133,
+        "parallelRoundChoiceReplayWorkItems": 18207,
+        "maxParallelRoundChoiceReplayConcurrency": 16,
+        "maxParallelConcurrency": 16,
+        "searchedTurns": 11,
+        "shufflesCrossed": 3,
+        "score": 10000171924,
+        "projectedBattleHpLost": 22,
+        "potionCount": 0,
+        "onlyDeathRoutes": false,
+        "finalHp": 44,
+        "finalEnemyHp": 0,
+        "combatEndedTurn": 11,
+        "transpositionCount": 54468,
+        "expandedTranspositionCount": 9081,
+        "transpositionLimitBypasses": 0,
+        "standPatCacheCount": 1973,
+        "threatProjectionCacheCount": 20,
+        "coverageCacheCount": 18
+      },
+      "cpu": {
+        "scope": "PR213 baseline unresolved-root complete production-budget Coordinator CPU diagnosis, not performance acceptance; inclusive paths overlap; nearest managed frame is attribution, not leaf resolution",
+        "startMonotonic": 1276438.8759617805,
+        "endMonotonic": 1276456.7019617558,
+        "includedSamples": 27540,
+        "estimatedCycles": 418293966634,
+        "listenerUnionPercent": 8.59788447713095,
+        "inclusive": [
+          {
+            "path": "::Snapshot(",
+            "percent": 31.87269313082253
+          },
+          {
+            "path": "::BuildProjectedShuffleOrder(",
+            "percent": 3.6050076515194704
+          },
+          {
+            "path": "::StableShuffleProjection(",
+            "percent": 0.9868091503245902
+          },
+          {
+            "path": "::CompareTo(",
+            "percent": 1.3050475257694725
+          },
+          {
+            "path": "::LeavesHandAtTurnEnd(",
+            "percent": 0.45412098249604516
+          },
+          {
+            "path": "::CalculateReachableHandPotential(",
+            "percent": 4.979150381392828
+          },
+          {
+            "path": "StrategicEffectContext::Build(",
+            "percent": 0.027308984855607753
+          },
+          {
+            "path": "::CardValue(",
+            "percent": 0.5620788946394746
+          },
+          {
+            "path": "::DynamicVarBaseValue(",
+            "percent": 0.41904770013900644
+          },
+          {
+            "path": "::BuildStateKey(",
+            "percent": 7.332327629969456
+          },
+          {
+            "path": "::Filter(",
+            "percent": 5.435768943302716
+          },
+          {
+            "path": "::Matches(",
+            "percent": 1.1966662601614328
+          },
+          {
+            "path": "::GetBaseHookListeners(",
+            "percent": 1.9412538692208747
+          },
+          {
+            "path": "::GetEffectiveHookListeners(",
+            "percent": 2.792853906549851
+          },
+          {
+            "path": "::GetMirroredHookListeners(",
+            "percent": 3.4931745861840313
+          },
+          {
+            "path": "::TryBuildMirroredListenerProjections(",
+            "percent": 0.0
+          },
+          {
+            "path": "::GetHookProjection(",
+            "percent": 0.0
+          },
+          {
+            "path": "::Fork(",
+            "percent": 14.568531261728866
+          }
+        ],
+        "stages": {
+          "Other": 22.326623095119956,
+          "Fork": 14.568531261728866,
+          "Replay": 31.23215251232865,
+          "Snapshot": 31.87269313082253
+        },
+        "nearestOwned": [
+          {
+            "path": "CombatSolver.Engine.Common.MirroredHookListenerFilter::Filter",
+            "percent": 3.503265492428666
+          },
+          {
+            "path": "CombatSolver.Engine.Common.PredictionForkContext::Find",
+            "percent": 2.4510174639862123
+          },
+          {
+            "path": "CombatSolver.SimulationSnapshot [CombatSolver] CombatSolver.CombatBeamSolver::Snapshot",
+            "percent": 2.3155471411508315
+          },
+          {
+            "path": "CombatSolver.Engine.Common.PredictionUtils::CloneModelForSimulation",
+            "percent": 2.0505988515739677
+          },
+          {
+            "path": "CombatSolver.StateFingerprint,int32> [CombatSolver] CombatSolver.CombatBeamSolver::BuildProjectedShuffleOrder",
+            "percent": 2.015802984884513
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator::CanPlay",
+            "percent": 1.8621133459511108
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::GetBaseHookListeners",
+            "percent": 1.5762683691226038
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState+ConcatenatedListenerView+<GetEnumerator>d__13::MoveNext",
+            "percent": 1.467871613690381
+          },
+          {
+            "path": "CombatSolver.SearchGcPolicy/BackgroundGen2Completion> [CombatSolver] CombatSolver.SearchGcPolicy::CollectGeneration2ForAutomaticReclaimAsync",
+            "percent": 1.4583084814936882
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::CombatSolver.Engine.Common.ICombatPredictionForkableState.Fork",
+            "percent": 1.3246376163604037
+          },
+          {
+            "path": "CombatSolver.SimulationCardPileLookupFastPath::Find",
+            "percent": 1.2151548330716102
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::GetAmount",
+            "percent": 1.1720717457275167
+          },
+          {
+            "path": "CombatSolver.StateFingerprintBuilder::Add",
+            "percent": 1.1493657995327193
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator::IsCombatEnding",
+            "percent": 1.1301879463005708
+          },
+          {
+            "path": "CombatSolver.CombatBeamSolver+ParallelExpansionExecutor+ExpansionLane::Run",
+            "percent": 1.1276260907982714
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::CombatSolver.Engine.Common.ICombatPredictionCreatureSemantics.IsHittable",
+            "percent": 1.063214936325239
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictionState [CombatSolver] CombatSolver.Engine.InCombat.Simulation.CombatPredictionState::Fork",
+            "percent": 1.0360296436672893
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::RemapCachedModels",
+            "percent": 1.0318083468261972
+          },
+          {
+            "path": "CombatSolver.Engine.Common.SimCardPile [CombatSolver] CombatSolver.Engine.Common.SimCardPile::Fork",
+            "percent": 1.030273894141725
+          },
+          {
+            "path": "CombatSolver.Engine.Common.MirroredHookListenerLayout::Matches",
+            "percent": 0.8807321555807855
+          },
+          {
+            "path": "CombatSolver.SimulationSnapshot [CombatSolver] CombatSolver.CombatBeamSolver::Replay",
+            "percent": 0.8287878498217411
+          },
+          {
+            "path": "CombatSolver.Engine.Common.PredictedCard::CompareTo",
+            "percent": 0.7965355448015152
+          },
+          {
+            "path": "CombatSolver.Engine.Common.PredictedCard::get_Preview",
+            "percent": 0.7293007091515715
+          },
+          {
+            "path": "CombatSolver.SearchNode> [CombatSolver] CombatSolver.CombatBeamSolver+BeamRetentionPolicy::RankBest",
+            "percent": 0.6552062742033415
+          },
+          {
+            "path": "CombatSolver.CombatBeamSolver::AppendCyclePileShape",
+            "percent": 0.6265277381571921
+          }
+        ]
+      },
+      "detail": {
+        "scope": "Reanalysis of the same captured full-request cycles; no new search or samples; inclusive paths overlap and inlining may hide callees",
+        "samples": 27540,
+        "estimatedCycles": 418293966634,
+        "hasAnyJitResolvedFramePct": 99.41644675259306,
+        "inclusive": [
+          {
+            "path": "PredictionForkContext::Find(",
+            "percent": 2.582115018754392
+          },
+          {
+            "path": "PredictionForkContext::FindIndexed(",
+            "percent": 0.2803349549686491
+          },
+          {
+            "path": "PredictionForkContext::Register(",
+            "percent": 0.9600572148614827
+          },
+          {
+            "path": "PredictionForkContext::BuildHashIndex(",
+            "percent": 0.06404595245678218
+          },
+          {
+            "path": "PredictionUtils::CloneModelForSimulation(",
+            "percent": 2.123059841972428
+          },
+          {
+            "path": "PowerModel::DeepCloneFields(",
+            "percent": 1.1990422423157958
+          },
+          {
+            "path": "CardModel::DeepCloneFields(",
+            "percent": 0.5253038631376226
+          },
+          {
+            "path": "DynamicVarSet::Clone(",
+            "percent": 1.2932623364212519
+          },
+          {
+            "path": "CombatBeamSolver::AdvanceRound(",
+            "percent": 12.502743385433536
+          },
+          {
+            "path": "CombatBeamSolver::BuildStateKey(",
+            "percent": 7.332327629969456
+          },
+          {
+            "path": "SimulatedCombatState::AppendFingerprint(",
+            "percent": 4.331805810351171
+          },
+          {
+            "path": "CombatBeamSolver::CalculateReachableHandPotential(",
+            "percent": 4.979150381392828
+          },
+          {
+            "path": "CombatPredictionSimulator::CanPlay(",
+            "percent": 5.136614442445451
+          },
+          {
+            "path": "SimulatedCombatState::CanPlayCard(",
+            "percent": 0.6054486992435973
+          }
+        ],
+        "nearestAnyJit": [
+          {
+            "path": "valuetype MonoMod.Core.Interop.CoreCLR/CorJitResult [0Harmony] MonoMod.Core.Interop.CoreCLR+V60::InvokeCompileMethod(native int,native int,native int,valuetype MonoMod.Core.Interop.CoreCLR/V21/CORINFO_METHOD_INFO*,uint32,uint8**,uint32*)[OptimizedTier1]",
+            "percent": 5.004954186756925
+          },
+          {
+            "path": "System.Runtime]System.Collections.Generic.IReadOnlyList`1<class [sts2]MegaCrit.Sts2.Core.Models.AbstractModel> [CombatSolver] CombatSolver.Engine.Common.MirroredHookListenerFilter::Filter",
+            "percent": 2.6467317652437092
+          },
+          {
+            "path": "CombatSolver.Engine.Common.PredictionForkContext::Find",
+            "percent": 2.4510174639862123
+          },
+          {
+            "path": "System.Private.CoreLib] System.Collections.Generic.Dictionary`2[System.__Canon,System.__Canon]::FindValue",
+            "percent": 2.0209113954054554
+          },
+          {
+            "path": "System.Private.CoreLib] System.Runtime.CompilerServices.CastHelpers::IsInstanceOfClass",
+            "percent": 1.8027182633494565
+          },
+          {
+            "path": "instance void [0Harmony] MonoMod.Core.Platforms.Runtimes.Core60Runtime+AllocMemDelegateHolder::AllocMemHook(native int,valuetype MonoMod.Core.Interop.CoreCLR/V60/AllocMemArgs*)[OptimizedTier1]",
+            "percent": 1.4632117224285368
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState+ConcatenatedListenerView+<GetEnumerator>d__13::MoveNext",
+            "percent": 1.4366692028475299
+          },
+          {
+            "path": "valuetype MonoMod.Core.Interop.CoreCLR/CorJitResult [0Harmony] MonoMod.Core.Interop.CoreCLR+V60::InvokeCompileMethod(native int,native int,native int,valuetype MonoMod.Core.Interop.CoreCLR/V21/CORINFO_METHOD_INFO*,uint32,uint8**,uint32*)[InstrumentedTier]",
+            "percent": 1.1859295504351612
+          },
+          {
+            "path": "CombatSolver.StateFingerprintBuilder::Add",
+            "percent": 1.1493657995327193
+          },
+          {
+            "path": "System.Private.CoreLib] System.Runtime.CompilerServices.ConditionalWeakTable`2+Container[System.__Canon,System.__Canon]::FindEntry",
+            "percent": 1.0169775438626247
+          },
+          {
+            "path": "CombatSolver.SimulationSnapshot [CombatSolver] CombatSolver.CombatBeamSolver::Snapshot",
+            "percent": 0.986650653656485
+          },
+          {
+            "path": "System.Runtime]System.Collections.Generic.IReadOnlyList`1<class [sts2]MegaCrit.Sts2.Core.Models.AbstractModel> [CombatSolver] CombatSolver.SimulatedCombatState::GetBaseHookListeners",
+            "percent": 0.9839916478167636
+          },
+          {
+            "path": "CombatSolver.Engine.Common.SimCardPile [CombatSolver] CombatSolver.Engine.Common.SimCardPile::Fork",
+            "percent": 0.9389836904907309
+          },
+          {
+            "path": "System.Runtime]System.Collections.Generic.IReadOnlyList`1<class [sts2]MegaCrit.Sts2.Core.Models.AbstractModel> [CombatSolver] CombatSolver.SimulatedCombatState::RemapCachedModels",
+            "percent": 0.9085553565550977
+          },
+          {
+            "path": "MegaCrit.Sts2.Core.Combat.ICombatState [CombatSolver] CombatSolver.SimulatedCombatState::CombatSolver.Engine.Common.ICombatPredictionForkableState.Fork",
+            "percent": 0.9058794757409252
+          },
+          {
+            "path": "CombatSolver.Engine.Common.MirroredHookListenerLayout::Matches",
+            "percent": 0.8537100216232807
+          },
+          {
+            "path": "System.Private.CoreLib] System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon]::IndexOf",
+            "percent": 0.840526438450002
+          },
+          {
+            "path": "System.Private.CoreLib] System.Runtime.CompilerServices.CastHelpers::IsInstanceOfInterface",
+            "percent": 0.8379936921411675
+          },
+          {
+            "path": "System.Private.CoreLib] System.Threading.WaitHandle::WaitOneNoCheck",
+            "percent": 0.8006064502790736
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::CombatSolver.Engine.Common.ICombatPredictionCreatureSemantics.IsHittable",
+            "percent": 0.7815465236821023
+          },
+          {
+            "path": "MegaCrit.Sts2.Core.Hooks.Hook::ShouldPayExcessEnergyCostWithStars",
+            "percent": 0.7719619778368405
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::GetAmount",
+            "percent": 0.7368066495916524
+          },
+          {
+            "path": "MegaCrit.Sts2.Core.Models.CardModel [CombatSolver] CombatSolver.Engine.Common.PredictedCard::get_Preview",
+            "percent": 0.7293007091515715
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator::IsCombatEnding",
+            "percent": 0.6857265690637511
+          },
+          {
+            "path": "System.Private.CoreLib] System.Collections.Generic.HashSet`1[System.__Canon]::FindItemIndex",
+            "percent": 0.678925350239361
+          },
+          {
+            "path": "System.Runtime]System.ValueTuple`2<valuetype CombatSolver.StateFingerprint,int32> [CombatSolver] CombatSolver.CombatBeamSolver::BuildProjectedShuffleOrder",
+            "percent": 0.6435586524620912
+          },
+          {
+            "path": "System.Private.CoreLib] System.Collections.Generic.ObjectEqualityComparer`1[System.__Canon]::GetHashCode",
+            "percent": 0.6344955738561379
+          },
+          {
+            "path": "MegaCrit.Sts2.Core.Hooks.Hook+<IterateCombatHookListeners>d__0::MoveNext",
+            "percent": 0.6305760750567814
+          },
+          {
+            "path": "CombatSolver.CombatBeamSolver::AppendCyclePileShape",
+            "percent": 0.6190615243240564
+          },
+          {
+            "path": "System.Private.CoreLib] System.Runtime.CompilerServices.CastHelpers::StelemRef_Helper",
+            "percent": 0.6078374021169387
+          }
+        ]
+      },
+      "rawResultPath": ".local/tool-tasks/unresolved-roots-cpu-20261006/dev-09-necrobinder-boss/run/result.json",
+      "rawPerfPath": ".local/tool-tasks/unresolved-roots-cpu-20261006/dev-09-necrobinder-boss/perf.data",
+      "zeroLostSamplesReported": true,
+      "gcLifecycleScope": "Selected-result lifecycle counters all zero; not proof the full host did not collect or enter NoGC."
+    }
+  ],
+  "interpretation": [
+    "Replay and Snapshot are shared major stages but paths overlap; no percentage is promised removable.",
+    "AdvanceRound inclusive 22.75%/12.50% is a relevant next path.",
+    "PredictionForkContext Find nearest attribution and explicit FindIndexed frames do not measure all linear vs hash calls after JIT inlining.",
+    "Prior 396-card fixed-budget trace is kept with its original policy; percentages are diagnostic context only, not matched performance across roots.",
+    "Potential pre-expansion incumbent recheck must first measure stale-bound opportunities and preserve resource policies, serial publication and ordered commits. No such runtime change in this report."
+  ],
+  "unverified": [
+    "All remaining original roots at least 2x full-request speed",
+    "Final fixed regression quality/RSS",
+    "Exact clone subtype/callback removable cost",
+    "Linear vs indexed Find operation counts or lock wait",
+    "Pre-expansion bound safety and benefit"
+  ],
+  "deployment": "Runtime unchanged; reuse successful same-source bb004176 five-file deployment. No version, PR or release."
+}
