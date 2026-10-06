@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-06 [完成回合证明](performance/completed-turn-snapshot-pruning-research-20261006.md)：两原生/16实际worker通过；两根8次纯请求战损/峰值通过，储君回合6→7，展开增加，无共同提速。原型撤回；[必须回合](performance/mandatory-end-turn-pruning-research-20261006.md)记录复用边界，原始目标保留。
+2026-10-07 [排名后并行证明](performance/ranked-mandatory-turn-pruning-research-20261007.md)：两原生/16lane及错误取消排空通过；两根8次纯请求质量/峰值通过，节点减少但无共同提速，撤回；[完成回合](performance/completed-turn-snapshot-pruning-research-20261006.md)记录补位问题，原始目标保留。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 
