@@ -1,5 +1,7 @@
 # CombatSolver 测试入口
 
+2026-10-06 [原生空判定认证](performance/native-noop-guard-research-20261006.md)：范围内合同`000236e700ac4f31b0b35a65361a5564`通过；新增`0045993cec824efba5e7188fbd2bd094`成功复现未知来源读取1→2、分支HP79→78，父/live保持，Passed表示反例复现而非候选安全。两实例清理。12次Evaluate/8次完整Coordinator全样本保留；猎手完整基线120秒超时、候选未启动，原型撤回，未做最终固定回归或新部署。
+
 2026-10-06 [监听类型同步遍历](performance/listener-type-traversal-research-20261006.md)：原生`2107f524896d4794a4b899ac81c7d6b5`通过数组/列表/嵌套冻结段、顺序/短路、未知访问器及异常/List子类/协变/外部标记回退，64方法/1674模型、Fork/补丁刷新/live合同通过并清理实例。12次短搜、4次完整Coordinator质量/工作相应保持，完整请求仅1.0051倍；原型撤回，未追加最终九根或新部署。
 
 2026-10-06 [单次牌值集合复用](performance/intrinsic-variable-set-research-20261006.md)：原生`d21f3161db494846b6bc5b60a563bcaf`通过603类型逐位值、16Fork/修改/Clone、父/live/RNG与三个真实补丁的回退次数/根刷新；续接合同通过、实例清理。12次Evaluate无收益，原型及临时合同撤回，未执行整请求或最终固定回归。
