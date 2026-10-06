@@ -1,5 +1,7 @@
 # CombatSolver 测试入口
 
+2026-10-06 [完整胜利见证交接剪枝](performance/late-plan-incumbent-research-20261006.md)：原生 `bf1630d428a84140a544f92805b456b2` / `39341182130347b3934cfdbbb0ca54c0` Passed；实际完整胜利、政策/目标门禁、未知Feed消耗堆保留、16Fork全状态/RNG/父/live、DOP1/16真实续搜派发与调用者保留胜利通过，实例清理。最终11根44次纯Coordinator交错质量/根/政策/预算一致，铁甲3.765倍，但亡灵精英内存超门槛；2次诊断工作/质量匹配，源码撤回。全部原始慢根未达标；没有新DOP1/16整协调器合同或上传包验收。
+
 2026-10-06 [库存边界与后续计划见证](performance/potion-inventory-pruning-research-20261006.md)：IL工具构建/扫描通过，18入口/45引用/29字段访问/7事件/20订阅引用/13Hook定义，13项既有输出不变；有限成本枚举及两次完整只读Coordinator同根/政策/预算/14项质量/工作通过。未实际删除分支，未跑新增原生/Fork合同、纯交错性能或最终回归；观察器撤回，同源码部署复用。
 
 2026-10-06 [Smart 已花成本界实验](performance/smart-branch-cost-bound-research-20261006.md)：`COMPONENT-SMART-BOUND`/`b06e13bcf2fd4e6c8914f0cca73dec58`通过原DOP2完整协调器/政策门禁，以及实际完整无药见证、高价新增剪枝、便宜/未知保留、完整回放、16Fork、父/live/RNG和原生潜能药水状态；实例清理。八次完整交错未证明收益，源码撤回；未做新DOP1/16整搜和最终全部固定回归。
