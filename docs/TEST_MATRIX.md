@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-07 [有限回复Smart研究](performance/smart-finite-recovery-pruning-research-20261007.md)：三原生起点合同/16次纯请求质量和峰值通过，355处剪枝仅约1%差异，原型撤回，未追加最终回归。[已交付剪枝](performance/zero-credit-growth-hp-pruning-20261007.md)及五文件部署复用5f47de56。
+2026-10-07 [选择前缀研究](performance/stable-choice-pruning-opportunity-research-20261007.md)：四次只读完整请求质量/根/政策/预算及确定性工作保持，10,406次手动检查无新剪枝。短探针231次TAINTED入口拒绝；插桩撤回，未做新原生/纯性能/最终回归。原门禁及部署复用5f47de56；[有限回复Smart证据](performance/smart-finite-recovery-pruning-research-20261007.md)保留。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 
