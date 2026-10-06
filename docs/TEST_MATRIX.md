@@ -1,5 +1,6 @@
 # CombatSolver 测试入口
 
+2026-10-06 [构造时监听类型证明](performance/listener-producer-type-proof-research-20261006.md)：`CARD-CONTINUATION-CONTRACT`原生`884555a56a234f2fb86b6baffeabc875`通过1674模型、16已知组合、未知资格拒绝、重映射撤销、16路两代Fork及完整状态／历史／RNG、父/live隔离；续接与原生抽弃牌合同保持。首轮不适用锚点夹具失败修正，两实例删除。12次Evaluate保存，亡灵A2并行解析干扰被排除；两个干净交错组无稳定收益，源码撤回。未做完整Coordinator／全根回归／新未知异常前缀；复用原CPU及部署。
 2026-10-06 [仅Power监听后缀复用](performance/power-only-listener-suffix-research-20261006.md)：原生`CARD-CONTINUATION-CONTRACT`（`4dc77b38df244b92abb9293dca229415`）通过源类型/36组合、后缀变化撤销资格、未知getter/异常前缀、实际Power克隆、16路及两代Fork、完整状态/历史/RNG和父/live隔离；初轮事务夹具失败修正，两实例清理。12次Evaluate九项质量/工作一致、内存通过但无共同提速，源码撤回。复用完整CPU的祖先新解析保持23428/27540样本与cycles，仅归因诊断；未新增完整Coordinator或最终固定回归，部署复用。
 
 2026-10-06 [Fork模型映射负证据](performance/fork-model-negative-map-research-20261006.md)：两版`CARD-CONTINUATION-CONTRACT`（`227d0b1fd3974fd291375b7a3c753afd`／`9e2123e9b2294a0dbe6121fe602c03ca`）通过显式映射矩阵、未知getter/空源/异常读取前缀、16路及两代Fork、完整状态/历史/RNG与父/live隔离，实例清理；实际最小夹具映射接收者0，不冒充重根覆盖。24次Evaluate交错根/政策/九项质量/逻辑工作一致、峰值门槛通过但无共同提速。三次独立类别诊断证明主要为Power映射，仅定位后续机会；源码和临时入口撤回，未做完整Coordinator及最终固定回归，生产/部署复用。
