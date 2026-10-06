@@ -1,0 +1,906 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-06",
+  "sourceCommit": "106434bb",
+  "runtimeBaseline": "bb004176",
+  "upstream": "9a4489d8",
+  "status": "Research only; observer withdrawn; no performance candidate or new source certification shipped",
+  "game": {
+    "version": "0.111.0",
+    "dllSha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+    "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+    "sourceEvidenceReused": [
+      "native-health-source-audit-20261003.json",
+      "native-healing-component-audit-20261003.json",
+      "native-potion-recovery-certificates-20261004.json"
+    ]
+  },
+  "newResearch": {
+    "branchCostFloor": {
+      "formula": "max(exactUses * rootMinimumExplicitPotionCost, snapshot.ExplicitPotionStrategicCost)",
+      "eligibility": "existing certified Smart exact-layer or certified one-potion posterior contexts only",
+      "justification": "Explicit cost is an immutable snapshot sum of nonnegative use-record costs; automatic uses excluded. A future route cannot refund the recorded cost. ApplyReplacementCredit once and SmartRequiredHpSaved remain unchanged.",
+      "unknown": "No certificate, unknown branch, forced/growth/theft/non-strict relic objectives keep existing guards; no wider source admission",
+      "integrationStatus": "No new candidates actually pruned; observer preserved original decision path"
+    },
+    "quotaAwareRegen": {
+      "formula": "T(activePlayerRegen + sum(largest min(remainingExplicitAllowance, legalHeldDoseCount) legally usable held doses)) + existing postCombatUpper",
+      "scope": "Requires the same complete finite component certificate, no new healing/potion acquisition and native explicit-use/automatic-use semantics; active effect always retained",
+      "integrationStatus": "Mathematical/source research only; no new native runtime implementation or branch observation"
+    },
+    "jointProof": {
+      "idea": "Keep attainable remaining-dose and remaining-cost pairs from the same legal future-use subset; do not combine an expensive subset healing maximum with a different subset cheap cost",
+      "scope": "Research extension, not runtime, new native source certification or measured pruning benefit"
+    }
+  },
+  "oracle": {
+    "status": "Passed",
+    "scope": "Exhaustive finite mathematical abstraction only; not native full-state/Fork/RNG proof, runtime acceptance or speedup.",
+    "counts": {
+      "costFloors": 13312,
+      "quotaBounds": 8748,
+      "staggeredDoseSchedules": 44604,
+      "netHpLowerBounds": 6426,
+      "jointChoiceBounds": 1792
+    },
+    "concreteQuotaExample": {
+      "activeRegen": 5,
+      "heldDoses": [
+        5,
+        5
+      ],
+      "remainingExplicitAllowance": 1,
+      "postCombatUpper": 6,
+      "oldBound": 126,
+      "quotaAwareBound": 61
+    },
+    "requirements": [
+      "No unproved new healing or potion acquisition",
+      "Known nonnegative explicit potion costs; automatic uses excluded",
+      "Same policy and complete audited no-death-save winner",
+      "Unknown sources retain infinity",
+      "Full native state/Fork/RNG contract and performance still required before shipping"
+    ]
+  },
+  "build": {
+    "scope": "Isolated read-only observer only; CopyModOnBuild=false",
+    "elapsedSeconds": 15.91,
+    "warnings": 0,
+    "errors": 0,
+    "rawLog": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/state-evaluation-query-cost-20261006/diagnostic-build.log",
+    "dllSha256": "6048a3eeb27b0655378f33fa307f5d60a3ff1884b334e1bc9038b077608a2c67"
+  },
+  "observerRuns": {
+    "scope": "All actual candidates continue through original bound. Counts are candidate visits, may repeat across retention calls and solvers; not unique branches, skipped expansion or measured savings. New cost calculations/counters/metadata and logging exclude these timing and RSS samples from performance acceptance.",
+    "results": [
+      {
+        "scene": "dev-00-ironclad-elite",
+        "status": "Passed",
+        "observerRecords": [
+          {
+            "candidateVisits": 2622,
+            "costFloorRaisedVisits": 1583,
+            "additionallyIneligibleVisits": 722,
+            "bins": "0/0/9/9:296;1/9/9/9:743;1/18/9/18:1583",
+            "ceiling": 22,
+            "existingPruned": 149
+          },
+          {
+            "candidateVisits": 2703,
+            "costFloorRaisedVisits": 1762,
+            "additionallyIneligibleVisits": 1106,
+            "bins": "0/0/18/18:209;1/9/18/18:298;1/18/18/18:434;2/27/18/27:1762",
+            "ceiling": 13,
+            "existingPruned": 279
+          }
+        ],
+        "candidateVisits": 5325,
+        "costFloorRaisedVisits": 3345,
+        "additionallyIneligibleVisits": 1828,
+        "existingSmartEligibilityPruned": 428,
+        "comparisonQuality": {
+          "won": true,
+          "outstandingStolenResource": 0,
+          "projectedBattleHpLost": 37,
+          "strategicHpDeficit": 31,
+          "potionStrategicCost": 0,
+          "projectedBattlePotionCount": 0,
+          "enemyHp": 0,
+          "score": 10000164976,
+          "combatEndedTurn": 5,
+          "theftPolicy": null,
+          "survives": true,
+          "deathSaveUseCount": 0,
+          "growthHpCredit": 0,
+          "growthRewardCount": 0
+        },
+        "rootStampSha256": "84de5bf67c281fb20ec8678ac5bf4e0df9adc2a25c688ca87754ecb40b8f8afe",
+        "policy": {
+          "profile": {
+            "beamWidth": 135,
+            "maxExpandedNodes": 500000,
+            "maxCardBranchesPerNode": 72,
+            "maxPileChoiceBranchesPerAction": 42,
+            "maxHandChoiceBranchesPerAction": 54,
+            "softTimeBudgetMilliseconds": 600000,
+            "secondRankBand": false,
+            "contextualRanking": null,
+            "continuousThreatRanking": false,
+            "baseScoreTacticalTies": false,
+            "adaptiveNoveltyRefinement": false,
+            "beamWeightPerturbation": null,
+            "offensiveRefinementPortfolio": false,
+            "boundedOffensiveRefinementPortfolio": false,
+            "reallocatedRefinementPortfolio": true,
+            "stopPortfolioAtHpTarget": true,
+            "baseScoreOnly": false,
+            "aggressivePowerCommitment": false
+          },
+          "potionPolicy": "Smart",
+          "potionStrategy": {
+            "defaultPolicy": "Smart",
+            "directives": [],
+            "hasForcedDirectives": false,
+            "forcedDirectiveCount": 0
+          },
+          "fixedBudget": false,
+          "maxDegreeOfParallelism": 16,
+          "includeTurnSetup": false,
+          "theftPolicy": null,
+          "actTransitionBossHpStrategy": "ProgressionFirst",
+          "finalBossHpStrategy": "ProgressionFirst",
+          "acceptableBattleHpLoss": 0,
+          "stopAtAcceptableBattleHpLoss": false,
+          "act3BossStrategy": false,
+          "growthBudgets": {
+            "handOfGreed": 0,
+            "theHunt": 0,
+            "feed": 0,
+            "royalties": 0,
+            "alchemize": 0,
+            "geneticAlgorithm": 0,
+            "theScythe": 0,
+            "goopy": 0,
+            "forbiddenGrimoire": 0,
+            "madScience": 0
+          },
+          "relicTargets": [],
+          "brightestFlameMaxHpLossLimit": null,
+          "hasGrowthTargets": false,
+          "ignoreLongTermRewards": false,
+          "verifyIncrementalSearch": false,
+          "detailedDiagnostics": false,
+          "measurePhasePerformance": false,
+          "useBeamWidthPortfolio": true,
+          "beamWidthPortfolioPlainBaselineMember": true,
+          "useNoveltyPortfolio": false,
+          "beamWidthPortfolioWidths": null,
+          "portfolioSelector": null,
+          "observePortfolio": false
+        },
+        "budget": {
+          "profile": "VeryHigh",
+          "beamWidth": 135,
+          "maxExpandedNodes": 500000,
+          "maxCardBranchesPerNode": 72,
+          "maxPileChoiceBranchesPerAction": 42,
+          "maxHandChoiceBranchesPerAction": 54,
+          "maxDegreeOfParallelism": 16,
+          "budgetMilliseconds": 300000,
+          "earlyTurnExplorationDepth": 0,
+          "earlyTurnExplorationBudgetMilliseconds": 0,
+          "potionPolicy": "Smart",
+          "searchMode": "Coordinator",
+          "usePortfolio": true,
+          "fixedSearchBudget": false,
+          "enableNoGcRegion": true,
+          "noGcRegionBudgetGigabytes": 16
+        },
+        "timeBoundaryObserved": false,
+        "rawResult": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/state-evaluation-query-cost-20261006/observer-dev-00-ironclad-elite/result.json",
+        "rawResultSha256": "fe1e74c8b2eb95ac2b794487b49baac2ec485e209df7a3fd1a935720d18653b7",
+        "loadout": {
+          "schemaVersion": 1,
+          "catalogFingerprint": "DA4899B984DC187F9434E8F292E0A4770B7083526F5AC4A23AC97F7205DC531E",
+          "seed": "NOVELTY-DEV-20260915-00",
+          "characterId": "IRONCLAD",
+          "ascension": 10,
+          "actIndex": 1,
+          "encounterId": "DECIMILLIPEDE_ELITE",
+          "roomType": "Elite",
+          "relicObtainEffects": false,
+          "playerHp": 80,
+          "playerMaxHp": 80,
+          "deck": [
+            {
+              "id": "STRIKE_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "STRIKE_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "STRIKE_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "STRIKE_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "STRIKE_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "DEFEND_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "DEFEND_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "DEFEND_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "DEFEND_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "BASH",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "ASCENDERS_BANE",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "HEADBUTT",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "BULLY",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "STONE_ARMOR",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "TAUNT",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "BURNING_PACT",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "INFERNAL_BLADE",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "MANGLE",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "BARRICADE",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "PERFECTED_STRIKE",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "TWIN_STRIKE",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "RAMPAGE",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "THUNDERCLAP",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "JACKPOT",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "JACK_OF_ALL_TRADES",
+              "currentUpgradeLevel": 0
+            }
+          ],
+          "relics": [
+            "BURNING_BLOOD",
+            "ICE_CREAM",
+            "TUNGSTEN_ROD",
+            "KUNAI"
+          ],
+          "potionSlots": [
+            "BEETLE_JUICE",
+            "GAMBLERS_BREW"
+          ]
+        },
+        "diagnosticElapsedSeconds": 41.3396049,
+        "diagnosticPeakProcessWorkingSetBytes": 16185401344
+      },
+      {
+        "scene": "dev-10-ironclad-monster",
+        "status": "Passed",
+        "observerRecords": [
+          {
+            "candidateVisits": 10,
+            "costFloorRaisedVisits": 1,
+            "additionallyIneligibleVisits": 0,
+            "bins": "1/9/9/9:4;0/0/9/9:5;1/14/9/14:1",
+            "ceiling": -1,
+            "existingPruned": 10
+          },
+          {
+            "candidateVisits": 12,
+            "costFloorRaisedVisits": 0,
+            "additionallyIneligibleVisits": 0,
+            "bins": "1/9/9/9:12",
+            "ceiling": -1,
+            "existingPruned": 12
+          },
+          {
+            "candidateVisits": 7,
+            "costFloorRaisedVisits": 0,
+            "additionallyIneligibleVisits": 0,
+            "bins": "1/9/9/9:7",
+            "ceiling": -1,
+            "existingPruned": 7
+          },
+          {
+            "candidateVisits": 7,
+            "costFloorRaisedVisits": 0,
+            "additionallyIneligibleVisits": 0,
+            "bins": "1/9/9/9:7",
+            "ceiling": -1,
+            "existingPruned": 7
+          },
+          {
+            "candidateVisits": 10,
+            "costFloorRaisedVisits": 0,
+            "additionallyIneligibleVisits": 0,
+            "bins": "1/9/9/9:10",
+            "ceiling": -1,
+            "existingPruned": 10
+          },
+          {
+            "candidateVisits": 10,
+            "costFloorRaisedVisits": 0,
+            "additionallyIneligibleVisits": 0,
+            "bins": "1/9/9/9:10",
+            "ceiling": -1,
+            "existingPruned": 10
+          },
+          {
+            "candidateVisits": 5,
+            "costFloorRaisedVisits": 0,
+            "additionallyIneligibleVisits": 0,
+            "bins": "1/9/9/9:5",
+            "ceiling": -1,
+            "existingPruned": 5
+          },
+          {
+            "candidateVisits": 5,
+            "costFloorRaisedVisits": 0,
+            "additionallyIneligibleVisits": 0,
+            "bins": "1/9/9/9:5",
+            "ceiling": -1,
+            "existingPruned": 5
+          },
+          {
+            "candidateVisits": 5,
+            "costFloorRaisedVisits": 0,
+            "additionallyIneligibleVisits": 0,
+            "bins": "1/9/9/9:5",
+            "ceiling": -1,
+            "existingPruned": 5
+          }
+        ],
+        "candidateVisits": 71,
+        "costFloorRaisedVisits": 1,
+        "additionallyIneligibleVisits": 0,
+        "existingSmartEligibilityPruned": 71,
+        "comparisonQuality": {
+          "won": true,
+          "outstandingStolenResource": 0,
+          "projectedBattleHpLost": 14,
+          "strategicHpDeficit": 8,
+          "potionStrategicCost": 0,
+          "projectedBattlePotionCount": 0,
+          "enemyHp": 0,
+          "score": 10001551991,
+          "combatEndedTurn": 2,
+          "theftPolicy": null,
+          "survives": true,
+          "deathSaveUseCount": 0,
+          "growthHpCredit": 0,
+          "growthRewardCount": 0
+        },
+        "rootStampSha256": "75058094d955ff29f2380afde8de2c36fbcb3ec0d12ccaae56fd1ac1d434f299",
+        "policy": {
+          "profile": {
+            "beamWidth": 135,
+            "maxExpandedNodes": 500000,
+            "maxCardBranchesPerNode": 72,
+            "maxPileChoiceBranchesPerAction": 42,
+            "maxHandChoiceBranchesPerAction": 54,
+            "softTimeBudgetMilliseconds": 600000,
+            "secondRankBand": false,
+            "contextualRanking": null,
+            "continuousThreatRanking": false,
+            "baseScoreTacticalTies": false,
+            "adaptiveNoveltyRefinement": false,
+            "beamWeightPerturbation": null,
+            "offensiveRefinementPortfolio": false,
+            "boundedOffensiveRefinementPortfolio": false,
+            "reallocatedRefinementPortfolio": true,
+            "stopPortfolioAtHpTarget": true,
+            "baseScoreOnly": false,
+            "aggressivePowerCommitment": false
+          },
+          "potionPolicy": "Smart",
+          "potionStrategy": {
+            "defaultPolicy": "Smart",
+            "directives": [],
+            "hasForcedDirectives": false,
+            "forcedDirectiveCount": 0
+          },
+          "fixedBudget": false,
+          "maxDegreeOfParallelism": 16,
+          "includeTurnSetup": false,
+          "theftPolicy": null,
+          "actTransitionBossHpStrategy": "ProgressionFirst",
+          "finalBossHpStrategy": "ProgressionFirst",
+          "acceptableBattleHpLoss": 0,
+          "stopAtAcceptableBattleHpLoss": false,
+          "act3BossStrategy": false,
+          "growthBudgets": {
+            "handOfGreed": 0,
+            "theHunt": 0,
+            "feed": 0,
+            "royalties": 0,
+            "alchemize": 0,
+            "geneticAlgorithm": 0,
+            "theScythe": 0,
+            "goopy": 0,
+            "forbiddenGrimoire": 0,
+            "madScience": 0
+          },
+          "relicTargets": [],
+          "brightestFlameMaxHpLossLimit": null,
+          "hasGrowthTargets": false,
+          "ignoreLongTermRewards": false,
+          "verifyIncrementalSearch": false,
+          "detailedDiagnostics": false,
+          "measurePhasePerformance": false,
+          "useBeamWidthPortfolio": true,
+          "beamWidthPortfolioPlainBaselineMember": true,
+          "useNoveltyPortfolio": false,
+          "beamWidthPortfolioWidths": null,
+          "portfolioSelector": null,
+          "observePortfolio": false
+        },
+        "budget": {
+          "profile": "VeryHigh",
+          "beamWidth": 135,
+          "maxExpandedNodes": 500000,
+          "maxCardBranchesPerNode": 72,
+          "maxPileChoiceBranchesPerAction": 42,
+          "maxHandChoiceBranchesPerAction": 54,
+          "maxDegreeOfParallelism": 16,
+          "budgetMilliseconds": 300000,
+          "earlyTurnExplorationDepth": 0,
+          "earlyTurnExplorationBudgetMilliseconds": 0,
+          "potionPolicy": "Smart",
+          "searchMode": "Coordinator",
+          "usePortfolio": true,
+          "fixedSearchBudget": false,
+          "enableNoGcRegion": true,
+          "noGcRegionBudgetGigabytes": 16
+        },
+        "timeBoundaryObserved": false,
+        "rawResult": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/state-evaluation-query-cost-20261006/observer-dev-10-ironclad-monster/result.json",
+        "rawResultSha256": "10add507413bce904c093f938fdaeed712e3f07d85b71ced0db3099a06236d08",
+        "loadout": {
+          "schemaVersion": 1,
+          "catalogFingerprint": "DA4899B984DC187F9434E8F292E0A4770B7083526F5AC4A23AC97F7205DC531E",
+          "seed": "NOVELTY-DEV-20260915-10",
+          "characterId": "IRONCLAD",
+          "ascension": 10,
+          "actIndex": 0,
+          "encounterId": "NIBBITS_WEAK",
+          "roomType": "Monster",
+          "relicObtainEffects": false,
+          "playerHp": 80,
+          "playerMaxHp": 80,
+          "deck": [
+            {
+              "id": "STRIKE_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "STRIKE_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "STRIKE_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "STRIKE_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "STRIKE_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "DEFEND_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "DEFEND_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "DEFEND_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "DEFEND_IRONCLAD",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "BASH",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "ASCENDERS_BANE",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "MANGLE",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "ANGER",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "HEMOKINESIS",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "INFERNAL_BLADE",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "HOWL_FROM_BEYOND",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "AGGRESSION",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "BATTLE_TRANCE",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "DARK_EMBRACE",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "TEAR_ASUNDER",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "STOKE",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "RUPTURE",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "BATTLE_TRANCE",
+              "currentUpgradeLevel": 1
+            },
+            {
+              "id": "FISTICUFFS",
+              "currentUpgradeLevel": 0
+            },
+            {
+              "id": "THE_GAMBIT",
+              "currentUpgradeLevel": 0
+            }
+          ],
+          "relics": [
+            "BURNING_BLOOD",
+            "ETERNAL_FEATHER",
+            "CAULDRON",
+            "BRIMSTONE"
+          ],
+          "potionSlots": [
+            "COLORLESS_POTION",
+            "BOTTLED_POTENTIAL"
+          ]
+        },
+        "diagnosticElapsedSeconds": 1.2950654,
+        "diagnosticPeakProcessWorkingSetBytes": 271007744
+      }
+    ]
+  },
+  "launches": [
+    {
+      "scene": "dev-00-ironclad-elite",
+      "status": "Completed",
+      "exitCode": 0,
+      "diagnosticWallSeconds": 44.045075540896505,
+      "out": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/state-evaluation-query-cost-20261006/observer-dev-00-ironclad-elite"
+    },
+    {
+      "scene": "dev-10-ironclad-monster",
+      "status": "Completed",
+      "exitCode": 0,
+      "diagnosticWallSeconds": 3.5703363290522248,
+      "out": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/state-evaluation-query-cost-20261006/observer-dev-10-ironclad-monster"
+    }
+  ],
+  "observerPatch": "diff --git a/src/Search/CombatBeamSolver.SmartPotionBound.cs b/src/Search/CombatBeamSolver.SmartPotionBound.cs\nindex c1d62892..59abbfef 100644\n--- a/src/Search/CombatBeamSolver.SmartPotionBound.cs\n+++ b/src/Search/CombatBeamSolver.SmartPotionBound.cs\n@@ -45,6 +45,30 @@ internal sealed partial class CombatBeamSolver\n                     potionStrategy: policy.PotionStrategy, effectivePotionPolicy: policy.PotionPolicy) == 0);\n \n     private int _smartPotionEligibilityBranchesPruned;\n+    // Research-only observer: all candidates continue through the original rule.\n+    private int _smartCostObserved;\n+    private int _smartCostTightened;\n+    private int _smartCostAdditional;\n+    private readonly Dictionary<(int Uses, int Cost, int OldRequired, int NewRequired), int> _smartCostBins = [];\n+\n+    private void ObserveSmartCostBound(SearchNode node, int ceiling, int healing)\n+    {\n+        int rootCostFloor = checked(_minimumPotionUses * root.MinimumSearchablePotionStrategicCost!.Value);\n+        int oldRequired = PotionUsePolicy.SmartRequiredHpSaved(\n+            PotionUsePolicy.ApplyReplacementCredit(rootCostFloor, _minimumPotionUses,\n+                root.PotionRewardOutlook.ReplacementHpCredit), _strategicBossHpRelief);\n+        int branchCostFloor = Math.Max(rootCostFloor, node.Snapshot.ExplicitPotionStrategicCost);\n+        int newRequired = PotionUsePolicy.SmartRequiredHpSaved(\n+            PotionUsePolicy.ApplyReplacementCredit(branchCostFloor, _minimumPotionUses,\n+                root.PotionRewardOutlook.ReplacementHpCredit), _strategicBossHpRelief);\n+        int lower = StrategicHpLowerBound(node.Snapshot, _strategicBossHpRelief, healing);\n+        _smartCostObserved++;\n+        _smartCostTightened += newRequired > oldRequired ? 1 : 0;\n+        _smartCostAdditional += lower <= ceiling && lower > ceiling + oldRequired - newRequired ? 1 : 0;\n+        var key = (ExplicitPotionUseCount(node), node.Snapshot.ExplicitPotionStrategicCost, oldRequired, newRequired);\n+        _smartCostBins[key] = _smartCostBins.GetValueOrDefault(key) + 1;\n+    }\n+\n     internal bool ComponentSmartBoundEnabledForTesting => _smartPotionEligibilityHpCeiling is not null;\n     internal int ComponentSmartBoundPrunedForTesting => _smartPotionEligibilityBranchesPruned;\n \n@@ -77,6 +101,7 @@ internal sealed partial class CombatBeamSolver\n                 bounded?.Add(node);\n                 continue;\n             }\n+            ObserveSmartCostBound(node, ceiling, healing);\n             if (StrategicHpLowerBound(node.Snapshot, _strategicBossHpRelief, healing) > ceiling)\n             {\n                 if (bounded is null)\n@@ -96,7 +121,12 @@ internal sealed partial class CombatBeamSolver\n     private void EmitSmartPotionEligibilityBoundDiagnostics()\n     {\n         if (_smartPotionEligibilityHpCeiling is { } ceiling)\n+        {\n+            policy.Diagnostics.Info($\"[CombatSolver/Test] SMART_COST_PROOF_OBSERVATION observed={_smartCostObserved} \"\n+                + $\"tightened={_smartCostTightened} additional={_smartCostAdditional} \"\n+                + $\"bins={string.Join(';', _smartCostBins.Select(x => $\"{x.Key.Uses}/{x.Key.Cost}/{x.Key.OldRequired}/{x.Key.NewRequired}:{x.Value}\"))}\");\n             policy.Diagnostics.Info($\"[CombatSolver/Test] SMART_POTION_ELIGIBILITY_BOUND \"\n                 + $\"ceiling={ceiling} pruned={_smartPotionEligibilityBranchesPruned}\");\n+        }\n     }\n }\n",
+  "sameTraceCpuQueries": {
+    "scope": "Reparse of existing two complete production request traces. Inclusive overlap; not unique savings, counts or performance acceptance. Inlining can hide methods.",
+    "priorEvidence": "docs/performance/unresolved-roots-cpu-20261006.json",
+    "results": [
+      {
+        "root": "dev-08-regent-boss",
+        "samples": 23428,
+        "cycles": 367805022801,
+        "inclusive": {
+          "BuildProjectedShuffleOrder": {
+            "cycles": 12660957969,
+            "percent": 3.4423015413387055
+          },
+          "CalculateReachableHandPotential": {
+            "cycles": 8461657773,
+            "percent": 2.3005824413600133
+          },
+          "::GetEnergyCostWithModifiers": {
+            "cycles": 3272556328,
+            "percent": 0.8897530281337698
+          },
+          "CombatPredictionSimulator::CanPlay": {
+            "cycles": 11285341237,
+            "percent": 3.068294486860748
+          },
+          "CardIsPlayableMirrors::Invoke": {
+            "cycles": 844047359,
+            "percent": 0.2294822818275295
+          },
+          "::CanPlayCard": {
+            "cycles": 3060695540,
+            "percent": 0.8321516429252196
+          },
+          "::GetCoverageSummary": {
+            "cycles": 4182994044,
+            "percent": 1.1372857314847489
+          },
+          "BranchCardValue": {
+            "cycles": 8410345133,
+            "percent": 2.2866313975136756
+          },
+          "::ShouldPlay": {
+            "cycles": 1813111847,
+            "percent": 0.49295461850747474
+          },
+          "::ProjectHpAfterThreat": {
+            "cycles": 11563318412,
+            "percent": 3.1438718057573416
+          },
+          "::GetStarCostWithModifiers": {
+            "cycles": 557619296,
+            "percent": 0.15160730860973004
+          },
+          "CardChoiceSupport::CardValue": {
+            "cycles": 3351884072,
+            "percent": 0.9113209076031374
+          },
+          "ReachableHandValue::Calculate": {
+            "cycles": 102041498,
+            "percent": 0.027743367184849266
+          },
+          "::EffectiveEnemyHp": {
+            "cycles": 27464280,
+            "percent": 0.007467075841120169
+          }
+        }
+      },
+      {
+        "root": "dev-09-necrobinder-boss",
+        "samples": 27540,
+        "cycles": 418293966634,
+        "inclusive": {
+          "::ProjectHpAfterThreat": {
+            "cycles": 13614769752,
+            "percent": 3.2548329256474045
+          },
+          "BranchCardValue": {
+            "cycles": 8710003273,
+            "percent": 2.0822684446273887
+          },
+          "CalculateReachableHandPotential": {
+            "cycles": 20827485635,
+            "percent": 4.979150381392828
+          },
+          "CombatPredictionSimulator::CanPlay": {
+            "cycles": 21486148302,
+            "percent": 5.136614442445451
+          },
+          "CardIsPlayableMirrors::Invoke": {
+            "cycles": 1158370721,
+            "percent": 0.27692742745523613
+          },
+          "::CanPlayCard": {
+            "cycles": 2532555380,
+            "percent": 0.6054486992435973
+          },
+          "::ShouldPlay": {
+            "cycles": 2132885345,
+            "percent": 0.5099010540752642
+          },
+          "::GetEnergyCostWithModifiers": {
+            "cycles": 4111601855,
+            "percent": 0.9829455318435374
+          },
+          "BuildProjectedShuffleOrder": {
+            "cycles": 15079529503,
+            "percent": 3.6050076515194704
+          },
+          "CardChoiceSupport::CardValue": {
+            "cycles": 2351142104,
+            "percent": 0.5620788946394746
+          },
+          "::GetCoverageSummary": {
+            "cycles": 6151123775,
+            "percent": 1.4705265353210621
+          },
+          "::GetStarCostWithModifiers": {
+            "cycles": 317399193,
+            "percent": 0.07587945758675473
+          },
+          "ReachableHandValue::Calculate": {
+            "cycles": 204613809,
+            "percent": 0.04891627069032854
+          },
+          "::EffectiveEnemyHp": {
+            "cycles": 12263505,
+            "percent": 0.0029317910317196508
+          }
+        }
+      }
+    ]
+  },
+  "sameTraceCpuBounds": {
+    "scope": "Reparse of existing two complete production request traces. Inclusive overlap; not unique savings, counts or performance acceptance. Inlining can hide methods.",
+    "priorEvidence": "docs/performance/unresolved-roots-cpu-20261006.json",
+    "results": [
+      {
+        "root": "dev-08-regent-boss",
+        "samples": 23428,
+        "cycles": 367805022801,
+        "inclusive": {
+          "::IsCardPlayPrevented": {
+            "cycles": 925180496,
+            "percent": 0.25154101729072
+          },
+          "RemainingHealingPotentialCore": {
+            "cycles": 2704213675,
+            "percent": 0.7352302190998377
+          },
+          "RemainingHealingPotential": {
+            "cycles": 2741681129,
+            "percent": 0.745416989719409
+          },
+          "KnownNativeHealingPotential": {
+            "cycles": 2637061441,
+            "percent": 0.7169726560332417
+          },
+          "::StrategicHpLowerBound": {
+            "cycles": 16690869,
+            "percent": 0.004537966576120021
+          }
+        }
+      },
+      {
+        "root": "dev-09-necrobinder-boss",
+        "samples": 27540,
+        "cycles": 418293966634,
+        "inclusive": {
+          "::IsCardPlayPrevented": {
+            "cycles": 1604506400,
+            "percent": 0.3835834432209048
+          },
+          "RemainingHealingPotentialCore": {
+            "cycles": 2286372918,
+            "percent": 0.546594763581789
+          },
+          "RemainingHealingPotential": {
+            "cycles": 2286372918,
+            "percent": 0.546594763581789
+          },
+          "KnownNativeHealingPotential": {
+            "cycles": 2256990370,
+            "percent": 0.5395703859087281
+          }
+        }
+      }
+    ]
+  },
+  "previousEvidenceNotRerun": {
+    "finiteRegenSmart": "pr215-recovery-proof-research-20261005.json finiteSmart: native 2e84b06abef4487e8c1a074ce4063774 and 5bf5eec3dce44b949bf0b6065f79c73a; supplemental initial 1.065x screen only, withdrawn; not a new finding",
+    "preExpansion": "pre-expansion-incumbent-opportunity-20261006.json: Reg261/74175, Nec0, large-short0",
+    "costFrontier": "pr215-recovery-proof-research-20261005.json costAwareWitnessFrontier: native passed, existing serial screen no gain; not repeated"
+  },
+  "oneOffScripts": {
+    "parse.py": {
+      "sha256": "d70bd5d07912f8ec025480a1d6dd694f0a72d822609fc3027a4860daf3e311bb",
+      "source": "from pathlib import Path\nimport json,bisect,collections,re\nprior=json.loads(Path('docs/performance/unresolved-roots-cpu-20261006.json').read_text());out=[]\nfor run in prior['runs']:\n p=Path(run['rawPerfPath']).parent;table={}\n for line in (p/'managed-perf.map').read_text().splitlines():\n  a=line.split(' ',2)\n  if len(a)==3:table[int(a[0],16)]=(int(a[0],16)+int(a[1],16),a[2])\n addresses=sorted(table)\n def resolve(pc):\n  i=bisect.bisect_right(addresses,pc)-1\n  return table[addresses[i]][1] if i>=0 and pc<table[addresses[i]][0] else ''\n samples=cycles=0;counter=collections.Counter();cpu=run['cpu']\n for block in (p/'frames.txt').read_text().split('\\n\\n'):\n  lines=block.splitlines()\n  if not lines:continue\n  m=re.match(r'^(\\d+\\.\\d+):\\s+(\\d+)',lines[0])\n  if not m:raise ValueError(lines[0])\n  if not cpu['startMonotonic']<=float(m[1])<=cpu['endMonotonic']:continue\n  samples+=1;period=int(m[2]);cycles+=period\n  names=[resolve(int(l.split()[0],16)) for l in lines[1:] if l.strip()]\n  for name in ('ReachableHandValue::Calculate','CalculateReachableHandPotential','CardChoiceSupport::CardValue','BuildProjectedShuffleOrder','::GetEnergyCostWithModifiers','::GetStarCostWithModifiers','CardIsPlayableMirrors::Invoke','::ShouldPlay','::CanPlayCard','CombatPredictionSimulator::CanPlay','BranchCardValue','::ProjectHpAfterThreat','::EffectiveEnemyHp','::GetCoverageSummary'):\n   if any(name in n for n in names):counter[name]+=period\n assert samples==cpu['includedSamples'] and cycles==cpu['estimatedCycles']\n item={'root':run['scene'],'samples':samples,'cycles':cycles,'inclusive':{k:{'cycles':v,'percent':100*v/cycles} for k,v in counter.items()}}\n out.append(item);print(json.dumps(item))\nPath('.local/tool-tasks/state-evaluation-query-cost-20261006/query-cpu-detail.json').write_text(json.dumps({'scope':'Reparse of existing two complete production request traces. Inclusive overlap; not unique savings, counts or performance acceptance. Inlining can hide methods.','priorEvidence':'docs/performance/unresolved-roots-cpu-20261006.json','results':out},indent=2)+'\\n')\n"
+    },
+    "parse-bound.py": {
+      "sha256": "9b1a9fc552332608f530bb21c426be7c8f86e1b12756d1a44b3ff18545b50e59",
+      "source": "from pathlib import Path\nimport json,bisect,collections,re\nprior=json.loads(Path('docs/performance/unresolved-roots-cpu-20261006.json').read_text());out=[]\nfor run in prior['runs']:\n p=Path(run['rawPerfPath']).parent;table={}\n for line in (p/'managed-perf.map').read_text().splitlines():\n  a=line.split(' ',2)\n  if len(a)==3:table[int(a[0],16)]=(int(a[0],16)+int(a[1],16),a[2])\n addresses=sorted(table)\n def resolve(pc):\n  i=bisect.bisect_right(addresses,pc)-1\n  return table[addresses[i]][1] if i>=0 and pc<table[addresses[i]][0] else ''\n samples=cycles=0;counter=collections.Counter();cpu=run['cpu']\n for block in (p/'frames.txt').read_text().split('\\n\\n'):\n  lines=block.splitlines()\n  if not lines:continue\n  m=re.match(r'^(\\d+\\.\\d+):\\s+(\\d+)',lines[0])\n  if not m:raise ValueError(lines[0])\n  if not cpu['startMonotonic']<=float(m[1])<=cpu['endMonotonic']:continue\n  samples+=1;period=int(m[2]);cycles+=period\n  names=[resolve(int(l.split()[0],16)) for l in lines[1:] if l.strip()]\n  for name in ('RemainingHealingPotentialCore','RemainingHealingPotential','ComponentHealingUpperBound','KnownNativeHealingPotential','::StrategicHpLowerBound','::IsCardPlayPrevented'):\n   if any(name in n for n in names):counter[name]+=period\n assert samples==cpu['includedSamples'] and cycles==cpu['estimatedCycles']\n item={'root':run['scene'],'samples':samples,'cycles':cycles,'inclusive':{k:{'cycles':v,'percent':100*v/cycles} for k,v in counter.items()}}\n out.append(item);print(json.dumps(item))\nPath('.local/tool-tasks/state-evaluation-query-cost-20261006/bound-cpu-detail.json').write_text(json.dumps({'scope':'Reparse of existing two complete production request traces. Inclusive overlap; not unique savings, counts or performance acceptance. Inlining can hide methods.','priorEvidence':'docs/performance/unresolved-roots-cpu-20261006.json','results':out},indent=2)+'\\n')\n"
+    },
+    "run-observer.py": {
+      "sha256": "5dfc479b680583c5f8e89a1d7eda81077a499ea535a912e2027b5b887796ce01",
+      "source": "from pathlib import Path\nimport json,subprocess,os,time,hashlib\nbase=Path.cwd();task=base/'.local/tool-tasks/state-evaluation-query-cost-20261006'\nhost=base/'.local/tool-tasks/intrinsic-card-value-20261006/updated-harness/OfflineSearchHarness.dll'\ndll=task/'diagnostic-build/CombatSolver.dll'\nroots=Path('/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests')\nresults=[]\nfor scene in ['dev-00-ironclad-elite','dev-10-ironclad-monster']:\n out=task/('observer-'+scene);out.mkdir(parents=True,exist_ok=True)\n cmd=['dotnet',str(host),'--request',str(roots/(scene+'.json')),'--label','smart-cost-proof-'+scene,'--out',str(out),'--profile','VeryHigh','--dop','16','--budget-ms','300000','--search-mode','Coordinator','--nodes','500000','--beam','135','--card-branches','72','--pile-branches','42','--hand-branches','54','--enable-no-gc-region','--no-gc-region-budget-gigabytes','16','--use-portfolio','--production-budget']\n env=os.environ.copy();env['OFFLINE_HARNESS_COMBATSOLVER_DLL']=str(dll)\n plan={'scene':scene,'command':cmd,'diagnosticOnly':True,'outerTimeoutSeconds':120,'dllSha256':hashlib.sha256(dll.read_bytes()).hexdigest()}\n (out/'command.json').write_text(json.dumps(plan,indent=2)+'\\n')\n start=time.monotonic()\n with (out/'launcher.log').open('w') as log:\n  process=subprocess.Popen(cmd,env=env,stdout=log,stderr=subprocess.STDOUT)\n  try:code=process.wait(timeout=120);status='Completed' if code==0 else 'Failed'\n  except subprocess.TimeoutExpired:\n   process.kill();process.wait();code=process.returncode;status='TimeoutNoRetry'\n result={'scene':scene,'status':status,'exitCode':code,'diagnosticWallSeconds':time.monotonic()-start,'out':str(out)}\n results.append(result);(task/'observer-run-summary.json').write_text(json.dumps(results,indent=2)+'\\n')\n print(json.dumps(result),flush=True)\n"
+    },
+    "proof-oracle.py": {
+      "sha256": "3fed768034ff917fadba84de647cd55352ecacc25d99dec212d057cb454d8de9",
+      "source": "from itertools import product,combinations,permutations\nfrom pathlib import Path\nimport json\n\ndef T(r):return r*(r+1)//2\n\ndef credit(cost,count,c):return max(1,cost-c) if cost>0 and count>0 and c>0 else cost\n\n# These mathematical cases are not native game or search regression evidence.\n# Future damage is arbitrary nonnegative; future HP recovery obeys only proven total/headroom limits.\ncounts={'costFloors':0,'quotaBounds':0,'staggeredDoseSchedules':0,'netHpLowerBounds':0,'jointChoiceBounds':0}\nfor initial in product([0,9,14,18],repeat=3):\n for used_mask in range(8):\n  used=[i for i in range(3) if used_mask>>i&1]\n  remaining=[i for i in range(3) if i not in used]\n  spent=sum(initial[i] for i in used)\n  for exact in range(max(1,len(used)),4):\n   needed=exact-len(used)\n   for selected in combinations(remaining,needed):\n    final_cost=spent+sum(initial[i] for i in selected)\n    root_floor=exact*min(initial)\n    branch_floor=max(root_floor,spent)\n    assert root_floor<=branch_floor<=final_cost\n    for c in [0,5,18,40]:\n     for q in [1,5]:\n      assert q*credit(root_floor,exact,c)<=q*credit(branch_floor,exact,c)<=q*credit(final_cost,exact,c)\n      counts['costFloors']+=1\nfor r in [0,1,5,10]:\n for doses in product([0,3,5],repeat=3):\n  for legal_mask in range(8):\n   legal=[d for i,d in enumerate(doses) if legal_mask>>i&1]\n   for allowance in range(4):\n    upper=T(r+sum(sorted(legal,reverse=True)[:allowance]))\n    old=T(r+sum(legal))\n    assert upper<=old\n    for n in range(min(allowance,len(legal))+1):\n     for indices in combinations(range(len(legal)),n):\n      selected=[legal[i] for i in indices]\n      assert T(r+sum(selected))<=upper\n      counts['quotaBounds']+=1\n      for order in set(permutations(selected)):\n       for ticks_between in product([0,1,3],repeat=len(order)):\n        active=r;healed=0\n        for dose,ticks in zip(order,ticks_between):\n         for _ in range(ticks):\n          healed+=active;active=max(0,active-1)\n         active+=dose\n        healed+=T(active)\n        assert healed<=upper\n        counts['staggeredDoseSchedules']+=1\nfor damage,recovered,headroom,bound,future_damage,q in product([0,10,40],[0,5,15],[0,5,30],[0,6,15,55],[0,5,20],[1,5]):\n optimistic=damage-(recovered+min(headroom,bound))//q\n for actual_heal in range(min(bound,headroom+future_damage)+1):\n  actual=damage+future_damage-(recovered+actual_heal)//q\n  assert optimistic<=actual\n  counts['netHpLowerBounds']+=1\n# Enumerate a complete future-use set, retaining cost/healing pairs from the SAME set.\nfor r,headroom,allowance in product([0,5],[5,30],[0,1,2]):\n for held in product([(0,0),(0,9),(0,18),(5,9)],repeat=3):\n  options=[]\n  for selected in combinations(range(3),allowance):\n   h=T(r+sum(held[i][0] for i in selected));cost=sum(held[i][1] for i in selected)\n   options.append((-min(headroom,h)+credit(cost,max(1,allowance),5),h,cost))\n  joint=min(x[0] for x in options)\n  separated=-min(headroom,max(x[1] for x in options))+credit(min(x[2] for x in options),max(1,allowance),5)\n  assert separated<=joint\n  for score,_,_ in options:\n   assert joint<=score;counts['jointChoiceBounds']+=1\nout={'status':'Passed','scope':'Exhaustive finite mathematical abstraction only; not native full-state/Fork/RNG proof, runtime acceptance or speedup.','counts':counts,'concreteQuotaExample':{'activeRegen':5,'heldDoses':[5,5],'remainingExplicitAllowance':1,'postCombatUpper':6,'oldBound':126,'quotaAwareBound':61},'requirements':['No unproved new healing or potion acquisition','Known nonnegative explicit potion costs; automatic uses excluded','Same policy and complete audited no-death-save winner','Unknown sources retain infinity','Full native state/Fork/RNG contract and performance still required before shipping']}\nPath('.local/tool-tasks/state-evaluation-query-cost-20261006/proof-oracle-result.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\\n')\nprint(json.dumps(out,ensure_ascii=False))\n"
+    }
+  },
+  "unverified": [
+    "New production predicate native full-state, Fork, RNG, strict incremental and policy guards",
+    "Quota-aware regeneration implementation and proof for all actual legal native use sequences",
+    "Finite healing and cost pair set under dynamic future acquisition/unknown sources",
+    "Actual new branches pruned and CPU savings",
+    "Pure serial A/C/C/A full Coordinator time and peak RSS",
+    "Final full fixed-root quality/resource/memory regression",
+    "Effect on unresolved Regent/Necrobinder/Silent boss or large deck roots with missing component certificates"
+  ],
+  "delivery": {
+    "runtimeSourcesRestored": true,
+    "noMergeVersionReleaseOrDeploymentOfObserver": true,
+    "deploymentReused": ".local/tool-tasks/upstream-pr213-sync-20261006/local-deployment.json"
+  },
+  "validation": {
+    "status": "Passed",
+    "scope": "Docs/research only; no new native game behavior or performance acceptance",
+    "documentation": {
+      "files": 512,
+      "links": 2113,
+      "errors": 0
+    },
+    "tools": {
+      "files": 294,
+      "projects": 37,
+      "errors": 0
+    },
+    "coverage": {
+      "data": 529,
+      "fixtures": 479,
+      "groups": 37,
+      "errors": 0
+    },
+    "gitDiffCheck": true,
+    "productionSmartBoundDiffEmpty": true
+  }
+}

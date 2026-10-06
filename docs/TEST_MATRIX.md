@@ -1,5 +1,7 @@
 # CombatSolver 测试入口
 
+2026-10-06 [分支用药成本与额度研究](performance/policy-aware-pruning-research-20261006.md)：隔离只读DLL两根完整Coordinator/DOP16正常完成，潜在新增否证访问1828/0，未删除新候选。有限数学核对覆盖成本13312、剂量额度8748、错开使用44604、净生命6426、组合1792项；不冒充新原生完整状态/Fork/RNG、最终交错或回归通过。源码清理、原始数据与一次性脚本归档，已有有限回复原生合同按原前提复用。
+
 2026-10-06 [构造时监听类型证明](performance/listener-producer-type-proof-research-20261006.md)：`CARD-CONTINUATION-CONTRACT`原生`884555a56a234f2fb86b6baffeabc875`通过1674模型、16已知组合、未知资格拒绝、重映射撤销、16路两代Fork及完整状态／历史／RNG、父/live隔离；续接与原生抽弃牌合同保持。首轮不适用锚点夹具失败修正，两实例删除。12次Evaluate保存，亡灵A2并行解析干扰被排除；两个干净交错组无稳定收益，源码撤回。未做完整Coordinator／全根回归／新未知异常前缀；复用原CPU及部署。
 2026-10-06 [仅Power监听后缀复用](performance/power-only-listener-suffix-research-20261006.md)：原生`CARD-CONTINUATION-CONTRACT`（`4dc77b38df244b92abb9293dca229415`）通过源类型/36组合、后缀变化撤销资格、未知getter/异常前缀、实际Power克隆、16路及两代Fork、完整状态/历史/RNG和父/live隔离；初轮事务夹具失败修正，两实例清理。12次Evaluate九项质量/工作一致、内存通过但无共同提速，源码撤回。复用完整CPU的祖先新解析保持23428/27540样本与cycles，仅归因诊断；未新增完整Coordinator或最终固定回归，部署复用。
 
