@@ -190,3 +190,5 @@ pwsh -NoProfile -File tools\testing\run-unattended-test.ps1 -ScenarioId RADIANT-
 [公共Fork及牌堆缓存研究](performance/fork-pile-cache-research-20261005.md)新增三次原生宿主机制合同与36次Evaluate交错，未建立稳定收益，原型全部撤回；对应完整Coordinator、最终8根回归及DOP1/2未追加执行，旧成功部署继续按原来源复用。
 
 2026-10-06 [牌值存储与根资格](performance/intrinsic-value-storage-research-20261006.md)：两项最小原生合同覆盖603牌/16Fork/完整父liveRNG、五getter补丁及真实Ritsu附着/写入/移除回退；24次Evaluate、4次交错完整请求和12次最终哨兵保留。对象分配大小相同但猎手首领RSS+12.158%失败，两版撤回；未追加最终增量/DOP1/2、Windows或可见Steam。
+
+2026-10-06 [战略上下文枚举](performance/strategic-context-enumerator-research-20261006.md)：`STRATEGIC-CONTEXT-DEMAND`原生`202f7281e44a43f79143a018f4eb908a`通过603卡、需求/集合/异常/Dispose/Count顺序、真实getter版本错误、16Fork与完整父/live/RNG，实例删除；两次准备失败保留。12次Evaluate仅小幅浮动，撤回原型，未做整请求性能或最终固定回归。

@@ -1,5 +1,7 @@
 # 性能工作入口
 
+- [战略上下文枚举](strategic-context-enumerator-research-20261006.md)：603卡/16Fork与原生回调边界通过；12次交错短搜、实际JIT未建立共同收益，原型撤回。
+
 - [空共享见证表的回复查询](shared-incumbent-empty-research-20261006.md)：复用同一CPU，原生发布边界与药水成本合同通过；12次交错短搜未建立共同收益，原型撤回。
 
 - [Fork监听布局复用](fork-listener-layout-research-20261006.md)：两项原生合同、12次交错短搜与独立消费/JIT诊断；部分预绑定在首读前失效，未建立共同收益，原型撤回。
