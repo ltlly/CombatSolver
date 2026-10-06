@@ -79,6 +79,17 @@ internal static partial class StrategicHpRecoveryBound
     internal static string? ComponentHealingRejection(
         CombatPredictionSimulator simulator, Player player)
     {
+        string? rejected = ComponentRootSourceRejection(simulator, player);
+        if (rejected is not null) return rejected;
+        return ComponentHealingUpperBound(simulator, player, 0) == int.MaxValue
+            ? "branch-component" : null;
+    }
+
+    // This explicit source closure is shared by independently audited HP and
+    // potion-inventory proofs. Neither proof is inferred from the other's value.
+    internal static string? ComponentRootSourceRejection(
+        CombatPredictionSimulator simulator, Player player, bool requireClosedPotionInventory = false)
+    {
         SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
         if (typeof(CardModel).Module.ModuleVersionId != ComponentAuditMvid)
             return "native-version";
@@ -93,6 +104,9 @@ internal static partial class StrategicHpRecoveryBound
             || combat.RootHasBaseLibCardModifiers
             || combat.AdaptedOnPlay is not null)
             return "extension";
+        if (requireClosedPotionInventory
+            && (combat.RootRunModSubscriberCount != 0 || combat.RootCombatModSubscriberCount != 0))
+            return "inventory-extension";
         var state = simulator.State.GetPlayerCombatState(player);
         foreach (PredictedCard card in state.AllCards.Concat(combat.PendingReturningCards))
             if (!ComponentInitialCard(card.Preview))
@@ -105,7 +119,7 @@ internal static partial class StrategicHpRecoveryBound
                 PowerModel power => ComponentPower(power.GetType()),
                 MonsterModel monster => ComponentEnemies.Contains(monster.GetType()),
                 PotionModel potion => ComponentPotion(potion.GetType()),
-                _ => combat.IsCertifiedNonHealingSubscriberSource(source)
+                _ => !requireClosedPotionInventory && combat.IsCertifiedNonHealingSubscriberSource(source)
                     || source.GetType() == typeof(global::MegaCrit.Sts2.Core.Models.Enchantments.Instinct)
                     || source.GetType() == typeof(CccComboModel)
                     || source.GetType() == typeof(DebufferModel)
@@ -123,8 +137,7 @@ internal static partial class StrategicHpRecoveryBound
             || !HasCertifiedNativeNonHealingGenerationPool(ModelDb.CardPool<StatusCardPool>())
             || !HasCertifiedNativeNonHealingGenerationPool(ModelDb.CardPool<CurseCardPool>()))
             return "generation-pool";
-        return ComponentHealingUpperBound(simulator, player, 0) == int.MaxValue
-            ? "branch-component" : null;
+        return null;
     }
 
     internal static int ComponentHealingUpperBound(
