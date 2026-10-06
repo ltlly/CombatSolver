@@ -310,7 +310,7 @@ internal static partial class CombatSearchCoordinator
     internal static PrimarySearchIncumbent? BuildPlanMemberPrimaryIncumbent(
         CombatRootSnapshot root, SearchPolicySnapshot policy,
         SolverPotionPolicy? potionPolicyOverride, SolverResult incumbent)
-        => root.UsesComponentHealingCertificate
+        => (root.UsesComponentHealingCertificate || CombatBeamSolver.CanUseReviewedGrowthHpProof(root, policy))
             && policy.TheftPolicy != SolverTheftPolicy.PreserveResources
                 ? BuildRefinementPrimarySearchIncumbent(root, policy, potionPolicyOverride, incumbent)
                 : null;
