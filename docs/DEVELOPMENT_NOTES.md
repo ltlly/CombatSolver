@@ -1,6 +1,6 @@
 # CombatSolver 开发笔记
 
-2026-10-08 [消耗堆完整回合与旧根隔离](performance/exhaust-root-turn-contract-20261008.md)：20类牌、三种保同类序排列、原生完整回合、旧根在实机推进后的回放及共64两代Fork隔离通过；7 getter/4实际补丁与冻结空牌堆注册边界记录。完整未来认证与实际剪枝仍0，无新增性能结论，正式源码及部署复用。
+2026-10-08 [消耗堆直接来源链](performance/exhaust-finite-source-pipeline-20261008.md)：保留猎手重根来源，三排列七动作边界、Shiv/Inky、Sly弃牌自动出牌与原生六张FranticEscape生成的完整状态/历史/RNG一致，旧父分支保持；Sandpit实际4层。5直接生成操作数与42 ToString槽根另定位。完整未来证书/实际剪枝/纯性能仍0。
 
 [默认方法局部验证归档](archive/development/volume-24.md)。
 

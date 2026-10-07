@@ -1,0 +1,1579 @@
+{
+  "schemaVersion": 1,
+  "task": "exhaust-finite-source-pipeline-20261008",
+  "date": "2026-10-08",
+  "sourceBase": "d476b93e",
+  "retainedRuntimeSource": "36370e54",
+  "runtimeChanged": false,
+  "game": {
+    "version": "0.111.0 / 41cef1ea",
+    "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+    "dllSha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+    "actualRuntime": "9.0.7 identity reused"
+  },
+  "scope": {
+    "root": "dev-06-silent-boss / THE_INSATIABLE_BOSS",
+    "rootPreserved": "Original cards, relics, powers, potions and enemy HP retained",
+    "injections": "20 exact direct-source card types into Exhaust; three upgraded cards into Hand; energy 20",
+    "orders": "original/type ascending/type descending, each type internal sequence stable; unmodified ordered key remains authoritative",
+    "actions": "five manual plays, fixture Blade move from Discard to Hand, real Sly discard/autoplay, three simulations of final EndTurn and one actual native EndTurn",
+    "fixtureMove": "explicit setup to expose Sly; not a claim of normal Discard recovery source",
+    "strictComparison": "ContinuationStamp (including nine RNG), original complete ordered state key, full card history and terminal flags for three predicted lanes; native StateText and snapshot at each action; old parent remains unchanged after native mutations",
+    "diagnosticOnly": true,
+    "noSolveOrCoordinator": true,
+    "launcherTimeoutSeconds": 120,
+    "launcherCpuAdmission": 2
+  },
+  "native": {
+    "result": {
+      "processReusable": false,
+      "processId": 605337,
+      "reusedProcess": false,
+      "developmentStrategyScriptHash": null,
+      "developmentStrategyParametersHash": null,
+      "mainAssemblyHash": "2FF0A7C9E68EA95C8A94D9BDA6B00053AB51FA2436355CB98409005C1E23C69C",
+      "schemaVersion": 1,
+      "runId": "4b12cebeef7c44439cac803ad2b5d057",
+      "scenarioId": "EXHAUST-FINITE-SOURCE-PIPELINE",
+      "status": "Passed",
+      "stage": "passed",
+      "characterId": "CHARACTER.SILENT",
+      "encounterId": "ENCOUNTER.THE_INSATIABLE_BOSS",
+      "seed": "NOVELTY-DEV-20260915-06",
+      "startedAtUtc": "2026-10-07T20:01:42.0853725+00:00",
+      "elapsedMilliseconds": 28847.5964,
+      "mainThread": true,
+      "combatEnded": false,
+      "startedTurn": 1,
+      "finishedTurn": 2,
+      "managedHeapBytes": 83020800,
+      "managedFragmentedBytes": 12042896,
+      "workingSetBytes": 1588658176,
+      "privateMemoryBytes": 1722982400,
+      "solverMetrics": null,
+      "replayVerification": null,
+      "generatedScenario": {
+        "schemaVersion": 1,
+        "mode": "Search",
+        "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+        "resolvedConfiguration": "generated-scenario.resolved.json",
+        "loadout": "generated-scenario.loadout.json",
+        "opening": "generated-scenario.opening.json",
+        "relicObtainEffects": false,
+        "combatEnded": false,
+        "actualOutcome": {
+          "initialHp": 56,
+          "finalHp": 56,
+          "hpLost": 0,
+          "hpHealed": 0,
+          "selfDamage": 0,
+          "combatEnded": false,
+          "survived": true,
+          "finalEnemyHp": 317,
+          "potions": [],
+          "unattributedHpLoss": 0
+        }
+      },
+      "stageTimings": [
+        {
+          "stage": "created",
+          "startedMilliseconds": 0,
+          "durationMilliseconds": 1.5642
+        },
+        {
+          "stage": "strategy_load",
+          "startedMilliseconds": 1.5642,
+          "durationMilliseconds": 5.2303999999999995
+        },
+        {
+          "stage": "game_startup",
+          "startedMilliseconds": 6.7946,
+          "durationMilliseconds": 12800.3351
+        },
+        {
+          "stage": "start_run",
+          "startedMilliseconds": 12807.1297,
+          "durationMilliseconds": 10946.0454
+        },
+        {
+          "stage": "inject_run_relics",
+          "startedMilliseconds": 23753.1751,
+          "durationMilliseconds": 262.16719999999987
+        },
+        {
+          "stage": "enter_encounter",
+          "startedMilliseconds": 24015.3423,
+          "durationMilliseconds": 1967.5361000000012
+        },
+        {
+          "stage": "wait_player_turn",
+          "startedMilliseconds": 25982.8784,
+          "durationMilliseconds": 2.5864999999976135
+        },
+        {
+          "stage": "inject_state",
+          "startedMilliseconds": 25985.4649,
+          "durationMilliseconds": 31.918400000002293
+        },
+        {
+          "stage": "finite_source_pipeline",
+          "startedMilliseconds": 26017.3833,
+          "durationMilliseconds": 2701.470599999997
+        },
+        {
+          "stage": "cleanup",
+          "startedMilliseconds": 28718.8539,
+          "durationMilliseconds": 123.07710000000225
+        },
+        {
+          "stage": "passed",
+          "startedMilliseconds": 28841.931,
+          "durationMilliseconds": 5.848999999998341
+        }
+      ],
+      "completedChecks": [
+        "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+        "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+        "GeneratedScenario:NativeOpeningCaptured",
+        "FiniteSourcePipeline:ThreeStableWithinTypeExhaustOrders:FiveNativePlays:ShivInkyAndSlyGeneration:NativeSlyAutoPlay:CompleteStateHistoryRng:ParentLiveIsolation:ThreeEndTurns:NativeSixFranticEscapeAndSandpit",
+        "TASK_FINITE_SOURCE_PIPELINE {\"steps\":[{\"label\":\"NOXIOUS_FUMES\",\"projectedFullSha256\":\"F7EA29F6DF33EAD7496DFB8964A1EE1D70E72160432D2E9B19DAE827645601CA\",\"nativeSha256\":\"09A22BF264A6B8DFA49276598546A3E675061E5F25519CFABA68171EC2079A97\",\"shivs\":1,\"inkyCards\":0,\"hand\":9},{\"label\":\"MASTER_PLANNER\",\"projectedFullSha256\":\"52CE5DDB9B5598DBFBD20C7AC2AFD621E8F8B3B2A4958CD52BE53E82821DFA8C\",\"nativeSha256\":\"BBE6302C9800C141A14A5BF805B11321FA83875A5DAC50722D7D7F2B4F4AB28F\",\"shivs\":1,\"inkyCards\":0,\"hand\":8},{\"label\":\"FAN_OF_KNIVES\",\"projectedFullSha256\":\"71692504E7D267ABD1FADFF6A15AD688CD79FC492CB2D304C33BCBDF0B72DB50\",\"nativeSha256\":\"1B82B42BD8D9B68D0BB469AF53BE9916E76C762AC358750879D63CE01DDE8D00\",\"shivs\":6,\"inkyCards\":0,\"hand\":10},{\"label\":\"BLADE_OF_INK\",\"projectedFullSha256\":\"91B59C5ECE46F380093E376AE9E47ACB1DF8B90CB747DE35F1BBCDE43F5652E7\",\"nativeSha256\":\"62C6D1A87E111EAF3919707444A868835141AE690092051E01DAD0781E763621\",\"shivs\":9,\"inkyCards\":3,\"hand\":10},{\"label\":\"BACKSTAB\",\"projectedFullSha256\":\"38DD554C1BDC436DB272F7580426B7A989D550AF2D85C751868C19E93C053E3A\",\"nativeSha256\":\"A0F697AC2C435A19E49003177034C16310CF64FA554C77983E19BE41CED6E0E9\",\"shivs\":9,\"inkyCards\":3,\"hand\":9},{\"label\":\"fixture_move_blade_to_hand\",\"projectedFullSha256\":\"35AC8DC808F50D1FB4C194169EA69D02B3E2A4B83A483C036C4FF05011373EC7\",\"nativeSha256\":\"7D7ED90C14B29C6BC76CE9C3678B66C54F9F5EA0B3512DD501B501A6D860E7FF\",\"shivs\":9,\"inkyCards\":3,\"hand\":10},{\"label\":\"sly_discard_auto_play\",\"projectedFullSha256\":\"464D01954795BE33196BD902B3EB9B8E459E91DD8DB78908DD26B1109A1F9131\",\"nativeSha256\":\"45FB7C4A4D9B9AAA2006973D01C5276EEB0EE16B74779C008C1A17872FAC4988\",\"shivs\":12,\"inkyCards\":6,\"hand\":10}],\"ends\":[{\"hash\":\"C9365035EA2017D3C368A88D362E2C6EA268ACB9BDF298598E91995DF3C1F808\",\"frantic\":7},{\"hash\":\"C9365035EA2017D3C368A88D362E2C6EA268ACB9BDF298598E91995DF3C1F808\",\"frantic\":7},{\"hash\":\"C9365035EA2017D3C368A88D362E2C6EA268ACB9BDF298598E91995DF3C1F808\",\"frantic\":7}],\"beforeFrantic\":1,\"afterFrantic\":7,\"nativeSandpitAmount\":4,\"CapturedRunModSubscriberCount\":0,\"CapturedCombatModSubscriberCount\":0,\"CapturedBaseLibCardModifiers\":false,\"nativeEndedSha256\":\"4AEBA6B0DB48B7213912642BFD7079FA2577092755216FF6C73C69883DC90E80\",\"actualPrunes\":0,\"wholeRootCertificate\":false}",
+        "NativeOutcome:combatEnded=False:turn=2:hp=56:maxHp=70"
+      ],
+      "error": null,
+      "finishedAtUtc": "2026-10-07T20:02:10.9327441+00:00"
+    },
+    "details": {
+      "steps": [
+        {
+          "label": "NOXIOUS_FUMES",
+          "projectedFullSha256": "F7EA29F6DF33EAD7496DFB8964A1EE1D70E72160432D2E9B19DAE827645601CA",
+          "nativeSha256": "09A22BF264A6B8DFA49276598546A3E675061E5F25519CFABA68171EC2079A97",
+          "shivs": 1,
+          "inkyCards": 0,
+          "hand": 9
+        },
+        {
+          "label": "MASTER_PLANNER",
+          "projectedFullSha256": "52CE5DDB9B5598DBFBD20C7AC2AFD621E8F8B3B2A4958CD52BE53E82821DFA8C",
+          "nativeSha256": "BBE6302C9800C141A14A5BF805B11321FA83875A5DAC50722D7D7F2B4F4AB28F",
+          "shivs": 1,
+          "inkyCards": 0,
+          "hand": 8
+        },
+        {
+          "label": "FAN_OF_KNIVES",
+          "projectedFullSha256": "71692504E7D267ABD1FADFF6A15AD688CD79FC492CB2D304C33BCBDF0B72DB50",
+          "nativeSha256": "1B82B42BD8D9B68D0BB469AF53BE9916E76C762AC358750879D63CE01DDE8D00",
+          "shivs": 6,
+          "inkyCards": 0,
+          "hand": 10
+        },
+        {
+          "label": "BLADE_OF_INK",
+          "projectedFullSha256": "91B59C5ECE46F380093E376AE9E47ACB1DF8B90CB747DE35F1BBCDE43F5652E7",
+          "nativeSha256": "62C6D1A87E111EAF3919707444A868835141AE690092051E01DAD0781E763621",
+          "shivs": 9,
+          "inkyCards": 3,
+          "hand": 10
+        },
+        {
+          "label": "BACKSTAB",
+          "projectedFullSha256": "38DD554C1BDC436DB272F7580426B7A989D550AF2D85C751868C19E93C053E3A",
+          "nativeSha256": "A0F697AC2C435A19E49003177034C16310CF64FA554C77983E19BE41CED6E0E9",
+          "shivs": 9,
+          "inkyCards": 3,
+          "hand": 9
+        },
+        {
+          "label": "fixture_move_blade_to_hand",
+          "projectedFullSha256": "35AC8DC808F50D1FB4C194169EA69D02B3E2A4B83A483C036C4FF05011373EC7",
+          "nativeSha256": "7D7ED90C14B29C6BC76CE9C3678B66C54F9F5EA0B3512DD501B501A6D860E7FF",
+          "shivs": 9,
+          "inkyCards": 3,
+          "hand": 10
+        },
+        {
+          "label": "sly_discard_auto_play",
+          "projectedFullSha256": "464D01954795BE33196BD902B3EB9B8E459E91DD8DB78908DD26B1109A1F9131",
+          "nativeSha256": "45FB7C4A4D9B9AAA2006973D01C5276EEB0EE16B74779C008C1A17872FAC4988",
+          "shivs": 12,
+          "inkyCards": 6,
+          "hand": 10
+        }
+      ],
+      "ends": [
+        {
+          "hash": "C9365035EA2017D3C368A88D362E2C6EA268ACB9BDF298598E91995DF3C1F808",
+          "frantic": 7
+        },
+        {
+          "hash": "C9365035EA2017D3C368A88D362E2C6EA268ACB9BDF298598E91995DF3C1F808",
+          "frantic": 7
+        },
+        {
+          "hash": "C9365035EA2017D3C368A88D362E2C6EA268ACB9BDF298598E91995DF3C1F808",
+          "frantic": 7
+        }
+      ],
+      "beforeFrantic": 1,
+      "afterFrantic": 7,
+      "nativeSandpitAmount": 4,
+      "CapturedRunModSubscriberCount": 0,
+      "CapturedCombatModSubscriberCount": 0,
+      "CapturedBaseLibCardModifiers": false,
+      "nativeEndedSha256": "4AEBA6B0DB48B7213912642BFD7079FA2577092755216FF6C73C69883DC90E80",
+      "actualPrunes": 0,
+      "wholeRootCertificate": false
+    },
+    "launcher": {
+      "command": [
+        "bash",
+        "tools/testing/run-unattended-test.sh",
+        "--scenario-id",
+        "EXHAUST-FINITE-SOURCE-PIPELINE",
+        "--generated-scenario-path",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+        "--combat-solver-build-dir",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-finite-source-pipeline-20261008/build-native",
+        "--headless-instance",
+        "exhaust-finite-source-pipeline-20261008",
+        "--timeout-seconds",
+        "120",
+        "--evidence-directory",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-finite-source-pipeline-20261008/evidence",
+        "--cleanup-instance-on-exit",
+        "--exit-on-complete"
+      ],
+      "exitCode": 0,
+      "wallSeconds": 36.35506636899663
+    }
+  },
+  "sourceCutset": {
+    "schemaVersion": 1,
+    "gameMvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+    "gameSha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+    "inventoryPath": ".local/tool-tasks/exhaust-reader-closure-20261007/native-slot-inventory-v5.json",
+    "scope": "Declared method/async body operands of the 45 prior static model hints, not a recursive reachable-source certificate",
+    "sourceOwners": [
+      "MegaCrit.Sts2.Core.Models.Cards.AscendersBane",
+      "MegaCrit.Sts2.Core.Models.Cards.Backstab",
+      "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk",
+      "MegaCrit.Sts2.Core.Models.Cards.BubbleBubble",
+      "MegaCrit.Sts2.Core.Models.Cards.DefendSilent",
+      "MegaCrit.Sts2.Core.Models.Cards.FanOfKnives",
+      "MegaCrit.Sts2.Core.Models.Cards.Flechettes",
+      "MegaCrit.Sts2.Core.Models.Cards.FranticEscape",
+      "MegaCrit.Sts2.Core.Models.Cards.MasterPlanner",
+      "MegaCrit.Sts2.Core.Models.Cards.Neutralize",
+      "MegaCrit.Sts2.Core.Models.Cards.NoxiousFumes",
+      "MegaCrit.Sts2.Core.Models.Cards.PreciseCut",
+      "MegaCrit.Sts2.Core.Models.Cards.Prepared",
+      "MegaCrit.Sts2.Core.Models.Cards.Prowess",
+      "MegaCrit.Sts2.Core.Models.Cards.Reflex",
+      "MegaCrit.Sts2.Core.Models.Cards.RollingBoulder",
+      "MegaCrit.Sts2.Core.Models.Cards.Shiv",
+      "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent",
+      "MegaCrit.Sts2.Core.Models.Cards.Survivor",
+      "MegaCrit.Sts2.Core.Models.Cards.TheHunt",
+      "MegaCrit.Sts2.Core.Models.Enchantments.Inky",
+      "MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable",
+      "MegaCrit.Sts2.Core.Models.Potions.Fortifier",
+      "MegaCrit.Sts2.Core.Models.Potions.LuckyTonic",
+      "MegaCrit.Sts2.Core.Models.Powers.AccelerantPower",
+      "MegaCrit.Sts2.Core.Models.Powers.BufferPower",
+      "MegaCrit.Sts2.Core.Models.Powers.CrueltyPower",
+      "MegaCrit.Sts2.Core.Models.Powers.DebilitatePower",
+      "MegaCrit.Sts2.Core.Models.Powers.DexterityPower",
+      "MegaCrit.Sts2.Core.Models.Powers.FanOfKnivesPower",
+      "MegaCrit.Sts2.Core.Models.Powers.MasterPlannerPower",
+      "MegaCrit.Sts2.Core.Models.Powers.NoxiousFumesPower",
+      "MegaCrit.Sts2.Core.Models.Powers.PoisonPower",
+      "MegaCrit.Sts2.Core.Models.Powers.RollingBoulderPower",
+      "MegaCrit.Sts2.Core.Models.Powers.SandpitPower",
+      "MegaCrit.Sts2.Core.Models.Powers.StrengthPower",
+      "MegaCrit.Sts2.Core.Models.Powers.TheHuntPower",
+      "MegaCrit.Sts2.Core.Models.Powers.VulnerablePower",
+      "MegaCrit.Sts2.Core.Models.Powers.WeakPower",
+      "MegaCrit.Sts2.Core.Models.Relics.BowlerHat",
+      "MegaCrit.Sts2.Core.Models.Relics.FestivePopper",
+      "MegaCrit.Sts2.Core.Models.Relics.PaperKrane",
+      "MegaCrit.Sts2.Core.Models.Relics.PaperPhrog",
+      "MegaCrit.Sts2.Core.Models.Relics.RingOfTheSnake",
+      "MegaCrit.Sts2.Core.Models.Relics.SparklingRouge"
+    ],
+    "directReferences": 1747,
+    "selectedCardMechanismOperands": [
+      {
+        "Caller": "System.Decimal MegaCrit.Sts2.Core.Models.Relics.RingOfTheSnake::ModifyHandDraw(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+        "Target": "MegaCrit.Sts2.Core.Localization.DynamicVars.CardsVar MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 39,
+        "Owner": "MegaCrit.Sts2.Core.Models.Relics.RingOfTheSnake",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.MasterPlannerPower::AfterCardPlayed(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+        "Target": "System.Void MegaCrit.Sts2.Core.Commands.CardCmd::ApplyKeyword(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardKeyword[])",
+        "Kind": "call",
+        "Offset": 72,
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.MasterPlannerPower",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Powers.RollingBoulderPower/<>c__DisplayClass8_0::<AfterPlayerTurnStart>b__0(MegaCrit.Sts2.Core.Nodes.Combat.NCreature)",
+        "Target": "System.Void System.Collections.Generic.List`1<System.Threading.Tasks.Task>::Add(!0)",
+        "Kind": "callvirt",
+        "Offset": 34,
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.RollingBoulderPower",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterMoveStateMachine MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable::GenerateMoveStateMachine()",
+        "Target": "System.Void System.Collections.Generic.List`1<MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterState>::Add(!0)",
+        "Kind": "callvirt",
+        "Offset": 263,
+        "Owner": "MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterMoveStateMachine MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable::GenerateMoveStateMachine()",
+        "Target": "System.Void System.Collections.Generic.List`1<MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterState>::Add(!0)",
+        "Kind": "callvirt",
+        "Offset": 271,
+        "Owner": "MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterMoveStateMachine MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable::GenerateMoveStateMachine()",
+        "Target": "System.Void System.Collections.Generic.List`1<MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterState>::Add(!0)",
+        "Kind": "callvirt",
+        "Offset": 278,
+        "Owner": "MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterMoveStateMachine MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable::GenerateMoveStateMachine()",
+        "Target": "System.Void System.Collections.Generic.List`1<MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterState>::Add(!0)",
+        "Kind": "callvirt",
+        "Offset": 285,
+        "Owner": "MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterMoveStateMachine MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable::GenerateMoveStateMachine()",
+        "Target": "System.Void System.Collections.Generic.List`1<MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterState>::Add(!0)",
+        "Kind": "callvirt",
+        "Offset": 293,
+        "Owner": "MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable/<LiquifyMove>d__35::MoveNext()",
+        "Target": "T MegaCrit.Sts2.Core.Combat.ICombatState::CreateCard(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Kind": "callvirt",
+        "Offset": 724,
+        "Owner": "MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable",
+        "GenericArguments": [
+          "MegaCrit.Sts2.Core.Models.Cards.FranticEscape"
+        ]
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable/<LiquifyMove>d__35::MoveNext()",
+        "Target": "System.Threading.Tasks.Task`1<MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult> MegaCrit.Sts2.Core.Commands.CardPileCmd::AddGeneratedCardToCombat(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.PileType,MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.Entities.Cards.CardPilePosition)",
+        "Kind": "call",
+        "Offset": 764,
+        "Owner": "MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable/<LiquifyMove>d__35::MoveNext()",
+        "Target": "System.Void System.Collections.Generic.List`1<MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult>::Add(!0)",
+        "Kind": "callvirt",
+        "Offset": 867,
+        "Owner": "MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.HoverTips.IHoverTip> MegaCrit.Sts2.Core.Models.Cards.BladeOfInk::get_ExtraHoverTips()",
+        "Target": "System.Void System.Collections.Generic.List`1<MegaCrit.Sts2.Core.HoverTips.IHoverTip>::Add(!0)",
+        "Kind": "callvirt",
+        "Offset": 12,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.BladeOfInk::OnUpgrade()",
+        "Target": "MegaCrit.Sts2.Core.Localization.DynamicVars.CardsVar MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 6,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.BladeOfInk/<OnPlay>d__5::MoveNext()",
+        "Target": "MegaCrit.Sts2.Core.Localization.DynamicVars.CardsVar MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 29,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.BladeOfInk/<OnPlay>d__5::MoveNext()",
+        "Target": "System.Threading.Tasks.Task`1<System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel>> MegaCrit.Sts2.Core.Models.Cards.Shiv::CreateInHand(MegaCrit.Sts2.Core.Entities.Players.Player,System.Int32,MegaCrit.Sts2.Core.Combat.ICombatState,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Kind": "call",
+        "Offset": 46,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.BladeOfInk/<OnPlay>d__5::MoveNext()",
+        "Target": "T MegaCrit.Sts2.Core.Commands.CardCmd::Enchant(MegaCrit.Sts2.Core.Models.CardModel,System.Decimal)",
+        "Kind": "call",
+        "Offset": 168,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk",
+        "GenericArguments": [
+          "MegaCrit.Sts2.Core.Models.Enchantments.Inky"
+        ]
+      },
+      {
+        "Caller": "System.Collections.Generic.HashSet`1<MegaCrit.Sts2.Core.Entities.Cards.CardTag> MegaCrit.Sts2.Core.Models.Cards.DefendSilent::get_CanonicalTags()",
+        "Target": "System.Boolean System.Collections.Generic.HashSet`1<MegaCrit.Sts2.Core.Entities.Cards.CardTag>::Add(!0)",
+        "Kind": "callvirt",
+        "Offset": 7,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.FanOfKnives/<OnPlay>d__8::MoveNext()",
+        "Target": "System.Threading.Tasks.Task`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Models.Cards.Shiv::CreateInHand(MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.Combat.ICombatState,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Kind": "call",
+        "Offset": 183,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.FanOfKnives",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Decimal MegaCrit.Sts2.Core.Models.Cards.Flechettes/<>c::<get_CanonicalVars>b__3_0(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 12,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Flechettes",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Decimal MegaCrit.Sts2.Core.Models.Cards.PreciseCut/<>c::<get_CanonicalVars>b__2_0(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 12,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.PreciseCut",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Decimal MegaCrit.Sts2.Core.Models.Cards.PreciseCut/<>c::<get_CanonicalVars>b__2_0(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "Target": "MegaCrit.Sts2.Core.Entities.Cards.CardPile MegaCrit.Sts2.Core.Models.CardModel::get_Pile()",
+        "Kind": "callvirt",
+        "Offset": 24,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.PreciseCut",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Prepared::OnUpgrade()",
+        "Target": "MegaCrit.Sts2.Core.Localization.DynamicVars.CardsVar MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 6,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Prepared",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Prepared/<OnPlay>d__3::MoveNext()",
+        "Target": "MegaCrit.Sts2.Core.Localization.DynamicVars.CardsVar MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 39,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Prepared",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Prepared/<OnPlay>d__3::MoveNext()",
+        "Target": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Commands.CardCmd::Discard(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel>)",
+        "Kind": "call",
+        "Offset": 304,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Prepared",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Reflex::OnUpgrade()",
+        "Target": "MegaCrit.Sts2.Core.Localization.DynamicVars.CardsVar MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 6,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Reflex",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Reflex/<OnPlay>d__5::MoveNext()",
+        "Target": "MegaCrit.Sts2.Core.Localization.DynamicVars.CardsVar MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 158,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Reflex",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Collections.Generic.HashSet`1<MegaCrit.Sts2.Core.Entities.Cards.CardTag> MegaCrit.Sts2.Core.Models.Cards.Shiv::get_CanonicalTags()",
+        "Target": "System.Boolean System.Collections.Generic.HashSet`1<MegaCrit.Sts2.Core.Entities.Cards.CardTag>::Add(!0)",
+        "Kind": "callvirt",
+        "Offset": 7,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Shiv",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Shiv/<CreateInHand>d__11::MoveNext()",
+        "Target": "System.Threading.Tasks.Task`1<System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel>> MegaCrit.Sts2.Core.Models.Cards.Shiv::CreateInHand(MegaCrit.Sts2.Core.Entities.Players.Player,System.Int32,MegaCrit.Sts2.Core.Combat.ICombatState,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Kind": "call",
+        "Offset": 29,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Shiv",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Shiv/<CreateInHand>d__12::MoveNext()",
+        "Target": "T MegaCrit.Sts2.Core.Combat.ICombatState::CreateCard(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Kind": "callvirt",
+        "Offset": 88,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Shiv",
+        "GenericArguments": [
+          "MegaCrit.Sts2.Core.Models.Cards.Shiv"
+        ]
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Shiv/<CreateInHand>d__12::MoveNext()",
+        "Target": "System.Void System.Collections.Generic.List`1<MegaCrit.Sts2.Core.Models.CardModel>::Add(!0)",
+        "Kind": "callvirt",
+        "Offset": 93,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Shiv",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Shiv/<CreateInHand>d__12::MoveNext()",
+        "Target": "System.Threading.Tasks.Task`1<System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult>> MegaCrit.Sts2.Core.Commands.CardPileCmd::AddGeneratedCardsToCombat(System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel>,MegaCrit.Sts2.Core.Entities.Cards.PileType,MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.Entities.Cards.CardPilePosition)",
+        "Kind": "call",
+        "Offset": 135,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Shiv",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Collections.Generic.HashSet`1<MegaCrit.Sts2.Core.Entities.Cards.CardTag> MegaCrit.Sts2.Core.Models.Cards.StrikeSilent::get_CanonicalTags()",
+        "Target": "System.Boolean System.Collections.Generic.HashSet`1<MegaCrit.Sts2.Core.Entities.Cards.CardTag>::Add(!0)",
+        "Kind": "callvirt",
+        "Offset": 7,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Survivor/<OnPlay>d__5::MoveNext()",
+        "Target": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Commands.CardCmd::Discard(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 295,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Survivor",
+        "GenericArguments": []
+      }
+    ],
+    "directProducerOperands": [
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable/<LiquifyMove>d__35::MoveNext()",
+        "Target": "T MegaCrit.Sts2.Core.Combat.ICombatState::CreateCard(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Kind": "callvirt",
+        "Offset": 724,
+        "Owner": "MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable",
+        "GenericArguments": [
+          "MegaCrit.Sts2.Core.Models.Cards.FranticEscape"
+        ]
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.BladeOfInk/<OnPlay>d__5::MoveNext()",
+        "Target": "System.Threading.Tasks.Task`1<System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel>> MegaCrit.Sts2.Core.Models.Cards.Shiv::CreateInHand(MegaCrit.Sts2.Core.Entities.Players.Player,System.Int32,MegaCrit.Sts2.Core.Combat.ICombatState,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Kind": "call",
+        "Offset": 46,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.FanOfKnives/<OnPlay>d__8::MoveNext()",
+        "Target": "System.Threading.Tasks.Task`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Models.Cards.Shiv::CreateInHand(MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.Combat.ICombatState,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Kind": "call",
+        "Offset": 183,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.FanOfKnives",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Shiv/<CreateInHand>d__11::MoveNext()",
+        "Target": "System.Threading.Tasks.Task`1<System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel>> MegaCrit.Sts2.Core.Models.Cards.Shiv::CreateInHand(MegaCrit.Sts2.Core.Entities.Players.Player,System.Int32,MegaCrit.Sts2.Core.Combat.ICombatState,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Kind": "call",
+        "Offset": 29,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Shiv",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Shiv/<CreateInHand>d__12::MoveNext()",
+        "Target": "T MegaCrit.Sts2.Core.Combat.ICombatState::CreateCard(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Kind": "callvirt",
+        "Offset": 88,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Shiv",
+        "GenericArguments": [
+          "MegaCrit.Sts2.Core.Models.Cards.Shiv"
+        ]
+      }
+    ],
+    "declaredNativeHookSlots": [
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Relics.BowlerHat",
+        "Method": "System.Decimal MegaCrit.Sts2.Core.Models.Relics.BowlerHat::ModifyGoldGained(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyGoldGained(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+        "Chain": [
+          "System.Decimal MegaCrit.Sts2.Core.Models.Relics.BowlerHat::ModifyGoldGained(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+          "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyGoldGained(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Relics.BowlerHat",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Relics.BowlerHat::AfterModifyingGoldGained(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterModifyingGoldGained(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Relics.BowlerHat::AfterModifyingGoldGained(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterModifyingGoldGained(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Relics.FestivePopper",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Relics.FestivePopper::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Relics.FestivePopper::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Relics.RingOfTheSnake",
+        "Method": "System.Decimal MegaCrit.Sts2.Core.Models.Relics.RingOfTheSnake::ModifyHandDraw(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyHandDraw(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+        "Chain": [
+          "System.Decimal MegaCrit.Sts2.Core.Models.Relics.RingOfTheSnake::ModifyHandDraw(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+          "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyHandDraw(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Relics.SparklingRouge",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Relics.SparklingRouge::AfterBlockCleared(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterBlockCleared(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Relics.SparklingRouge::AfterBlockCleared(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterBlockCleared(MegaCrit.Sts2.Core.Entities.Creatures.Creature)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.BufferPower",
+        "Method": "System.Decimal MegaCrit.Sts2.Core.Models.Powers.BufferPower::ModifyHpLostAfterOstyLate(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyHpLostAfterOstyLate(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)",
+        "Chain": [
+          "System.Decimal MegaCrit.Sts2.Core.Models.Powers.BufferPower::ModifyHpLostAfterOstyLate(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)",
+          "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyHpLostAfterOstyLate(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.BufferPower",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.BufferPower::AfterModifyingHpLostAfterOsty()",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterModifyingHpLostAfterOsty()",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.BufferPower::AfterModifyingHpLostAfterOsty()",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterModifyingHpLostAfterOsty()"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.DebilitatePower",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.DebilitatePower::AfterSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.DebilitatePower::AfterSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.DexterityPower",
+        "Method": "System.Decimal MegaCrit.Sts2.Core.Models.Powers.DexterityPower::ModifyBlockAdditive(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyBlockAdditive(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+        "Chain": [
+          "System.Decimal MegaCrit.Sts2.Core.Models.Powers.DexterityPower::ModifyBlockAdditive(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+          "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyBlockAdditive(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.MasterPlannerPower",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.MasterPlannerPower::AfterCardPlayed(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterCardPlayed(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.MasterPlannerPower::AfterCardPlayed(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterCardPlayed(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.NoxiousFumesPower",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.NoxiousFumesPower::AfterSideTurnStart(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>,MegaCrit.Sts2.Core.Combat.ICombatState)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterSideTurnStart(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>,MegaCrit.Sts2.Core.Combat.ICombatState)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.NoxiousFumesPower::AfterSideTurnStart(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>,MegaCrit.Sts2.Core.Combat.ICombatState)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterSideTurnStart(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>,MegaCrit.Sts2.Core.Combat.ICombatState)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.PoisonPower",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.PoisonPower::AfterSideTurnStart(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>,MegaCrit.Sts2.Core.Combat.ICombatState)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterSideTurnStart(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>,MegaCrit.Sts2.Core.Combat.ICombatState)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.PoisonPower::AfterSideTurnStart(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>,MegaCrit.Sts2.Core.Combat.ICombatState)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterSideTurnStart(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>,MegaCrit.Sts2.Core.Combat.ICombatState)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.RollingBoulderPower",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.RollingBoulderPower::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.RollingBoulderPower::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.SandpitPower",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.SandpitPower::AfterSideTurnStartLate(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>,MegaCrit.Sts2.Core.Combat.ICombatState)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterSideTurnStartLate(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>,MegaCrit.Sts2.Core.Combat.ICombatState)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.SandpitPower::AfterSideTurnStartLate(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>,MegaCrit.Sts2.Core.Combat.ICombatState)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterSideTurnStartLate(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>,MegaCrit.Sts2.Core.Combat.ICombatState)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.SandpitPower",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.SandpitPower::AfterPowerAmountChanged(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Models.PowerModel,System.Decimal,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterPowerAmountChanged(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Models.PowerModel,System.Decimal,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.SandpitPower::AfterPowerAmountChanged(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Models.PowerModel,System.Decimal,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterPowerAmountChanged(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Models.PowerModel,System.Decimal,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.SandpitPower",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.SandpitPower::AfterCreatureAddedToCombat(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterCreatureAddedToCombat(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.SandpitPower::AfterCreatureAddedToCombat(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterCreatureAddedToCombat(MegaCrit.Sts2.Core.Entities.Creatures.Creature)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.SandpitPower",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.SandpitPower::AfterOstyRevived(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterOstyRevived(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.SandpitPower::AfterOstyRevived(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterOstyRevived(MegaCrit.Sts2.Core.Entities.Creatures.Creature)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.SandpitPower",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.SandpitPower::BeforeSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::BeforeSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.SandpitPower::BeforeSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::BeforeSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.StrengthPower",
+        "Method": "System.Decimal MegaCrit.Sts2.Core.Models.Powers.StrengthPower::ModifyDamageAdditive(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyDamageAdditive(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+        "Chain": [
+          "System.Decimal MegaCrit.Sts2.Core.Models.Powers.StrengthPower::ModifyDamageAdditive(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+          "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyDamageAdditive(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.VulnerablePower",
+        "Method": "System.Decimal MegaCrit.Sts2.Core.Models.Powers.VulnerablePower::ModifyDamageMultiplicative(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyDamageMultiplicative(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+        "Chain": [
+          "System.Decimal MegaCrit.Sts2.Core.Models.Powers.VulnerablePower::ModifyDamageMultiplicative(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+          "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyDamageMultiplicative(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.VulnerablePower",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.VulnerablePower::AfterSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.VulnerablePower::AfterSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.WeakPower",
+        "Method": "System.Decimal MegaCrit.Sts2.Core.Models.Powers.WeakPower::ModifyDamageMultiplicative(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyDamageMultiplicative(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+        "Chain": [
+          "System.Decimal MegaCrit.Sts2.Core.Models.Powers.WeakPower::ModifyDamageMultiplicative(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+          "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyDamageMultiplicative(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Powers.WeakPower",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.WeakPower::AfterSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.WeakPower::AfterSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>)"
+        ],
+        "IsNativeHookTarget": true
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable",
+        "Method": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable::AfterDeath(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Boolean,System.Single)",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterDeath(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Boolean,System.Single)",
+        "Chain": [
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Monsters.TheInsatiable::AfterDeath(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Boolean,System.Single)",
+          "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.AbstractModel::AfterDeath(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Boolean,System.Single)"
+        ],
+        "IsNativeHookTarget": true
+      }
+    ],
+    "candidateOrderedReaders": [
+      {
+        "Caller": "System.Boolean MegaCrit.Sts2.Core.Models.CardModel::<get_Pile>b__107_0(MegaCrit.Sts2.Core.Entities.Cards.CardPile)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 1,
+        "Owner": "MegaCrit.Sts2.Core.Models.CardModel",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Decimal MegaCrit.Sts2.Core.Models.Cards.Flechettes/<>c::<get_CanonicalVars>b__3_0(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 12,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Flechettes",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Decimal MegaCrit.Sts2.Core.Models.Cards.PreciseCut/<>c::<get_CanonicalVars>b__2_0(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 12,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.PreciseCut",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Entities.Cards.CardPile> MegaCrit.Sts2.Core.Entities.Players.Player::get_Piles()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Cards.CardPile> MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState::get_AllPiles()",
+        "Kind": "call",
+        "Offset": 42,
+        "Owner": "MegaCrit.Sts2.Core.Entities.Players.Player",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "MegaCrit.Sts2.Core.Saves.Runs.SerializablePlayer MegaCrit.Sts2.Core.Entities.Players.Player::ToSerializable()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 174,
+        "Owner": "MegaCrit.Sts2.Core.Entities.Players.Player",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Cards.CardPile> MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState::get_AllPiles()",
+        "Target": "MegaCrit.Sts2.Core.Entities.Cards.CardPile MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState::get_ExhaustPile()",
+        "Kind": "call",
+        "Offset": 45,
+        "Owner": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState::get_AllCards()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Cards.CardPile> MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState::get_AllPiles()",
+        "Kind": "call",
+        "Offset": 1,
+        "Owner": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState::RecalculateCardValues()",
+        "Target": "System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState::get_AllCards()",
+        "Kind": "call",
+        "Offset": 1,
+        "Owner": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState::EndOfTurnCleanup()",
+        "Target": "System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState::get_AllCards()",
+        "Kind": "call",
+        "Offset": 1,
+        "Owner": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState/<>c::<get_AllCards>b__42_0(MegaCrit.Sts2.Core.Entities.Cards.CardPile)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 1,
+        "Owner": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "MegaCrit.Sts2.Core.Entities.Multiplayer.NetDeckCard MegaCrit.Sts2.Core.Entities.Multiplayer.NetDeckCard::FromModel(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 147,
+        "Owner": "MegaCrit.Sts2.Core.Entities.Multiplayer.NetDeckCard",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "MegaCrit.Sts2.Core.Models.CardModel MegaCrit.Sts2.Core.Entities.Multiplayer.NetDeckCard::ToCardModel(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 6,
+        "Owner": "MegaCrit.Sts2.Core.Entities.Multiplayer.NetDeckCard",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "MegaCrit.Sts2.Core.Entities.Cards.CardPile MegaCrit.Sts2.Core.Entities.Cards.CardPile::Get(MegaCrit.Sts2.Core.Entities.Cards.PileType,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Target": "MegaCrit.Sts2.Core.Entities.Cards.CardPile MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState::get_ExhaustPile()",
+        "Kind": "call",
+        "Offset": 119,
+        "Owner": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Entities.Cards.CardPile::AddInternal(MegaCrit.Sts2.Core.Models.CardModel,System.Int32,System.Boolean)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "call",
+        "Offset": 7,
+        "Owner": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Entities.Cards.CardPile::RemoveInternal(MegaCrit.Sts2.Core.Models.CardModel,System.Boolean)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "call",
+        "Offset": 1,
+        "Owner": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Boolean MegaCrit.Sts2.Core.Commands.CardPileCmd::CheckIfDrawIsPossibleAndShowThoughtBubbleIfNot(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 7,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardPileCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Boolean MegaCrit.Sts2.Core.Commands.CardPileCmd::CheckIfDrawIsPossibleAndShowThoughtBubbleIfNot(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 24,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardPileCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Boolean MegaCrit.Sts2.Core.Commands.CardPileCmd::CheckIfDrawIsPossibleAndShowThoughtBubbleIfNot(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 81,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardPileCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Commands.CardPileCmd/<Add>d__10::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 1264,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardPileCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Commands.CardPileCmd/<Add>d__10::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 1515,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardPileCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Commands.CardPileCmd/<DrawInternal>d__21::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 354,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardPileCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Commands.CardPileCmd/<DrawInternal>d__21::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 569,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardPileCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Commands.CardPileCmd/<DrawInternal>d__21::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 601,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardPileCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Commands.CardPileCmd/<DrawInternal>d__21::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 948,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardPileCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Commands.CardPileCmd/<Shuffle>d__22::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 75,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardPileCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Commands.CardPileCmd/<Shuffle>d__22::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 135,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardPileCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Commands.CardPileCmd/<ShuffleIfNecessary>d__24::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 44,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardPileCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Commands.CardPileCmd/<ShuffleIfNecessary>d__24::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 60,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardPileCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Commands.CardSelectCmd/<FromHand>d__28::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 269,
+        "Owner": "MegaCrit.Sts2.Core.Commands.CardSelectCmd",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<CheckForEmptyHand>d__115::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 69,
+        "Owner": "MegaCrit.Sts2.Core.Combat.CombatManager",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<RemoveDeadPlayerCardsFromCombat>d__118::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 135,
+        "Owner": "MegaCrit.Sts2.Core.Combat.CombatManager",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<RemoveDeadPlayerCardsFromCombat>d__118::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 162,
+        "Owner": "MegaCrit.Sts2.Core.Combat.CombatManager",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<RemoveDeadPlayerCardsFromCombat>d__118::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 189,
+        "Owner": "MegaCrit.Sts2.Core.Combat.CombatManager",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<RemoveDeadPlayerCardsFromCombat>d__118::MoveNext()",
+        "Target": "MegaCrit.Sts2.Core.Entities.Cards.CardPile MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState::get_ExhaustPile()",
+        "Kind": "callvirt",
+        "Offset": 211,
+        "Owner": "MegaCrit.Sts2.Core.Combat.CombatManager",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<RemoveDeadPlayerCardsFromCombat>d__118::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 216,
+        "Owner": "MegaCrit.Sts2.Core.Combat.CombatManager",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<RemoveDeadPlayerCardsFromCombat>d__118::MoveNext()",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 243,
+        "Owner": "MegaCrit.Sts2.Core.Combat.CombatManager",
+        "GenericArguments": []
+      },
+      {
+        "Caller": "System.Int32 MegaCrit.Sts2.Core.Nodes.Combat.NPlayerHand::GetHandInsertIndex(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Entities.Cards.CardPile::get_Cards()",
+        "Kind": "callvirt",
+        "Offset": 12,
+        "Owner": "MegaCrit.Sts2.Core.Nodes.Combat.NPlayerHand",
+        "GenericArguments": []
+      }
+    ],
+    "unresolvedSelectedSlotSummary": {
+      "System.String MegaCrit.Sts2.Core.Models.AbstractModel::ToString()": 42
+    },
+    "isWholeSourceCertificate": false,
+    "limitations": [
+      "method operand names locate mechanisms; they do not classify full semantics",
+      "base methods, command bodies, events, reflection, patch bodies and external code require separate closure",
+      "45 hints include query-only powers/relics, not all are reachable new sources",
+      "42 ToString entries arise from external System.Object slot roots; source body resolution differs from full CLR slot certification"
+    ]
+  },
+  "nativeSourceEvidence": {
+    "FranticEscape": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-regent-healing-bound-20261003/.local/c56/native-src/FranticEscape.cs",
+      "sha256": "86890ea3ea43d5d602da6082bc26b8d9cc0692087a55561c8ed0709d0dc101db",
+      "lineCount": 54,
+      "evidenceLines": [
+        {
+          "line": 30,
+          "text": "public override bool CanBeGeneratedInCombat => false;"
+        }
+      ]
+    },
+    "Shiv": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-regent-healing-bound-20261003/.local/c56/native-src/Shiv.cs",
+      "sha256": "2aa06ecf776fa01bed445aa0324414ea5c03eaea944b72ab09aeab9a91b2aa37",
+      "lineCount": 108,
+      "evidenceLines": [
+        {
+          "line": 83,
+          "text": "public static async Task<CardModel?> CreateInHand(Player owner, ICombatState combatState, Player? creator = null)"
+        },
+        {
+          "line": 85,
+          "text": "return (await CreateInHand(owner, 1, combatState, creator)).FirstOrDefault();"
+        },
+        {
+          "line": 88,
+          "text": "public static async Task<IEnumerable<CardModel>> CreateInHand(Player owner, int count, ICombatState combatState, Player? creator = null)"
+        },
+        {
+          "line": 101,
+          "text": "shivs.Add(combatState.CreateCard<Shiv>(owner));"
+        }
+      ]
+    },
+    "Inky": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-regent-healing-bound-20261003/.local/c56/native-src/Inky.cs",
+      "sha256": "4869876394749b607bdabba0a9e5873ae53df8c5699bd81238079f3e8f025cab",
+      "lineCount": 39,
+      "evidenceLines": []
+    },
+    "BLADE_OF_INK": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-regent-healing-bound-20261003/.local/c56/native-src/BladeOfInk.cs",
+      "sha256": "d5d767ac36d88b14eb77af8dbc1a2a3794b9289191b8244a83b80b5be7b92a3c",
+      "lineCount": 46,
+      "evidenceLines": [
+        {
+          "line": 34,
+          "text": "foreach (CardModel item in await Shiv.CreateInHand(base.Owner, base.DynamicVars.Cards.IntValue, base.CombatState))"
+        },
+        {
+          "line": 36,
+          "text": "CardCmd.Enchant<Inky>(item, 1m);"
+        }
+      ]
+    },
+    "FAN_OF_KNIVES": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-regent-healing-bound-20261003/.local/c56/native-src/FanOfKnives.cs",
+      "sha256": "e88543e39d3df9d7c96f55dd3a5154cb24d5a8e0752b4710375ef0df212de0f8",
+      "lineCount": 52,
+      "evidenceLines": [
+        {
+          "line": 35,
+          "text": "await Shiv.CreateInHand(base.Owner, base.CombatState);"
+        }
+      ]
+    },
+    "MasterPlannerPower": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-regent-healing-bound-20261003/.local/c56/native-src/powers/MasterPlannerPower.cs",
+      "sha256": "4db5bb9a7b4bb5dc46622c816ed563f1f1fc5a04551ce22df5e4a052f54745f5",
+      "lineCount": 31,
+      "evidenceLines": [
+        {
+          "line": 26,
+          "text": "CardCmd.ApplyKeyword(cardPlay.Card, CardKeyword.Sly);"
+        }
+      ]
+    },
+    "TheInsatiable": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/general-healing-audit/regent-boss-source-audit/Monsters.TheInsatiable.cs",
+      "sha256": "e2afd78d123696b1c51eede33ea2126c1f3860f5e4f514a884958d95a1501ab7",
+      "lineCount": 214,
+      "evidenceLines": [
+        {
+          "line": 133,
+          "text": "CardModel card = base.CombatState.CreateCard<FranticEscape>(player);"
+        }
+      ]
+    },
+    "SandpitPower": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-healing-bound-general-20261003/.local/general-healing-audit/callback-closure/Powers.SandpitPower.cs",
+      "sha256": "c196f68b0c76b4b03d8f8b16b32e71df90cca3595dea5e32d8b2c69d5d2759d0",
+      "lineCount": 204,
+      "evidenceLines": []
+    },
+    "PREPARED": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-regent-healing-bound-20261003/.local/c56/native-src/Prepared.cs",
+      "sha256": "e9caa2a819b7dc1afe1428006b9de8af0e8f17a3f047a38706b60784b7a1aaaf",
+      "lineCount": 33,
+      "evidenceLines": []
+    },
+    "SURVIVOR": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-regent-healing-bound-20261003/.local/c56/native-src/Survivor.cs",
+      "sha256": "315d5ab83ecd318dd8008e54253f603e0e422cc01c568cec0926d4e99d0ecbaa",
+      "lineCount": 40,
+      "evidenceLines": []
+    }
+  },
+  "bodyFindings": [
+    "Native MasterPlannerPower marks own played skills Sly; native and simulated Discard resolve Sly autoplay from discarded cards, not an Exhaust read",
+    "Five direct declared model producer operands link two concrete output types: Shiv and FranticEscape; helper recursion and explicit generation are recorded, this is not full dynamic reachability closure",
+    "TheInsatiable Liquify body applies SandpitPower amount4 and creates six FranticEscape cards, three into Draw and three into Discard at random positions; native result agrees",
+    "FranticEscape cannot be ordinarily combat-generated; explicit enemy generation is reachable. Its OnPlay modifies matched enemy SandpitPower and adds one combat energy cost to itself",
+    "All 42 unresolved selected virtual slots from the old overapproximate worklist are the external Object root of AbstractModel.ToString; not 42 missing combat callbacks",
+    "Selected card-mechanism operand count33 includes name collisions such as generic List.Add and DynamicVarSet.Cards; none are promoted to semantic certification by a name match"
+  ],
+  "certification": {
+    "nativeConditionalTracePassed": true,
+    "directDeclaredModelProducerOperands": 5,
+    "directOutputCardTypes": [
+      "Shiv",
+      "FranticEscape"
+    ],
+    "wholeFutureSourceClosure": false,
+    "productionProjectedTranspositions": false,
+    "actualNewPrunes": 0,
+    "newPurePerformanceRequests": 0,
+    "finalFixedRegressionRequests": 0
+  },
+  "unverified": [
+    "all legal future action/choice chains; source hint set is not an exhaustive generator closure",
+    "all command/callback/patch/event/private reference readers and future extension mutation closure",
+    "production identity-bound combined certificate and actual projected TT consumers",
+    "full heap/native private fields beyond the captured state",
+    "pure VeryHigh DOP16 Coordinator speed and peak RSS",
+    "certification cost and actual replay/snapshot reductions",
+    "historical quality gaps and original Soul recovery provenance"
+  ],
+  "build": {
+    "status": "Passed",
+    "seconds": 15.06,
+    "warnings": 0,
+    "errors": 0,
+    "dllSha256FromResult": "2FF0A7C9E68EA95C8A94D9BDA6B00053AB51FA2436355CB98409005C1E23C69C"
+  },
+  "sourceArchive": {
+    "prepare.py": {
+      "path": ".local/tool-tasks/exhaust-finite-source-pipeline-20261008/prepare.py",
+      "sha256": "7bd9a49835fd738066e8aa8e1f7582a2db75f8883db461ba7f271cd14caff3d8",
+      "text": "from pathlib import Path\nimport json\n\nbase=Path(__file__).resolve().parent\nrepo=base.parents[2]\nold=json.loads((repo/'docs/performance/task-caller-order-proof-20261008.json').read_text())['sourceArchive']['run-native.py']\nold=old.get('text',old.get('body')) if isinstance(old,dict) else old\nold=old.replace('task-caller-order-proof-20261008','exhaust-finite-source-pipeline-20261008').replace('TASK-CALLER-ORDER-PROOF','EXHAUST-FINITE-SOURCE-PIPELINE')\n(base/'run-native.py').write_text(old)\n(base/'native.props').write_text('<Project><PropertyGroup><CopyModOnBuild>false</CopyModOnBuild></PropertyGroup><ItemGroup><Compile Include=\"'+str(base/'TaskFiniteSourcePipeline.cs')+'\" /></ItemGroup></Project>\\n')\nexecutor=repo/'src/Testing/Host/UnattendedTestRunner.Executor.cs'\noriginal=executor.read_bytes()\n(base/'original-executor.txt').write_bytes(original)\nmarker=b'            if (request.ScenarioId is \"ZERO-CREDIT-GROWTH-PROOF\"'\nassert original.count(marker)==1\nroute=b'''            if (request.ScenarioId == \"EXHAUST-FINITE-SOURCE-PIPELINE\")\n            {\n                await runner.AssertFiniteSourcePipelineAsync(combatState, player);\n                return Observation(combatEnded: false);\n            }\n'''\ntemporary=original.replace(marker,route+marker)\nexecutor.write_bytes(temporary)\n(base/'temporary-executor.txt').write_bytes(temporary)\n"
+    },
+    "TaskFiniteSourcePipeline.cs": {
+      "path": ".local/tool-tasks/exhaust-finite-source-pipeline-20261008/TaskFiniteSourcePipeline.cs",
+      "sha256": "0cb035899aabdb60a3f7d15862c8b8f61966af08c2d0b9615536f8a22a64429d",
+      "text": "using System.Security.Cryptography;\nusing System.Text;\nusing System.Text.Json;\nusing CombatSolver.Engine.Common;\nusing CombatSolver.Engine.InCombat.Simulation;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Commands;\nusing MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.Entities.Creatures;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing MegaCrit.Sts2.Core.GameActions;\nusing MegaCrit.Sts2.Core.GameActions.Multiplayer;\nusing MegaCrit.Sts2.Core.Models;\nusing MegaCrit.Sts2.Core.Models.Enchantments;\nusing MegaCrit.Sts2.Core.Models.Powers;\nusing MegaCrit.Sts2.Core.Runs;\n\nnamespace CombatSolver;\ninternal sealed partial class CombatBeamSolver\n{\n    internal StateFingerprint TaskFiniteSourceKey(CombatPredictionSimulator simulator)\n    {\n        var combat=(SimulatedCombatState)simulator.State.CombatState;\n        return BuildStateKey(combat.GetPlayerTurnNumber(_player),simulator.State.GetCreature(_player.Creature),\n            simulator.State.GetPlayerCombatState(_player),combat,simulator,simulator.ShuffleEventCount,new HashSet<uint>());\n    }\n}\n\ninternal sealed partial class UnattendedTestRunner\n{\n    private async Task AssertFiniteSourcePipelineAsync(CombatState live, Player player)\n    {\n        SetStage(\"finite_source_pipeline\");\n        string[] sourceIds=[\"ASCENDERS_BANE\",\"BACKSTAB\",\"BLADE_OF_INK\",\"BUBBLE_BUBBLE\",\"DEFEND_SILENT\",\"FAN_OF_KNIVES\",\n            \"FLECHETTES\",\"MASTER_PLANNER\",\"NEUTRALIZE\",\"NOXIOUS_FUMES\",\"PRECISE_CUT\",\"PREPARED\",\"PROWESS\",\"REFLEX\",\n            \"ROLLING_BOULDER\",\"STRIKE_SILENT\",\"SURVIVOR\",\"THE_HUNT\",\"SHIV\",\"FRANTIC_ESCAPE\"];\n        foreach(string id in sourceIds) await InjectCardAsync(live,player,new(){CardId=id,Pile=\"Exhaust\"});\n        foreach(string id in new[]{\"NOXIOUS_FUMES\",\"MASTER_PLANNER\",\"BLADE_OF_INK\"})\n            await InjectCardAsync(live,player,new(){CardId=id,Pile=\"Hand\",UpgradeLevels=1});\n        SetEnergy(player,20);\n        await RunManager.Instance.ActionExecutor.FinishedExecutingActions();\n        var root=CombatRootSnapshot.Capture(live);\n        var policy=SolverController.CaptureSearchPolicy(SolverSettings.Capture(),live,false,null);\n        var names=SolverDisplayNames.Capture(live);\n        var solver=new CombatBeamSolver(root,names,BattleDamageTracker.Observe(live),policy,potionPolicyOverride:SolverPotionPolicy.Disabled);\n        var parent=root.ForkSimulator();\n        var lanes=Enumerable.Range(0,3).Select(_=>parent.Fork()).ToArray();\n        var movable=parent.State.GetPlayerCombatState(player).ExhaustPile.Cards.Select(card=>card.Preview.GetType()).ToHashSet();\n        static void Equal(string expected,string actual,string label)\n        {if(expected!=actual)throw new InvalidOperationException(label+\" differs\\nEXPECTED\\n\"+expected+\"\\nACTUAL\\n\"+actual);}\n        static string Hash(string value)=>Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));\n        string State(CombatPredictionSimulator sim,CombatRootSnapshot captured)\n            =>ContinuationStamp.CapturePredicted(player,sim,((SimulatedCombatState)sim.State.CombatState).GetPlayerTurnNumber(player),captured.Forecast,captured.StartTurnNumber).StateText;\n        string Full(CombatPredictionSimulator sim,CombatRootSnapshot captured,CombatBeamSolver driver)\n            =>State(sim,captured)+\"\\nKEY=\"+driver.TaskFiniteSourceKey(sim)+\"\\nHISTORY=\"+CardContinuationContractHistoryText(sim)\n                +\"\\nFLAGS=\"+JsonSerializer.Serialize(new{sim.TerminalStamp,sim.IsInProgress,sim.IsAboutToLose});\n        string Canonical(CombatPredictionSimulator sim,CombatRootSnapshot captured,CombatBeamSolver driver)\n        {\n            var clone=sim.Fork();var pile=clone.State.GetPlayerCombatState(player).ExhaustPile;\n            var all=pile.Cards.ToArray();var free=all.Select((card,index)=>(card,index)).Where(pair=>movable.Contains(pair.card.Preview.GetType())\n                    &&pair.card.Preview.Enchantment==null&&pair.card.Preview.Affliction==null)\n                .OrderBy(pair=>pair.card.Preview.GetType().FullName,StringComparer.Ordinal).ThenBy(pair=>pair.index).Select(pair=>pair.card).ToArray();\n            int next=0;for(int index=0;index<all.Length;index++)\n                if(movable.Contains(all[index].Preview.GetType())&&all[index].Preview.Enchantment==null&&all[index].Preview.Affliction==null)all[index]=free[next++];\n            pile.Clear();foreach(var card in all)pile.Add(card);\n            return Full(clone,captured,driver);\n        }\n        for(int lane=1;lane<lanes.Length;lane++)\n        {\n            var pile=lanes[lane].State.GetPlayerCombatState(player).ExhaustPile;\n            var all=lane==1?pile.Cards.OrderBy(card=>card.Preview.GetType().FullName,StringComparer.Ordinal).ToArray()\n                :pile.Cards.OrderByDescending(card=>card.Preview.GetType().FullName,StringComparer.Ordinal).ToArray();\n            pile.Clear();foreach(var card in all)pile.Add(card);\n        }\n        string parentBefore=Full(parent,root,solver);\n        for(int lane=1;lane<lanes.Length;lane++)Equal(Canonical(lanes[0],root,solver),Canonical(lanes[lane],root,solver),\"initial projected state\");\n        var steps=new List<object>();\n        using var deadline=new CancellationTokenSource(TimeSpan.FromSeconds(55));\n        void Shadow(CombatPredictionSimulator sim,Action<CombatPredictionSimulator> execute)\n        {\n            using IDisposable isolation=SimulationNotificationIsolation.Enter();\n            var combat=(SimulatedCombatState)sim.State.CombatState;var deaths=new ForkableSet<uint>();\n            using(combat.BeginCardExecutionScope(deaths))execute(sim);\n            if(!CorePowerSupport.ApplyEnemyDeathPowers(sim,combat,combat.KnownEnemies,deaths)\n                ||!CombatBeamSolver.SettleReplayActionBoundary(sim,combat)||sim.HasPendingChoice)\n                throw new InvalidOperationException(\"Unexpected choice or incomplete action boundary.\");\n            sim.CheckWinCondition(combat.GetPlayerTurnNumber(player));\n        }\n        void CheckShadow(string label)\n        {\n            for(int lane=1;lane<lanes.Length;lane++)Equal(Canonical(lanes[0],root,solver),Canonical(lanes[lane],root,solver),label+\" full projected state/history/RNG\");\n            Equal(parentBefore,Full(parent,root,solver),label+\" parent isolation\");\n        }\n        void CheckNative(string label)\n        {\n            Equal(State(lanes[0],root),ContinuationStamp.CaptureLive(live).StateText,label+\" native complete state/RNG\");\n            AssertSnapshotEqual(CaptureSimulated(lanes[0],(SimulatedCombatState)lanes[0].State.CombatState,player,root.Enemies[0]),\n                CaptureActual(live,player,root.Enemies[0]),\"FINITE-SOURCE\",label);\n            Equal(parentBefore,Full(parent,root,solver),label+\" old root after native mutation\");\n            steps.Add(new{label,projectedFullSha256=Hash(Canonical(lanes[0],root,solver)),nativeSha256=Hash(State(lanes[0],root)),\n                shivs=player.PlayerCombatState!.AllCards.Count(card=>card.Id.Entry==\"SHIV\"),\n                inkyCards=player.PlayerCombatState.AllCards.Count(card=>card.Enchantment is Inky),\n                hand=player.PlayerCombatState.Hand.Cards.Count});\n        }\n        foreach(string id in new[]{\"NOXIOUS_FUMES\",\"MASTER_PLANNER\",\"FAN_OF_KNIVES\",\"BLADE_OF_INK\",\"BACKSTAB\"})\n        {\n            string liveBefore=ContinuationStamp.CaptureLive(live).StateText;\n            foreach(var sim in lanes)Shadow(sim,current=>\n            {\n                var card=current.State.GetPlayerCombatState(player).Hand.Cards.Single(card=>card.Preview.Id.Entry==id);\n                Creature? target=id==\"BACKSTAB\"?root.Enemies[0]:null;\n                if(!current.ManualPlay(card,target,out _))throw new InvalidOperationException(\"Not playable: \"+id);\n            });\n            CheckShadow(id);Equal(liveBefore,ContinuationStamp.CaptureLive(live).StateText,id+\" shadow/live isolation\");\n            CardModel native=player.PlayerCombatState!.Hand.Cards.Single(card=>card.Id.Entry==id);\n            Creature? nativeTarget=id==\"BACKSTAB\"?root.Enemies[0]:null;\n            GameAction action=await SolverController.EnqueueAndCaptureActionAsync(\n                action=>action is PlayCardAction played&&ReferenceEquals(played.NetCombatCard.ToCardModelOrNull(),native),\n                ()=>{if(!native.TryManualPlay(nativeTarget))throw new InvalidOperationException(\"Native not playable: \"+id);},deadline.Token);\n            await action.CompletionTask.WaitAsync(deadline.Token);CheckNative(id);\n        }\n        CardModel nativeBlade=player.PlayerCombatState!.DiscardPile.Cards.Single(card=>card.Id.Entry==\"BLADE_OF_INK\"&&card.IsSlyThisTurn);\n        foreach(var sim in lanes)Shadow(sim,current=>\n        {\n            var card=current.State.FindCard(nativeBlade)??throw new InvalidOperationException(\"Missing tracked Blade.\");\n            if(!current.AddToPile(card,PileType.Hand).Success)throw new InvalidOperationException(\"Shadow Blade return rejected.\");\n        });\n        CheckShadow(\"fixture_move_blade_to_hand\");\n        if(!(await CardPileCmd.Add(nativeBlade,PileType.Hand)).success)throw new InvalidOperationException(\"Native Blade return rejected.\");\n        CheckNative(\"fixture_move_blade_to_hand\");\n        foreach(var sim in lanes)Shadow(sim,current=>current.Discard(current.State.FindCard(nativeBlade)??throw new InvalidOperationException(\"Missing Blade before Sly.\")));\n        CheckShadow(\"sly_discard_auto_play\");\n        await CardCmd.Discard(new BlockingPlayerChoiceContext(),nativeBlade);\n        await RunManager.Instance.ActionExecutor.FinishedExecutingActions();CheckNative(\"sly_discard_auto_play\");\n        int beforeFrantic=player.PlayerCombatState.AllCards.Count(card=>card.Id.Entry==\"FRANTIC_ESCAPE\");\n        if(player.PlayerCombatState.ExhaustPile.Cards is not List<CardModel> actualExhaust)throw new InvalidOperationException(\"Unknown native pile storage.\");\n        var original=actualExhaust.ToArray();\n        CardModel[][] orders=[original.OrderBy(card=>card.GetType().FullName,StringComparer.Ordinal).ToArray(),\n            original.OrderByDescending(card=>card.GetType().FullName,StringComparer.Ordinal).ToArray(),original];\n        string? endedFull=null;SimulationSnapshot? expected=null;CombatRootSnapshot? endRoot=null;\n        var ends=new List<object>();\n        foreach(var order in orders)\n        {\n            actualExhaust.Clear();actualExhaust.AddRange(order);\n            var captured=CombatRootSnapshot.Capture(live);var driver=new CombatBeamSolver(captured,names,BattleDamageTracker.Observe(live),policy,potionPolicyOverride:SolverPotionPolicy.Disabled);\n            SimulationSnapshot end;using(SimulationNotificationIsolation.Enter())end=driver.ReplayEndTurnForTesting();\n            if(end.Simulator.HasPendingChoice)throw new InvalidOperationException(\"Unexpected end-turn choice.\");\n            string full=Canonical(end.Simulator,captured,driver);\n            if(endedFull is null)endedFull=full;else Equal(endedFull,full,\"source-populated next turn under exhaust permutation\");\n            ends.Add(new{hash=Hash(full),frantic=end.Simulator.State.GetPlayerCombatState(player).AllCards.Count(card=>card.Preview.Id.Entry==\"FRANTIC_ESCAPE\")});\n            expected=end;endRoot=captured;\n        }\n        int previous=player.PlayerCombatState.TurnNumber;CombatManager.Instance.OnEndedTurnLocally();\n        var ending=new EndPlayerTurnAction(player,previous);RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(ending);\n        await ending.CompletionTask.WaitAsync(deadline.Token);\n        while(player.PlayerCombatState is not{Phase:PlayerTurnPhase.Play} current||current.TurnNumber<=previous)\n        {deadline.Token.ThrowIfCancellationRequested();EnsureWithinDeadline();await NextFrameAsync();}\n        if(expected is null||endRoot is null)throw new InvalidOperationException(\"No generated-source end reference.\");\n        Equal(State(expected.Simulator,endRoot),ContinuationStamp.CaptureLive(live).StateText,\"native generation next-turn full state/RNG\");\n        int afterFrantic=player.PlayerCombatState.AllCards.Count(card=>card.Id.Entry==\"FRANTIC_ESCAPE\");\n        if(afterFrantic!=beforeFrantic+6)throw new InvalidOperationException(\"Native Liquify did not generate exactly six FranticEscape cards.\");\n        var sandpit=live.Enemies.SelectMany(enemy=>enemy.Powers).OfType<SandpitPower>().Single(power=>power.Target==player.Creature);\n        var output=new{steps,ends,beforeFrantic,afterFrantic,nativeSandpitAmount=sandpit.Amount,\n            root.CapturedRunModSubscriberCount,root.CapturedCombatModSubscriberCount,root.CapturedBaseLibCardModifiers,\n            nativeEndedSha256=Hash(ContinuationStamp.CaptureLive(live).StateText),actualPrunes=0,wholeRootCertificate=false};\n        File.WriteAllText(\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-finite-source-pipeline-20261008/native-details.json\",JsonSerializer.Serialize(output,new JsonSerializerOptions{WriteIndented=true}));\n        _completedChecks.Add(\"FiniteSourcePipeline:ThreeStableWithinTypeExhaustOrders:FiveNativePlays:ShivInkyAndSlyGeneration:NativeSlyAutoPlay:CompleteStateHistoryRng:ParentLiveIsolation:ThreeEndTurns:NativeSixFranticEscapeAndSandpit\");\n        _completedChecks.Add(\"TASK_FINITE_SOURCE_PIPELINE \"+JsonSerializer.Serialize(output));\n    }\n}\n"
+    },
+    "native.props": {
+      "path": ".local/tool-tasks/exhaust-finite-source-pipeline-20261008/native.props",
+      "sha256": "d1a2eab927f88683949f0da18506f8ebf4963235453d9e715fe571b3349f1c80",
+      "text": "<Project><PropertyGroup><CopyModOnBuild>false</CopyModOnBuild></PropertyGroup><ItemGroup><Compile Include=\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-finite-source-pipeline-20261008/TaskFiniteSourcePipeline.cs\" /></ItemGroup></Project>\n"
+    },
+    "run-native.py": {
+      "path": ".local/tool-tasks/exhaust-finite-source-pipeline-20261008/run-native.py",
+      "sha256": "61924531e5e4af8c3e83c1564f44968d06b9b7ee1998b941933309692d6e22fd",
+      "text": "from pathlib import Path\nimport subprocess,time,json\nbase=Path(__file__).resolve().parent\ncommand=['bash', 'tools/testing/run-unattended-test.sh', '--scenario-id', 'EXHAUST-FINITE-SOURCE-PIPELINE', '--generated-scenario-path', '/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json', '--combat-solver-build-dir', '/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-finite-source-pipeline-20261008/build-native', '--headless-instance', 'exhaust-finite-source-pipeline-20261008', '--timeout-seconds', '120', '--evidence-directory', '/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-finite-source-pipeline-20261008/evidence', '--cleanup-instance-on-exit', '--exit-on-complete']\nstarted=time.perf_counter()\nwith (base/\"launcher.log\").open(\"w\") as log:\n result=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT)\nsummary={\"command\":command,\"exitCode\":result.returncode,\"wallSeconds\":time.perf_counter()-started}\n(base/\"native-run-summary.json\").write_text(json.dumps(summary,indent=2)+\"\\n\")\nprint(json.dumps(summary))\nprint((base/\"launcher.log\").read_text()[-1800:])\nraise SystemExit(result.returncode)\n"
+    },
+    "inspect-source-cutset.py": {
+      "path": ".local/tool-tasks/exhaust-finite-source-pipeline-20261008/inspect-source-cutset.py",
+      "sha256": "53ef1deb714d5b04aff585edd27d56ffe65845a6cbe6145c77186cee2eab04fd",
+      "text": "from pathlib import Path\nimport json, collections, hashlib\n\nbase=Path(__file__).resolve().parent\nrepo=base.parents[2]\ninventory=repo/'.local/tool-tasks/exhaust-reader-closure-20261007/native-slot-inventory-v5.json'\nd=json.loads(inventory.read_text())\nhint=json.loads((repo/'docs/performance/portfolio-witness-and-exhaust-closure-research-20261007.json').read_text())['staticOrderClosureSlice']\nowners=set(hint['staticModelHintSet'])\nrefs=[r for r in d['staticReferences'] if r['Owner'] in owners]\ntokens=('::CreateCard','::CreateInHand','::CreateInDraw','::Clone','::Transform','::Enchant','::ApplyKeyword','::GetCards','::get_AllCards','::get_ExhaustPile','::get_AllPiles','::get_Cards','::get_Pile','::Discard','::AddGenerated','::Add(')\nselected=[r for r in refs if any(t in r['Target'] for t in tokens)]\nproducers=[r for r in selected if '::CreateCard' in r['Target'] or '::CreateInHand' in r['Target']]\nworklist=json.loads((repo/'.local/tool-tasks/exhaust-reader-worklist-20261007/final-reader-worklist.json').read_text())\nvirtual=[s for s in d['virtualModelSlots'] if s['Owner'] in owners and s['IsNativeHookTarget']]\nout={'schemaVersion':1,'gameMvid':d['mvid'],'gameSha256':d['dllSha256'],'inventoryPath':str(inventory.relative_to(repo)),\n 'scope':'Declared method/async body operands of the 45 prior static model hints, not a recursive reachable-source certificate',\n 'sourceOwners':sorted(owners),'directReferences':len(refs),'selectedCardMechanismOperands':selected,\n 'directProducerOperands':producers,'declaredNativeHookSlots':virtual,\n 'candidateOrderedReaders':worklist['potentialOrderedPileReaders'],\n 'unresolvedSelectedSlotSummary':dict(collections.Counter(s['slot']['Method'] for s in worklist['unresolvedSelectedSlots'])),\n 'isWholeSourceCertificate':False,\n 'limitations':['method operand names locate mechanisms; they do not classify full semantics','base methods, command bodies, events, reflection, patch bodies and external code require separate closure','45 hints include query-only powers/relics, not all are reachable new sources','42 ToString entries arise from external System.Object slot roots; source body resolution differs from full CLR slot certification']}\n(base/'source-cutset.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\\n')\nprint(json.dumps({'references':len(refs),'mechanismOperands':len(selected),'producerOperands':len(producers),'nativeHookDeclarations':len(virtual),'unresolvedSlots':out['unresolvedSelectedSlotSummary']},ensure_ascii=False))\nfor r in producers: print(r['Caller'],r['Target'],r['GenericArguments'])\n"
+    },
+    "write-report.py": {
+      "path": ".local/tool-tasks/exhaust-finite-source-pipeline-20261008/write-report.py",
+      "sha256": "27942ad7c5dd0ae7d425d33fd67666b3518a78f6b1e828dbb912f5f318a1a7dc",
+      "text": "from pathlib import Path\nimport json,hashlib,difflib,shutil\n\nbase=Path(__file__).resolve().parent\nrepo=base.parents[2]\ndef load(p):return json.loads(p.read_text())\ndef record(p):return {'path':str(p.relative_to(repo)),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'text':p.read_text()}\nresult=load(base/'evidence/result.json');details=load(base/'native-details.json');cutset=load(base/'source-cutset.json')\nassert result['status']=='Passed' and details['nativeSandpitAmount']==4\nassert details['afterFrantic']==details['beforeFrantic']+6\nassert len(set(x['hash'] for x in details['ends']))==1\nexecutor=repo/'src/Testing/Host/UnattendedTestRunner.Executor.cs'\noriginal=(base/'original-executor.txt').read_bytes();temporary=(base/'temporary-executor.txt').read_bytes()\nassert executor.read_bytes()==temporary,'Concurrent Executor change; do not overwrite'\npatch=''.join(difflib.unified_diff(original.decode().splitlines(True),temporary.decode().splitlines(True),fromfile='a/src/Testing/Host/UnattendedTestRunner.Executor.cs',tofile='b/src/Testing/Host/UnattendedTestRunner.Executor.cs'))\nsources=['prepare.py','TaskFiniteSourcePipeline.cs','native.props','run-native.py','inspect-source-cutset.py','write-report.py']\nprior=load(repo/'docs/performance/exhaust-reader-closure-20261007.json')['sourceEvidence']\nnative_names=['FranticEscape','Shiv','Inky','BLADE_OF_INK','FAN_OF_KNIVES','MasterPlannerPower','TheInsatiable','SandpitPower','PREPARED','SURVIVOR']\nnative_evidence={name:prior[name] for name in native_names}\nreport={'schemaVersion':1,'task':'exhaust-finite-source-pipeline-20261008','date':'2026-10-08','sourceBase':'d476b93e','retainedRuntimeSource':'36370e54','runtimeChanged':False,\n 'game':{'version':'0.111.0 / 41cef1ea','mvid':'8a76776c-0ce1-4d4f-90bd-8cce653dad8e','dllSha256':'2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f','actualRuntime':'9.0.7 identity reused'},\n 'scope':{'root':'dev-06-silent-boss / THE_INSATIABLE_BOSS','rootPreserved':'Original cards, relics, powers, potions and enemy HP retained',\n 'injections':'20 exact direct-source card types into Exhaust; three upgraded cards into Hand; energy 20',\n 'orders':'original/type ascending/type descending, each type internal sequence stable; unmodified ordered key remains authoritative',\n 'actions':'five manual plays, fixture Blade move from Discard to Hand, real Sly discard/autoplay, three simulations of final EndTurn and one actual native EndTurn',\n 'fixtureMove':'explicit setup to expose Sly; not a claim of normal Discard recovery source',\n 'strictComparison':'ContinuationStamp (including nine RNG), original complete ordered state key, full card history and terminal flags for three predicted lanes; native StateText and snapshot at each action; old parent remains unchanged after native mutations',\n 'diagnosticOnly':True,'noSolveOrCoordinator':True,'launcherTimeoutSeconds':120,'launcherCpuAdmission':2},\n 'native':{'result':result,'details':details,'launcher':load(base/'native-run-summary.json')},\n 'sourceCutset':cutset,'nativeSourceEvidence':native_evidence,\n 'bodyFindings':['Native MasterPlannerPower marks own played skills Sly; native and simulated Discard resolve Sly autoplay from discarded cards, not an Exhaust read',\n  'Five direct declared model producer operands link two concrete output types: Shiv and FranticEscape; helper recursion and explicit generation are recorded, this is not full dynamic reachability closure',\n  'TheInsatiable Liquify body applies SandpitPower amount4 and creates six FranticEscape cards, three into Draw and three into Discard at random positions; native result agrees',\n  'FranticEscape cannot be ordinarily combat-generated; explicit enemy generation is reachable. Its OnPlay modifies matched enemy SandpitPower and adds one combat energy cost to itself',\n  'All 42 unresolved selected virtual slots from the old overapproximate worklist are the external Object root of AbstractModel.ToString; not 42 missing combat callbacks',\n  'Selected card-mechanism operand count33 includes name collisions such as generic List.Add and DynamicVarSet.Cards; none are promoted to semantic certification by a name match'],\n 'certification':{'nativeConditionalTracePassed':True,'directDeclaredModelProducerOperands':5,'directOutputCardTypes':['Shiv','FranticEscape'],\n  'wholeFutureSourceClosure':False,'productionProjectedTranspositions':False,'actualNewPrunes':0,'newPurePerformanceRequests':0,'finalFixedRegressionRequests':0},\n 'unverified':['all legal future action/choice chains; source hint set is not an exhaustive generator closure','all command/callback/patch/event/private reference readers and future extension mutation closure','production identity-bound combined certificate and actual projected TT consumers','full heap/native private fields beyond the captured state','pure VeryHigh DOP16 Coordinator speed and peak RSS','certification cost and actual replay/snapshot reductions','historical quality gaps and original Soul recovery provenance'],\n 'build':{'status':'Passed','seconds':15.06,'warnings':0,'errors':0,'dllSha256FromResult':result['mainAssemblyHash']},\n 'sourceArchive':{name:record(base/name) for name in sources},'temporaryExecutorPatch':patch,'executorOriginalSha256':hashlib.sha256(original).hexdigest(),\n 'reuse':['d476b93e complete-turn membership and post-native-advancement 64 Fork tests; not rerun','exhaust-positive-native-contract local four actions; new trace retains actual root sources and adds Sly/native enemy generation','default callback body, completion order and counterexamples retained under original scope'],\n 'deploymentReuse':{'evidence':load(repo/'.local/tool-tasks/model-capability-recovery-proof-20261007/deployment.json'),'reason':'Runtime source unchanged after Executor byte restoration; diagnostic build not deployed'},\n 'cleanup':{'executorRestored':True,'oneOffSourcesArchivedBeforeDeletion':True,'diagnosticBuildRemoved':True,'nativeInstanceRemovedByLauncher':True,'rawEvidenceRetained':True},\n 'gates':{'documentation':'pending','unchangedStructureToolsCoverage':'reuse prior successful evidence'},\n 'decision':{'retained':'source/callback/generation trace evidence only','newSpeedupClaim':False,'wholeGoalAchieved':False,'newPrMergeVersionPublish':False}}\n(repo/'docs/performance/exhaust-finite-source-pipeline-20261008.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\\n')\nexecutor.write_bytes(original)\nfor name in sources+['original-executor.txt','temporary-executor.txt']:(base/name).unlink()\nshutil.rmtree(base/'build-native')\nprint('REPORT_WRITTEN_EXECUTOR_RESTORED_ONEOFFS_REMOVED')\n"
+    }
+  },
+  "temporaryExecutorPatch": "--- a/src/Testing/Host/UnattendedTestRunner.Executor.cs\n+++ b/src/Testing/Host/UnattendedTestRunner.Executor.cs\n@@ -39,6 +39,11 @@\n             bool expectedCardPlayed = request.ExpectedPlayedCardId == null;\n             bool expectedPotionUsed = request.ExpectedUsedPotionId == null;\n             bool expectedPlayerPowerObserved = request.ExpectedObservedPlayerPowerId == null;\n+            if (request.ScenarioId == \"EXHAUST-FINITE-SOURCE-PIPELINE\")\n+            {\n+                await runner.AssertFiniteSourcePipelineAsync(combatState, player);\n+                return Observation(combatEnded: false);\n+            }\n             if (request.ScenarioId is \"ZERO-CREDIT-GROWTH-PROOF\" or \"ZERO-CREDIT-GROWTH-PROOF-REGEN\")\n             {\n                 await runner.AssertZeroCreditGrowthProofAsync(combatState, player,\n",
+  "executorOriginalSha256": "933d290348e4603224f8ce7a8f7ae2e7cd9de3a0011f78c211d0045056f6af89",
+  "reuse": [
+    "d476b93e complete-turn membership and post-native-advancement 64 Fork tests; not rerun",
+    "exhaust-positive-native-contract local four actions; new trace retains actual root sources and adds Sly/native enemy generation",
+    "default callback body, completion order and counterexamples retained under original scope"
+  ],
+  "deploymentReuse": {
+    "evidence": {
+      "status": "Passed",
+      "files": [
+        {
+          "name": "CombatSolver.json",
+          "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/CombatSolver.json",
+          "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/CombatSolver.json",
+          "beforeSha256": "292d741498072c6678b473d31c98c2ea8288ce742a894cb0e33634dc008ea22b",
+          "sourceSha256": "292d741498072c6678b473d31c98c2ea8288ce742a894cb0e33634dc008ea22b",
+          "deployedSha256": "292d741498072c6678b473d31c98c2ea8288ce742a894cb0e33634dc008ea22b"
+        },
+        {
+          "name": "CombatSolver.dll",
+          "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/model-capability-recovery-proof-20261007/build-candidate-v2/CombatSolver.dll",
+          "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/CombatSolver.dll",
+          "beforeSha256": "901a3882aedb60246eea7657fe27bf444cd5bc11086ab9e8d0fe2251021c30c7",
+          "sourceSha256": "901a3882aedb60246eea7657fe27bf444cd5bc11086ab9e8d0fe2251021c30c7",
+          "deployedSha256": "901a3882aedb60246eea7657fe27bf444cd5bc11086ab9e8d0fe2251021c30c7"
+        },
+        {
+          "name": "CombatSolver.MemoryCleaner.exe",
+          "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-pr213-sync-20261006/installed-before-sync/CombatSolver.MemoryCleaner.exe",
+          "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/CombatSolver.MemoryCleaner.exe",
+          "beforeSha256": "5474c2d6e59df76430484d2ed4230231b5026a32e0796986520bc2ac41569415",
+          "sourceSha256": "5474c2d6e59df76430484d2ed4230231b5026a32e0796986520bc2ac41569415",
+          "deployedSha256": "5474c2d6e59df76430484d2ed4230231b5026a32e0796986520bc2ac41569415"
+        },
+        {
+          "name": "LICENSE",
+          "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/LICENSE",
+          "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/LICENSE",
+          "beforeSha256": "e6e86edc9dac3448c67240d4b3b588b7354299c5c4488ffa1e920715e53fca96",
+          "sourceSha256": "e6e86edc9dac3448c67240d4b3b588b7354299c5c4488ffa1e920715e53fca96",
+          "deployedSha256": "e6e86edc9dac3448c67240d4b3b588b7354299c5c4488ffa1e920715e53fca96"
+        },
+        {
+          "name": "THIRD_PARTY_NOTICES.md",
+          "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/THIRD_PARTY_NOTICES.md",
+          "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/THIRD_PARTY_NOTICES.md",
+          "beforeSha256": "309dcd321323622bc8bb1f906556aabfc9806b3661f2ac824bad950fc5a6bbc0",
+          "sourceSha256": "309dcd321323622bc8bb1f906556aabfc9806b3661f2ac824bad950fc5a6bbc0",
+          "deployedSha256": "309dcd321323622bc8bb1f906556aabfc9806b3661f2ac824bad950fc5a6bbc0"
+        }
+      ],
+      "sourceSha256": {
+        "src/Prediction/PredictionRitsuCapabilityAudit.cs": "059db4fed6454d4cf99a97d58c199a4da238643f15266b201f5bf906d4991cc6",
+        "src/Prediction/PredictionRitsuHealingAudit.cs": "f2ac50d08e800bb92f68fef0c2ff73e5a446cd54fc43965578b95f5202b75820",
+        "src/Prediction/PredictionModHookSubscriberCapture.cs": "1f42206ce24f89eb9d639955be5533a9faa326cc65ace9bd0e099f5feb28b5e7",
+        "src/Search/SimulatedCombatState.cs": "5ef142570b6dd8743f21988352686571acbdf342dd79730bdecfa6442212fec2",
+        "src/Runtime/ContinuationStamp.cs": "16baeeb60631be7705f5da607e992c7eafb5864e826bd85e41dcf32190bcbeeb",
+        "src/Testing/Host/UnattendedTestRunner.Executor.cs": "933d290348e4603224f8ce7a8f7ae2e7cd9de3a0011f78c211d0045056f6af89",
+        "src/Testing/Host/UnattendedTestIsolationPatch.cs": "6c696231b5ba3e54fdd5efc4023819a6d286526cfa2809afd94cc05fb8e068c9",
+        "src/Testing/Contracts/Runtime/UnattendedTestRunner.NativeHealingCapabilityBoundary.cs": "b6e94b5ffa4805d808d4814ed6fffbf88050c68d61b9abcd2f1c5e9b2421dc19",
+        "src/Testing/Contracts/Runtime/UnattendedTestRunner.NativeHealingCallbackBoundary.cs": "d28382bc5c5145fce28f1aa252f643edd28f28e97be4fc13647b3ba4dd550d5b"
+      },
+      "scope": "Exact five local files; no version bump, publication or visible game launch"
+    },
+    "reason": "Runtime source unchanged after Executor byte restoration; diagnostic build not deployed"
+  },
+  "cleanup": {
+    "executorRestored": true,
+    "oneOffSourcesArchivedBeforeDeletion": true,
+    "diagnosticBuildRemoved": true,
+    "nativeInstanceRemovedByLauncher": true,
+    "rawEvidenceRetained": true
+  },
+  "gates": {
+    "documentation": "DOCUMENTATION_OK files=575 links=2448 errors=0",
+    "unchangedStructureToolsCoverage": "reuse prior successful evidence"
+  },
+  "decision": {
+    "retained": "source/callback/generation trace evidence only",
+    "newSpeedupClaim": false,
+    "wholeGoalAchieved": false,
+    "newPrMergeVersionPublish": false
+  }
+}
