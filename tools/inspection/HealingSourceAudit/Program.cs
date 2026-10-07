@@ -128,11 +128,13 @@ VirtualSlot[] virtualModelSlots = methods.Where(method => method.IsVirtual
         && method.DeclaringType.Namespace.StartsWith("MegaCrit.Sts2.Core.Models", StringComparison.Ordinal))
     .Select(method => InspectLocalVirtualSlot(method, localTypes, localMethods, nativeHookTargets,
         ambiguousTypes, ambiguousMethods)).ToArray();
+NativeHookBodyEvidence[] nativeHookBodies = NativeHookBodyInspection.Read(dll,
+    methods.Where(method => nativeHookTargets.Contains(method.FullName)));
 // The graph inventories possible static edges, including delegate creation. It
 // cannot resolve virtual hook dispatch or prove a target, condition or HP amount.
 var audit = new
 {
-    schemaVersion = 7,
+    schemaVersion = 8,
     assembly = module.Assembly.Name.FullName,
     mvid = module.Mvid,
     dllSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dll))).ToLowerInvariant(),
@@ -208,6 +210,7 @@ var audit = new
     // declaration. Resolution stays inside the input module; external or
     // ambiguous slots remain explicit unknowns rather than being treated safe.
     nativeHookModelTargets = nativeHookTargets.Order(StringComparer.Ordinal).ToArray(),
+    nativeHookModelBodies = nativeHookBodies,
     virtualModelSlots,
     hookDispatchReferences = references.Where(reference =>
         reference.Target.Contains(" MegaCrit.Sts2.Core.Hooks.Hook::", StringComparison.Ordinal)).ToArray(),
@@ -230,6 +233,7 @@ var audit = new
         "Card event accessors inventory static subscriptions; reflective subscribers and delegate-body effects require review.",
         "Display signatures are not method identities; ambiguity is retained. Operand tokens belong to this input module and need not identify a resolved target definition.",
         "Event definitions/references are local to the input. Accessor candidates also retain dependency references, but no candidate is resolved or certified from its name; scope/signature metadata requires definition and callback review.",
+        "Native hook body shapes describe exact IL definitions, not whole hook identity or order safety. Static-call bodies retain unresolved dependencies; active patches, dispatch, events and future receivers require independent proof.",
     },
 };
 string output = Path.GetFullPath(args[1]);
@@ -251,6 +255,7 @@ Console.WriteLine(JsonSerializer.Serialize(new
     nativeHookModelTargetCount = nativeHookTargets.Count,
     virtualModelSlotCount = virtualModelSlots.Length,
     unresolvedVirtualModelSlotCount = virtualModelSlots.Count(slot => slot.Status != "resolved-local"),
+    nativeHookBodyCount = nativeHookBodies.Length,
 }));
 
 static IEnumerable<TypeDefinition> Flatten(IEnumerable<TypeDefinition> types)

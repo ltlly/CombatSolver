@@ -12,6 +12,8 @@ schema6保留同文本签名的全部定义及token、泛型参数数量、实�
 
 schema7另列`cardStateEventAccessorCandidates`：在同一七个明确类型上保留所有`add_`/`remove_`方法引用，含依赖DLL对原生事件的引用；原有事件定义/引用列表仍只使用输入自身定义。候选记录操作码、调用token、声明类型范围及程序集身份、参数/返回类型身份、实例标志和调用约定。名称可能对应普通方法，全部`DefinitionResolution=not-resolved`，不作为事件解析或安全认证；不同程序集/版本的同名类型不能合并。工具不增加外部程序集加载/自动解析。21项元数据检查及Ritsu新增10处候选见[跨程序集事件审计](../../../docs/performance/exhaust-event-reference-audit-20261007.md)。
 
+schema8另列`nativeHookModelBodies`：对输入中被原生Hook直接引用的模型方法定义，保留MVID/MethodDef token、原始IL摘要及完整指令、异常区域/局部变量数量和方法体形状。同文本定义仍各自保留；读取PE与Cecil模块身份不一致时失败。只识别空void、类型/作用域一致的返回参数、整数常量、引用null及无参数静态调用形状。分支、字段、输出参数、泛型未解析或其他模式保留未分类；调用仍是未解析依赖，操作数token不冒充目标定义。方法体分类不认证整个Hook、默认返回值的中性含义、活动补丁、事件或未来接收者。[默认回调方法体审计](../../../docs/performance/native-hook-body-proof-20261008.md)记录180个入口、26项新增元数据边界及剩余证明义务。
+
 构建时传入已安装 ILSpy 的 `Mono.Cecil.dll`，不把该依赖或游戏二进制提交到仓库：
 
 ```bash
