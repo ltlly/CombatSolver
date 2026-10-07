@@ -1,6 +1,6 @@
 # 性能工作入口
 
-- [剪枝克隆真实绑定](exhaust-clone-binding-contract-20261007.md)：实际内部委托、同名同数量替换拒绝、54根牌/20原型无资源层及零层/原生复制隔离通过；结合[扩展注册](exhaust-extension-registry-contract-20261007.md)和[根审计](exhaust-root-extension-audit-20261007.md)推进读写闭包，未启用新剪枝。
+- [剪枝读牌调用边界](exhaust-reader-footprint-20261007.md)：24候选方法/37引用，补齐抽象基类并核对成员查询、指定堆读取及全牌生命周期；结合[真实克隆绑定](exhaust-clone-binding-contract-20261007.md)推进回调与写入闭包，尚未认证整根或启用新剪枝。
 
 - [历史计数门槛与状态等价研究](saturated-history-key-research-20261007.md)：三根含并行worker约145万次构键，三项门槛投影没有合并不同完整键；原生读取链说明局部门槛不能作为完整根认证，未接入剪枝。
 

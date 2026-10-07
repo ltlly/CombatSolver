@@ -56,3 +56,5 @@
 [扩展注册原生合同](../../docs/performance/exhaust-extension-registry-contract-20261007.md)补齐真实根的生命周期、克隆、默认能力与保存槽盘点；最终登记变化/原生克隆/16初始Fork通过，临时入口撤回。完整证书和性能未验证，失败/崩溃保留。
 
 [克隆真实绑定合同](../../docs/performance/exhaust-clone-binding-contract-20261007.md)核对实际内部方法、同名同数量替换、零费用层拒绝及原生资源复制隔离；初始54根牌/20原型无资源层。临时入口撤回，无新Fork或整请求验收。
+
+[读牌调用边界](../../docs/performance/exhaust-reader-footprint-20261007.md)仅从既有IL清单形成候选方法与核对正文；不是原生/Fork或整根证书。保守图包含非搜索阶段及潜在委托，未知回调和未来写入继续保留有序语义；临时脚本归档清理，运行时未变。
