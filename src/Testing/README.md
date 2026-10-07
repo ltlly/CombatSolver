@@ -48,3 +48,5 @@
 [相同前缀原型](../../docs/performance/exact-action-prefix-replay-research-20261007.md)真实测试冷/热/不同前缀回退、生成牌/随机目标、当前评分和16缓存Fork；测试持有弱模板，未知风险为注入条目。完整请求变慢撤回，缺根绑定/GC/交互/最终回归，不作通用缓存或新速度结论。
 
 [完整动作重复回放研究](../../docs/performance/action-transition-opportunity-20261007.md)扩展离线宿主可选观察，按冻结根、完整动作、capture模式及实际worker拥有者分组；仅检查选定特征，未执行新原生/Fork合同，不替代完整历史或全部政策的安全证明。生产搜索及部署保持。 后续[历史前缀边界](../../docs/performance/transition-prefix-boundary-research-20261007.md)以临时夹具复现同键/同数量不同历史，并核对16个已Fork子分支并行修改及原生完整状态；不代表完整原合同、并发Fork或缓存安全。首版Power排列失败保留，临时路由恢复。
+
+[生命支配诊断](../../docs/performance/hp-state-dominance-research-20261007.md)只投影CurrentHp并观察真实转置表，覆盖全部并行worker；两个完整请求质量/根/政策/预算保持但工作量变化。计数含终局、准入和展开重叠，不能计作实际剪枝；条件战后回复反例仅为源码算术结论，未跑新原生/Fork。三处插桩恢复，源码/构建清理、正式部署复用。

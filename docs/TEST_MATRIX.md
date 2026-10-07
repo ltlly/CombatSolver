@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-07 [消耗堆保序正例](performance/exhaust-positive-native-contract-20261007.md)：两原生/四动作/跨回合及32串行Fork隔离通过；无全根认证。复用[九项元数据边界](performance/exhaust-reader-closure-20261007.md)、[六次诊断](performance/exhaust-projection-subsets-20261007.md)及[8/6反例](performance/exhaust-equivalence-certification-20261007.md)，未重跑；入口/夹具清理、部署复用，无新剪枝或性能验收。
+2026-10-07 [生命支配诊断](performance/hp-state-dominance-research-20261007.md)：两完整请求包含全部worker，14质量/根/政策/预算保持；工作量变化，无新原生/性能验收。复用[消耗堆两原生及32Fork](performance/exhaust-positive-native-contract-20261007.md)、[元数据边界](performance/exhaust-reader-closure-20261007.md)及[反例](performance/exhaust-equivalence-certification-20261007.md)，未重跑；任务清理、部署复用。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 

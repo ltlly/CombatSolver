@@ -1,6 +1,6 @@
 # 性能工作入口
 
-- [消耗堆保序原生正例](exhaust-positive-native-contract-20261007.md)：两种顺序的四原生动作、下一回合及32串行Fork后并行修改通过；结合[虚槽与来源闭包](exhaust-reader-closure-20261007.md)、[机会统计](exhaust-projection-subsets-20261007.md)及[8/6反例](exhaust-equivalence-certification-20261007.md)限定正向认证。全部未来动作/扩展未认证，未启用剪枝或报告新速度。
+- [消耗堆保序认证](exhaust-positive-native-contract-20261007.md)：两种顺序的四原生动作、跨回合及32串行Fork隔离通过；结合[来源闭包](exhaust-reader-closure-20261007.md)、[机会统计](exhaust-projection-subsets-20261007.md)及[原生反例](exhaust-equivalence-certification-20261007.md)限定认证。并行研究的[生命支配](hp-state-dominance-research-20261007.md)机会较少，条件回复禁止通用高HP支配；未启用新剪枝。
 
 - [历史计数门槛与状态等价研究](saturated-history-key-research-20261007.md)：三根含并行worker约145万次构键，三项门槛投影没有合并不同完整键；原生读取链说明局部门槛不能作为完整根认证，未接入剪枝。
 
