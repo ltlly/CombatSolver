@@ -6,6 +6,8 @@ schema3另列药水获取/消费/丢弃/槽位容量入口、槽位字段全部�
 
 schema4追加牌堆命令、完整牌堆/消耗堆读取、返回精确牌堆类型的方法及原生战斗监听枚举入口，保留CardPile自身字段，以及精确CardPile类型或其数组/泛型包装字段的全部IL访问；不将名字含CardPile的其他结果类型算作牌堆根。返回值扫描也覆盖CardModel.Pile和各牌堆getter的间接别名。它帮助定位有序列表别名、根字段和间接读写，不把只读接口、已消耗或没有直接取牌调用视为无交互证明。方法/委托图、原版模型虚方法和异步映射继续复用原格式；反射、扩展、递归生成和完整未来等价仍须单独证明。
 
+schema5追加原生Hook实际引用的AbstractModel入口及模型虚方法槽。按输入模块内的继承链、参数、返回类型和显式override定位槽根，保留IsNewSlot/IsFinal、解析链和失败原因；外部程序集、多个显式槽、泛型/协变或歧义不猜测。Hook入口包含非虚方法和战斗外回调，不能据此认定全部都是战斗虚回调。另列AbstractModel、CardModel、附着效果基类、CardPile、CardEnergyCost和PlayerCombatState的事件及静态订阅/退订入口。尤其默认Hook之后也可能InvokeExecutionFinished；没有声明回调不等于没有事件副作用。调用槽只定位实际继承关系，不证明方法体、当前监听者、补丁或生成闭包安全。[消耗堆闭包研究](../../../docs/performance/exhaust-reader-closure-20261007.md)记录适用边界。
+
 构建时传入已安装 ILSpy 的 `Mono.Cecil.dll`，不把该依赖或游戏二进制提交到仓库：
 
 ```bash

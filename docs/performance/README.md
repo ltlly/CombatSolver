@@ -1,6 +1,6 @@
 # 性能工作入口
 
-- [消耗堆保序投影与认证研究](exhaust-projection-subsets-20261007.md)：六次完整只读请求保留同类顺序及回调/附着/未知槽位，仍有潜在判重机会；四类状态先验无机会。沿用[原生反例及入口审计](exhaust-equivalence-certification-20261007.md)，尚未形成安全证书或实际剪枝。
+- [消耗堆来源与回调闭包](exhaust-reader-closure-20261007.md)：核对实际虚槽/事件及猎手直接生成来源，九项元数据边界通过；基类事件与未来来源仍需证明。沿用[六次保序投影](exhaust-projection-subsets-20261007.md)及[原生反例](exhaust-equivalence-certification-20261007.md)，没有新增实际剪枝或性能结论。
 
 - [历史计数门槛与状态等价研究](saturated-history-key-research-20261007.md)：三根含并行worker约145万次构键，三项门槛投影没有合并不同完整键；原生读取链说明局部门槛不能作为完整根认证，未接入剪枝。
 

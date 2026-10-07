@@ -10,6 +10,8 @@ using ModuleDefinition module = ModuleDefinition.ReadModule(dll, new ReaderParam
     { InMemory = true, ReadSymbols = false });
 TypeDefinition[] types = Flatten(module.Types).ToArray();
 MethodDefinition[] methods = types.SelectMany(type => type.Methods).ToArray();
+Dictionary<string, TypeDefinition> localTypes = types.ToDictionary(type => type.FullName, StringComparer.Ordinal);
+Dictionary<string, MethodDefinition> localMethods = methods.ToDictionary(method => method.FullName, StringComparer.Ordinal);
 var references = new List<Reference>();
 var fieldWrites = new List<Reference>();
 var fieldAddresses = new List<Reference>();
@@ -28,6 +30,16 @@ EventDefinition[] potionUseEvents = types.FirstOrDefault(type =>
 potionInventoryEvents = potionInventoryEvents.Concat(potionUseEvents).ToArray();
 var potionEventAccessors = potionInventoryEvents.SelectMany(@event =>
     new[] { @event.AddMethod, @event.RemoveMethod }).Where(method => method is not null)
+    .Select(method => method!.FullName).ToHashSet(StringComparer.Ordinal);
+EventDefinition[] cardStateEvents = types.Where(type => type.FullName is
+        "MegaCrit.Sts2.Core.Models.AbstractModel" or "MegaCrit.Sts2.Core.Models.CardModel"
+        or "MegaCrit.Sts2.Core.Models.EnchantmentModel" or "MegaCrit.Sts2.Core.Models.AfflictionModel"
+        or "MegaCrit.Sts2.Core.Entities.Cards.CardPile"
+        or "MegaCrit.Sts2.Core.Entities.Cards.CardEnergyCost"
+        or "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState")
+    .SelectMany(type => type.Events).ToArray();
+HashSet<string> cardEventAccessors = cardStateEvents.SelectMany(@event =>
+        new[] { @event.AddMethod, @event.RemoveMethod }).Where(method => method is not null)
     .Select(method => method!.FullName).ToHashSet(StringComparer.Ordinal);
 foreach (MethodDefinition method in methods)
 {
@@ -86,11 +98,18 @@ foreach (MethodDefinition method in methods)
 Reference[] directHealthReferences = references.Where(reference => sinks.Contains(reference.Target))
     .OrderBy(reference => reference.Owner, StringComparer.Ordinal)
     .ThenBy(reference => reference.Caller, StringComparer.Ordinal).ThenBy(reference => reference.Offset).ToArray();
+HashSet<string> nativeHookTargets = references.Where(reference =>
+        reference.Owner == "MegaCrit.Sts2.Core.Hooks.Hook"
+        && reference.Target.Contains(" MegaCrit.Sts2.Core.Models.AbstractModel::", StringComparison.Ordinal))
+    .Select(reference => reference.Target).ToHashSet(StringComparer.Ordinal);
+VirtualSlot[] virtualModelSlots = methods.Where(method => method.IsVirtual
+        && method.DeclaringType.Namespace.StartsWith("MegaCrit.Sts2.Core.Models", StringComparison.Ordinal))
+    .Select(method => InspectLocalVirtualSlot(method, localTypes, localMethods, nativeHookTargets)).ToArray();
 // The graph inventories possible static edges, including delegate creation. It
 // cannot resolve virtual hook dispatch or prove a target, condition or HP amount.
 var audit = new
 {
-    schemaVersion = 4,
+    schemaVersion = 5,
     assembly = module.Assembly.Name.FullName,
     mvid = module.Mvid,
     dllSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dll))).ToLowerInvariant(),
@@ -114,6 +133,10 @@ var audit = new
     cardPileFieldDefinitions = types.SelectMany(type => type.Fields).Where(IsCardPileField)
         .Select(field => new { field = field.FullName, field.IsInitOnly, field.IsStatic }).ToArray(),
     cardPileFieldReferences,
+    cardStateEventDefinitions = cardStateEvents.Select(@event => new
+        { owner = @event.DeclaringType.FullName, @event.Name, type = @event.EventType.FullName,
+            add = @event.AddMethod?.FullName, remove = @event.RemoveMethod?.FullName }).ToArray(),
+    cardStateEventReferences = references.Where(reference => cardEventAccessors.Contains(reference.Target)).ToArray(),
     potionInventoryEventDefinitions = potionInventoryEvents.Select(@event => new
         { owner = @event.DeclaringType.FullName, @event.Name, type = @event.EventType.FullName, add = @event.AddMethod?.FullName,
             remove = @event.RemoveMethod?.FullName }).ToArray(),
@@ -145,6 +168,11 @@ var audit = new
         .Select(method => new { owner = Owner(method.DeclaringType), method = method.FullName,
             method.HasBody, method.IsAbstract, baseType = method.DeclaringType.BaseType?.FullName })
         .ToArray(),
+    // Exact IL slots distinguish a reused inherited hook from a same-name
+    // declaration. Resolution stays inside the input module; external or
+    // ambiguous slots remain explicit unknowns rather than being treated safe.
+    nativeHookModelTargets = nativeHookTargets.Order(StringComparer.Ordinal).ToArray(),
+    virtualModelSlots,
     hookDispatchReferences = references.Where(reference =>
         reference.Target.Contains(" MegaCrit.Sts2.Core.Hooks.Hook::", StringComparison.Ordinal)).ToArray(),
     modelTypes = types.Where(type => type.DeclaringType is null
@@ -162,6 +190,8 @@ var audit = new
         "HP amounts, callback dispatch and generation closure require source and native differential review.",
         "Potion slot reads include mutable List aliases; event subscribers and indirect relic acquisition require review.",
         "Pile fields/aliases and commands are an inventory, not proof of order independence or a complete reachable callback closure.",
+        "Local virtual-slot identities do not prove hook bodies, active listeners, patches or recursively reachable generation safe.",
+        "Card event accessors inventory static subscriptions; reflective subscribers and delegate-body effects require review.",
     },
 };
 string output = Path.GetFullPath(args[1]);
@@ -177,6 +207,11 @@ Console.WriteLine(JsonSerializer.Serialize(new
     potionEventReferenceCount = audit.potionInventoryEventReferences.Length,
     cardPileEntryCount = cardPileEntries.Count,
     cardPileFieldReferenceCount = cardPileFieldReferences.Count,
+    cardStateEventCount = cardStateEvents.Length,
+    cardStateEventReferenceCount = audit.cardStateEventReferences.Length,
+    nativeHookModelTargetCount = nativeHookTargets.Count,
+    virtualModelSlotCount = virtualModelSlots.Length,
+    unresolvedVirtualModelSlotCount = virtualModelSlots.Count(slot => slot.Status != "resolved-local"),
 }));
 
 static IEnumerable<TypeDefinition> Flatten(IEnumerable<TypeDefinition> types)
@@ -235,6 +270,97 @@ static bool ContainsCardPileType(TypeReference type)
     => type.FullName == "MegaCrit.Sts2.Core.Entities.Cards.CardPile"
         || type is GenericInstanceType generic && generic.GenericArguments.Any(ContainsCardPileType)
         || type is TypeSpecification specification && ContainsCardPileType(specification.ElementType);
+
+static VirtualSlot InspectLocalVirtualSlot(MethodDefinition method,
+    IReadOnlyDictionary<string, TypeDefinition> localTypes,
+    IReadOnlyDictionary<string, MethodDefinition> localMethods,
+    IReadOnlySet<string> nativeHookTargets)
+{
+    var chain = new List<string>();
+    var seen = new HashSet<string>(StringComparer.Ordinal);
+    MethodDefinition current = method;
+    while (true)
+    {
+        if (!seen.Add(current.FullName)) return Result("cyclic-slot", null);
+        chain.Add(current.FullName);
+        // Explicit overrides can name an interface slot. Do not replace them
+        // with a heuristic name match, including when several are present.
+        if (current.Overrides.Count > 0)
+        {
+            if (current.Overrides.Count != 1) return Result("multiple-explicit-slots", null);
+            MethodReference target = current.Overrides[0];
+            if (!IsLocalTypeScope(target.DeclaringType, method.Module)
+                || !localMethods.TryGetValue(target.FullName, out MethodDefinition? overridden))
+                return Result("external-or-unresolved-explicit-slot", target.FullName);
+            current = overridden;
+            continue;
+        }
+        if (current.IsNewSlot) return Result("resolved-local", current.FullName);
+
+        TypeReference? parent = current.DeclaringType.BaseType;
+        while (parent is not null)
+        {
+            if (!IsLocalTypeScope(parent, method.Module)
+                || !localTypes.TryGetValue(parent.FullName, out TypeDefinition? definition))
+                return Result("external-or-unresolved-base", parent.FullName);
+            MethodDefinition[] candidates = definition.Methods.Where(candidate => candidate.IsVirtual
+                && HasSameSlotParameters(candidate, current)).ToArray();
+            if (candidates.Length > 1) return Result("ambiguous-base-slot", null);
+            if (candidates.Length == 1)
+            {
+                if (SlotTypeIdentity(candidates[0].ReturnType) != SlotTypeIdentity(current.ReturnType))
+                    return Result("covariant-or-unresolved-return", candidates[0].FullName);
+                current = candidates[0];
+                break;
+            }
+            parent = definition.BaseType;
+        }
+        if (parent is null) return Result("missing-base-slot", null);
+    }
+
+    VirtualSlot Result(string status, string? rootOrUnresolved)
+        => new(Owner(method.DeclaringType), method.FullName, method.IsNewSlot, method.IsFinal,
+            method.IsAbstract, method.HasBody, method.Overrides.Select(@override => @override.FullName).ToArray(),
+            status, rootOrUnresolved, chain.ToArray(),
+            status == "resolved-local" && rootOrUnresolved is not null && nativeHookTargets.Contains(rootOrUnresolved));
+}
+
+static bool HasSameSlotParameters(MethodDefinition left, MethodDefinition right)
+    => left.Name == right.Name && left.GenericParameters.Count == right.GenericParameters.Count
+        && left.Parameters.Select(parameter => parameter.ParameterType.FullName)
+            .SequenceEqual(right.Parameters.Select(parameter => parameter.ParameterType.FullName), StringComparer.Ordinal)
+        && left.Parameters.Select(parameter => SlotTypeIdentity(parameter.ParameterType))
+            .SequenceEqual(right.Parameters.Select(parameter => SlotTypeIdentity(parameter.ParameterType)), StringComparer.Ordinal);
+
+static string SlotTypeIdentity(TypeReference type)
+    => type switch
+    {
+        GenericParameter parameter => $"{parameter.Type}:{parameter.Position}",
+        GenericInstanceType generic => SlotTypeIdentity(generic.ElementType) + "<"
+            + string.Join(",", generic.GenericArguments.Select(SlotTypeIdentity)) + ">",
+        RequiredModifierType required => "modreq:" + SlotTypeIdentity(required.ModifierType)
+            + ":" + SlotTypeIdentity(required.ElementType),
+        OptionalModifierType optional => "modopt:" + SlotTypeIdentity(optional.ModifierType)
+            + ":" + SlotTypeIdentity(optional.ElementType),
+        FunctionPointerType pointer => $"fn:{pointer.CallingConvention}:{pointer.HasThis}:{pointer.ExplicitThis}:"
+            + SlotTypeIdentity(pointer.ReturnType) + "("
+            + string.Join(",", pointer.Parameters.Select(parameter => SlotTypeIdentity(parameter.ParameterType))) + ")",
+        TypeSpecification specification => specification.FullName + ":" + SlotTypeIdentity(specification.ElementType),
+        _ => type.FullName + "@" + (type.Scope is ModuleDefinition definition
+            ? definition.Assembly.Name.FullName : type.Scope?.ToString()),
+    };
+
+static bool IsLocalTypeScope(TypeReference type, ModuleDefinition module)
+    => type.Scope switch
+    {
+        ModuleDefinition definition => ReferenceEquals(definition, module),
+        AssemblyNameReference assembly => assembly.FullName == module.Assembly.Name.FullName,
+        _ => false,
+    };
+
+sealed record VirtualSlot(string Owner, string Method, bool IsNewSlot, bool IsFinal,
+    bool IsAbstract, bool HasBody, string[] ExplicitOverrides, string Status,
+    string? RootOrUnresolved, string[] Chain, bool IsNativeHookTarget);
 
 sealed record Reference(string Caller, string Target, string Kind, int Offset, string Owner,
     string[]? GenericArguments = null);
