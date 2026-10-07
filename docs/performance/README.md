@@ -1,6 +1,6 @@
 # 性能工作入口
 
-- [剪枝扩展写入审计](exhaust-extension-writer-audit-20261007.md)：费用容器回调、免费绑定/缓存写入及35个被引用入口；修正方法文本碰撞，14项元数据边界与游戏原字段保持通过。承接[清理合同](exhaust-cleanup-contract-20261007.md)，尚未认证整根或启用新剪枝。
+- [剪枝免费根合同](exhaust-free-root-contract-20261007.md)：54根牌的绑定/附加资源及检测器/定义/PlayStates为空；原生空绑定与无层回调条件通过。承接[扩展写入](exhaust-extension-writer-audit-20261007.md)核对未来来源，整根证书未完成、未启用新剪枝。
 
 - [历史计数门槛与状态等价研究](saturated-history-key-research-20261007.md)：三根含并行worker约145万次构键，三项门槛投影没有合并不同完整键；原生读取链说明局部门槛不能作为完整根认证，未接入剪枝。
 

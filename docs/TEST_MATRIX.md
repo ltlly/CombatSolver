@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-07 [扩展写入审计](performance/exhaust-extension-writer-audit-20261007.md)：schema6构建、14项托管元数据边界及游戏33原字段保持通过；补齐费用容器回调/缓存写入清单。无新游戏/Fork/剪枝/性能验收；临时任务清理、Mod部署复用。
+2026-10-07 [免费根合同](performance/exhaust-free-root-contract-20261007.md)：原生776c50467f85493989db575ad3e99ec2通过54根牌只读、检测器替换恢复、空绑定/无层回调及零收费层。无新Fork/完整EndTurn/搜索性能验收；任务清理、部署复用。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 
