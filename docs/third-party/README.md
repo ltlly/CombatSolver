@@ -338,6 +338,8 @@ StrategicEffectMirrors.Register<TYourPower>(requirements, evaluate, host);
 
 ## 6. 已知的封闭开关
 
+当前回复组件表和Ritsu治疗门禁尚未覆盖 `Creature.CurrentHpChanged`、`MaxHpChanged` 及其转发的 `CombatStateTracker.CombatStateChanged` 全部受众。[实际原生研究](../performance/finite-health-capacity-proof-20261008.md)复现未适配直接/延迟监听器仍取得0回复界、随后额外回复2点；这类来源尚无已完成的拒绝修复。模型镜像登记、原版类型身份和非gameplay清单都不能补足这项证明。下表的组件资格仅表示已检查的来源表通过，不能解释为任意生命事件、界面回调或扩展链已经安全。
+
 组合达标早停额外读取冻结的 `CombatRootSnapshot.HasVisibleHealingSource`：牌、玩家 Power 和可搜索药水的 `Heal` / `HealPercent` / `RegenPower` 变量，以及已有 `RegenPower`，会保守保留追加搜索；已选路线实际回血也保留追加搜索。变量在主线程完成物化后读取，治疗随从同样可能触发保守回退。这不是完整治疗来源登记或可达收益上界；没有这些元数据的自定义治疗、后续生成的治疗来源，仍可能因玩家战损目标已经达标而少做追加审计。关闭战损达标早停可保留原追加搜索；不改变模拟执行和既有第三方适配合同。
 
 下面这些位置目前是按原版类型写死的开关，第三方登记不进去。要用只能 Harmony 打补丁，或者等
