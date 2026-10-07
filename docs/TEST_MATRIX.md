@@ -1,10 +1,10 @@
 # CombatSolver 测试入口
 
-2026-10-08 [默认系数与输出](performance/default-value-out-proof-20261008.md)：13定义/33调用及原生Hook反例通过，live戳保持，首轮夹具CS0079已修正；非全状态/Fork/顺序资格或性能，Mod部署复用。
-2026-10-08 [默认Task绑定](performance/default-task-binding-proof-20261008.md)：98直接/1568作业调用通过；字段类型首轮失败及详细文件未导出另列，独立元数据采集0次重复调用，live戳保持；非Fork/整根资格或性能，生产部署复用。
+2026-10-08 [默认Task调用方](performance/task-caller-order-proof-20261008.md)：98引用定位，五个原生入口/八默认回调与隐含/双完成通知通过；Ritsu生命周期补丁只观察，未知受众可写上下文，live戳相等。无新根认证/实际剪枝/性能，生产部署复用。
+
+[默认方法局部验证归档](archive/testing/volume-25.md)。
 
 2026-10-07 [原生回调](performance/native-generation-callback-proof-20261007.md)与[模型能力](performance/model-capability-recovery-proof-20261007.md)：两类15界/30回复反例；未知治疗、生成OnPlay、当前/未来能力及默认注入拒绝。原生、清理后16Fork状态/历史/RNG、质量与峰值范围见各报告；非全来源认证。
-2026-10-07 [有限回复剪枝原型](performance/initial-generation-finite-recovery-pruning-20261007.md)：未来OnPlay认证接纳反例复现，原型撤回；原生合同及11根44次质量/内存通过，无稳定提速。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：原生GC生命周期通过；No-GC信息能力夹具修复前后结果留存。48次纯请求保存，最终11根44次内存通过，但猎手首领战损54→57，原型撤回；未做全29根或上传包验收。
 
@@ -109,7 +109,6 @@ pwsh -NoProfile -File tools\testing\run-unattended-test.ps1 -ScenarioId EFFECT-S
 ./tools/testing/run-unattended-test.sh --scenario-id CASCADE-EMPTY-HAND-NATIVE --enemy-current-hp 1000 --headless-fast-mode-for-test Instant --deployment-fast-mode-for-test Instant --deployment-inter-action-delay-seconds-for-test 0 --timeout-seconds 120
 ./tools/testing/run-unattended-test.sh --scenario-id EFFECT-SCOPE-ADJACENT-CONTRACT --enemy-current-hp 1000 --headless-fast-mode-for-test Instant --deployment-fast-mode-for-test Instant --deployment-inter-action-delay-seconds-for-test 0 --timeout-seconds 120
 ```
-
 
 ## 0.48.0 硬错误机制合同
 
