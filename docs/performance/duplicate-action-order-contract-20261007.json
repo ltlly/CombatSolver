@@ -1,0 +1,464 @@
+{
+  "schemaVersion": 1,
+  "task": "duplicate-action-order-contract",
+  "date": "2026-10-07",
+  "sourceBase": "1d567f1c79974f641610b8df74c6076468bbc93e",
+  "retainedRuntimeSource": "27c28f66",
+  "game": {
+    "version": "0.111.0 / 41cef1ea",
+    "sha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+    "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+  },
+  "build": {
+    "exit_code": 0,
+    "seconds": 14.11,
+    "warnings": 0,
+    "errors": 0,
+    "taskDllSha256": "8b3a9495e7b8ba1039f5ad031153cd3b7d94acfb0966e890a269270c806542f2",
+    "command": [
+      "dotnet",
+      "build",
+      "CombatSolver.csproj",
+      "-c",
+      "Release",
+      "-o",
+      "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/duplicate-action-order-20261007/build-native",
+      "-p:CopyModOnBuild=false",
+      "-p:CustomAfterMicrosoftCommonTargets=/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/duplicate-action-order-20261007/native.props"
+    ]
+  },
+  "native": [
+    {
+      "variant": "first",
+      "summary": {
+        "variant": "FIRST",
+        "command": [
+          "bash",
+          "tools/testing/run-unattended-test.sh",
+          "--scenario-id",
+          "DUPLICATE-ACTION-FIRST",
+          "--generated-scenario-path",
+          "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+          "--combat-solver-build-dir",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/duplicate-action-order-20261007/build-native",
+          "--headless-instance",
+          "duplicate-action-first-20261007",
+          "--timeout-seconds",
+          "120",
+          "--evidence-directory",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/duplicate-action-order-20261007/evidence-first",
+          "--cleanup-instance-on-exit",
+          "--exit-on-complete"
+        ],
+        "exit_code": 0,
+        "seconds": 34.16904347400123
+      },
+      "result": {
+        "processReusable": false,
+        "processId": 390427,
+        "reusedProcess": false,
+        "developmentStrategyScriptHash": null,
+        "developmentStrategyParametersHash": null,
+        "mainAssemblyHash": "8B3A9495E7B8BA1039F5AD031153CD3B7D94ACFB0966E890A269270C806542F2",
+        "schemaVersion": 1,
+        "runId": "37f3914f89ca4fa091fd213a05132db0",
+        "scenarioId": "DUPLICATE-ACTION-FIRST",
+        "status": "Passed",
+        "stage": "passed",
+        "characterId": "CHARACTER.SILENT",
+        "encounterId": "ENCOUNTER.THE_INSATIABLE_BOSS",
+        "seed": "NOVELTY-DEV-20260915-06",
+        "startedAtUtc": "2026-10-07T10:03:32.0871633+00:00",
+        "elapsedMilliseconds": 26521.3296,
+        "mainThread": true,
+        "combatEnded": false,
+        "startedTurn": 1,
+        "finishedTurn": 1,
+        "managedHeapBytes": 74370000,
+        "managedFragmentedBytes": 5350064,
+        "workingSetBytes": 1533874176,
+        "privateMemoryBytes": 1659314176,
+        "solverMetrics": null,
+        "replayVerification": null,
+        "generatedScenario": {
+          "schemaVersion": 1,
+          "mode": "Search",
+          "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+          "resolvedConfiguration": "generated-scenario.resolved.json",
+          "loadout": "generated-scenario.loadout.json",
+          "opening": "generated-scenario.opening.json",
+          "relicObtainEffects": false,
+          "combatEnded": false,
+          "actualOutcome": {
+            "initialHp": 56,
+            "finalHp": 56,
+            "hpLost": 0,
+            "hpHealed": 0,
+            "selfDamage": 0,
+            "combatEnded": false,
+            "survived": true,
+            "finalEnemyHp": 250,
+            "potions": [],
+            "unattributedHpLoss": 0
+          }
+        },
+        "stageTimings": [
+          {
+            "stage": "created",
+            "startedMilliseconds": 0,
+            "durationMilliseconds": 1.5937
+          },
+          {
+            "stage": "strategy_load",
+            "startedMilliseconds": 1.5937,
+            "durationMilliseconds": 5.4078
+          },
+          {
+            "stage": "game_startup",
+            "startedMilliseconds": 7.0015,
+            "durationMilliseconds": 12812.1005
+          },
+          {
+            "stage": "start_run",
+            "startedMilliseconds": 12819.102,
+            "durationMilliseconds": 10948.099499999998
+          },
+          {
+            "stage": "inject_run_relics",
+            "startedMilliseconds": 23767.2015,
+            "durationMilliseconds": 280.9385000000002
+          },
+          {
+            "stage": "enter_encounter",
+            "startedMilliseconds": 24048.14,
+            "durationMilliseconds": 2003.7623000000021
+          },
+          {
+            "stage": "wait_player_turn",
+            "startedMilliseconds": 26051.9023,
+            "durationMilliseconds": 2.5177999999978056
+          },
+          {
+            "stage": "inject_state",
+            "startedMilliseconds": 26054.4201,
+            "durationMilliseconds": 348.21359999999913
+          },
+          {
+            "stage": "cleanup",
+            "startedMilliseconds": 26402.6337,
+            "durationMilliseconds": 112.90020000000004
+          },
+          {
+            "stage": "passed",
+            "startedMilliseconds": 26515.5339,
+            "durationMilliseconds": 5.974100000003091
+          }
+        ],
+        "completedChecks": [
+          "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+          "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+          "GeneratedScenario:NativeOpeningCaptured",
+          "DuplicateAction:SameLocalFingerprint:SeparatedInstances:DifferentOrderedHand:RealNativePlay:RealNativeShuffle:FullStateRng:SixteenParallelShuffleTwoGenerationFork:ParentLiveIsolation",
+          "TASK_DUPLICATE_ACTION {\"last\":false,\"sameLocalFingerprint\":true,\"actualHand\":[\"DEFEND_SILENT\",\"STRIKE_SILENT\"],\"firstHand\":[\"DEFEND_SILENT\",\"STRIKE_SILENT\"],\"secondHand\":[\"STRIKE_SILENT\",\"DEFEND_SILENT\"],\"afterPlayHash\":\"37618C17C96BCF2AC9A887C24E5DE4506BF4A66BFEA8E7754CD8E49D335E76CA\",\"afterShuffleHash\":\"5F3222FD10076449FDC70A8CDA7E168A88A4F3E5594210A6BE0C78EBC2E478D8\",\"shuffleConvergedState\":true,\"shuffleConvergedHistory\":false,\"draw\":[\"STRIKE_SILENT\",\"STRIKE_SILENT\",\"DEFEND_SILENT\"],\"forkCount\":16,\"parentUnchanged\":true,\"actualPrunes\":0,\"wholeRootCertified\":false}",
+          "NativeOutcome:combatEnded=False:turn=1:hp=56:maxHp=70"
+        ],
+        "error": null,
+        "finishedAtUtc": "2026-10-07T10:03:58.6082899+00:00"
+      },
+      "facts": {
+        "last": false,
+        "sameLocalFingerprint": true,
+        "actualHand": [
+          "DEFEND_SILENT",
+          "STRIKE_SILENT"
+        ],
+        "firstHand": [
+          "DEFEND_SILENT",
+          "STRIKE_SILENT"
+        ],
+        "secondHand": [
+          "STRIKE_SILENT",
+          "DEFEND_SILENT"
+        ],
+        "afterPlayHash": "37618C17C96BCF2AC9A887C24E5DE4506BF4A66BFEA8E7754CD8E49D335E76CA",
+        "afterShuffleHash": "5F3222FD10076449FDC70A8CDA7E168A88A4F3E5594210A6BE0C78EBC2E478D8",
+        "shuffleConvergedState": true,
+        "shuffleConvergedHistory": false,
+        "draw": [
+          "STRIKE_SILENT",
+          "STRIKE_SILENT",
+          "DEFEND_SILENT"
+        ],
+        "forkCount": 16,
+        "parentUnchanged": true,
+        "actualPrunes": 0,
+        "wholeRootCertified": false
+      }
+    },
+    {
+      "variant": "last",
+      "summary": {
+        "variant": "LAST",
+        "command": [
+          "bash",
+          "tools/testing/run-unattended-test.sh",
+          "--scenario-id",
+          "DUPLICATE-ACTION-LAST",
+          "--generated-scenario-path",
+          "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+          "--combat-solver-build-dir",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/duplicate-action-order-20261007/build-native",
+          "--headless-instance",
+          "duplicate-action-last-20261007",
+          "--timeout-seconds",
+          "120",
+          "--evidence-directory",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/duplicate-action-order-20261007/evidence-last",
+          "--cleanup-instance-on-exit",
+          "--exit-on-complete"
+        ],
+        "exit_code": 0,
+        "seconds": 34.32351704100438
+      },
+      "result": {
+        "processReusable": false,
+        "processId": 392977,
+        "reusedProcess": false,
+        "developmentStrategyScriptHash": null,
+        "developmentStrategyParametersHash": null,
+        "mainAssemblyHash": "8B3A9495E7B8BA1039F5AD031153CD3B7D94ACFB0966E890A269270C806542F2",
+        "schemaVersion": 1,
+        "runId": "1fe903130f35499d86f122af24e12b66",
+        "scenarioId": "DUPLICATE-ACTION-LAST",
+        "status": "Passed",
+        "stage": "passed",
+        "characterId": "CHARACTER.SILENT",
+        "encounterId": "ENCOUNTER.THE_INSATIABLE_BOSS",
+        "seed": "NOVELTY-DEV-20260915-06",
+        "startedAtUtc": "2026-10-07T10:04:06.226175+00:00",
+        "elapsedMilliseconds": 26690.6274,
+        "mainThread": true,
+        "combatEnded": false,
+        "startedTurn": 1,
+        "finishedTurn": 1,
+        "managedHeapBytes": 83786408,
+        "managedFragmentedBytes": 14815168,
+        "workingSetBytes": 1543819264,
+        "privateMemoryBytes": 1671774208,
+        "solverMetrics": null,
+        "replayVerification": null,
+        "generatedScenario": {
+          "schemaVersion": 1,
+          "mode": "Search",
+          "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+          "resolvedConfiguration": "generated-scenario.resolved.json",
+          "loadout": "generated-scenario.loadout.json",
+          "opening": "generated-scenario.opening.json",
+          "relicObtainEffects": false,
+          "combatEnded": false,
+          "actualOutcome": {
+            "initialHp": 56,
+            "finalHp": 56,
+            "hpLost": 0,
+            "hpHealed": 0,
+            "selfDamage": 0,
+            "combatEnded": false,
+            "survived": true,
+            "finalEnemyHp": 250,
+            "potions": [],
+            "unattributedHpLoss": 0
+          }
+        },
+        "stageTimings": [
+          {
+            "stage": "created",
+            "startedMilliseconds": 0,
+            "durationMilliseconds": 1.5074
+          },
+          {
+            "stage": "strategy_load",
+            "startedMilliseconds": 1.5074,
+            "durationMilliseconds": 5.2765
+          },
+          {
+            "stage": "game_startup",
+            "startedMilliseconds": 6.7839,
+            "durationMilliseconds": 13054.862
+          },
+          {
+            "stage": "start_run",
+            "startedMilliseconds": 13061.6459,
+            "durationMilliseconds": 10954.528300000002
+          },
+          {
+            "stage": "inject_run_relics",
+            "startedMilliseconds": 24016.1742,
+            "durationMilliseconds": 271.55079999999725
+          },
+          {
+            "stage": "enter_encounter",
+            "startedMilliseconds": 24287.725,
+            "durationMilliseconds": 1944.6946000000025
+          },
+          {
+            "stage": "wait_player_turn",
+            "startedMilliseconds": 26232.4196,
+            "durationMilliseconds": 2.485999999997148
+          },
+          {
+            "stage": "inject_state",
+            "startedMilliseconds": 26234.9056,
+            "durationMilliseconds": 340.9796000000024
+          },
+          {
+            "stage": "cleanup",
+            "startedMilliseconds": 26575.8852,
+            "durationMilliseconds": 109.18339999999807
+          },
+          {
+            "stage": "passed",
+            "startedMilliseconds": 26685.0686,
+            "durationMilliseconds": 5.754300000000512
+          }
+        ],
+        "completedChecks": [
+          "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+          "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+          "GeneratedScenario:NativeOpeningCaptured",
+          "DuplicateAction:SameLocalFingerprint:SeparatedInstances:DifferentOrderedHand:RealNativePlay:RealNativeShuffle:FullStateRng:SixteenParallelShuffleTwoGenerationFork:ParentLiveIsolation",
+          "TASK_DUPLICATE_ACTION {\"last\":true,\"sameLocalFingerprint\":true,\"actualHand\":[\"STRIKE_SILENT\",\"DEFEND_SILENT\"],\"firstHand\":[\"DEFEND_SILENT\",\"STRIKE_SILENT\"],\"secondHand\":[\"STRIKE_SILENT\",\"DEFEND_SILENT\"],\"afterPlayHash\":\"992366B8DD07E9C6BB29A2CEDA2FA8872169420C4E73AA285055FB61F90DB8FC\",\"afterShuffleHash\":\"5F3222FD10076449FDC70A8CDA7E168A88A4F3E5594210A6BE0C78EBC2E478D8\",\"shuffleConvergedState\":true,\"shuffleConvergedHistory\":false,\"draw\":[\"STRIKE_SILENT\",\"STRIKE_SILENT\",\"DEFEND_SILENT\"],\"forkCount\":16,\"parentUnchanged\":true,\"actualPrunes\":0,\"wholeRootCertified\":false}",
+          "NativeOutcome:combatEnded=False:turn=1:hp=56:maxHp=70"
+        ],
+        "error": null,
+        "finishedAtUtc": "2026-10-07T10:04:32.9165771+00:00"
+      },
+      "facts": {
+        "last": true,
+        "sameLocalFingerprint": true,
+        "actualHand": [
+          "STRIKE_SILENT",
+          "DEFEND_SILENT"
+        ],
+        "firstHand": [
+          "DEFEND_SILENT",
+          "STRIKE_SILENT"
+        ],
+        "secondHand": [
+          "STRIKE_SILENT",
+          "DEFEND_SILENT"
+        ],
+        "afterPlayHash": "992366B8DD07E9C6BB29A2CEDA2FA8872169420C4E73AA285055FB61F90DB8FC",
+        "afterShuffleHash": "5F3222FD10076449FDC70A8CDA7E168A88A4F3E5594210A6BE0C78EBC2E478D8",
+        "shuffleConvergedState": true,
+        "shuffleConvergedHistory": false,
+        "draw": [
+          "STRIKE_SILENT",
+          "STRIKE_SILENT",
+          "DEFEND_SILENT"
+        ],
+        "forkCount": 16,
+        "parentUnchanged": true,
+        "actualPrunes": 0,
+        "wholeRootCertified": false
+      }
+    }
+  ],
+  "oneShotSources": [
+    {
+      "path": ".local/tool-tasks/duplicate-action-order-20261007/TaskDuplicateAction.cs",
+      "sha256": "267fae1e2a4122c0421ace4f22e85298953901dfea20b5de383de86fbc7b9a6d",
+      "body": "using System.Text;\nusing System.Text.Json;\nusing System.Security.Cryptography;\nusing CombatSolver.Engine.Common;\nusing CombatSolver.Engine.InCombat.Simulation;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Commands;\nusing MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing MegaCrit.Sts2.Core.GameActions;\nusing MegaCrit.Sts2.Core.GameActions.Multiplayer;\nusing MegaCrit.Sts2.Core.Models;\nusing MegaCrit.Sts2.Core.Models.Cards;\nusing MegaCrit.Sts2.Core.Runs;\n\nnamespace CombatSolver;\ninternal sealed partial class UnattendedTestRunner\n{\n    private async Task RunTaskDuplicateActionAsync(CombatState live, Player player, bool last)\n    {\n        var enemy = live.Enemies.First(candidate => candidate.IsAlive);\n        foreach (RelicModel relic in player.Relics.ToArray()) await RelicCmd.Remove(relic);\n        foreach (PowerModel power in live.Creatures.SelectMany(creature => creature.Powers).ToArray())\n            await PowerCmd.Remove(power);\n        await ClearPlayerPilesAsync(player);\n        await SetBlockAsync(player.Creature, 0); await SetBlockAsync(enemy, 0);\n        await CreatureCmd.SetMaxHp(enemy, Math.Max(256, enemy.MaxHp));\n        await CreatureCmd.SetCurrentHp(enemy, 256); SetEnergy(player, 6);\n        foreach (string id in new[] { \"STRIKE_SILENT\", \"DEFEND_SILENT\", \"STRIKE_SILENT\" })\n            await InjectCardAsync(live, player, new() { CardId = id, Pile = \"Hand\" });\n        await RunManager.Instance.ActionExecutor.FinishedExecutingActions();\n        CardModel[] actual = player.PlayerCombatState!.Hand.Cards.ToArray();\n        CombatRootSnapshot root = CombatRootSnapshot.Capture(live);\n        var parent = root.ForkSimulator();\n        string State(CombatPredictionSimulator sim) => ContinuationStamp.CapturePredicted(player, sim,\n            root.StartTurnNumber, root.Forecast, root.StartTurnNumber).StateText;\n        string Full(CombatPredictionSimulator sim) => State(sim) + \"\\nHISTORY=\" + CardContinuationContractHistoryText(sim);\n        string Hash(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));\n        var predictedHand = parent.State.GetPlayerCombatState(player).Hand.Cards;\n        StateFingerprint firstKey = CombatBeamSolver.CaptureCardStateFingerprintForTesting(predictedHand[0]);\n        StateFingerprint lastKey = CombatBeamSolver.CaptureCardStateFingerprintForTesting(predictedHand[2]);\n        if (firstKey != lastKey) throw new InvalidOperationException(\"Ordinary duplicate cards have different local fingerprints.\");\n        string parentBefore = Full(parent), liveBefore = ContinuationStamp.CaptureLive(live).StateText;\n        var first = parent.Fork(); var second = parent.Fork();\n        void Play(CombatPredictionSimulator sim, int index)\n        {\n            using IDisposable isolation = SimulationNotificationIsolation.Enter();\n            var combat = (SimulatedCombatState)sim.State.CombatState;\n            var card = sim.State.GetPlayerCombatState(player).Hand.Cards[index];\n            if (!combat.CanPlayCard(sim, card)) throw new InvalidOperationException(\"Duplicate fixture card cannot play.\");\n            using (combat.BeginCardExecutionScope(new ForkableSet<uint>())) sim.ManualPlay(card, enemy, out _);\n            CombatBeamSolver.SettleReplayActionBoundary(sim, combat); combat.AssertForkable();\n        }\n        Play(first, 0); Play(second, 2);\n        string[] Hand(CombatPredictionSimulator sim) => sim.State.GetPlayerCombatState(player).Hand.Cards.Select(c => c.Preview.Id.Entry).ToArray();\n        if (Hand(first).SequenceEqual(Hand(second)) || State(first) == State(second))\n            throw new InvalidOperationException(\"Separated duplicates did not leave different ordered hands.\");\n        if (Full(parent) != parentBefore || ContinuationStamp.CaptureLive(live).StateText != liveBefore)\n            throw new InvalidOperationException(\"Duplicate action leaked into parent/live.\");\n        int index = last ? 2 : 0;\n        var predicted = last ? second : first;\n        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(12));\n        CardModel native = actual[index];\n        GameAction action = await SolverController.EnqueueAndCaptureActionAsync(\n            queued => queued is PlayCardAction played && ReferenceEquals(played.NetCombatCard.ToCardModelOrNull(), native),\n            () => { if (!native.TryManualPlay(enemy)) throw new InvalidOperationException(\"Native duplicate card cannot play.\"); }, deadline.Token);\n        await action.CompletionTask.WaitAsync(deadline.Token);\n        if (State(predicted) != ContinuationStamp.CaptureLive(live).StateText)\n            throw new InvalidOperationException(\"Native duplicate play differs in complete ordered state/RNG.\");\n        AssertSnapshotEqual(CaptureSimulated(predicted, (SimulatedCombatState)predicted.State.CombatState, player, enemy),\n            CaptureActual(live, player, enemy), \"DUPLICATE-ACTION\", \"play\");\n        string afterPlayHash = Hash(State(predicted));\n        string[] actualHand = player.PlayerCombatState.Hand.Cards.Select(c => c.Id.Entry).ToArray();\n        CombatRootSnapshot postPlayRoot = CombatRootSnapshot.Capture(live);\n        var shuffleParent = postPlayRoot.ForkSimulator();\n        string shuffleParentBefore = Full(shuffleParent), beforeShuffleLive = ContinuationStamp.CaptureLive(live).StateText;\n        void MoveAndShuffle(CombatPredictionSimulator sim)\n        {\n            using IDisposable isolation = SimulationNotificationIsolation.Enter();\n            var cards = sim.State.GetPlayerCombatState(player).Hand.Cards.ToArray();\n            foreach (var card in cards) sim.AddToPile(card, PileType.Discard);\n            sim.Shuffle(player); ((SimulatedCombatState)sim.State.CombatState).AssertForkable();\n        }\n        var shuffled = shuffleParent.Fork(); MoveAndShuffle(shuffled);\n        var opposite = (last ? first : second).Fork(); MoveAndShuffle(opposite);\n        bool shuffleConvergedState = State(shuffled) == State(opposite);\n        bool shuffleConvergedHistory = Full(shuffled) == Full(opposite);\n        var children = Enumerable.Range(0, 16).Select(_ => shuffleParent.Fork()).ToArray();\n        await Task.WhenAll(children.Select(child => Task.Run(() => MoveAndShuffle(child))));\n        foreach (var child in children)\n            if (Full(child) != Full(shuffled) || Full(child.Fork()) != Full(shuffled))\n                throw new InvalidOperationException(\"Duplicate shuffle parallel/two-generation Fork differs.\");\n        if (Full(shuffleParent) != shuffleParentBefore || ContinuationStamp.CaptureLive(live).StateText != beforeShuffleLive)\n            throw new InvalidOperationException(\"Duplicate shuffle leaked into parent/live.\");\n        foreach (var card in player.PlayerCombatState.Hand.Cards.ToArray())\n        {\n            var moved = await CardPileCmd.Add(card, PileType.Discard);\n            if (!moved.success) throw new InvalidOperationException(\"Native duplicate discard move rejected.\");\n        }\n        await CardPileCmd.Shuffle(new BlockingPlayerChoiceContext(), player);\n        await RunManager.Instance.ActionExecutor.FinishedExecutingActions();\n        if (State(shuffled) != ContinuationStamp.CaptureLive(live).StateText)\n            throw new InvalidOperationException(\"Native duplicate shuffle differs in complete state/RNG.\");\n        AssertSnapshotEqual(CaptureSimulated(shuffled, (SimulatedCombatState)shuffled.State.CombatState, player, enemy),\n            CaptureActual(live, player, enemy), \"DUPLICATE-ACTION\", \"shuffle\");\n        _completedChecks.Add(\"DuplicateAction:SameLocalFingerprint:SeparatedInstances:DifferentOrderedHand:RealNativePlay:RealNativeShuffle:FullStateRng:SixteenParallelShuffleTwoGenerationFork:ParentLiveIsolation\");\n        _completedChecks.Add(\"TASK_DUPLICATE_ACTION \" + JsonSerializer.Serialize(new { last,\n            sameLocalFingerprint = firstKey == lastKey, actualHand, firstHand = Hand(first), secondHand = Hand(second),\n            afterPlayHash, afterShuffleHash = Hash(State(shuffled)), shuffleConvergedState, shuffleConvergedHistory,\n            draw = player.PlayerCombatState.DrawPile.Cards.Select(c => c.Id.Entry).ToArray(),\n            forkCount = children.Length, parentUnchanged = Full(parent) == parentBefore,\n            actualPrunes = 0, wholeRootCertified = false }));\n    }\n}\n"
+    },
+    {
+      "path": ".local/tool-tasks/duplicate-action-order-20261007/native.props",
+      "sha256": "45f6705f63a4b1a658ade0bf01614e23aa4199236199f2b4321ad80e101acb7b",
+      "body": "<Project><ItemGroup><Compile Include=\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/duplicate-action-order-20261007/TaskDuplicateAction.cs\" /></ItemGroup></Project>\n"
+    },
+    {
+      "path": ".local/tool-tasks/duplicate-action-order-20261007/run-native.py",
+      "sha256": "205afaf75d7a6562866e8c621cd96c1ebda9575e554ff9b3616f1cfb358da068",
+      "body": "from pathlib import Path\nimport json,subprocess,time\nbase=Path(__file__).resolve().parent\nfor variant in ['FIRST','LAST']:\n evidence=base/('evidence-'+variant.lower())\n command=['bash','tools/testing/run-unattended-test.sh','--scenario-id','DUPLICATE-ACTION-'+variant,\n  '--generated-scenario-path','/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json',\n  '--combat-solver-build-dir',str(base/'build-native'),'--headless-instance','duplicate-action-'+variant.lower()+'-20261007',\n  '--timeout-seconds','120','--evidence-directory',str(evidence),'--cleanup-instance-on-exit','--exit-on-complete']\n started=time.perf_counter()\n with (base/('launcher-'+variant.lower()+'.log')).open('w') as log:\n  result=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT)\n summary={'variant':variant,'command':command,'exit_code':result.returncode,'seconds':time.perf_counter()-started}\n (base/('summary-'+variant.lower()+'.json')).write_text(json.dumps(summary,indent=2)+'\\n')\n print(json.dumps(summary),flush=True)\n if result.returncode:\n  print((base/('launcher-'+variant.lower()+'.log')).read_text()[-4500:],flush=True)\n  raise SystemExit(result.returncode)\n print((base/('launcher-'+variant.lower()+'.log')).read_text()[-800:],flush=True)\n"
+    }
+  ],
+  "executorTemporaryPatch": "diff --git a/src/Testing/Host/UnattendedTestRunner.Executor.cs b/src/Testing/Host/UnattendedTestRunner.Executor.cs\nindex fe1b2da5..85d7a133 100644\n--- a/src/Testing/Host/UnattendedTestRunner.Executor.cs\n+++ b/src/Testing/Host/UnattendedTestRunner.Executor.cs\n@@ -39,6 +39,12 @@ internal sealed partial class UnattendedTestRunner\n             bool expectedCardPlayed = request.ExpectedPlayedCardId == null;\n             bool expectedPotionUsed = request.ExpectedUsedPotionId == null;\n             bool expectedPlayerPowerObserved = request.ExpectedObservedPlayerPowerId == null;\n+            if (request.ScenarioId is \"DUPLICATE-ACTION-FIRST\" or \"DUPLICATE-ACTION-LAST\")\n+            {\n+                await runner.RunTaskDuplicateActionAsync(combatState, player,\n+                    request.ScenarioId.EndsWith(\"-LAST\", StringComparison.Ordinal));\n+                return Observation(combatEnded: false);\n+            }\n             if (request.ScenarioId is \"ZERO-CREDIT-GROWTH-PROOF\" or \"ZERO-CREDIT-GROWTH-PROOF-REGEN\")\n             {\n                 await runner.AssertZeroCreditGrowthProofAsync(combatState, player,\n",
+  "existingRule": {
+    "file": "src/Search/CombatBeamSolver.ExpansionPlan.cs",
+    "member": "EnumeratePlannedCardActions",
+    "comparison": "BuildPlayableCardKey delegates to cached full local card fingerprint; already playable duplicates are pruned before target enumeration.",
+    "newOpportunity": "No new duplicate-action capability identified; the existing local-card rule already handles this category."
+  },
+  "verificationScope": {
+    "fixture": "Original frozen dev-06 generator establishes an independent combat; original relics/powers and piles replaced. Hand is StrikeSilent, DefendSilent, StrikeSilent; energy 6; enemy HP 256.",
+    "root": "First and last StrikeSilent have equal production local card fingerprints.",
+    "action": "Each real native PlayCardAction matches its own complete predicted state/RNG and move snapshot. Alternative shadow leaves a different ordered hand.",
+    "shuffle": "Remaining hand moved into Discard via native CardPileCmd.Add, followed by real CardPileCmd.Shuffle. Native complete state/RNG and move snapshot match own prediction.",
+    "convergence": "Opposite simulated shuffle state converges but serialized rich simulation history does not; two independent native after-shuffle complete-state hashes agree.",
+    "fork": "Sixteen serially created children shuffle in parallel; full state/rich history and sequential grandchild checks match own reference; parent/live remain unchanged.",
+    "fullTurn": false,
+    "allFutureActions": false,
+    "sameProductionStateKeyProved": false,
+    "wholeRootCertificate": false,
+    "qualityRegression": false,
+    "performanceAcceptance": false
+  },
+  "nativeSourceEvidence": {
+    "reusedCardModelPath": ".local/tool-tasks/intrinsic-card-value-20261006/native-source/CardModel.cs",
+    "reusedCardModelSha256": "5a9be9595a3c6b40d8659a2dd9c10b9faa048fe69b3e3301c9b23ee69190bac7",
+    "observation": "Current CompareTo compares base model and upgrade level; no new exhaustive shuffle or card certification from this fragment.",
+    "shuffleEntry": "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Commands.CardPileCmd::Shuffle(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+    "shuffleEntryEvidence": "Existing schema7 game-reference-inventory-v7.json cardPileEntries/directCardPileReferences; source unchanged and scan not repeated."
+  },
+  "limitations": [
+    "Different ordered hand stamps and rich simulation histories do not prove different battle loss or an existing duplicate-pruning bug.",
+    "Rich-history comparison serializes selected fields and trace structure, not all opaque object identity/alias relations or complete native history.",
+    "No production transposition keys, actual action enumeration counts, or all future history readers compared.",
+    "Forced hand-to-discard movement and explicit native shuffle are isolated boundaries, not natural EndTurn or complete combat.",
+    "No unknown attachment/callback, future generation, private source, revival, or full extension closure certification.",
+    "The full original loadout was replaced; not original heavy-scene quality or speed acceptance.",
+    "Diagnostic request timing and current working set are not full Coordinator timing or process peak RSS acceptance."
+  ],
+  "decision": {
+    "searchChanged": false,
+    "actualNewPrunes": 0,
+    "wholeRootCertified": false,
+    "newTwofoldScenarios": 0,
+    "duplicateRuleExpanded": false,
+    "existingRuleRemoved": false,
+    "next": "Continue positive exhaust-order certificate with all reachable readers, writers, generation and extensions; local card equality or shuffle convergence cannot substitute for it."
+  },
+  "reusedEvidence": [
+    "docs/performance/exhaust-projection-subsets-20261007.json",
+    "docs/performance/exhaust-positive-native-contract-20261007.json",
+    "docs/performance/exhaust-return-boundary-20261007.json",
+    "docs/performance/exhaust-event-reference-audit-20261007.json",
+    "docs/performance/retained-victory-strict-hp-pruning-20261007.json"
+  ],
+  "cleanup": {
+    "removed": [
+      "TaskDuplicateAction.cs",
+      "native.props",
+      "run-native.py",
+      "executor.original",
+      "build-native"
+    ],
+    "executorRestored": true,
+    "instanceRemovedByLauncher": true,
+    "rawNativeEvidenceRetained": true,
+    "diagnosticModDeployed": false,
+    "productionDeployment": "Reuse unchanged 27c28f66 five-file success from retained-victory-strict-hp-pruning-20261007.json."
+  },
+  "gates": {
+    "documentation": {
+      "passed": true,
+      "files": 557,
+      "links": 2362,
+      "errors": 0,
+      "command": "python3 -B tools/inspection/verify-documentation.py"
+    },
+    "diff": {
+      "passed": true,
+      "command": "git diff --check"
+    },
+    "toolsReusedFrom": "exhaust-event-reference-audit-20261007.json"
+  }
+}

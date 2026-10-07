@@ -63,4 +63,4 @@
 
 [扩展写入审计](../../docs/performance/exhaust-extension-writer-audit-20261007.md)的14项检查只验证Cecil元数据边界及调用token，不执行CLR/游戏语义；已有游戏合同按原范围复用。一次性项目、夹具、生成脚本和构建已归档清理，未扩生产认证。
 
-[消耗堆回手容量合同](../../docs/performance/exhaust-return-boundary-20261007.md)以真实两次出牌建立资格，原生两排列验证末位手牌/弃牌差异，16路两代Fork完整状态历史RNG隔离通过；仅隔离回手与回合开始，未做整搜或同键证明。既有逐张回复认证、[创建与复制](../../docs/performance/exhaust-card-creation-contract-20261007.md)及[事件审计](../../docs/performance/exhaust-event-reference-audit-20261007.md)证据复用，临时入口/构建清理、部署保持。
+[同牌动作顺序合同](../../docs/performance/duplicate-action-order-contract-20261007.md)运行两个真实打击选择和显式原生洗牌，每组16路两代Fork隔离通过；同牌局部指纹不覆盖周围手序，当前状态收敛不代表历史或所有未来等价。未证现有规则有bug、未做整搜；[回手容量证据](../../docs/performance/exhaust-return-boundary-20261007.md)复用，临时入口/构建清理、部署保持。
