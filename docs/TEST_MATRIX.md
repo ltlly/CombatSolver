@@ -1,7 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-08 [默认回调与调用方](performance/native-hook-body-proof-20261008.md)：47项元数据及3项离线原生入口检查通过；三类调用边界不构成完整状态/Fork资格，夹具警告另列；无新游戏内合同/性能，Mod部署复用。
-2026-10-07 [阶段见证与等价闭包研究](performance/portfolio-witness-and-exhaust-closure-research-20261007.md)：两根只读Coordinator的14质量/根/政策/预算保持，16721次新增界访问无额外否证；无新原生/纯性能/固定回归，观察器撤回。
+2026-10-08 [默认Task绑定](performance/default-task-binding-proof-20261008.md)：98直接/1568作业调用通过；字段类型首轮失败及详细文件未导出另列，独立元数据采集0次重复调用，live戳保持；非Fork/整根资格或性能，生产部署复用。
 
 2026-10-07 [原生回调](performance/native-generation-callback-proof-20261007.md)与[模型能力](performance/model-capability-recovery-proof-20261007.md)：两类15界/30回复反例；未知治疗、生成OnPlay、当前/未来能力及默认注入拒绝。原生、清理后16Fork状态/历史/RNG、质量与峰值范围见各报告；非全来源认证。
 2026-10-07 [有限回复剪枝原型](performance/initial-generation-finite-recovery-pruning-20261007.md)：未来OnPlay认证接纳反例复现，原型撤回；原生合同及11根44次质量/内存通过，无稳定提速。
