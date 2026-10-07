@@ -1,5 +1,6 @@
 # CombatSolver 测试入口
 
+2026-10-08 [默认系数与输出](performance/default-value-out-proof-20261008.md)：13定义/33调用及原生Hook反例通过，live戳保持，首轮夹具CS0079已修正；非全状态/Fork/顺序资格或性能，Mod部署复用。
 2026-10-08 [默认Task绑定](performance/default-task-binding-proof-20261008.md)：98直接/1568作业调用通过；字段类型首轮失败及详细文件未导出另列，独立元数据采集0次重复调用，live戳保持；非Fork/整根资格或性能，生产部署复用。
 
 2026-10-07 [原生回调](performance/native-generation-callback-proof-20261007.md)与[模型能力](performance/model-capability-recovery-proof-20261007.md)：两类15界/30回复反例；未知治疗、生成OnPlay、当前/未来能力及默认注入拒绝。原生、清理后16Fork状态/历史/RNG、质量与峰值范围见各报告；非全来源认证。
