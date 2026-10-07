@@ -130,6 +130,15 @@ internal static class EquivalenceProbe
         private static readonly Dictionary<PrefixInput, Entry> PrefixInputs = [];
         private static readonly ConditionalWeakTable<object, RootIdentity> HistoryIdentities = new();
         private static bool ObservePrefix;
+        private static bool ObserveRoute;
+        private static readonly ConditionalWeakTable<SearchNode, RouteIdentity> NodeRoutes = new();
+        private static readonly Dictionary<RouteEdge, RouteIdentity> RouteEdges = [];
+        private static readonly Dictionary<RouteInput, Entry> RouteInputs = [];
+        private static readonly List<object> RouteExamples = [];
+        private static int NextRoute;
+        private static long RouteRepeats, RouteLimitBypasses, RouteOpaqueOrigins,
+            RouteParentStateMismatches, RouteResultStateMismatches, RouteResultFeatureMismatches,
+            RouteLabelMismatches, RouteDifferentProfileMatches;
         private static int NextHistoryIdentity;
         private static long PrefixRepeats, PrefixLimitBypasses, PrefixSelectedMatches,
             PrefixBeforeMismatches, PrefixAfterMismatches, PrefixDifferentProfileMatches;
@@ -141,7 +150,7 @@ internal static class EquivalenceProbe
         private sealed class Member
         {
             internal int Id, Root, Workers;
-            internal string Profile = "";
+            internal string Profile = "", ReplayPolicy = "";
         }
         private static class Metadata
         {
@@ -180,6 +189,62 @@ internal static class EquivalenceProbe
             Features Before, PathLabel Label, int BeforeHistory, PrefixStamp Prefix);
         private sealed record Entry(Observation First, StateFingerprint AfterState,
             Features After, int AfterHistory);
+        private sealed record RouteIdentity(int Id, int Actions);
+        private readonly record struct RouteEdge(int Parent, string Action);
+        private readonly record struct RouteInput(int Root, int Route, string Policy, string Action, int Mode);
+
+        private static class RouteMetadata
+        {
+            internal static readonly string[] Names = ["_potionPolicy", "_potionStrategy",
+                "_forceAllPotionsDisabled", "_enforcePotionDirectives", "_maximumPotionUses",
+                "_minimumPotionUses", "_earliestPotionTurn", "_includeTurnSetup", "_theftPolicy",
+                "_growthBudgets", "_relicTargets", "_ignoreLongTermRewards", "_strategicBossHpRelief"];
+            internal static readonly System.Reflection.FieldInfo[] Fields = Names.Select(name =>
+                AccessTools.Field(typeof(CombatBeamSolver), name)
+                ?? throw new InvalidOperationException("Route probe field missing: " + name)).ToArray();
+        }
+
+        // A detached prefix trie compares complete ordered PlanActions, without forcing
+        // SearchNode.Actions materialization or retaining nodes/simulators. Origin state
+        // and setup choices partition the census; they are not a complete origin proof.
+        // Called under ReplayGate. Opaque/truncated origins and capacity refuse counting.
+        private static RouteIdentity RouteFor(SearchNode parent)
+        {
+            if (NodeRoutes.TryGetValue(parent, out RouteIdentity? cached)) return cached;
+            Stack<SearchNode> pending = new();
+            SearchNode cursor = parent;
+            while (!NodeRoutes.TryGetValue(cursor, out cached))
+            {
+                pending.Push(cursor);
+                if (cursor.Parent == null) break;
+                cursor = cursor.Parent;
+            }
+            RouteIdentity route = cached ?? new(0, 0);
+            while (pending.TryPop(out SearchNode? node))
+            {
+                if (node.Parent == null && (node.Action != null || node.ActionCount != 0))
+                { RouteOpaqueOrigins++; route = new(-1, 0); }
+                else if (route.Id >= 0)
+                {
+                    string descriptor = node.Parent == null ? JsonSerializer.Serialize(new {
+                        node.StateKey, node.Turn, node.ActionCount, node.Snapshot.HistoryEntryCount,
+                        node.TurnSetupChoices
+                    }) : JsonSerializer.Serialize(node.Action);
+                    RouteEdge edge = new(route.Id, descriptor);
+                    if (!RouteEdges.TryGetValue(edge, out RouteIdentity? next))
+                    {
+                        if (RouteEdges.Count >= MaximumInputs) route = new(-1, 0);
+                        else { next = new(++NextRoute, route.Actions + (node.Action == null ? 0 : 1));
+                            RouteEdges.Add(edge, next); route = next; }
+                    }
+                    else route = next;
+                    if (route.Id >= 0 && route.Actions != node.ActionCount)
+                    { RouteOpaqueOrigins++; route = new(-1, 0); }
+                }
+                NodeRoutes.Add(node, route);
+            }
+            return route;
+        }
 
         private static class HistoryMetadata
         {
@@ -219,6 +284,7 @@ internal static class EquivalenceProbe
         {
             if (Environment.GetEnvironmentVariable("OFFLINE_HARNESS_TRANSITION_PROBE") != "1") return;
             ObservePrefix = Environment.GetEnvironmentVariable("OFFLINE_HARNESS_TRANSITION_PREFIX_PROBE") == "1";
+            ObserveRoute = Environment.GetEnvironmentVariable("OFFLINE_HARNESS_TRANSITION_ROUTE_PROBE") == "1";
             GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(CombatBeamSolver), "CreateExpansionWorker"),
                 postfix: new HarmonyMethod(typeof(ReplayRequests), nameof(ObserveWorker)));
             GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(CombatBeamSolver), "ReplayAction"),
@@ -240,8 +306,15 @@ internal static class EquivalenceProbe
                             PrefixRepeats, PrefixLimitBypasses, PrefixSelectedMatches,
                             PrefixBeforeMismatches, PrefixAfterMismatches, PrefixDifferentProfileMatches,
                             retainedPrefixInputs = PrefixInputs.Count,
+                            routeObservationEnabled = ObserveRoute,
+                            routeScope = "Exact ordered full PlanAction prefix from a zero-action SearchNode origin, origin state key/turn/history count/setup choices, and selected immutable replay-policy fields. Parent/result state checks remain diagnostic; full origin history and all policy/checkpoint/callback semantics are not certified. No route deletion or cache.",
+                            RouteRepeats, RouteLimitBypasses, RouteOpaqueOrigins,
+                            RouteParentStateMismatches, RouteResultStateMismatches, RouteResultFeatureMismatches,
+                            RouteLabelMismatches, RouteDifferentProfileMatches,
+                            retainedRouteInputs = RouteInputs.Count, retainedRouteEdges = RouteEdges.Count,
+                            routeExamples = RouteExamples,
                             modes = Modes, members = MemberResults.Select(m => new {
-                                m.Id, m.Root, m.Workers, m.Profile
+                                m.Id, m.Root, m.Workers, m.Profile, m.ReplayPolicy
                             }).ToArray(), Examples
                         }, new JsonSerializerOptions { WriteIndented = true }));
             };
@@ -254,7 +327,9 @@ internal static class EquivalenceProbe
             Member member = new() {
                 Id = ++NextMember,
                 Root = Roots.GetValue(root, _ => new(++NextRoot)).Id,
-                Profile = JsonSerializer.Serialize(Metadata.Profile.GetValue(solver))
+                Profile = JsonSerializer.Serialize(Metadata.Profile.GetValue(solver)),
+                ReplayPolicy = ObserveRoute ? JsonSerializer.Serialize(RouteMetadata.Fields
+                    .Select((field, index) => new { name = RouteMetadata.Names[index], value = field.GetValue(solver) })) : ""
             };
             MemberResults.Add(member);
             return member;
@@ -269,6 +344,8 @@ internal static class EquivalenceProbe
                 member.Workers++;
             }
         }
+
+        private static readonly ConditionalWeakTable<Observation, RouteIdentity> ObservationRoutes = new();
 
         private static void BeforeReplay(CombatBeamSolver __instance, SearchNode parent,
             PlanAction action, object? roundCheckpointCapture, object? cardChoiceCapture,
@@ -287,6 +364,7 @@ internal static class EquivalenceProbe
                     parent.BoundaryReason, actionText, mode), member.Id, member.Profile,
                     features, label, parent.Snapshot.HistoryEntryCount,
                     ObservePrefix ? CapturePrefix(__instance, parent) : default);
+                if (ObserveRoute) ObservationRoutes.Add(__state, RouteFor(parent));
             }
         }
 
@@ -298,6 +376,40 @@ internal static class EquivalenceProbe
                 Completed++;
                 Modes.TryGetValue(__state.Input.CaptureMode, out long modeCount);
                 Modes[__state.Input.CaptureMode] = modeCount + 1;
+                if (ObserveRoute)
+                {
+                    RouteIdentity route = ObservationRoutes.GetValue(__state,
+                        _ => throw new InvalidOperationException("Route observation prefix missing."));
+                    if (route.Id < 0) RouteLimitBypasses++;
+                    else
+                    {
+                        string replayPolicy = MemberResults.Single(m => m.Id == __state.Member).ReplayPolicy;
+                        RouteInput input = new(__state.Input.Root, route.Id, replayPolicy,
+                            __state.Input.Action, __state.Input.CaptureMode);
+                        if (RouteInputs.TryGetValue(input, out Entry? old))
+                        {
+                            RouteRepeats++;
+                            bool parentEqual = old.First.Input.State == __state.Input.State
+                                && old.First.BeforeHistory == __state.BeforeHistory;
+                            bool resultEqual = old.AfterState == __result.StateKey
+                                && old.AfterHistory == __result.HistoryEntryCount;
+                            bool featuresEqual = old.After == after;
+                            if (!parentEqual) RouteParentStateMismatches++;
+                            if (!resultEqual) RouteResultStateMismatches++;
+                            if (!featuresEqual) RouteResultFeatureMismatches++;
+                            if (old.First.Label != __state.Label) RouteLabelMismatches++;
+                            if (parentEqual && resultEqual && featuresEqual
+                                && old.First.Profile != __state.Profile) RouteDifferentProfileMatches++;
+                            if ((!parentEqual || !resultEqual || !featuresEqual) && RouteExamples.Count < 12)
+                                RouteExamples.Add(new { input, parentEqual, resultEqual, featuresEqual,
+                                    oldParent = old.First.Input.State, parent = __state.Input.State,
+                                    oldResult = old.AfterState, result = __result.StateKey,
+                                    oldFeatures = old.After, features = after });
+                        }
+                        else if (RouteInputs.Count >= MaximumInputs) RouteLimitBypasses++;
+                        else RouteInputs.Add(input, new(__state, __result.StateKey, after, __result.HistoryEntryCount));
+                    }
+                }
                 if (ObservePrefix)
                 {
                     PrefixInput prefixInput = new(__state.Input, __state.Prefix);

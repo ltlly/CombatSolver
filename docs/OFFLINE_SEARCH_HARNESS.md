@@ -80,6 +80,8 @@ dotnet .local/tool-build/OfflineSearchHarness/bin/Release/net9.0/OfflineSearchHa
 
 `OFFLINE_HARNESS_TRANSITION_PREFIX_PROBE=1`须同时开启上述TRANSITION_PROBE，额外统计封存历史段身份、有序尾事件身份、尾部延迟配对表身份及pending数。使用已有并行Fork拥有者锁读取，不封存或修改历史；弱身份表不保留对象图，独立250000输入上限后的计数只作下限。不同段布局不归一化，选定特征相同也不是缓存/剪枝证明；具体标签差异随样本输出，原生边界及命令见[历史前缀研究](performance/transition-prefix-boundary-research-20261007.md)。
 
+`OFFLINE_HARNESS_TRANSITION_ROUTE_PROBE=1`须同时开启TRANSITION_PROBE，额外按完整有序PlanAction前缀、零动作起点的状态/回合/历史数/准备选择和13项选定政策统计。弱节点身份和纯值前缀树不物化Actions或保留对象图；各表250000上限，截断起点和容量拒绝。父/结果键、历史数、特征和标签仍单独核对，起点/政策/callback/checkpoint未形成缓存证书。命令、原生及失败原型见[相同前缀研究](performance/exact-action-prefix-replay-research-20261007.md)。
+
 `tools/search/OfflineSearchHarness/run_plan.py` 吃一份 plan JSON（数组），起 N 个宿主进程并行消费：
 
 ```
