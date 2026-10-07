@@ -1,6 +1,6 @@
 # 性能工作入口
 
-- [跨程序集事件来源审计](exhaust-event-reference-audit-20261007.md)：schema7补全10处依赖事件访问候选，21项元数据检查通过；候选全部未解析。承接[免费根合同](exhaust-free-root-contract-20261007.md)核对订阅与克隆时点，未来闭包未完成、未启用剪枝。
+- [创建、复制及订阅清理原生合同](exhaust-card-creation-contract-20261007.md)：复制前未知订阅和显式Quest创建差异复现，20空创建阶段与16路复制隔离通过；承接[事件清单](exhaust-event-reference-audit-20261007.md)，生成可达性仍按具体入口证明，未启用剪枝。
 
 - [历史计数门槛与状态等价研究](saturated-history-key-research-20261007.md)：三根含并行worker约145万次构键，三项门槛投影没有合并不同完整键；原生读取链说明局部门槛不能作为完整根认证，未接入剪枝。
 

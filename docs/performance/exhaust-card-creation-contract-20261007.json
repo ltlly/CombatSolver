@@ -1,0 +1,644 @@
+{
+  "schemaVersion": 1,
+  "task": "exhaust-card-creation-contract",
+  "date": "2026-10-07",
+  "sourceBase": "c71d5d78",
+  "retainedRuntimeSource": "27c28f66",
+  "game": {
+    "version": "0.111.0 / 41cef1ea",
+    "sha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+    "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+  },
+  "build": {
+    "exit_code": 0,
+    "seconds": 14.41,
+    "warnings": 0,
+    "errors": 0,
+    "taskDllSha256": "4e53cc157f51564a8a5af1bc6bab121e877d5be079be3cb65bc00f825da24669"
+  },
+  "preparationBuilds": [
+    {
+      "seconds": 14.16,
+      "warnings": 1,
+      "errors": 0,
+      "reason": "Nullable annotation in one-shot fixture; added read-only source/pool evidence before final execution."
+    },
+    {
+      "seconds": 14.04,
+      "warnings": 1,
+      "errors": 0,
+      "reason": "Remaining fixture nullable annotation corrected before any native execution."
+    }
+  ],
+  "native": {
+    "summary": {
+      "command": [
+        "bash",
+        "tools/testing/run-unattended-test.sh",
+        "--scenario-id",
+        "EXHAUST-CARD-CREATION",
+        "--generated-scenario-path",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+        "--combat-solver-build-dir",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-card-creation-contract-20261007/build-native",
+        "--headless-instance",
+        "exhaust-card-creation-20261007",
+        "--timeout-seconds",
+        "120",
+        "--evidence-directory",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-card-creation-contract-20261007/evidence",
+        "--cleanup-instance-on-exit",
+        "--exit-on-complete"
+      ],
+      "exit_code": 0,
+      "seconds": 33.84651610199944
+    },
+    "result": {
+      "processReusable": false,
+      "processId": 372641,
+      "reusedProcess": false,
+      "developmentStrategyScriptHash": null,
+      "developmentStrategyParametersHash": null,
+      "mainAssemblyHash": "4E53CC157F51564A8A5AF1BC6BAB121E877D5BE079BE3CB65BC00F825DA24669",
+      "schemaVersion": 1,
+      "runId": "237e2c7c115d4a68837593bc6bbb23fe",
+      "scenarioId": "EXHAUST-CARD-CREATION",
+      "status": "Passed",
+      "stage": "passed",
+      "characterId": "CHARACTER.SILENT",
+      "encounterId": "ENCOUNTER.THE_INSATIABLE_BOSS",
+      "seed": "NOVELTY-DEV-20260915-06",
+      "startedAtUtc": "2026-10-07T09:15:45.4631015+00:00",
+      "elapsedMilliseconds": 26319.162,
+      "mainThread": true,
+      "combatEnded": false,
+      "startedTurn": 1,
+      "finishedTurn": 1,
+      "managedHeapBytes": 73339656,
+      "managedFragmentedBytes": 5332336,
+      "workingSetBytes": 1547304960,
+      "privateMemoryBytes": 1679880192,
+      "solverMetrics": null,
+      "replayVerification": null,
+      "generatedScenario": {
+        "schemaVersion": 1,
+        "mode": "Search",
+        "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+        "resolvedConfiguration": "generated-scenario.resolved.json",
+        "loadout": "generated-scenario.loadout.json",
+        "opening": "generated-scenario.opening.json",
+        "relicObtainEffects": false,
+        "combatEnded": false,
+        "actualOutcome": {
+          "initialHp": 56,
+          "finalHp": 56,
+          "hpLost": 0,
+          "hpHealed": 0,
+          "selfDamage": 0,
+          "combatEnded": false,
+          "survived": true,
+          "finalEnemyHp": 332,
+          "potions": [],
+          "unattributedHpLoss": 0
+        }
+      },
+      "stageTimings": [
+        {
+          "stage": "created",
+          "startedMilliseconds": 0,
+          "durationMilliseconds": 1.5507
+        },
+        {
+          "stage": "strategy_load",
+          "startedMilliseconds": 1.5507,
+          "durationMilliseconds": 5.4754
+        },
+        {
+          "stage": "game_startup",
+          "startedMilliseconds": 7.0261,
+          "durationMilliseconds": 12874.5352
+        },
+        {
+          "stage": "start_run",
+          "startedMilliseconds": 12881.5613,
+          "durationMilliseconds": 10953.8765
+        },
+        {
+          "stage": "inject_run_relics",
+          "startedMilliseconds": 23835.4378,
+          "durationMilliseconds": 278.41159999999945
+        },
+        {
+          "stage": "enter_encounter",
+          "startedMilliseconds": 24113.8494,
+          "durationMilliseconds": 1963.1186000000016
+        },
+        {
+          "stage": "wait_player_turn",
+          "startedMilliseconds": 26076.968,
+          "durationMilliseconds": 2.4769999999989523
+        },
+        {
+          "stage": "inject_state",
+          "startedMilliseconds": 26079.445,
+          "durationMilliseconds": 129.23819999999978
+        },
+        {
+          "stage": "cleanup",
+          "startedMilliseconds": 26208.6832,
+          "durationMilliseconds": 104.83070000000225
+        },
+        {
+          "stage": "passed",
+          "startedMilliseconds": 26313.5139,
+          "durationMilliseconds": 5.838199999998324
+        }
+      ],
+      "completedChecks": [
+        "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+        "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+        "GeneratedScenario:NativeOpeningCaptured",
+        "CardCreation:NativePreCleanupCallbackCounterexample:InheritedObserverCleared:FinalClonedFullStateEqual:NativeCreatedSpoilsMapDiffers:NativeAndSimGameplayCopyPreserveCreatedState:SixteenBranchGameplayCopiesTwoGenerationFork:FullHistoryNineRngFloatingParentLiveIsolation",
+        "TASK_CARD_CREATION {\"nativeCallbackCount\":1,\"simulationAdditionalCallbacks\":0,\"executionCallbacks\":1,\"nativeCreatedAct\":1,\"simulatedCreatedAct\":-1,\"nativeCopiedAct\":1,\"simulatedCopiedAct\":1,\"methods\":[{\"declaringType\":\"MegaCrit.Sts2.Core.Models.AbstractModel\",\"signature\":\"MegaCrit.Sts2.Core.Models.AbstractModel MutableClone()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669131,\"ilSha256\":\"2EB04EC2DA19A5F293398FEC760C0E6D9B6037562A626B37C6A8D34A2522A917\",\"patchCount\":3},{\"declaringType\":\"MegaCrit.Sts2.Core.Models.AbstractModel\",\"signature\":\"Void AfterCloned()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669133,\"ilSha256\":\"B3FBA9F359F6F7F11841EAC93C0C57718CF0352B2ACB4B909320D84DC2E69A91\",\"patchCount\":0},{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void DeepCloneFields()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669632,\"ilSha256\":\"0E24D359B1DA9A4871C5B86E300B414AFB4BADD6ED5FA9364C98C43E03365CC6\",\"patchCount\":0},{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCloned()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669633,\"ilSha256\":\"CB5D972895AD2098D245318A638A6693A9B1EB03E89071B1C6B0150027C494B1\",\"patchCount\":0},{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0},{\"declaringType\":\"MegaCrit.Sts2.Core.Models.Cards.SpoilsMap\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100681046,\"ilSha256\":\"00B2485226E7D31E623F27A768BD64D39B5589FF6C8B86AAE8955A7CC4D04414\",\"patchCount\":0},{\"declaringType\":\"MegaCrit.Sts2.Core.Combat.CombatState\",\"signature\":\"MegaCrit.Sts2.Core.Models.CardModel CreateCard(MegaCrit.Sts2.Core.Models.CardModel, MegaCrit.Sts2.Core.Entities.Players.Player)\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100685566,\"ilSha256\":\"F7C9F1B94443236DB18E56FC90459F8A9FB0E44F0F8B140E375E6767ECC88532\",\"patchCount\":0},{\"declaringType\":\"MegaCrit.Sts2.Core.Combat.CombatState\",\"signature\":\"MegaCrit.Sts2.Core.Models.CardModel CloneCard(MegaCrit.Sts2.Core.Models.CardModel)\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100685567,\"ilSha256\":\"F1B5A68E4E3402324B0D97C7901CD62E6405D369A22B545C15B308D23FACC4CC\",\"patchCount\":0},{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"MegaCrit.Sts2.Core.Models.CardModel CreateClone()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669691,\"ilSha256\":\"1F5B5FD88A1A2E4BDD426FE41783714FB05AFE6063CAC2D17A14273041D28F66\",\"patchCount\":0}],\"creationSources\":[{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.AscendersBane\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.Backstab\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.BladeOfInk\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.BubbleBubble\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.DefendSilent\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.FanOfKnives\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.Flechettes\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.FranticEscape\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.MasterPlanner\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.Neutralize\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.NoxiousFumes\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.PreciseCut\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.Prepared\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.Prowess\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.Reflex\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.RollingBoulder\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.Shiv\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.StrikeSilent\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.Survivor\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}},{\"type\":\"MegaCrit.Sts2.Core.Models.Cards.TheHunt\",\"afterCreated\":{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void AfterCreated()\",\"ModuleVersionId\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669634,\"ilSha256\":\"684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1\",\"patchCount\":0}}],\"spoilsCanBeGeneratedInCombat\":true,\"spoilsRarity\":\"Quest\",\"unlockedColorlessCount\":53,\"spoilsInUnlockedColorless\":false,\"initialSourceHasSpoils\":false,\"forkCount\":16,\"wholeRootCertified\":false,\"actualPrunes\":0}",
+        "NativeOutcome:combatEnded=False:turn=1:hp=56:maxHp=70"
+      ],
+      "error": null,
+      "finishedAtUtc": "2026-10-07T09:16:11.7820572+00:00"
+    }
+  },
+  "facts": {
+    "nativeCallbackCount": 1,
+    "simulationAdditionalCallbacks": 0,
+    "executionCallbacks": 1,
+    "nativeCreatedAct": 1,
+    "simulatedCreatedAct": -1,
+    "nativeCopiedAct": 1,
+    "simulatedCopiedAct": 1,
+    "methods": [
+      {
+        "declaringType": "MegaCrit.Sts2.Core.Models.AbstractModel",
+        "signature": "MegaCrit.Sts2.Core.Models.AbstractModel MutableClone()",
+        "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+        "token": 100669131,
+        "ilSha256": "2EB04EC2DA19A5F293398FEC760C0E6D9B6037562A626B37C6A8D34A2522A917",
+        "patchCount": 3
+      },
+      {
+        "declaringType": "MegaCrit.Sts2.Core.Models.AbstractModel",
+        "signature": "Void AfterCloned()",
+        "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+        "token": 100669133,
+        "ilSha256": "B3FBA9F359F6F7F11841EAC93C0C57718CF0352B2ACB4B909320D84DC2E69A91",
+        "patchCount": 0
+      },
+      {
+        "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+        "signature": "Void DeepCloneFields()",
+        "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+        "token": 100669632,
+        "ilSha256": "0E24D359B1DA9A4871C5B86E300B414AFB4BADD6ED5FA9364C98C43E03365CC6",
+        "patchCount": 0
+      },
+      {
+        "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+        "signature": "Void AfterCloned()",
+        "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+        "token": 100669633,
+        "ilSha256": "CB5D972895AD2098D245318A638A6693A9B1EB03E89071B1C6B0150027C494B1",
+        "patchCount": 0
+      },
+      {
+        "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+        "signature": "Void AfterCreated()",
+        "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+        "token": 100669634,
+        "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+        "patchCount": 0
+      },
+      {
+        "declaringType": "MegaCrit.Sts2.Core.Models.Cards.SpoilsMap",
+        "signature": "Void AfterCreated()",
+        "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+        "token": 100681046,
+        "ilSha256": "00B2485226E7D31E623F27A768BD64D39B5589FF6C8B86AAE8955A7CC4D04414",
+        "patchCount": 0
+      },
+      {
+        "declaringType": "MegaCrit.Sts2.Core.Combat.CombatState",
+        "signature": "MegaCrit.Sts2.Core.Models.CardModel CreateCard(MegaCrit.Sts2.Core.Models.CardModel, MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+        "token": 100685566,
+        "ilSha256": "F7C9F1B94443236DB18E56FC90459F8A9FB0E44F0F8B140E375E6767ECC88532",
+        "patchCount": 0
+      },
+      {
+        "declaringType": "MegaCrit.Sts2.Core.Combat.CombatState",
+        "signature": "MegaCrit.Sts2.Core.Models.CardModel CloneCard(MegaCrit.Sts2.Core.Models.CardModel)",
+        "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+        "token": 100685567,
+        "ilSha256": "F1B5A68E4E3402324B0D97C7901CD62E6405D369A22B545C15B308D23FACC4CC",
+        "patchCount": 0
+      },
+      {
+        "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+        "signature": "MegaCrit.Sts2.Core.Models.CardModel CreateClone()",
+        "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+        "token": 100669691,
+        "ilSha256": "1F5B5FD88A1A2E4BDD426FE41783714FB05AFE6063CAC2D17A14273041D28F66",
+        "patchCount": 0
+      }
+    ],
+    "creationSources": [
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.AscendersBane",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.Backstab",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.BubbleBubble",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.FanOfKnives",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.Flechettes",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.FranticEscape",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.MasterPlanner",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.Neutralize",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.NoxiousFumes",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.PreciseCut",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.Prepared",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.Prowess",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.Reflex",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.RollingBoulder",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.Shiv",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.Survivor",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      },
+      {
+        "type": "MegaCrit.Sts2.Core.Models.Cards.TheHunt",
+        "afterCreated": {
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "signature": "Void AfterCreated()",
+          "ModuleVersionId": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669634,
+          "ilSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+          "patchCount": 0
+        }
+      }
+    ],
+    "spoilsCanBeGeneratedInCombat": true,
+    "spoilsRarity": "Quest",
+    "unlockedColorlessCount": 53,
+    "spoilsInUnlockedColorless": false,
+    "initialSourceHasSpoils": false,
+    "forkCount": 16,
+    "wholeRootCertified": false,
+    "actualPrunes": 0
+  },
+  "creationSlotInventory": {
+    "inputSha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+    "inputMvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+    "slots": [
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.CardModel",
+        "Method": "System.Void MegaCrit.Sts2.Core.Models.CardModel::AfterCreated()",
+        "IsNewSlot": true,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Void MegaCrit.Sts2.Core.Models.CardModel::AfterCreated()",
+        "Chain": [
+          "System.Void MegaCrit.Sts2.Core.Models.CardModel::AfterCreated()"
+        ],
+        "IsNativeHookTarget": false
+      },
+      {
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.SpoilsMap",
+        "Method": "System.Void MegaCrit.Sts2.Core.Models.Cards.SpoilsMap::AfterCreated()",
+        "IsNewSlot": false,
+        "IsFinal": false,
+        "IsAbstract": false,
+        "HasBody": true,
+        "ExplicitOverrides": [],
+        "Status": "resolved-local",
+        "RootOrUnresolved": "System.Void MegaCrit.Sts2.Core.Models.CardModel::AfterCreated()",
+        "Chain": [
+          "System.Void MegaCrit.Sts2.Core.Models.Cards.SpoilsMap::AfterCreated()",
+          "System.Void MegaCrit.Sts2.Core.Models.CardModel::AfterCreated()"
+        ],
+        "IsNativeHookTarget": false
+      }
+    ],
+    "scope": "Metadata slots only, not future generation or patch closure."
+  },
+  "verificationScope": {
+    "nativeCallbackCounterexample": "Fixture-owned detached Shiv with Inky plus EnchantmentChanged callback writes another detached card's ExhaustOnNextPlay. Native MutableClone invokes it once before cleanup; simulation invokes it zero times. Final cloned branch full stamps/history/RNG match.",
+    "inheritedEvent": "Native and simulated clones both have zero AbstractModel.ExecutionFinished subscribers, invoking the clones does not call the source handler; original source handler still runs once.",
+    "creationDifference": "Actual live.CreateCard<SpoilsMap> sets SpoilsActIndex=1, prediction canonical Create yields -1. Native and predicted gameplay copy of the native created card both retain 1. Native new floating instances explicitly removed; original all-card reference sequence restored.",
+    "generationEvidence": "Actual canonical SpoilsMap.CanBeGeneratedInCombat=true, Quest rarity, absent from this player's 53 unlocked colorless cards and initial native all-card registry. This is not proof of every generator's reachable pool.",
+    "currentStageBindings": "20 actual initial types plus explicit Shiv/FranticEscape source types resolve to the same empty CardModel.AfterCreated token/IL, with zero observed patches; no full source/model certification.",
+    "fork": "16 children are forked serially, then each executes branch-local gameplay copy and independent Inky amount mutation in parallel; child copy reset and attachment ownership checked. Sequential grandchildren preserve each complete stamp/history/RNG. Parent/seed/live/all-card registry unchanged.",
+    "fullSearch": false,
+    "performanceAcceptance": false,
+    "wholeRootCertificate": false
+  },
+  "nativeSourceEvidence": [
+    {
+      "path": ".local/tool-tasks/exhaust-card-creation-contract-20261007/native/AbstractModel.cs",
+      "sha256": "c4143ca644e0ff990f65f23049287a26f652a22f30dba3f98fbd93f46f223b67",
+      "line": 171,
+      "text": "public AbstractModel MutableClone()\n\t{\n\t\tAbstractModel abstractModel = (AbstractModel)MemberwiseClone();\n\t\tabstractModel.IsMutable = true;\n\t\tabstractModel.DeepCloneFields();\n\t\tabstractModel.AfterCloned();\n\t\treturn abstractModel;\n\t}"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-card-creation-contract-20261007/native/AbstractModel.cs",
+      "sha256": "c4143ca644e0ff990f65f23049287a26f652a22f30dba3f98fbd93f46f223b67",
+      "line": 192,
+      "text": "protected virtual void AfterCloned()\n\t{\n\t\tthis.ExecutionFinished = null;\n\t}"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-card-creation-contract-20261007/native/SpoilsMap.cs",
+      "sha256": "e3b10000bbab973fbca7b6ae2be8eeb5f63f77072d68d9f0823f745401f6d452",
+      "line": 44,
+      "text": "public override void AfterCreated()\n\t{\n\t\tSpoilsActIndex = 1;\n\t}"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-equivalence-certification-20261007/native/CombatState.cs",
+      "sha256": "6261020a5a830972f8a18b6d9a2faf51779b3545009f5227e696947542730da5",
+      "line": 176,
+      "text": "public CardModel CreateCard(CardModel canonicalCard, Player owner)\n\t{\n\t\tCardModel cardModel = canonicalCard.ToMutable();\n\t\tAddCard(cardModel, owner);\n\t\tcardModel.AfterCreated();\n\t\treturn cardModel;\n\t}"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-equivalence-certification-20261007/native/CombatState.cs",
+      "sha256": "6261020a5a830972f8a18b6d9a2faf51779b3545009f5227e696947542730da5",
+      "line": 189,
+      "text": "public CardModel CloneCard(CardModel mutableCard)\n\t{\n\t\tCardModel cardModel = (CardModel)mutableCard.ClonePreservingMutability();\n\t\tAddCard(cardModel);\n\t\treturn cardModel;\n\t}"
+    }
+  ],
+  "oneShotSources": [
+    {
+      "path": ".local/tool-tasks/exhaust-card-creation-contract-20261007/TaskCardCreation.cs",
+      "sha256": "d420a13d1b41bd859e07b985d88607fe4e42e9b665a19b1c867e4f93e419595e",
+      "text": "using System.Reflection;\nusing System.Security.Cryptography;\nusing System.Text.Json;\nusing HarmonyLib;\nusing CombatSolver.Engine.Common;\nusing CombatSolver.Engine.InCombat.Simulation;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Commands;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing MegaCrit.Sts2.Core.Models;\nusing MegaCrit.Sts2.Core.Models.Cards;\nusing MegaCrit.Sts2.Core.Models.CardPools;\nusing MegaCrit.Sts2.Core.Models.Enchantments;\nusing MegaCrit.Sts2.Core.Entities.Cards;\n\nnamespace CombatSolver;\n\ninternal sealed partial class UnattendedTestRunner\n{\n    private static int TaskCreationSubscriberCount(AbstractModel source, Type owner, string field)\n        => ((Delegate?)owner.GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)!\n            .GetValue(source))?.GetInvocationList().Length ?? 0;\n\n    private static object TaskCreationMethod(MethodInfo method)\n    {\n        Patches? patches = Harmony.GetPatchInfo(method);\n        return new { declaringType = method.DeclaringType!.FullName, signature = method.ToString(),\n            method.Module.ModuleVersionId, token = method.MetadataToken,\n            ilSha256 = Convert.ToHexString(SHA256.HashData(method.GetMethodBody()!.GetILAsByteArray()!)),\n            patchCount = patches is null ? 0 : patches.Prefixes.Count + patches.Postfixes.Count\n                + patches.Transpilers.Count + patches.Finalizers.Count };\n    }\n\n    private async Task RunTaskCardCreationAsync(CombatState live, Player player)\n    {\n        // These are detached, fixture-owned native models; injected callbacks\n        // never write a root/live card. Attach before capturing the root.\n        CardModel source = ModelDb.Card<Shiv>().ToMutable();source.Owner = player;\n        CardCmd.Enchant<Inky>(source, 1);\n        CardModel target = ModelDb.Card<DefendSilent>().ToMutable();\n        int enchantmentCallbacks = 0, executionCallbacks = 0;\n        source.EnchantmentChanged += () => { enchantmentCallbacks++;target.ExhaustOnNextPlay = true; };\n        source.ExecutionFinished += _ => executionCallbacks++;\n        CombatRootSnapshot root = CombatRootSnapshot.Capture(live);\n        CombatPredictionSimulator parent = root.ForkSimulator();\n        string Full(CombatPredictionSimulator sim) => ContinuationStamp.CapturePredicted(player, sim,\n            ((SimulatedCombatState)sim.State.CombatState).GetPlayerTurnNumber(player), root.Forecast,\n            root.StartTurnNumber).StateText + \"\\nHISTORY=\" + CardContinuationContractHistoryText(sim);\n        string liveBefore = ContinuationStamp.CaptureLive(live).StateText, parentBefore = Full(parent);\n        FieldInfo allCardsField = typeof(CombatState).GetField(\"_allCards\", BindingFlags.Instance | BindingFlags.NonPublic)!;\n        CardModel[] allCardsBefore = ((IEnumerable<CardModel>)allCardsField.GetValue(live)!).ToArray();\n\n        CardModel native = (CardModel)source.MutableClone();\n        if (enchantmentCallbacks != 1 || !target.ExhaustOnNextPlay || executionCallbacks != 0)\n            throw new InvalidOperationException(\"Native clone did not expose its pre-cleanup copied callback.\");\n        int nativeCallbackCount = enchantmentCallbacks;\n        target.ExhaustOnNextPlay = false;\n        CardModel simulated;\n        using (SimulationNotificationIsolation.Enter()) simulated = PredictionUtils.CloneCardStateForSimulation(source);\n        if (enchantmentCallbacks != nativeCallbackCount || target.ExhaustOnNextPlay)\n            throw new InvalidOperationException(\"Simulation clone leaked the source callback.\");\n        foreach (CardModel clone in new[] { native, simulated })\n        {\n            if (TaskCreationSubscriberCount(clone, typeof(CardModel), \"EnchantmentChanged\") != 0\n                || TaskCreationSubscriberCount(clone, typeof(AbstractModel), \"ExecutionFinished\") != 0)\n                throw new InvalidOperationException(\"Clone retained copied declared or inherited observers.\");\n            clone.InvokeExecutionFinished();\n            if (!ReferenceEquals(clone.Enchantment!.Card, clone) || ReferenceEquals(clone.Enchantment, source.Enchantment))\n                throw new InvalidOperationException(\"Cloned enchantment ownership was not isolated.\");\n        }\n        if (executionCallbacks != 0 || TaskCreationSubscriberCount(source, typeof(AbstractModel), \"ExecutionFinished\") != 1)\n            throw new InvalidOperationException(\"Inherited observer cleanup changed the source.\");\n        source.InvokeExecutionFinished();\n        if (executionCallbacks != 1) throw new InvalidOperationException(\"Source inherited event no longer works.\");\n\n        var nativeState = parent.Fork();var simulatedState = parent.Fork();\n        using (SimulationNotificationIsolation.Enter())\n        {\n            nativeState.AddToPile(PredictedCard.FromGenerated(native), PileType.Exhaust);\n            simulatedState.AddToPile(PredictedCard.FromGenerated(simulated), PileType.Exhaust);\n        }\n        if (Full(nativeState) != Full(simulatedState))\n            throw new InvalidOperationException(\"Final clone state differs after observer cleanup.\");\n\n        int nativeCreatedAct, simulatedCreatedAct, nativeCopiedAct, simulatedCopiedAct;\n        CardModel? created = null, copied = null;\n        try\n        {\n            created = live.CreateCard<SpoilsMap>(player);\n            nativeCreatedAct = ((SpoilsMap)created).SpoilsActIndex;\n            var predicted = PredictedCard.Create(ModelDb.Card<SpoilsMap>(), player);\n            simulatedCreatedAct = ((SpoilsMap)predicted.Preview).SpoilsActIndex;\n            copied = created.CreateClone();\n            nativeCopiedAct = ((SpoilsMap)copied).SpoilsActIndex;\n            var predictedCopy = PredictedCard.FromGenerated(created).CreateClone();\n            simulatedCopiedAct = ((SpoilsMap)predictedCopy.Preview).SpoilsActIndex;\n            if (nativeCreatedAct != 1 || simulatedCreatedAct != -1 || nativeCopiedAct != 1 || simulatedCopiedAct != 1)\n                throw new InvalidOperationException(\"Creation versus gameplay-copy boundary was not reproduced.\");\n        }\n        finally\n        {\n            if (copied is not null) live.RemoveCard(copied);\n            if (created is not null) live.RemoveCard(created);\n        }\n\n        // Serial Fork ownership followed by parallel branch-local gameplay\n        // copies, rather than simultaneous Fork of one mutable parent.\n        string seededBefore = Full(simulatedState);\n        var children = Enumerable.Range(0, 16).Select(_ => simulatedState.Fork()).ToArray();\n        await Task.WhenAll(children.Select((child, index) => Task.Run(() =>\n        {\n            using IDisposable isolation = SimulationNotificationIsolation.Enter();\n            PredictedCard original = child.State.GetPlayerCombatState(player).ExhaustPile.Cards.Last();\n            original.MutablePreview.ExhaustOnNextPlay = true;\n            PredictedCard clone = original.CreateClone();\n            clone.MutablePreview.Enchantment!.Amount = index + 2;\n            child.AddToPile(clone, PileType.Exhaust);\n            if (clone.Preview.ExhaustOnNextPlay || clone.Preview.Enchantment!.Amount != index + 2\n                || !ReferenceEquals(clone.Preview.Enchantment!.Card, clone.Preview)\n                || original.Preview.Enchantment!.Amount != 1\n                || TaskCreationSubscriberCount(clone.Preview, typeof(AbstractModel), \"ExecutionFinished\") != 0)\n                throw new InvalidOperationException(\"Branch-local gameplay copy leaked or failed native reset rules.\");\n        })));\n        for (int index = 0; index < children.Length; index++)\n        {\n            var pile = children[index].State.GetPlayerCombatState(player).ExhaustPile;\n            if (pile.Cards.Last().Preview.Enchantment!.Amount != index + 2)\n                throw new InvalidOperationException(\"Sibling copy mutation leaked.\");\n            var grandchild = children[index].Fork();\n            if (Full(grandchild) != Full(children[index]))\n                throw new InvalidOperationException(\"Gameplay copy did not preserve its full state/history/RNG through Fork.\");\n        }\n        CardModel[] allCardsAfter = ((IEnumerable<CardModel>)allCardsField.GetValue(live)!).ToArray();\n        if (!allCardsBefore.SequenceEqual(allCardsAfter, ReferenceEqualityComparer.Instance)\n            || liveBefore != ContinuationStamp.CaptureLive(live).StateText || parentBefore != Full(parent)\n            || seededBefore != Full(simulatedState))\n            throw new InvalidOperationException(\"Creation contract changed parent/live or the native floating-card registry.\");\n        CardModel[] unlockedColorless = ModelDb.CardPool<ColorlessCardPool>()\n            .GetUnlockedCards(player.UnlockState, player.RunState.CardMultiplayerConstraint).ToArray();\n        var creationSources = allCardsBefore.Select(card => card.GetType()).Append(typeof(Shiv))\n            .Append(typeof(FranticEscape)).Distinct().OrderBy(type => type.FullName, StringComparer.Ordinal)\n            .Select(type => new { type = type.FullName, afterCreated = TaskCreationMethod(type.GetMethod(\"AfterCreated\")!) })\n            .ToArray();\n        var methods = new[]\n        {\n            typeof(AbstractModel).GetMethod(\"MutableClone\")!,\n            typeof(AbstractModel).GetMethod(\"AfterCloned\", BindingFlags.Instance | BindingFlags.NonPublic)!,\n            typeof(CardModel).GetMethod(\"DeepCloneFields\", BindingFlags.Instance | BindingFlags.NonPublic)!,\n            typeof(CardModel).GetMethod(\"AfterCloned\", BindingFlags.Instance | BindingFlags.NonPublic)!,\n            typeof(CardModel).GetMethod(\"AfterCreated\")!, typeof(SpoilsMap).GetMethod(\"AfterCreated\")!,\n            typeof(CombatState).GetMethod(\"CreateCard\", new[] { typeof(CardModel), typeof(Player) })!,\n            typeof(CombatState).GetMethod(\"CloneCard\")!, typeof(CardModel).GetMethod(\"CreateClone\")!,\n        }.Select(TaskCreationMethod).ToArray();\n        _completedChecks.Add(\"CardCreation:NativePreCleanupCallbackCounterexample:InheritedObserverCleared:FinalClonedFullStateEqual:NativeCreatedSpoilsMapDiffers:NativeAndSimGameplayCopyPreserveCreatedState:SixteenBranchGameplayCopiesTwoGenerationFork:FullHistoryNineRngFloatingParentLiveIsolation\");\n        _completedChecks.Add(\"TASK_CARD_CREATION \" + JsonSerializer.Serialize(new { nativeCallbackCount,\n            simulationAdditionalCallbacks = enchantmentCallbacks - nativeCallbackCount, executionCallbacks,\n            nativeCreatedAct, simulatedCreatedAct, nativeCopiedAct, simulatedCopiedAct, methods, creationSources,\n            spoilsCanBeGeneratedInCombat = ModelDb.Card<SpoilsMap>().CanBeGeneratedInCombat,\n            spoilsRarity = ModelDb.Card<SpoilsMap>().Rarity.ToString(),\n            unlockedColorlessCount = unlockedColorless.Length,\n            spoilsInUnlockedColorless = unlockedColorless.Any(card => card is SpoilsMap),\n            initialSourceHasSpoils = allCardsBefore.Any(card => card is SpoilsMap),\n            forkCount = children.Length, wholeRootCertified = false, actualPrunes = 0 }));\n    }\n}\n"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-card-creation-contract-20261007/native.props",
+      "sha256": "c374336fd9f9e1ed18dc64e27d56f37bb769e6f6c07bf3afc69450f190fe01af",
+      "text": "<Project><ItemGroup><Compile Include=\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-card-creation-contract-20261007/TaskCardCreation.cs\" /></ItemGroup></Project>\n"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-card-creation-contract-20261007/run-native.py",
+      "sha256": "8fc0ed93c8323fe7d93cf9be2bf065883ff6386f277eab98ceb942a4f0b77a5a",
+      "text": "from pathlib import Path\nimport json,subprocess,time\nbase=Path(__file__).resolve().parent\ncommand=['bash','tools/testing/run-unattended-test.sh','--scenario-id','EXHAUST-CARD-CREATION',\n '--generated-scenario-path','/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json',\n '--combat-solver-build-dir',str(base/'build-native'),'--headless-instance','exhaust-card-creation-20261007',\n '--timeout-seconds','120','--evidence-directory',str(base/'evidence'),'--cleanup-instance-on-exit','--exit-on-complete']\nstarted=time.perf_counter()\nwith (base/'launcher-output.log').open('w') as log:\n result=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT)\nsummary={'command':command,'exit_code':result.returncode,'seconds':time.perf_counter()-started}\n(base/'native-run-summary.json').write_text(json.dumps(summary,indent=2)+'\\n')\nprint(json.dumps(summary));print((base/'launcher-output.log').read_text()[-6500:])\nraise SystemExit(result.returncode)\n"
+    }
+  ],
+  "executorTemporaryPatch": "diff --git a/src/Testing/Host/UnattendedTestRunner.Executor.cs b/src/Testing/Host/UnattendedTestRunner.Executor.cs\nindex fe1b2da5..bedc643f 100644\n--- a/src/Testing/Host/UnattendedTestRunner.Executor.cs\n+++ b/src/Testing/Host/UnattendedTestRunner.Executor.cs\n@@ -39,6 +39,11 @@ internal sealed partial class UnattendedTestRunner\n             bool expectedCardPlayed = request.ExpectedPlayedCardId == null;\n             bool expectedPotionUsed = request.ExpectedUsedPotionId == null;\n             bool expectedPlayerPowerObserved = request.ExpectedObservedPlayerPowerId == null;\n+            if (request.ScenarioId == \"EXHAUST-CARD-CREATION\")\n+            {\n+                await runner.RunTaskCardCreationAsync(combatState, player);\n+                return Observation(combatEnded: false);\n+            }\n             if (request.ScenarioId is \"ZERO-CREDIT-GROWTH-PROOF\" or \"ZERO-CREDIT-GROWTH-PROOF-REGEN\")\n             {\n                 await runner.AssertZeroCreditGrowthProofAsync(combatState, player,\n",
+  "limitations": [
+    "This native Passed reproduces deliberate observer and explicit quest-creation boundaries; it does not certify those unknown observers as safe.",
+    "The SpoilsMap prediction discrepancy is not claimed reachable through normal native random combat generation; no unrelated quest/map gameplay implementation changed.",
+    "Only current original Silent boss root source types and one unlocked colorless pool were sampled. Initial holds, copying, recycling and other generator pools need their own closure proof.",
+    "Method patch totals are recorded, but owner/priority/full patch body closure and future patch/registration invariance are not proved.",
+    "Serial Fork followed by parallel mutations is not simultaneous Fork of a mutable parent. No actual draw/end-turn/action-queue deployment was tested.",
+    "No speed, battle-loss, potion, turn-count or peak-RSS comparison ran; request startup/diagnostic elapsed and process memory are not performance acceptance.",
+    "Post-test evidence enumeration encountered a null JSON document after saving native facts; native outcome and saved direct result are unaffected."
+  ],
+  "decision": {
+    "searchChanged": false,
+    "actualNewPrunes": 0,
+    "wholeRootCertified": false,
+    "newTwofoldScenarios": 0
+  },
+  "reusedEvidence": [
+    "docs/performance/exhaust-event-reference-audit-20261007.json",
+    "docs/performance/exhaust-free-root-contract-20261007.json",
+    "docs/performance/exhaust-positive-native-contract-20261007.json",
+    "docs/performance/retained-victory-strict-hp-pruning-20261007.json"
+  ],
+  "cleanup": {
+    "removed": [
+      {
+        "item_path": ".local/tool-tasks/exhaust-card-creation-contract-20261007/TaskCardCreation.cs",
+        "archived": true
+      },
+      {
+        "item_path": ".local/tool-tasks/exhaust-card-creation-contract-20261007/native.props",
+        "archived": true
+      },
+      {
+        "item_path": ".local/tool-tasks/exhaust-card-creation-contract-20261007/run-native.py",
+        "archived": true
+      },
+      {
+        "item_path": ".local/tool-tasks/exhaust-card-creation-contract-20261007/executor.original",
+        "archived": false,
+        "reason": "Executor original restored verbatim; original source is retained in Git."
+      },
+      {
+        "item_path": ".local/tool-tasks/exhaust-card-creation-contract-20261007/build-native",
+        "archived": true,
+        "reason": "Native outcome includes the exact final DLL hash; one-shot source retained."
+      }
+    ],
+    "executorRestored": true,
+    "instanceRemovedByLauncher": true,
+    "rawNativeEvidenceRetained": true,
+    "diagnosticModDeployed": false,
+    "productionDeployment": "Unchanged runtime source/build/five-file deployment reused from retained-victory-strict-hp-pruning-20261007.json"
+  },
+  "gates": {
+    "documentation": {
+      "exit_code": 0,
+      "output": "DOCUMENTATION_OK files=555 links=2351 errors=0"
+    },
+    "diff": {
+      "exit_code": 0,
+      "scope": "Restored executor and task changes"
+    },
+    "toolsReusedFrom": "docs/performance/exhaust-event-reference-audit-20261007.json"
+  }
+}

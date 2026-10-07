@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-07 [事件来源审计](performance/exhaust-event-reference-audit-20261007.md)：21项Cecil检查通过，游戏/依赖35旧字段保持，新增10处依赖事件候选均未认证。无新原生/Fork/搜索性能；既有免费根合同复用，临时元数据项目清理、部署复用。
+2026-10-07 [创建与复制合同](performance/exhaust-card-creation-contract-20261007.md)：原生237e2c7c115d4a68837593bc6bbb23fe通过复制前回调反例、继承清理、显式Quest创建差异及16路自有玩法复制/两代Fork完整状态历史RNG隔离。无整根/性能验收，临时入口恢复、实例与构建清理。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 
