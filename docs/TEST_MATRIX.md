@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-07 [联合回复/用药成本研究](performance/joint-recovery-cost-research-20261007.md)：4,626库存域及166,536次有限政策比较通过，DP/Pareto与完整枚举一致，相等资格保留。复用九份库存及2/11独立证书，已有认证根无组合增益；无新原生、实际剪枝、性能或部署。前轮[禁药候选](performance/policy-blocked-recovery-research-20261007.md)已撤回。
+2026-10-07 [初始生成/有限回复剪枝研究](performance/initial-generation-finite-recovery-pruning-20261007.md)：原生完整状态/32Fork/最终稳定P0门禁通过；11根44交错质量/内存通过，无稳定提速。额外原生反例复现未知未来OnPlay认证接纳，原型撤回，生产部署复用；源码与各次结果归档。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 
