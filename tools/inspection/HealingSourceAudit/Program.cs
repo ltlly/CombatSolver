@@ -4,14 +4,22 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 if (args.Length != 2)
-    throw new ArgumentException("Usage: HealingSourceAudit game.dll output.json");
+    throw new ArgumentException("Usage: HealingSourceAudit input.dll output.json");
 string dll = Path.GetFullPath(args[0]);
 using ModuleDefinition module = ModuleDefinition.ReadModule(dll, new ReaderParameters
     { InMemory = true, ReadSymbols = false });
 TypeDefinition[] types = Flatten(module.Types).ToArray();
 MethodDefinition[] methods = types.SelectMany(type => type.Methods).ToArray();
-Dictionary<string, TypeDefinition> localTypes = types.ToDictionary(type => type.FullName, StringComparer.Ordinal);
-Dictionary<string, MethodDefinition> localMethods = methods.ToDictionary(method => method.FullName, StringComparer.Ordinal);
+var typeGroups = types.GroupBy(type => type.FullName, StringComparer.Ordinal).ToArray();
+var methodGroups = methods.GroupBy(method => method.FullName, StringComparer.Ordinal).ToArray();
+Dictionary<string, TypeDefinition> localTypes = typeGroups.Where(group => group.Count() == 1)
+    .ToDictionary(group => group.Key, group => group.Single(), StringComparer.Ordinal);
+Dictionary<string, MethodDefinition> localMethods = methodGroups.Where(group => group.Count() == 1)
+    .ToDictionary(group => group.Key, group => group.Single(), StringComparer.Ordinal);
+HashSet<string> ambiguousTypes = typeGroups.Where(group => group.Count() > 1)
+    .Select(group => group.Key).ToHashSet(StringComparer.Ordinal);
+HashSet<string> ambiguousMethods = methodGroups.Where(group => group.Count() > 1)
+    .Select(group => group.Key).ToHashSet(StringComparer.Ordinal);
 var references = new List<Reference>();
 var fieldWrites = new List<Reference>();
 var fieldAddresses = new List<Reference>();
@@ -55,7 +63,9 @@ foreach (MethodDefinition method in methods)
             MethodDefinition? body = types.FirstOrDefault(type => type.FullName == machine.FullName)?
                 .Methods.FirstOrDefault(candidate => candidate.Name == "MoveNext");
             if (body is not null)
-                asyncMappings.Add(new(method.FullName, body.FullName, "async_body", -1, Owner(method.DeclaringType)));
+                asyncMappings.Add(new(method.FullName, body.FullName, "async_body", -1,
+                    Owner(method.DeclaringType), CallerDefinitionToken: method.MetadataToken.ToInt32(),
+                    OperandMetadataToken: body.MetadataToken.ToInt32()));
         }
     }
     if (!method.HasBody) continue;
@@ -67,7 +77,8 @@ foreach (MethodDefinition method in methods)
             references.Add(new(method.FullName, definition.FullName, instruction.OpCode.Name,
                 instruction.Offset, Owner(method.DeclaringType),
                 callee is GenericInstanceMethod constructed
-                    ? constructed.GenericArguments.Select(type => type.FullName).ToArray() : []));
+                    ? constructed.GenericArguments.Select(type => type.FullName).ToArray() : [],
+                method.MetadataToken.ToInt32(), callee.MetadataToken.ToInt32()));
         }
         if (instruction.OpCode.Code is Code.Stfld or Code.Stsfld
             && instruction.Operand is FieldReference field
@@ -104,12 +115,13 @@ HashSet<string> nativeHookTargets = references.Where(reference =>
     .Select(reference => reference.Target).ToHashSet(StringComparer.Ordinal);
 VirtualSlot[] virtualModelSlots = methods.Where(method => method.IsVirtual
         && method.DeclaringType.Namespace.StartsWith("MegaCrit.Sts2.Core.Models", StringComparison.Ordinal))
-    .Select(method => InspectLocalVirtualSlot(method, localTypes, localMethods, nativeHookTargets)).ToArray();
+    .Select(method => InspectLocalVirtualSlot(method, localTypes, localMethods, nativeHookTargets,
+        ambiguousTypes, ambiguousMethods)).ToArray();
 // The graph inventories possible static edges, including delegate creation. It
 // cannot resolve virtual hook dispatch or prove a target, condition or HP amount.
 var audit = new
 {
-    schemaVersion = 5,
+    schemaVersion = 6,
     assembly = module.Assembly.Name.FullName,
     mvid = module.Mvid,
     dllSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dll))).ToLowerInvariant(),
@@ -117,6 +129,18 @@ var audit = new
     methodCount = methods.Length,
     methodsWithBody = methods.Count(method => method.HasBody),
     referenceCount = references.Count,
+    // FullName is a display signature. Different metadata rows can render the
+    // same text; preserve them and refuse signature-only slot resolution.
+    ambiguousTypeSignatures = typeGroups.Where(group => group.Count() > 1)
+        .Select(group => new { signature = group.Key,
+            tokens = group.Select(type => type.MetadataToken.ToInt32()).ToArray() }).ToArray(),
+    ambiguousMethodSignatures = methodGroups.Where(group => group.Count() > 1)
+        .Select(group => new { signature = group.Key, methods = group.Select(method => new
+        {
+            token = method.MetadataToken.ToInt32(), method.IsStatic, method.HasThis,
+            callingConvention = method.CallingConvention.ToString(),
+            genericParameterCount = method.GenericParameters.Count,
+        }).ToArray() }).ToArray(),
     healthEntries = sinks.Order(StringComparer.Ordinal).ToArray(),
     directHealthReferences,
     directCreatureFieldWrites = fieldWrites,
@@ -192,6 +216,7 @@ var audit = new
         "Pile fields/aliases and commands are an inventory, not proof of order independence or a complete reachable callback closure.",
         "Local virtual-slot identities do not prove hook bodies, active listeners, patches or recursively reachable generation safe.",
         "Card event accessors inventory static subscriptions; reflective subscribers and delegate-body effects require review.",
+        "Display signatures are not method identities; ambiguity is retained. Operand tokens belong to this input module and need not identify a resolved target definition.",
     },
 };
 string output = Path.GetFullPath(args[1]);
@@ -274,13 +299,19 @@ static bool ContainsCardPileType(TypeReference type)
 static VirtualSlot InspectLocalVirtualSlot(MethodDefinition method,
     IReadOnlyDictionary<string, TypeDefinition> localTypes,
     IReadOnlyDictionary<string, MethodDefinition> localMethods,
-    IReadOnlySet<string> nativeHookTargets)
+    IReadOnlySet<string> nativeHookTargets,
+    IReadOnlySet<string> ambiguousTypes,
+    IReadOnlySet<string> ambiguousMethods)
 {
     var chain = new List<string>();
     var seen = new HashSet<string>(StringComparer.Ordinal);
     MethodDefinition current = method;
     while (true)
     {
+        if (ambiguousTypes.Contains(current.DeclaringType.FullName))
+            return Result("ambiguous-declaring-type", current.DeclaringType.FullName);
+        if (ambiguousMethods.Contains(current.FullName))
+            return Result("ambiguous-method-identity", current.FullName);
         if (!seen.Add(current.FullName)) return Result("cyclic-slot", null);
         chain.Add(current.FullName);
         // Explicit overrides can name an interface slot. Do not replace them
@@ -289,6 +320,9 @@ static VirtualSlot InspectLocalVirtualSlot(MethodDefinition method,
         {
             if (current.Overrides.Count != 1) return Result("multiple-explicit-slots", null);
             MethodReference target = current.Overrides[0];
+            if (IsLocalTypeScope(target.DeclaringType, method.Module)
+                && ambiguousMethods.Contains(target.FullName))
+                return Result("ambiguous-explicit-slot", target.FullName);
             if (!IsLocalTypeScope(target.DeclaringType, method.Module)
                 || !localMethods.TryGetValue(target.FullName, out MethodDefinition? overridden))
                 return Result("external-or-unresolved-explicit-slot", target.FullName);
@@ -300,6 +334,8 @@ static VirtualSlot InspectLocalVirtualSlot(MethodDefinition method,
         TypeReference? parent = current.DeclaringType.BaseType;
         while (parent is not null)
         {
+            if (IsLocalTypeScope(parent, method.Module) && ambiguousTypes.Contains(parent.FullName))
+                return Result("ambiguous-base-type", parent.FullName);
             if (!IsLocalTypeScope(parent, method.Module)
                 || !localTypes.TryGetValue(parent.FullName, out TypeDefinition? definition))
                 return Result("external-or-unresolved-base", parent.FullName);
@@ -363,4 +399,4 @@ sealed record VirtualSlot(string Owner, string Method, bool IsNewSlot, bool IsFi
     string? RootOrUnresolved, string[] Chain, bool IsNativeHookTarget);
 
 sealed record Reference(string Caller, string Target, string Kind, int Offset, string Owner,
-    string[]? GenericArguments = null);
+    string[]? GenericArguments = null, int? CallerDefinitionToken = null, int? OperandMetadataToken = null);

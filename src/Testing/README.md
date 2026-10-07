@@ -60,3 +60,5 @@
 [读牌调用边界](../../docs/performance/exhaust-reader-footprint-20261007.md)仅从既有IL清单形成候选方法与核对正文；不是原生/Fork或整根证书。保守图包含非搜索阶段及潜在委托，未知回调和未来写入继续保留有序语义；临时脚本归档清理，运行时未变。
 
 [清理回调合同](../../docs/performance/exhaust-cleanup-contract-20261007.md)用脱离牌堆的原生两牌验证局部清理、跨牌订阅反例与16路两代Fork费用隔离；未执行完整EndTurn或整根证书。临时入口逐字恢复，实例/源码/构建清理；生产及部署复用。
+
+[扩展写入审计](../../docs/performance/exhaust-extension-writer-audit-20261007.md)的14项检查只验证Cecil元数据边界及调用token，不执行CLR/游戏语义；已有游戏合同按原范围复用。一次性项目、夹具、生成脚本和构建已归档清理，未扩生产认证。

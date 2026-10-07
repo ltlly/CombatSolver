@@ -1,0 +1,1068 @@
+{
+  "schemaVersion": 1,
+  "task": "extension cost writer and method identity audit",
+  "date": "2026-10-07",
+  "sourceBase": "d5bc5c97",
+  "retainedRuntimeSource": "27c28f66",
+  "game": {
+    "version": "0.111.0",
+    "build": "41cef1ea",
+    "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+    "sha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f"
+  },
+  "runtime": {
+    "version": "0.6.6.0",
+    "mvid": "f7f18a36-8ebb-4db2-b1ea-7bd340579646",
+    "sha256": "fe387f765a3951690b161c129731e6c10016215c06074aa3356dd96290f13b52",
+    "displaySignatureCollisions": [
+      {
+        "signature": "System.Collections.Generic.IEnumerable`1<STS2RitsuLib.Diagnostics.RegistrationConflictDetector/RitsuDynamicEnumEntry> STS2RitsuLib.Diagnostics.RegistrationConflictDetector::GetRitsuDynamicEnumEntries()",
+        "methods": [
+          {
+            "token": 100679889,
+            "IsStatic": true,
+            "HasThis": false,
+            "callingConvention": "Default",
+            "genericParameterCount": 0
+          },
+          {
+            "token": 100679890,
+            "IsStatic": true,
+            "HasThis": false,
+            "callingConvention": "Generic",
+            "genericParameterCount": 1
+          }
+        ]
+      }
+    ]
+  },
+  "tool": {
+    "path": ".local/tool-build/HealingSourceAudit/bin/Release/net9.0/HealingSourceAudit.dll",
+    "bytes": 74240,
+    "sha256": "f3dc9ac952d93ace50dd06c28fd996c6820bb9e499099ee4e2c1d76ed14744c4",
+    "schemaVersion": 6,
+    "source": {
+      "path": "tools/inspection/HealingSourceAudit/Program.cs",
+      "bytes": 25769,
+      "sha256": "c1729301f44c3fe814adbded3f7e79be1ebc87ca1cd382c2af2dc6c406a92453"
+    },
+    "build": {
+      "exitCode": 0,
+      "seconds": 2.2,
+      "warnings": 0,
+      "errors": 0,
+      "output": "  Determining projects to restore...\n  All projects are up-to-date for restore.\n  HealingSourceAudit -> /home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-build/HealingSourceAudit/bin/Release/net9.0/HealingSourceAudit.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:02.20\n"
+    }
+  },
+  "preFixFailure": {
+    "exitCode": 134,
+    "output": "Unhandled exception. System.ArgumentException: An item with the same key has already been added. Key: System.Collections.Generic.IEnumerable`1<STS2RitsuLib.Diagnostics.RegistrationConflictDetector/RitsuDynamicEnumEntry> STS2RitsuLib.Diagnostics.RegistrationConflictDetector::GetRitsuDynamicEnumEntries()\n   at System.Collections.Generic.Dictionary`2.TryInsert(TKey key, TValue value, InsertionBehavior behavior)\n   at System.Collections.Generic.Dictionary`2.Add(TKey key, TValue value)\n   at System.Linq.Enumerable.SpanToDictionary[TSource,TKey](ReadOnlySpan`1 source, Func`2 keySelector, IEqualityComparer`1 comparer)\n   at System.Linq.Enumerable.ToDictionary[TSource,TKey](IEnumerable`1 source, Func`2 keySelector, IEqualityComparer`1 comparer)\n   at Program.<Main>$(String[] args) in /home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/tools/inspection/HealingSourceAudit/Program.cs:line 14\n",
+    "cause": "two method definitions have identical Cecil FullName but generic arity 0/1"
+  },
+  "newMetadataChecks": {
+    "result.json": {
+      "passed": 9,
+      "checks": [
+        {
+          "name": "inherited-chain",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.Leaf::Do()",
+          "status": "resolved-local",
+          "rootSlot": "System.Void MegaCrit.Sts2.Core.Models.AbstractModel::Do()",
+          "hookTarget": true,
+          "chainLength": 3
+        },
+        {
+          "name": "overload-new-slot",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.Leaf::Do(System.Int32)",
+          "status": "resolved-local",
+          "rootSlot": "System.Void MegaCrit.Sts2.Core.Models.Leaf::Do(System.Int32)",
+          "hookTarget": false,
+          "chainLength": 1
+        },
+        {
+          "name": "same-name-hiding",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.NewLeaf::Do()",
+          "status": "resolved-local",
+          "rootSlot": "System.Void MegaCrit.Sts2.Core.Models.NewLeaf::Do()",
+          "hookTarget": false,
+          "chainLength": 1
+        },
+        {
+          "name": "external-homonym",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.ExternalLeaf::Do()",
+          "status": "external-or-unresolved-base",
+          "rootSlot": "MegaCrit.Sts2.Core.Models.AbstractModel",
+          "hookTarget": false,
+          "chainLength": 1
+        },
+        {
+          "name": "external-parameter-homonym",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.Leaf::WithValue(MegaCrit.Sts2.Core.Models.Value)",
+          "status": "external-or-unresolved-base",
+          "rootSlot": "System.Object",
+          "hookTarget": false,
+          "chainLength": 1
+        },
+        {
+          "name": "covariant-return",
+          "method": "System.String MegaCrit.Sts2.Core.Models.Covariant::GetValue()",
+          "status": "covariant-or-unresolved-return",
+          "rootSlot": "System.Object MegaCrit.Sts2.Core.Models.AbstractModel::GetValue()",
+          "hookTarget": false,
+          "chainLength": 1
+        },
+        {
+          "name": "closest-covariant-base",
+          "method": "System.Object MegaCrit.Sts2.Core.Models.AfterCovariant::GetValue()",
+          "status": "covariant-or-unresolved-return",
+          "rootSlot": "System.String MegaCrit.Sts2.Core.Models.Covariant::GetValue()",
+          "hookTarget": false,
+          "chainLength": 1
+        },
+        {
+          "name": "explicit-renamed-slot",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.ExplicitLeaf::Renamed()",
+          "status": "resolved-local",
+          "rootSlot": "System.Void MegaCrit.Sts2.Core.Models.AbstractModel::Do()",
+          "hookTarget": true,
+          "chainLength": 2
+        },
+        {
+          "name": "multiple-explicit-slots",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.ExplicitLeaf::Multiple()",
+          "status": "multiple-explicit-slots",
+          "rootSlot": null,
+          "hookTarget": false,
+          "chainLength": 1
+        }
+      ],
+      "nativeExecution": false,
+      "scannerOutput": "{\"dllSha256\":\"d4cf75566c514a033088a285e36cb6817c9be8d7cac78cea71d55cbf10be4056\",\"typeCount\":11,\"methodCount\":15,\"methodsWithBody\":15,\"healthEntryCount\":0,\"healthReferenceCount\":0,\"sourceOwnerCount\":0,\"fieldWriteCount\":0,\"potionEntryCount\":0,\"potionSlotFieldReferenceCount\":0,\"potionEventReferenceCount\":0,\"cardPileEntryCount\":0,\"cardPileFieldReferenceCount\":0,\"cardStateEventCount\":0,\"cardStateEventReferenceCount\":0,\"nativeHookModelTargetCount\":1,\"virtualModelSlotCount\":14,\"unresolvedVirtualModelSlotCount\":5}\n",
+      "scannerError": ""
+    },
+    "ambiguity-result.json": {
+      "passed": 5,
+      "checks": [
+        "same-display-generic-arity-retained-and-conservative",
+        "ambiguous-explicit-slot-refused",
+        "duplicate-declaring-types-retained-and-refused",
+        "duplicate-base-type-refused",
+        "caller-and-operand-tokens-distinguish-call-sites"
+      ],
+      "nativeExecution": false,
+      "scannerOutput": "{\"dllSha256\":\"55760a07ec8c0799907ed3d018bd55811b30ec5b9e8a8445b326c65a72b60bfd\",\"typeCount\":7,\"methodCount\":8,\"methodsWithBody\":8,\"healthEntryCount\":0,\"healthReferenceCount\":0,\"sourceOwnerCount\":0,\"fieldWriteCount\":0,\"potionEntryCount\":0,\"potionSlotFieldReferenceCount\":0,\"potionEventReferenceCount\":0,\"cardPileEntryCount\":0,\"cardPileFieldReferenceCount\":0,\"cardStateEventCount\":0,\"cardStateEventReferenceCount\":0,\"nativeHookModelTargetCount\":0,\"virtualModelSlotCount\":6,\"unresolvedVirtualModelSlotCount\":6}\n",
+      "scannerError": ""
+    }
+  },
+  "fixtureEvidence": [
+    {
+      "path": ".local/tool-tasks/exhaust-extension-writer-audit-20261007/metadata-checks/fixture.dll",
+      "bytes": 2560,
+      "sha256": "d4cf75566c514a033088a285e36cb6817c9be8d7cac78cea71d55cbf10be4056",
+      "base64": "TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZGUuDQ0KJAAAAAAAAABQRQAATAECAPj/xWoAAAAAAAAAAOAAAiELAQgAAAYAAAACAAAAAAAAniQAAAAgAAAAAAAAAABAAAAgAAAAAgAABAAAAAAAAAAEAAAAAAAAAABgAAAAAgAAAAAAAAMAQIUAABAAABAAAAAAEAAAEAAAAAAAABAAAAAAAAAAAAAAAEQkAABXAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAACAAAAAAAAAAAAAAACCAAAEgAAAAAAAAAAAAAAC50ZXh0AAAApAQAAAAgAAAABgAAAAIAAAAAAAAAAAAAAAAAACAAAGAucmVsb2MAAAwAAAAAQAAAAAIAAAAIAAAAAAAAAAAAAAAAAABAAABCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAJAAAAAAAAEgAAAACAAUAYCAAAOQDAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYqChQqHgJvAQAABioAAABCU0pCAQABAAAAAAAMAAAAdjQuMC4zMDMxOQAAAAAEAGAAAAAoAgAAI34AAIgCAAAcAQAAI1N0cmluZ3MAAAAApAMAABAAAAAjR1VJRAAAALQDAAAwAAAAI0Jsb2IAAAAAAAAAAgAACkcBAAIJAAAAAPoBMwAWxAABAAAAAwAAAAsAAAAPAAAABAAAAAMAAAABAAAAAgAAAAAAnAABAAAAAAAGAAUBtAAKAEwA3QAKAIgA3QAAAAAAAQAAAAAAAQABAAEAAACIAN0ABQABAAEAAQAAABsA3QAIAAEABQABAAAAdQDdAAwAAQAGAAEAAAByAN0ADAABAAkAAQAAAFgA3QANAAEACgABAAAATADdAAUAAQALAAEAAAARAd0ACAABAAsAAQAAAAwB3QAgAAEADAABAAAAZQDdAAgAAQANAAEAAACDAMQABQABAA8AUCAAAAAAxgG7AAoAAQBSIAAAAADGAUkADgABAFAgAAAAAMYBvgAKAAEAUCAAAAAAxgE/ABIAAQBQIAAAAADGALsACgACAFAgAAAAAMYAuwAKAAIAUCAAAAAAxgG7ABgAAgBQIAAAAADGAD8AHQADAFAgAAAAAMYBuwAKAAQAUCAAAAAAxgC7AAoABABSIAAAAADGAEkAIwAEAFIgAAAAAMYASQAOAAQAUCAAAAAAxgETAAoABABQIAAAAADGASIACgAEAFUgAAAAABYAegAnAAQAAAABAFIAAAABAFIAAAABAFIAAAABAJYACgAaAAIACgAcAAIACgAcAAYAAAAAAAEAAAAAAAAAAAAAAAAAKwAAAAQAAAAAAAAAAAAAAAEACgAAAAAAAQAAAAAAAAAAAAAAAAD3AAAAAAAAPE1vZHVsZT4AbXNjb3JsaWIAUmVuYW1lZABNaWRkbGUATXVsdGlwbGUAU2xvdE1ldGFkYXRhRml4dHVyZQBXaXRoVmFsdWUAR2V0VmFsdWUAdmFsdWUARXh0ZXJuYWxMZWFmAEV4cGxpY2l0TGVhZgBOZXdMZWFmAERpc3BhdGNoAEhvb2sAQWJzdHJhY3RNb2RlbABtb2RlbABTbG90TWV0YWRhdGFGaXh0dXJlLmRsbABTeXN0ZW0ARG8AT3RoZXIATWVnYUNyaXQuU3RzMi5Db3JlLkhvb2tzAE1lZ2FDcml0LlN0czIuQ29yZS5Nb2RlbHMARm9yZWlnbk1vZGVscwBPYmplY3QAQWZ0ZXJDb3ZhcmlhbnQAAL8z/vjAa59IjIKWK9xcoKMACLd6XFYZNOCJAyAAAQMgABwFIAEBEhwEIAEBCAUgAQESCQMgAA4FAAEBEggAAABsJAAAAAAAAAAAAACOJAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgCQAAAAAAAAAAAAAAAAAAAAAAAAAAF9Db3JEbGxNYWluAG1zY29yZWUuZGxsAAAAAAD/JQAgQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAADAAAAKA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-extension-writer-audit-20261007/metadata-checks/ambiguity-fixture.dll",
+      "bytes": 2048,
+      "sha256": "55760a07ec8c0799907ed3d018bd55811b30ec5b9e8a8445b326c65a72b60bfd",
+      "base64": "TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZGUuDQ0KJAAAAAAAAABQRQAATAECAPj/xWoAAAAAAAAAAOAAAiELAQgAAAQAAAACAAAAAAAAfiMAAAAgAAAAAAAAAABAAAAgAAAAAgAABAAAAAAAAAAEAAAAAAAAAABgAAAAAgAAAAAAAAMAQIUAABAAABAAAAAAEAAAEAAAAAAAABAAAAAAAAAAAAAAACgjAABTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAACAAAAAAAAAAAAAAACCAAAEgAAAAAAAAAAAAAAC50ZXh0AAAAhAMAAAAgAAAABAAAAAIAAAAAAAAAAAAAAAAAACAAAGAucmVsb2MAAAwAAAAAQAAAAAIAAAAGAAAAAAAAAAAAAAAAAABAAABCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgIwAAAAAAAEgAAAACAAUAaCAAAMACAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYqHhRvAQAABioeFG8BAAArKgAAAAAAAEJTSkIBAAEAAAAAAAwAAAB2NC4wLjMwMzE5AAAAAAQAYAAAAFwBAAAjfgAAvAEAANgAAAAjU3RyaW5ncwAAAACUAgAAEAAAACNHVUlEAAAApAIAABwAAAAjQmxvYgAAAAAAAAACAAAKRwAAAgkMAAAA+gEzABbEAAEAAAABAAAABwAAAAgAAAABAAAAAQAAAAEAAAABAAAAAQAAAAAAXQABAAAAAAAGAMAAegAAAAAAAQAAAAAAAQABAAEAAADHAKYABQABAAEAAQAAAI4ApgAIAAEAAwABAAAANgCmAAUAAQAEAAEAAAA2AKYABQABAAUAAQAAACsApgAQAAEABgABAAAAnACmAAUAAQAHAFAgAAAAAMYBJgAKAAEAUCAAAAAAxgEmAA4AAQBQIAAAAADGAZYACgABAFAgAAAAAMYBiwAKAAEAUCAAAAAAxgGLAAoAAQBQIAAAAADGAIsACgABAFIgAAAAABYAgQATAAEAWiAAAAAAFgATABMAAQADAAYAAgAAAAAAAQAAAAAAAAAAAAAAAABEAAAABAAAAAAAAAAAAAAAAQAKAAAAAAAAAAAABQAfAAQAFwAAAAA8TW9kdWxlPgBtc2NvcmxpYgBDYWxsR2VuZXJpYwBVbnVzZWQAU2FtZQBEZXJpdmVkRnJvbUR1cGxpY2F0ZVR5cGUAQW1iaWd1aXR5TWV0YWRhdGFGaXh0dXJlAEFtYmlndWl0eU1ldGFkYXRhRml4dHVyZS5kbGwAU3lzdGVtAENhbGxQbGFpbgBEbwBFeHBsaWNpdEFsaWFzAENhbGxTaXRlcwBNZWdhQ3JpdC5TdHMyLkNvcmUuTW9kZWxzAE9iamVjdABHZW5lcmljQXJpdHlSb290APgsB+d42LFFih4ibPtzqNEACLd6XFYZNOCJAyAAAQQwAQABAwAAAQMKAQ4AUCMAAAAAAAAAAAAAbiMAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAjAAAAAAAAAAAAAAAAAAAAAF9Db3JEbGxNYWluAG1zY29yZWUuZGxsAAAAAAD/JQAgQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAwAAACAMwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    }
+  ],
+  "metadataProjectLog": "/usr/share/dotnet/sdk/9.0.121/Microsoft.Common.CurrentVersion.targets(888,5): warning MSB3539: The value of the property \"BaseIntermediateOutputPath\" was modified after it was used by MSBuild which can lead to unexpected build results. Tools such as NuGet will write outputs to the path specified by the \"MSBuildProjectExtensionsPath\" instead. To set this property, you must do so before Microsoft.Common.props is imported, for example by using Directory.Build.props.  For more information, please visit https://go.microsoft.com/fwlink/?linkid=869650 [/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-extension-writer-audit-20261007/MetadataFixture.csproj]\nSLOT_METADATA_BOUNDARIES_OK cases=9\nAMBIGUITY_METADATA_BOUNDARIES_OK cases=5\n",
+  "gamePayloadComparison": {
+    "oldPayloadFieldsEqual": 33,
+    "changed": [],
+    "oldLimitationsPrefixEqual": true,
+    "gameAmbiguousMethods": 0,
+    "gameAmbiguousTypes": 0
+  },
+  "oneShotSources": [
+    {
+      "path": ".local/tool-tasks/exhaust-extension-writer-audit-20261007/MetadataFixture.cs",
+      "bytes": 13604,
+      "sha256": "bb81c45c367a6e5b41fc39be5a0d0c87633796d9172c9d7ce393d2c125165e33",
+      "text": "using System.Diagnostics;\nusing System.Text.Json;\nusing Mono.Cecil;\nusing Mono.Cecil.Cil;\n\nif (args.Length != 2) throw new ArgumentException(\"Usage: fixture audit.dll output-directory\");\nstring directory = Path.GetFullPath(args[1]);\nDirectory.CreateDirectory(directory);\nusing AssemblyDefinition assembly = AssemblyDefinition.CreateAssembly(\n    new AssemblyNameDefinition(\"SlotMetadataFixture\", new Version(1, 0)), \"SlotMetadataFixture.dll\", ModuleKind.Dll);\nModuleDefinition module = assembly.MainModule;\nconst string ns = \"MegaCrit.Sts2.Core.Models\";\nTypeDefinition root = AddType(ns, \"AbstractModel\", module.TypeSystem.Object);\nMethodDefinition rootDo = AddMethod(root, \"Do\", module.TypeSystem.Void, newSlot: true);\nMethodDefinition rootGet = AddMethod(root, \"GetValue\", module.TypeSystem.Object, newSlot: true);\nMethodDefinition rootOther = AddMethod(root, \"Other\", module.TypeSystem.Void, newSlot: true);\nTypeDefinition middle = AddType(ns, \"Middle\", root);\nMethodDefinition middleDo = AddMethod(middle, \"Do\", module.TypeSystem.Void, newSlot: false);\nTypeDefinition leaf = AddType(ns, \"Leaf\", middle);\nMethodDefinition leafDo = AddMethod(leaf, \"Do\", module.TypeSystem.Void, newSlot: false);\nMethodDefinition leafOverload = AddMethod(leaf, \"Do\", module.TypeSystem.Void, newSlot: true);\nleafOverload.Parameters.Add(new ParameterDefinition(\"value\", ParameterAttributes.None, module.TypeSystem.Int32));\nTypeDefinition newLeaf = AddType(ns, \"NewLeaf\", middle);\nMethodDefinition hiding = AddMethod(newLeaf, \"Do\", module.TypeSystem.Void, newSlot: true);\n\n// The external parent has exactly the same FullName as the local root. The\n// scanner must preserve its different assembly scope rather than bind locally.\nvar externalAssembly = new AssemblyNameReference(\"ForeignModels\", new Version(1, 0));\nmodule.AssemblyReferences.Add(externalAssembly);\nvar externalParent = new TypeReference(ns, \"AbstractModel\", module, externalAssembly);\nTypeDefinition externalLeaf = AddType(ns, \"ExternalLeaf\", externalParent);\nMethodDefinition externalDo = AddMethod(externalLeaf, \"Do\", module.TypeSystem.Void, newSlot: false);\nTypeDefinition localValue = AddType(ns, \"Value\", module.TypeSystem.Object);\nvar externalValue = new TypeReference(ns, \"Value\", module, externalAssembly);\nMethodDefinition rootWithValue = AddMethod(root, \"WithValue\", module.TypeSystem.Void, newSlot: true);\nrootWithValue.Parameters.Add(new ParameterDefinition(\"value\", ParameterAttributes.None, localValue));\nMethodDefinition externalParameter = AddMethod(leaf, \"WithValue\", module.TypeSystem.Void, newSlot: false);\nexternalParameter.Parameters.Add(new ParameterDefinition(\"value\", ParameterAttributes.None, externalValue));\n\n// Covariant-looking reuse is an explicit unknown for this metadata tool.\n// The closest base must not be skipped to bind an older matching return type.\nTypeDefinition covariant = AddType(ns, \"Covariant\", root);\nMethodDefinition covariantGet = AddMethod(covariant, \"GetValue\", module.TypeSystem.String, newSlot: false);\nTypeDefinition afterCovariant = AddType(ns, \"AfterCovariant\", covariant);\nMethodDefinition afterCovariantGet = AddMethod(afterCovariant, \"GetValue\", module.TypeSystem.Object, newSlot: false);\nTypeDefinition explicitLeaf = AddType(ns, \"ExplicitLeaf\", root);\nMethodDefinition renamed = AddMethod(explicitLeaf, \"Renamed\", module.TypeSystem.Void, newSlot: true);\nrenamed.Overrides.Add(rootDo);\nMethodDefinition multiple = AddMethod(explicitLeaf, \"Multiple\", module.TypeSystem.Void, newSlot: true);\nmultiple.Overrides.Add(rootDo);\nmultiple.Overrides.Add(rootOther);\n\n// Supply one actual Hook call edge, so same-name hiding is checked against\n// the referenced root slot rather than inferred from its name.\nTypeDefinition hook = AddType(\"MegaCrit.Sts2.Core.Hooks\", \"Hook\", module.TypeSystem.Object);\nvar dispatch = new MethodDefinition(\"Dispatch\", MethodAttributes.Public | MethodAttributes.Static, module.TypeSystem.Void);\nhook.Methods.Add(dispatch);\ndispatch.Parameters.Add(new ParameterDefinition(\"model\", ParameterAttributes.None, root));\ndispatch.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));\ndispatch.Body.Instructions.Add(Instruction.Create(OpCodes.Callvirt, rootDo));\ndispatch.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));\nstring dll = Path.Combine(directory, \"fixture.dll\");\nassembly.Write(dll);\nstring output = Path.Combine(directory, \"audit.json\");\nvar start = new ProcessStartInfo(\"dotnet\") { RedirectStandardOutput = true, RedirectStandardError = true };\nstart.ArgumentList.Add(Path.GetFullPath(args[0])); start.ArgumentList.Add(dll); start.ArgumentList.Add(output);\nusing Process process = Process.Start(start) ?? throw new InvalidOperationException(\"Could not start audit tool\");\nTask<string> stdout = process.StandardOutput.ReadToEndAsync();\nTask<string> stderr = process.StandardError.ReadToEndAsync();\nawait process.WaitForExitAsync();\nif (process.ExitCode != 0) throw new InvalidOperationException(await stdout + await stderr);\nusing JsonDocument json = JsonDocument.Parse(File.ReadAllText(output));\nDictionary<string, JsonElement> slots = json.RootElement.GetProperty(\"virtualModelSlots\")\n    .EnumerateArray().ToDictionary(slot => slot.GetProperty(\"Method\").GetString()!);\nvar checks = new List<object>();\nCheck(\"inherited-chain\", leafDo, \"resolved-local\", rootDo.FullName, true, 3);\nCheck(\"overload-new-slot\", leafOverload, \"resolved-local\", leafOverload.FullName, false, 1);\nCheck(\"same-name-hiding\", hiding, \"resolved-local\", hiding.FullName, false, 1);\nCheck(\"external-homonym\", externalDo, \"external-or-unresolved-base\", externalParent.FullName, false, 1);\nCheck(\"external-parameter-homonym\", externalParameter, \"external-or-unresolved-base\", module.TypeSystem.Object.FullName, false, 1);\nCheck(\"covariant-return\", covariantGet, \"covariant-or-unresolved-return\", rootGet.FullName, false, 1);\nCheck(\"closest-covariant-base\", afterCovariantGet, \"covariant-or-unresolved-return\", covariantGet.FullName, false, 1);\nCheck(\"explicit-renamed-slot\", renamed, \"resolved-local\", rootDo.FullName, true, 2);\nCheck(\"multiple-explicit-slots\", multiple, \"multiple-explicit-slots\", null, false, 1);\nstring result = JsonSerializer.Serialize(new { passed = checks.Count, checks, nativeExecution = false,\n    scannerOutput = await stdout, scannerError = await stderr }, new JsonSerializerOptions { WriteIndented = true });\nFile.WriteAllText(Path.Combine(directory, \"result.json\"), result + \"\\n\");\nConsole.WriteLine($\"SLOT_METADATA_BOUNDARIES_OK cases={checks.Count}\");\n\n\nusing (AssemblyDefinition ambiguityAssembly = AssemblyDefinition.CreateAssembly(\n    new AssemblyNameDefinition(\"AmbiguityMetadataFixture\", new Version(1, 0)), \"AmbiguityMetadataFixture.dll\", ModuleKind.Dll))\n{\n    ModuleDefinition am = ambiguityAssembly.MainModule;\n    TypeDefinition AT(string name, TypeReference parent)\n    {\n        var type = new TypeDefinition(ns, name, TypeAttributes.Public | TypeAttributes.Class, parent);\n        am.Types.Add(type); return type;\n    }\n    MethodDefinition AM(TypeDefinition type, string name, bool isNewSlot = true)\n    {\n        var attrs = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig;\n        if (isNewSlot) attrs |= MethodAttributes.NewSlot;\n        var method = new MethodDefinition(name, attrs, am.TypeSystem.Void);\n        type.Methods.Add(method);method.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));return method;\n    }\n    var ar = AT(\"GenericArityRoot\", am.TypeSystem.Object);\n    var nonGeneric = AM(ar, \"Same\");\n    var generic = AM(ar, \"Same\");\n    generic.GenericParameters.Add(new GenericParameter(\"Unused\", generic));\n    if (nonGeneric.FullName != generic.FullName) throw new InvalidOperationException(\"No display-signature collision in fixture.\");\n    var alias = AM(AT(\"ExplicitAlias\", ar), \"Alias\");alias.Overrides.Add(nonGeneric);\n    var twinOne = AT(\"DuplicateType\", am.TypeSystem.Object);\n    var twinTwo = AT(\"DuplicateType\", am.TypeSystem.Object);\n    AM(twinOne, \"Do\");AM(twinTwo, \"Do\");\n    AM(AT(\"DerivedFromDuplicateType\", twinOne), \"Do\", false);\n    var calls = AT(\"CallSites\", am.TypeSystem.Object);\n    foreach (var (name, target) in new[] { (\"CallPlain\", (MethodReference)nonGeneric),\n        (\"CallGeneric\", (MethodReference)new GenericInstanceMethod(generic)) })\n    {\n        if (target is GenericInstanceMethod constructed) constructed.GenericArguments.Add(am.TypeSystem.String);\n        var method = new MethodDefinition(name, MethodAttributes.Public | MethodAttributes.Static, am.TypeSystem.Void);\n        calls.Methods.Add(method);\n        method.Body.Instructions.Add(Instruction.Create(OpCodes.Ldnull));\n        method.Body.Instructions.Add(Instruction.Create(OpCodes.Callvirt, target));\n        method.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));\n    }\n    string ambiguityDll = Path.Combine(directory, \"ambiguity-fixture.dll\");ambiguityAssembly.Write(ambiguityDll);\n    string ambiguityOutput = Path.Combine(directory, \"ambiguity-audit.json\");\n    var astart = new ProcessStartInfo(\"dotnet\") { RedirectStandardOutput = true, RedirectStandardError = true };\n    astart.ArgumentList.Add(Path.GetFullPath(args[0]));astart.ArgumentList.Add(ambiguityDll);astart.ArgumentList.Add(ambiguityOutput);\n    using Process ap = Process.Start(astart) ?? throw new InvalidOperationException(\"Could not start ambiguity scan.\");\n    Task<string> aout = ap.StandardOutput.ReadToEndAsync(), aerr = ap.StandardError.ReadToEndAsync();\n    await ap.WaitForExitAsync();\n    if (ap.ExitCode != 0) throw new InvalidOperationException(await aout + await aerr);\n    using JsonDocument aj = JsonDocument.Parse(File.ReadAllText(ambiguityOutput));\n    JsonElement[] aslots = aj.RootElement.GetProperty(\"virtualModelSlots\").EnumerateArray().ToArray();\n    var achecks = new List<string>();\n    void ACheck(string name, bool passed)\n    {\n        if (!passed) throw new InvalidOperationException(name);achecks.Add(name);\n    }\n    JsonElement[] dupSlots = aslots.Where(row => row.GetProperty(\"Method\").GetString() == nonGeneric.FullName).ToArray();\n    ACheck(\"same-display-generic-arity-retained-and-conservative\", dupSlots.Length == 2\n        && dupSlots.All(row => row.GetProperty(\"Status\").GetString() == \"ambiguous-method-identity\")\n        && aj.RootElement.GetProperty(\"ambiguousMethodSignatures\").EnumerateArray()\n            .Single(row => row.GetProperty(\"signature\").GetString() == nonGeneric.FullName)\n            .GetProperty(\"methods\").EnumerateArray().Select(row => row.GetProperty(\"genericParameterCount\").GetInt32())\n            .Order().SequenceEqual(new[] { 0, 1 }));\n    ACheck(\"ambiguous-explicit-slot-refused\", aslots.Single(row => row.GetProperty(\"Method\").GetString() == alias.FullName)\n        .GetProperty(\"Status\").GetString() == \"ambiguous-explicit-slot\");\n    ACheck(\"duplicate-declaring-types-retained-and-refused\", aj.RootElement.GetProperty(\"ambiguousTypeSignatures\").GetArrayLength() == 1\n        && aslots.Count(row => row.GetProperty(\"Status\").GetString() == \"ambiguous-declaring-type\") == 2);\n    ACheck(\"duplicate-base-type-refused\", aslots.Count(row => row.GetProperty(\"Status\").GetString() == \"ambiguous-base-type\") == 1);\n    JsonElement[] edges = aj.RootElement.GetProperty(\"staticReferences\").EnumerateArray()\n        .Where(row => row.GetProperty(\"Target\").GetString() == nonGeneric.FullName).ToArray();\n    ACheck(\"caller-and-operand-tokens-distinguish-call-sites\", edges.Length == 2\n        && edges.Select(row => row.GetProperty(\"CallerDefinitionToken\").GetInt32()).Distinct().Count() == 2\n        && edges.Select(row => row.GetProperty(\"OperandMetadataToken\").GetInt32()).Distinct().Count() == 2\n        && edges.Select(row => row.GetProperty(\"GenericArguments\").GetArrayLength()).Order().SequenceEqual(new[] { 0, 1 }));\n    File.WriteAllText(Path.Combine(directory, \"ambiguity-result.json\"), JsonSerializer.Serialize(new {\n        passed = achecks.Count, checks = achecks, nativeExecution = false,\n        scannerOutput = await aout, scannerError = await aerr }, new JsonSerializerOptions { WriteIndented = true }) + \"\\n\");\n    Console.WriteLine($\"AMBIGUITY_METADATA_BOUNDARIES_OK cases={achecks.Count}\");\n}\n\nTypeDefinition AddType(string typeNamespace, string name, TypeReference parent)\n{\n    var type = new TypeDefinition(typeNamespace, name, TypeAttributes.Public | TypeAttributes.Class, parent);\n    module.Types.Add(type); return type;\n}\nMethodDefinition AddMethod(TypeDefinition type, string name, TypeReference resultType, bool newSlot)\n{\n    var attributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig;\n    if (newSlot) attributes |= MethodAttributes.NewSlot;\n    var method = new MethodDefinition(name, attributes, resultType); type.Methods.Add(method);\n    if (resultType.FullName != module.TypeSystem.Void.FullName)\n        method.Body.Instructions.Add(Instruction.Create(OpCodes.Ldnull));\n    method.Body.Instructions.Add(Instruction.Create(OpCodes.Ret)); return method;\n}\nvoid Check(string name, MethodDefinition method, string status, string? rootSlot, bool hookTarget, int chainLength)\n{\n    JsonElement slot = slots[method.FullName];\n    if (slot.GetProperty(\"Status\").GetString() != status\n        || slot.GetProperty(\"RootOrUnresolved\").GetString() != rootSlot\n        || slot.GetProperty(\"IsNativeHookTarget\").GetBoolean() != hookTarget\n        || slot.GetProperty(\"Chain\").GetArrayLength() != chainLength)\n        throw new InvalidOperationException($\"{name}: {slot.GetRawText()}\");\n    checks.Add(new { name, method = method.FullName, status, rootSlot, hookTarget, chainLength });\n}\n"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-extension-writer-audit-20261007/MetadataFixture.csproj",
+      "bytes": 739,
+      "sha256": "127ca50c47b70097352ee6f21e86e35ed2396f75ea395cec1d4286290f2779f6",
+      "text": "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <Import Project=\"../../../tools/Directory.Build.props\" />\n  <PropertyGroup>\n    <OutputType>Exe</OutputType>\n    <TargetFramework>net9.0</TargetFramework>\n    <ImplicitUsings>enable</ImplicitUsings>\n    <Nullable>enable</Nullable>\n    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>\n    <BaseOutputPath>$(MSBuildThisFileDirectory)fixture-build/bin/</BaseOutputPath>\n    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)fixture-build/obj/</BaseIntermediateOutputPath>\n  </PropertyGroup>\n  <ItemGroup>\n    <Compile Include=\"MetadataFixture.cs\" />\n    <Reference Include=\"Mono.Cecil\"><HintPath>$(CecilAssemblyPath)</HintPath><Private>true</Private></Reference>\n  </ItemGroup>\n</Project>\n"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-extension-writer-audit-20261007/writer_inventory_once.py",
+      "bytes": 4749,
+      "sha256": "7fb5c466bf1d48dde76cf651aec34a975f11eeacf678729fea05fd02bf7cc1ec",
+      "text": "from pathlib import Path\nimport collections,json,hashlib\nbase=Path('.local/tool-tasks/exhaust-extension-writer-audit-20261007')\nruntime=json.loads((base/'runtime-reference-inventory.json').read_text())\ngame=json.loads((base/'game-reference-inventory-v6.json').read_text())\npatches=json.loads(Path('docs/performance/exhaust-root-extension-audit-20261007.json').read_text())['initialInventory']['NativePatches']\nassert runtime['schemaVersion']==game['schemaVersion']==6\nassert runtime['dllSha256']=='fe387f765a3951690b161c129731e6c10016215c06074aa3356dd96290f13b52'\nassert game['dllSha256']=='2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f'\ndef parts(signature):\n head=signature.split('::',1)\n return (head[0].rsplit(' ',1)[-1],head[1].split('(',1)[0]) if len(head)==2 else ('','')\ndef api(signature):\n owner,name=parts(signature)\n if owner=='STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry':\n  return name.startswith(('Mark','Clear')) or name in ['Register','Resolve']\n if owner=='STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions':\n  return name.startswith(('Copy','Reset','Clear')) or name in ['SecondaryCosts','SecondaryResourceUses']\n if owner=='STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet':\n  return name.startswith(('Set','Clear','Reset')) or name in ['Clone','GetLayers']\n if owner=='STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet':\n  return name.startswith(('Set','Require','Spend','Clear','Reset')) or name in ['Clone','GetLayers']\n if owner=='STS2RitsuLib.Combat.SecondaryResources.ModSecondaryResourceRegistry':\n  return name in ['Register','For']\n return False\nrefs=runtime['staticReferences']+runtime['asyncMappings']\ndirect=[row for row in refs if api(row['Target'])]\nseeds={row['Target'] for row in direct}\ndef reverse_closure(refs,seeds):\n incoming=collections.defaultdict(list)\n for row in refs:incoming[row['Target']].append(row)\n seen=set();via={m:None for m in seeds};queue=collections.deque(sorted(seeds))\n while queue:\n  method=queue.popleft()\n  if method in seen:continue\n  seen.add(method)\n  for row in incoming.get(method,[]):\n   caller=row['Caller']\n   if caller not in via:via[caller]=row;queue.append(caller)\n return seen,via\nseen,via=reverse_closure(refs,seeds)\npatchnames={owner.replace('/','+')+'.'+name for method in seen for owner,name in [parts(method)]}\nbridges=[row for row in patches if row['PatchAssembly']=='STS2-RitsuLib.Runtime' and row['Patch'] in patchnames]\nbridge_targets={row['Target'] for row in bridges if row['TargetAssembly']=='sts2'}\ngame_refs=game['staticReferences']+game['asyncMappings']\ngame_names={row['Caller'] for row in game_refs}|{row['Target'] for row in game_refs}\ngame_seeds={m for m in game_names if '.'.join(parts(m)) in bridge_targets}\ngame_seen,game_via=reverse_closure(game_refs,game_seeds)\nsummary={'runtimeTypes':runtime['typeCount'],'runtimeMethods':runtime['methodCount'],\n 'runtimeDisplaySignatureGroups':len(runtime['ambiguousMethodSignatures']),\n 'scopedWriterApiTargets':len(seeds),'directWriterApiReferences':len(direct),\n 'runtimePotentialCallerMethods':len(seen),'possiblePatchBridges':len(bridges),\n 'nativeTargetNames':len(bridge_targets),'nativeMethodSeeds':len(game_seeds),\n 'nativePotentialCallerMethods':len(game_seen),\n 'displaySignatureCollisionsInRuntimeClosure':sum(row['signature'] in seen for row in runtime['ambiguousMethodSignatures'])}\nresult={'schemaVersion':1,'summary':summary,'isSafetyCertificate':False,\n 'writerApiTargets':sorted(seeds),'directWriterApiReferences':direct,\n 'runtimePotentialCallerMethods':sorted(seen),'runtimeWitnessEdges':via,\n 'possibleNativePatchBridges':bridges,'nativeMethodSeeds':sorted(game_seeds),\n 'nativePotentialCallerMethods':sorted(game_seen),'nativeWitnessEdges':game_via,\n 'limitations':[\n  'manually scoped API-name worklist is not all possible field/alias/reflection writers',\n  'static and ldftn/async edges indicate potential references, not runtime or branch reachability',\n  'patch bridge matching uses prior type/method names and does not resolve overload or execution order',\n  'only installed Runtime and game modules scanned; other callback assemblies remain unclosed',\n  'full-name graph nodes are investigation labels; MVID and per-edge definition/operand tokens are preserved',\n  'native method closure includes noncombat, UI, save and network entrypoints',\n  'no current root registration snapshot, finite future source closure or per-branch guard established']}\n(base/'writer-api-worklist.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\\n')\n(base/'writer-api-summary.json').write_text(json.dumps(summary,indent=2)+'\\n')\nprint(json.dumps(summary))\nprint('native target names', sorted(bridge_targets))\n"
+    }
+  ],
+  "nativeSourceEvidence": [
+    {
+      "path": ".local/tool-tasks/exhaust-extension-writer-audit-20261007/native/FreePlayBindingRegistry.cs",
+      "bytes": 14607,
+      "sha256": "eb4250cc53339fa311426bb5583553a895d99687bf73570bb075e0999c91dcd3",
+      "text": "using System;\nusing System.Collections.Generic;\nusing System.Linq;\nusing System.Threading;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.Models;\nusing STS2RitsuLib.Utils;\n\nnamespace STS2RitsuLib.Cards.FreePlay;\n\n/// <summary>\n///     <para xml:lang=\"en\">Provides an extensible registry for determining whether a card play is free.</para>\n///     <para xml:lang=\"zh-CN\">提供可扩展注册表，用于判断一次出牌是否免费。</para>\n/// </summary>\npublic static class FreePlayBindingRegistry\n{\n\tprivate sealed class CardFreeBindingState\n\t{\n\t\tpublic int BaseCostsFreeNextPlayCharges { get; set; }\n\n\t\tpublic int BaseCostsFreeThisTurnCharges { get; set; }\n\n\t\tpublic int BaseCostsFreeForRestOfTurnCharges { get; set; }\n\n\t\tpublic ICombatState? BaseCostsFreeThisCombatState { get; set; }\n\t}\n\n\tprivate sealed class PlayFreeBindingState\n\t{\n\t\tpublic bool IsResolved { get; set; }\n\n\t\tpublic FreePlayResolution Resolution { get; set; } = new FreePlayResolution(IsAutoPlayNoSpend: false, IsCardBindingFree: false, IsRegisteredDetectorFree: false);\n\t}\n\n\tprivate static readonly Lock Gate = new Lock();\n\n\tprivate static readonly Dictionary<string, Func<CardPlay, bool>> RegisteredDetectors = new Dictionary<string, Func<CardPlay, bool>>();\n\n\tprivate static readonly AttachedState<CardModel, CardFreeBindingState> CardStates = new AttachedState<CardModel, CardFreeBindingState>((Func<CardFreeBindingState>)(() => new CardFreeBindingState()));\n\n\tprivate static readonly AttachedState<CardPlay, PlayFreeBindingState> PlayStates = new AttachedState<CardPlay, PlayFreeBindingState>((Func<PlayFreeBindingState>)(() => new PlayFreeBindingState()));\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Registers an additional free-play detector. The detector should return <see langword=\"true\" /> when\n\t///         mod-defined rules consider the specified <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.CardPlay\" /> free.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         注册额外的免费出牌检测器。模组规则将指定 <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.CardPlay\" /> 视为免费时，检测器应返回\n\t///         <see langword=\"true\" />。\n\t///     </para>\n\t/// </summary>\n\t/// <param name=\"bindingId\">\n\t///     <para xml:lang=\"en\">Stable unique ID used for replacement and diagnostics.</para>\n\t///     <para xml:lang=\"zh-CN\">用于替换和诊断的稳定唯一 ID。</para>\n\t/// </param>\n\t/// <param name=\"detector\">\n\t///     <para xml:lang=\"en\">Predicate that determines whether a play is free.</para>\n\t///     <para xml:lang=\"zh-CN\">判断一次出牌是否免费的谓词。</para>\n\t/// </param>\n\tpublic static void Register(string bindingId, Func<CardPlay, bool> detector)\n\t{\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(bindingId, \"bindingId\");\n\t\tArgumentNullException.ThrowIfNull(detector, \"detector\");\n\t\tusing (Gate.EnterScope())\n\t\t{\n\t\t\tRegisteredDetectors[bindingId] = detector;\n\t\t}\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Marks the card's base costs as free for its next play.</para>\n\t///     <para xml:lang=\"zh-CN\">将卡牌下一次打出时的基础费用标记为免费。</para>\n\t/// </summary>\n\t/// <param name=\"card\">\n\t///     <para xml:lang=\"en\">Card receiving a single-use base-cost-free charge.</para>\n\t///     <para xml:lang=\"zh-CN\">获得一次性基础费用免费次数的卡牌。</para>\n\t/// </param>\n\tpublic static void MarkCardFreeNextPlay(CardModel card)\n\t{\n\t\tArgumentNullException.ThrowIfNull(card, \"card\");\n\t\tCardStates.Update(card, (Func<CardFreeBindingState, CardFreeBindingState>)delegate(CardFreeBindingState state)\n\t\t{\n\t\t\tstate.BaseCostsFreeNextPlayCharges++;\n\t\t\treturn state;\n\t\t});\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Marks the card's base costs as free until the end of the turn or its next play.</para>\n\t///     <para xml:lang=\"zh-CN\">将卡牌的基础费用标记为免费，直至回合结束或该牌下一次打出。</para>\n\t/// </summary>\n\t/// <param name=\"card\">\n\t///     <para xml:lang=\"en\">Card receiving a current-turn base-cost-free charge.</para>\n\t///     <para xml:lang=\"zh-CN\">获得本回合基础费用免费次数的卡牌。</para>\n\t/// </param>\n\tpublic static void MarkCardFreeThisTurn(CardModel card)\n\t{\n\t\tMarkCardBaseCostsFreeThisTurn(card);\n\t}\n\n\tinternal static void MarkCardBaseCostsFreeThisTurn(CardModel card)\n\t{\n\t\tArgumentNullException.ThrowIfNull(card, \"card\");\n\t\tCardStates.Update(card, (Func<CardFreeBindingState, CardFreeBindingState>)delegate(CardFreeBindingState state)\n\t\t{\n\t\t\tstate.BaseCostsFreeThisTurnCharges++;\n\t\t\treturn state;\n\t\t});\n\t}\n\n\tinternal static void MarkCardBaseCostsFreeForRestOfTurn(CardModel card)\n\t{\n\t\tArgumentNullException.ThrowIfNull(card, \"card\");\n\t\tCardStates.Update(card, (Func<CardFreeBindingState, CardFreeBindingState>)delegate(CardFreeBindingState state)\n\t\t{\n\t\t\tstate.BaseCostsFreeForRestOfTurnCharges++;\n\t\t\treturn state;\n\t\t});\n\t}\n\n\tinternal static void MarkCardBaseCostsFreeThisCombat(CardModel card)\n\t{\n\t\tArgumentNullException.ThrowIfNull(card, \"card\");\n\t\tCardStates.Update(card, (Func<CardFreeBindingState, CardFreeBindingState>)delegate(CardFreeBindingState state)\n\t\t{\n\t\t\tstate.BaseCostsFreeThisCombatState = ResolveCombatState(card);\n\t\t\treturn state;\n\t\t});\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Marks the card's base costs as free for the current combat.</para>\n\t///     <para xml:lang=\"zh-CN\">将卡牌在当前战斗中的基础费用标记为免费。</para>\n\t/// </summary>\n\t/// <param name=\"card\">\n\t///     <para xml:lang=\"en\">Card receiving a combat-duration base-cost-free state.</para>\n\t///     <para xml:lang=\"zh-CN\">获得持续整场战斗基础费用免费状态的卡牌。</para>\n\t/// </param>\n\tpublic static void MarkCardFreeThisCombat(CardModel card)\n\t{\n\t\tMarkCardBaseCostsFreeThisCombat(card);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Immediately marks the current <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.CardPlay\" /> as free.</para>\n\t///     <para xml:lang=\"zh-CN\">立即将当前 <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.CardPlay\" /> 标记为免费。</para>\n\t/// </summary>\n\t/// <param name=\"play\">\n\t///     <para xml:lang=\"en\">Play instance to mark.</para>\n\t///     <para xml:lang=\"zh-CN\">要标记的出牌实例。</para>\n\t/// </param>\n\tpublic static void MarkCurrentPlayFree(CardPlay play)\n\t{\n\t\tArgumentNullException.ThrowIfNull(play, \"play\");\n\t\tPlayStates.Update(play, (Func<PlayFreeBindingState, PlayFreeBindingState>)delegate(PlayFreeBindingState state)\n\t\t{\n\t\t\tstate.Resolution = (state.IsResolved ? state.Resolution with\n\t\t\t{\n\t\t\t\tIsCardBindingFree = true\n\t\t\t} : new FreePlayResolution(play.IsAutoPlay, IsCardBindingFree: true, IsRegisteredDetectorFree: false));\n\t\t\tstate.IsResolved = true;\n\t\t\treturn state;\n\t\t});\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Resolves the free-play sources for this <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.CardPlay\" />.</para>\n\t///     <para xml:lang=\"zh-CN\">解析此 <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.CardPlay\" /> 的免费出牌来源。</para>\n\t/// </summary>\n\t/// <param name=\"play\">\n\t///     <para xml:lang=\"en\">Play instance to evaluate.</para>\n\t///     <para xml:lang=\"zh-CN\">要求值的出牌实例。</para>\n\t/// </param>\n\t/// <returns>\n\t///     <para xml:lang=\"en\">A result indicating which sources marked the play as free.</para>\n\t///     <para xml:lang=\"zh-CN\">指示哪些来源将本次出牌标记为免费的结果。</para>\n\t/// </returns>\n\tpublic static FreePlayResolution Resolve(CardPlay play)\n\t{\n\t\tArgumentNullException.ThrowIfNull(play, \"play\");\n\t\tPlayFreeBindingState orCreate = PlayStates.GetOrCreate(play);\n\t\tif (orCreate.IsResolved)\n\t\t{\n\t\t\treturn orCreate.Resolution;\n\t\t}\n\t\tFreePlayResolution freePlayResolution = BuildResolution(play);\n\t\tPlayStates.Set(play, new PlayFreeBindingState\n\t\t{\n\t\t\tIsResolved = true,\n\t\t\tResolution = freePlayResolution\n\t\t});\n\t\treturn freePlayResolution;\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Returns whether any source marks the play as free.</para>\n\t///     <para xml:lang=\"zh-CN\">返回是否有任一来源将本次出牌标记为免费。</para>\n\t/// </summary>\n\t/// <param name=\"play\">\n\t///     <para xml:lang=\"en\">Play instance to evaluate.</para>\n\t///     <para xml:lang=\"zh-CN\">要求值的出牌实例。</para>\n\t/// </param>\n\t/// <returns>\n\t///     <para xml:lang=\"en\"><see langword=\"true\" /> when any free-play source applies.</para>\n\t///     <para xml:lang=\"zh-CN\">有任一免费出牌来源适用时为 <see langword=\"true\" />。</para>\n\t/// </returns>\n\tpublic static bool IsFreeForPlay(CardPlay play)\n\t{\n\t\treturn Resolve(play).IsFree;\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Returns whether the card is marked free before a <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.CardPlay\" /> exists, without consuming a\n\t///         next-play charge.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         返回卡牌在 <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.CardPlay\" /> 创建前是否已被标记为免费，且不消耗下一次出牌的免费次数。\n\t///     </para>\n\t/// </summary>\n\tpublic static bool IsCardFreeForUpcomingPlay(CardModel card)\n\t{\n\t\treturn ResolveCardCostScopeForUpcomingPlay(card).IsFree;\n\t}\n\n\tinternal static FreePlayCardCostScope ResolveCardCostScopeForUpcomingPlay(CardModel card)\n\t{\n\t\tArgumentNullException.ThrowIfNull(card, \"card\");\n\t\tCardFreeBindingState cardFreeBindingState = default(CardFreeBindingState);\n\t\tif (!CardStates.TryGetValue(card, ref cardFreeBindingState))\n\t\t{\n\t\t\treturn new FreePlayCardCostScope(FixedSecondaryCostsFree: false, XSecondaryCostsFree: false);\n\t\t}\n\t\tICombatState val = ResolveCombatState(card);\n\t\treturn new FreePlayCardCostScope(cardFreeBindingState.BaseCostsFreeNextPlayCharges > 0 || cardFreeBindingState.BaseCostsFreeThisTurnCharges > 0 || cardFreeBindingState.BaseCostsFreeForRestOfTurnCharges > 0 || (cardFreeBindingState.BaseCostsFreeThisCombatState != null && cardFreeBindingState.BaseCostsFreeThisCombatState == val), XSecondaryCostsFree: false);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Clears current-turn free-play charges that were not consumed by playing the card.</para>\n\t///     <para xml:lang=\"zh-CN\">清除未因打出卡牌而消耗的本回合免费出牌次数。</para>\n\t/// </summary>\n\t/// <param name=\"card\">\n\t///     <para xml:lang=\"en\">Card receiving end-of-turn cleanup.</para>\n\t///     <para xml:lang=\"zh-CN\">正在执行回合结束清理的卡牌。</para>\n\t/// </param>\n\t/// <returns>\n\t///     <para xml:lang=\"en\"><see langword=\"true\" /> when any current-turn free-play charge was cleared.</para>\n\t///     <para xml:lang=\"zh-CN\">清除了任一本回合免费出牌次数时为 <see langword=\"true\" />。</para>\n\t/// </returns>\n\tpublic static bool ClearCardFreeThisTurn(CardModel card)\n\t{\n\t\tArgumentNullException.ThrowIfNull(card, \"card\");\n\t\tbool changed = false;\n\t\tCardStates.Update(card, (Func<CardFreeBindingState, CardFreeBindingState>)delegate(CardFreeBindingState state)\n\t\t{\n\t\t\tchanged = state.BaseCostsFreeThisTurnCharges > 0 || state.BaseCostsFreeForRestOfTurnCharges > 0;\n\t\t\tstate.BaseCostsFreeThisTurnCharges = 0;\n\t\t\tstate.BaseCostsFreeForRestOfTurnCharges = 0;\n\t\t\treturn state;\n\t\t});\n\t\treturn changed;\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Clears free-play bindings that expire after the card is played.</para>\n\t///     <para xml:lang=\"zh-CN\">清除在卡牌打出后失效的免费出牌绑定。</para>\n\t/// </summary>\n\t/// <param name=\"card\">\n\t///     <para xml:lang=\"en\">Card receiving after-play cleanup.</para>\n\t///     <para xml:lang=\"zh-CN\">正在执行打出后清理的卡牌。</para>\n\t/// </param>\n\t/// <returns>\n\t///     <para xml:lang=\"en\"><see langword=\"true\" /> when any after-play binding was cleared or consumed.</para>\n\t///     <para xml:lang=\"zh-CN\">清除或消耗了任一打出后失效的绑定时为 <see langword=\"true\" />。</para>\n\t/// </returns>\n\tpublic static bool ClearCardFreeAfterPlayed(CardModel card)\n\t{\n\t\tArgumentNullException.ThrowIfNull(card, \"card\");\n\t\tbool changed = false;\n\t\tCardStates.Update(card, (Func<CardFreeBindingState, CardFreeBindingState>)delegate(CardFreeBindingState state)\n\t\t{\n\t\t\tchanged = state.BaseCostsFreeNextPlayCharges > 0 || state.BaseCostsFreeThisTurnCharges > 0;\n\t\t\tstate.BaseCostsFreeNextPlayCharges = Math.Max(0, state.BaseCostsFreeNextPlayCharges - 1);\n\t\t\tstate.BaseCostsFreeThisTurnCharges = 0;\n\t\t\treturn state;\n\t\t});\n\t\treturn changed;\n\t}\n\n\tprivate static FreePlayResolution BuildResolution(CardPlay play)\n\t{\n\t\tif (play.IsAutoPlay)\n\t\t{\n\t\t\treturn new FreePlayResolution(IsAutoPlayNoSpend: true, IsCardBindingFree: false, IsRegisteredDetectorFree: false);\n\t\t}\n\t\tbool isCardBindingFree = EvaluateCardBindings(play);\n\t\tbool isRegisteredDetectorFree = EvaluateRegisteredDetectors(play);\n\t\treturn new FreePlayResolution(IsAutoPlayNoSpend: false, isCardBindingFree, isRegisteredDetectorFree);\n\t}\n\n\tprivate static bool EvaluateCardBindings(CardPlay play)\n\t{\n\t\tCardModel card = play.Card;\n\t\tCardFreeBindingState orCreate = CardStates.GetOrCreate(card);\n\t\tICombatState val = ResolveCombatState(card);\n\t\tif (orCreate.BaseCostsFreeThisCombatState != null && orCreate.BaseCostsFreeThisCombatState == val)\n\t\t{\n\t\t\treturn true;\n\t\t}\n\t\tif (orCreate.BaseCostsFreeThisTurnCharges > 0)\n\t\t{\n\t\t\treturn true;\n\t\t}\n\t\tif (orCreate.BaseCostsFreeForRestOfTurnCharges > 0)\n\t\t{\n\t\t\treturn true;\n\t\t}\n\t\treturn orCreate.BaseCostsFreeNextPlayCharges > 0;\n\t}\n\n\tprivate static bool EvaluateRegisteredDetectors(CardPlay play)\n\t{\n\t\tKeyValuePair<string, Func<CardPlay, bool>>[] array;\n\t\tusing (Gate.EnterScope())\n\t\t{\n\t\t\tarray = RegisteredDetectors.ToArray();\n\t\t}\n\t\tKeyValuePair<string, Func<CardPlay, bool>>[] array2 = array;\n\t\tfor (int i = 0; i < array2.Length; i++)\n\t\t{\n\t\t\tKeyValuePair<string, Func<CardPlay, bool>> keyValuePair = array2[i];\n\t\t\tvar (value, func2) = (KeyValuePair<string, Func<CardPlay, bool>>)(ref keyValuePair);\n\t\t\ttry\n\t\t\t{\n\t\t\t\tif (func2(play))\n\t\t\t\t{\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t}\n\t\t\tcatch (Exception value2)\n\t\t\t{\n\t\t\t\tRitsuLibFramework.Logger.Warn($\"[FreePlay] Detector '{value}' failed for card '{((AbstractModel)play.Card).Id}': {value2}\", 1);\n\t\t\t\tthrow;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}\n\n\tprivate static ICombatState? ResolveCombatState(CardModel card)\n\t{\n\t\tICombatState combatState = card.CombatState;\n\t\tif (combatState == null)\n\t\t{\n\t\t\tif (!((AbstractModel)card).IsMutable)\n\t\t\t{\n\t\t\t\treturn null;\n\t\t\t}\n\t\t\tcombatState = card.Owner.Creature.CombatState;\n\t\t}\n\t\treturn combatState;\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-extension-writer-audit-20261007/native/FreePlayCardVisuals.resolved.cs",
+      "bytes": 641,
+      "sha256": "64ad047d92c5d0a423436b0f231cfe2e7c91122c44f8ad72b1993646c17c3156",
+      "text": "using MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.Models;\nusing MegaCrit.Sts2.Core.Nodes.Cards;\n\nnamespace STS2RitsuLib.Cards.FreePlay.Patches;\n\ninternal static class FreePlayCardVisuals\n{\n\tpublic static void Refresh(CardModel card)\n\t{\n\t\t//IL_0023: Unknown result type (might be due to invalid IL or missing references)\n\t\tif (card.Pile != null)\n\t\t{\n\t\t\tNCard obj = NCard.FindOnTable(card, (PileType?)null);\n\t\t\tif (obj != null)\n\t\t\t{\n\t\t\t\tobj.UpdateVisuals(card.Pile.Type, (CardPreviewMode)1);\n\t\t\t}\n\t\t}\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-extension-writer-audit-20261007/native/ModSecondaryResourceRegistry.cs",
+      "bytes": 20365,
+      "sha256": "7b1b686f650e3ea4771e5a9bb86dc25da0cedece71829c586791df76e58e1d05",
+      "text": "using System;\nusing System.Collections.Generic;\nusing System.Linq;\nusing System.Threading;\nusing Godot;\nusing MegaCrit.Sts2.Core.HoverTips;\nusing MegaCrit.Sts2.Core.Models;\nusing MegaCrit.Sts2.Core.Nodes.Cards;\nusing MegaCrit.Sts2.Core.Nodes.Combat;\nusing MegaCrit.Sts2.Core.Nodes.Multiplayer;\nusing STS2RitsuLib.Content;\nusing STS2RitsuLib.Scaffolding.Godot.NodeAttachments;\n\nnamespace STS2RitsuLib.Combat.SecondaryResources;\n\n/// <summary>\n///     <para xml:lang=\"en\">Registers secondary combat resources owned by one mod.</para>\n///     <para xml:lang=\"zh-CN\">注册由一个模组所有的次级战斗资源。</para>\n/// </summary>\npublic sealed class ModSecondaryResourceRegistry\n{\n\tprivate sealed record CombatUiVisibilityPredicateRegistration(int Order, long Sequence, SecondaryResourceCombatUiVisibilityPredicate Predicate);\n\n\tprivate const string IdTypeStem = \"SECONDARY_RESOURCE\";\n\n\tprivate static readonly Lock SyncRoot = new Lock();\n\n\tprivate static readonly Dictionary<string, ModSecondaryResourceRegistry> Registries = new Dictionary<string, ModSecondaryResourceRegistry>(StringComparer.OrdinalIgnoreCase);\n\n\tprivate static readonly Dictionary<string, SecondaryResourceDefinition> Definitions = new Dictionary<string, SecondaryResourceDefinition>(StringComparer.OrdinalIgnoreCase);\n\n\tprivate static readonly Dictionary<string, List<CombatUiVisibilityPredicateRegistration>> CombatUiVisibilityPredicates = new Dictionary<string, List<CombatUiVisibilityPredicateRegistration>>(StringComparer.OrdinalIgnoreCase);\n\n\tprivate static long _nextVisibilityPredicateSequence;\n\n\tprivate readonly string _modId;\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Gets whether at least one secondary resource is registered.</para>\n\t///     <para xml:lang=\"zh-CN\">获取是否至少注册了一个次级资源。</para>\n\t/// </summary>\n\tpublic static bool HasAny\n\t{\n\t\tget\n\t\t{\n\t\t\tusing (SyncRoot.EnterScope())\n\t\t\t{\n\t\t\t\treturn Definitions.Count > 0;\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate ModSecondaryResourceRegistry(string modId)\n\t{\n\t\t_modId = modId;\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Gets the registry for <paramref name=\"modId\" />. Leading and trailing whitespace is ignored.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         获取 <paramref name=\"modId\" /> 的注册表；忽略首尾空白。\n\t///     </para>\n\t/// </summary>\n\tpublic static ModSecondaryResourceRegistry For(string modId)\n\t{\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(modId, \"modId\");\n\t\tstring text = modId.Trim();\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\tif (Registries.TryGetValue(text, out ModSecondaryResourceRegistry value))\n\t\t\t{\n\t\t\t\treturn value;\n\t\t\t}\n\t\t\tModSecondaryResourceRegistry modSecondaryResourceRegistry = new ModSecondaryResourceRegistry(text);\n\t\t\tRegistries[text] = modSecondaryResourceRegistry;\n\t\t\treturn modSecondaryResourceRegistry;\n\t\t}\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Builds a full resource ID from a mod ID and mod-local ID.</para>\n\t///     <para xml:lang=\"zh-CN\">根据模组 ID 和模组内 ID 构建完整资源 ID。</para>\n\t/// </summary>\n\tpublic static string GetResourceId(string modId, string localId)\n\t{\n\t\treturn ModContentRegistry.GetCompoundId(modId, \"SECONDARY_RESOURCE\", localId);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Registers a secondary resource and returns its mod-bound definition. Repeating the same registration\n\t///         returns the definition registered first.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">注册次级资源并返回绑定到模组后的定义；重复注册同一资源时返回最先注册的定义。</para>\n\t/// </summary>\n\tpublic SecondaryResourceDefinition Register(string localId, SecondaryResourceDefinition definition)\n\t{\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(localId, \"localId\");\n\t\tArgumentNullException.ThrowIfNull(definition, \"definition\");\n\t\tSecondaryResourceDefinition secondaryResourceDefinition = definition.Bind(_modId, localId);\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\tif (Definitions.TryGetValue(secondaryResourceDefinition.Id, out SecondaryResourceDefinition value))\n\t\t\t{\n\t\t\t\tif (!StringComparer.OrdinalIgnoreCase.Equals(value.ModId, _modId))\n\t\t\t\t{\n\t\t\t\t\tthrow new InvalidOperationException($\"Secondary resource '{secondaryResourceDefinition.Id}' is already registered by mod '{value.ModId}'.\");\n\t\t\t\t}\n\t\t\t\treturn value;\n\t\t\t}\n\t\t\tDefinitions[secondaryResourceDefinition.Id] = secondaryResourceDefinition;\n\t\t}\n\t\tRitsuLibFramework.Logger.Info($\"[SecondaryResource] Registered {secondaryResourceDefinition.Id} (mod={secondaryResourceDefinition.ModId}).\", 1);\n\t\treturn secondaryResourceDefinition;\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Attempts to get a registered definition by full resource ID.</para>\n\t///     <para xml:lang=\"zh-CN\">尝试按完整资源 ID 获取已注册定义。</para>\n\t/// </summary>\n\tpublic static bool TryGet(string resourceId, out SecondaryResourceDefinition definition)\n\t{\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(resourceId, \"resourceId\");\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\treturn Definitions.TryGetValue(resourceId.Trim(), out definition);\n\t\t}\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Gets a registered definition, or throws when the ID is unknown.</para>\n\t///     <para xml:lang=\"zh-CN\">获取已注册定义；ID 未知时抛出异常。</para>\n\t/// </summary>\n\tpublic static SecondaryResourceDefinition Get(string resourceId)\n\t{\n\t\tif (!TryGet(resourceId, out SecondaryResourceDefinition definition))\n\t\t{\n\t\t\tthrow new KeyNotFoundException(\"Secondary resource is not registered: \" + resourceId);\n\t\t}\n\t\treturn definition;\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Returns a deterministically ordered snapshot of registered definitions.</para>\n\t///     <para xml:lang=\"zh-CN\">返回按确定性顺序排列的已注册定义快照。</para>\n\t/// </summary>\n\tpublic static SecondaryResourceDefinition[] GetDefinitionsSnapshot()\n\t{\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\treturn Definitions.Values.OrderBy<SecondaryResourceDefinition, string>((SecondaryResourceDefinition definition) => definition.Id, StringComparer.Ordinal).ToArray();\n\t\t}\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Creates a localized <see cref=\"T:MegaCrit.Sts2.Core.HoverTips.HoverTip\" /> for a registered resource.</para>\n\t///     <para xml:lang=\"zh-CN\">为已注册资源创建本地化的 <see cref=\"T:MegaCrit.Sts2.Core.HoverTips.HoverTip\" />。</para>\n\t/// </summary>\n\t/// <param name=\"resourceId\">\n\t///     <para xml:lang=\"en\">The full resource ID.</para>\n\t///     <para xml:lang=\"zh-CN\">完整资源 ID。</para>\n\t/// </param>\n\t/// <param name=\"amount\">\n\t///     <para xml:lang=\"en\">The current amount exposed to localization variables.</para>\n\t///     <para xml:lang=\"zh-CN\">提供给本地化变量的当前数量。</para>\n\t/// </param>\n\t/// <param name=\"maxAmount\">\n\t///     <para xml:lang=\"en\">The optional maximum exposed to localization variables.</para>\n\t///     <para xml:lang=\"zh-CN\">提供给本地化变量的可选最大数量。</para>\n\t/// </param>\n\tpublic static HoverTip CreateHoverTip(string resourceId, int amount = 0, int? maxAmount = null)\n\t{\n\t\t//IL_000d: Unknown result type (might be due to invalid IL or missing references)\n\t\tif (TryGet(resourceId, out SecondaryResourceDefinition definition))\n\t\t{\n\t\t\treturn SecondaryResourceHoverTipFactory.Create(definition, amount, maxAmount);\n\t\t}\n\t\tthrow new KeyNotFoundException(\"Secondary resource is not registered: \" + resourceId);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Registers an additional combat UI visibility predicate for one resource. Lower order values run\n\t///         first; predicates with the same order retain registration order.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">为一种资源注册额外的战斗界面可见性谓词；顺序值较小的先运行，相同时保持注册顺序。</para>\n\t/// </summary>\n\tpublic void RegisterCombatUiAlwaysVisibleWhen(string localId, SecondaryResourceCombatUiVisibilityPredicate predicate, int order = 0)\n\t{\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(localId, \"localId\");\n\t\tArgumentNullException.ThrowIfNull(predicate, \"predicate\");\n\t\tstring resourceId = GetResourceId(_modId, localId);\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\tif (!CombatUiVisibilityPredicates.TryGetValue(resourceId, out List<CombatUiVisibilityPredicateRegistration> value))\n\t\t\t{\n\t\t\t\tvalue = new List<CombatUiVisibilityPredicateRegistration>();\n\t\t\t\tCombatUiVisibilityPredicates[resourceId] = value;\n\t\t\t}\n\t\t\tvalue.Add(new CombatUiVisibilityPredicateRegistration(order, _nextVisibilityPredicateSequence++, predicate));\n\t\t\tvalue.Sort(delegate(CombatUiVisibilityPredicateRegistration left, CombatUiVisibilityPredicateRegistration right)\n\t\t\t{\n\t\t\t\tint num = left.Order.CompareTo(right.Order);\n\t\t\t\treturn (num == 0) ? left.Sequence.CompareTo(right.Sequence) : num;\n\t\t\t});\n\t\t}\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Keeps a resource visible in combat UI for <typeparamref name=\"TCharacter\" />, even at its default\n\t///         amount.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         对 <typeparamref name=\"TCharacter\" /> 始终在战斗界面显示资源，即使资源处于默认数量。\n\t///     </para>\n\t/// </summary>\n\tpublic void AlwaysShowInCombatUiForCharacter<TCharacter>(string localId, int order = -1000) where TCharacter : CharacterModel\n\t{\n\t\tAlwaysShowInCombatUiForCharacter(localId, typeof(TCharacter), order);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Keeps a resource visible for characters assignable to the specified type.</para>\n\t///     <para xml:lang=\"zh-CN\">对可赋值给指定类型的角色始终显示资源。</para>\n\t/// </summary>\n\tpublic void AlwaysShowInCombatUiForCharacter(string localId, Type characterType, int order = -1000)\n\t{\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(localId, \"localId\");\n\t\tArgumentNullException.ThrowIfNull(characterType, \"characterType\");\n\t\tif (characterType.IsInterface || characterType.ContainsGenericParameters || !typeof(CharacterModel).IsAssignableFrom(characterType))\n\t\t{\n\t\t\tthrow new ArgumentException(\"Type '\" + characterType.FullName + \"' must be a closed character model subtype.\", \"characterType\");\n\t\t}\n\t\tRegisterCombatUiAlwaysVisibleWhen(localId, (SecondaryResourceCombatVisibilityContext context) => characterType.IsInstanceOfType(context.Player.Character), order);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Keeps a resource visible in combat UI for every character.</para>\n\t///     <para xml:lang=\"zh-CN\">对所有角色始终在战斗界面显示资源。</para>\n\t/// </summary>\n\tpublic void AlwaysShowInCombatUi(string localId, int order = -1000)\n\t{\n\t\tRegisterCombatUiAlwaysVisibleWhen(localId, (SecondaryResourceCombatVisibilityContext _) => true, order);\n\t}\n\n\tinternal static SecondaryResourceCombatUiVisibilityPredicate[] GetCombatUiVisibilityPredicates(string resourceId)\n\t{\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(resourceId, \"resourceId\");\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\tList<CombatUiVisibilityPredicateRegistration> value;\n\t\t\treturn CombatUiVisibilityPredicates.TryGetValue(resourceId.Trim(), out value) ? value.Select((CombatUiVisibilityPredicateRegistration registration) => registration.Predicate).ToArray() : Array.Empty<SecondaryResourceCombatUiVisibilityPredicate>();\n\t\t}\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Registers a combat UI child and its update route on <see cref=\"T:MegaCrit.Sts2.Core.Nodes.Combat.NCombatUi\" /> through node\n\t///         attachments.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">通过节点挂载机制，在 <see cref=\"T:MegaCrit.Sts2.Core.Nodes.Combat.NCombatUi\" /> 上注册战斗界面子节点及其更新路径。</para>\n\t/// </summary>\n\tpublic NodeAttachmentDefinition RegisterCombatUi<TNode>(string localId, Func<NCombatUi, TNode> factory, Action<SecondaryResourceCombatUiContext<NCombatUi, TNode>> update, NodeAttachmentOptions? options = null) where TNode : Node\n\t{\n\t\treturn this.RegisterCombatUi<NCombatUi, TNode>(localId, factory, update, options);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Registers a combat UI child with update and amount-change routes on <see cref=\"T:MegaCrit.Sts2.Core.Nodes.Combat.NCombatUi\" />.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">在 <see cref=\"T:MegaCrit.Sts2.Core.Nodes.Combat.NCombatUi\" /> 上注册带更新及数量变化处理路径的战斗界面子节点。</para>\n\t/// </summary>\n\tpublic NodeAttachmentDefinition RegisterCombatUi<TNode>(string localId, Func<NCombatUi, TNode> factory, Action<SecondaryResourceCombatUiContext<NCombatUi, TNode>> update, SecondaryResourceCombatUiChangedHandler<NCombatUi, TNode> changed, NodeAttachmentOptions? options = null) where TNode : Node\n\t{\n\t\treturn this.RegisterCombatUi<NCombatUi, TNode>(localId, factory, update, changed, options);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Registers a combat UI child and its update route through node attachments.</para>\n\t///     <para xml:lang=\"zh-CN\">通过节点挂载机制注册战斗界面子节点及其更新路径。</para>\n\t/// </summary>\n\tpublic NodeAttachmentDefinition RegisterCombatUi<TParent, TNode>(string localId, Func<TParent, TNode> factory, Action<SecondaryResourceCombatUiContext<TParent, TNode>> update, NodeAttachmentOptions? options = null) where TParent : Node where TNode : Node\n\t{\n\t\tArgumentNullException.ThrowIfNull(factory, \"factory\");\n\t\tArgumentNullException.ThrowIfNull(update, \"update\");\n\t\treturn ModNodeAttachmentRegistry.For(_modId).RegisterReadyChild(localId, factory, delegate(TParent parent, TNode node)\n\t\t{\n\t\t\tSecondaryResourceUiRuntime.RegisterCombatUpdater(parent, node, update);\n\t\t\tSecondaryResourceUiRuntime.HideCombatUi((Node)(object)parent);\n\t\t}, options);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Registers a combat UI child with update and amount-change routes through node attachments.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">通过节点挂载机制注册带更新及数量变化处理路径的战斗界面子节点。</para>\n\t/// </summary>\n\tpublic NodeAttachmentDefinition RegisterCombatUi<TParent, TNode>(string localId, Func<TParent, TNode> factory, Action<SecondaryResourceCombatUiContext<TParent, TNode>> update, SecondaryResourceCombatUiChangedHandler<TParent, TNode> changed, NodeAttachmentOptions? options = null) where TParent : Node where TNode : Node\n\t{\n\t\tArgumentNullException.ThrowIfNull(factory, \"factory\");\n\t\tArgumentNullException.ThrowIfNull(update, \"update\");\n\t\tArgumentNullException.ThrowIfNull(changed, \"changed\");\n\t\treturn ModNodeAttachmentRegistry.For(_modId).RegisterReadyChild(localId, factory, delegate(TParent parent, TNode node)\n\t\t{\n\t\t\tSecondaryResourceUiRuntime.RegisterCombatUpdater(parent, node, update, changed);\n\t\t\tSecondaryResourceUiRuntime.HideCombatUi((Node)(object)parent);\n\t\t}, options);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Registers a card UI child and its update route on <see cref=\"T:MegaCrit.Sts2.Core.Nodes.Cards.NCard\" /> through node attachments.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">通过节点挂载机制，在 <see cref=\"T:MegaCrit.Sts2.Core.Nodes.Cards.NCard\" /> 上注册卡牌界面子节点及其更新路径。</para>\n\t/// </summary>\n\tpublic NodeAttachmentDefinition RegisterCardUi<TNode>(string localId, Func<NCard, TNode> factory, Action<SecondaryResourceCardUiContext<NCard, TNode>> update, NodeAttachmentOptions? options = null) where TNode : Node\n\t{\n\t\treturn this.RegisterCardUi<NCard, TNode>(localId, factory, update, WithDefaultCardUiOptions(options));\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Registers a card UI child and its update route through node attachments.</para>\n\t///     <para xml:lang=\"zh-CN\">通过节点挂载机制注册卡牌界面子节点及其更新路径。</para>\n\t/// </summary>\n\tpublic NodeAttachmentDefinition RegisterCardUi<TParent, TNode>(string localId, Func<TParent, TNode> factory, Action<SecondaryResourceCardUiContext<TParent, TNode>> update, NodeAttachmentOptions? options = null) where TParent : Node where TNode : Node\n\t{\n\t\tArgumentNullException.ThrowIfNull(factory, \"factory\");\n\t\tArgumentNullException.ThrowIfNull(update, \"update\");\n\t\treturn ModNodeAttachmentRegistry.For(_modId).RegisterReadyChild(localId, factory, delegate(TParent parent, TNode node)\n\t\t{\n\t\t\tSecondaryResourceUiRuntime.RegisterCardUpdater(parent, node, update);\n\t\t}, options);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Registers a secondary-resource UI child for each multiplayer player-state display.</para>\n\t///     <para xml:lang=\"zh-CN\">为每个多人玩家状态栏注册次级资源界面子节点。</para>\n\t/// </summary>\n\tpublic NodeAttachmentDefinition RegisterMultiplayerPlayerStateUi<TNode>(string localId, Func<NMultiplayerPlayerState, TNode> factory, Action<SecondaryResourceMultiplayerPlayerStateUiContext<TNode>> update, NodeAttachmentOptions? options = null) where TNode : Node\n\t{\n\t\tArgumentNullException.ThrowIfNull(factory, \"factory\");\n\t\tArgumentNullException.ThrowIfNull(update, \"update\");\n\t\treturn ModNodeAttachmentRegistry.For(_modId).RegisterReadyChild<NMultiplayerPlayerState, TNode>(localId, factory, (Action<NMultiplayerPlayerState, TNode>?)delegate(NMultiplayerPlayerState parent, TNode node)\n\t\t{\n\t\t\tSecondaryResourceUiRuntime.RegisterMultiplayerPlayerStateUpdater(parent, node, update);\n\t\t\tSecondaryResourceMultiplayerPlayerStateUiTicker.Ensure(parent);\n\t\t\tSecondaryResourceUiRuntime.HideMultiplayerPlayerStateUi(parent);\n\t\t}, WithDefaultMultiplayerPlayerStateOptions(options));\n\t}\n\n\tprivate static NodeAttachmentOptions WithDefaultCardUiOptions(NodeAttachmentOptions? options)\n\t{\n\t\tNodeAttachmentOptions nodeAttachmentOptions = options ?? NodeAttachmentOptions.Default;\n\t\treturn new NodeAttachmentOptions\n\t\t{\n\t\t\tName = nodeAttachmentOptions.Name,\n\t\t\tOrder = nodeAttachmentOptions.Order,\n\t\t\tUniqueNameInOwner = nodeAttachmentOptions.UniqueNameInOwner,\n\t\t\tIncludeDerivedParentTypes = nodeAttachmentOptions.IncludeDerivedParentTypes,\n\t\t\tDuplicatePolicy = nodeAttachmentOptions.DuplicatePolicy,\n\t\t\tAddMode = nodeAttachmentOptions.AddMode,\n\t\t\tAttachParentSelector = (nodeAttachmentOptions.AttachParentSelector ?? new Func<Node, Node>(ResolveCardUiAttachParent)),\n\t\t\tSetupTiming = nodeAttachmentOptions.SetupTiming,\n\t\t\tChildIndex = nodeAttachmentOptions.ChildIndex,\n\t\t\tInsertBeforeName = nodeAttachmentOptions.InsertBeforeName,\n\t\t\tInsertAfterName = nodeAttachmentOptions.InsertAfterName,\n\t\t\tQueueFreeReplacedNode = nodeAttachmentOptions.QueueFreeReplacedNode\n\t\t};\n\t}\n\n\tprivate static NodeAttachmentOptions WithDefaultMultiplayerPlayerStateOptions(NodeAttachmentOptions? options)\n\t{\n\t\tNodeAttachmentOptions nodeAttachmentOptions = options ?? NodeAttachmentOptions.Default;\n\t\treturn new NodeAttachmentOptions\n\t\t{\n\t\t\tName = nodeAttachmentOptions.Name,\n\t\t\tOrder = nodeAttachmentOptions.Order,\n\t\t\tUniqueNameInOwner = nodeAttachmentOptions.UniqueNameInOwner,\n\t\t\tIncludeDerivedParentTypes = nodeAttachmentOptions.IncludeDerivedParentTypes,\n\t\t\tDuplicatePolicy = nodeAttachmentOptions.DuplicatePolicy,\n\t\t\tAddMode = nodeAttachmentOptions.AddMode,\n\t\t\tAttachParentSelector = (nodeAttachmentOptions.AttachParentSelector ?? new Func<Node, Node>(ResolveMultiplayerPlayerStateAttachParent)),\n\t\t\tSetupTiming = NodeAttachmentSetupTiming.AfterAdd,\n\t\t\tChildIndex = nodeAttachmentOptions.ChildIndex,\n\t\t\tInsertBeforeName = nodeAttachmentOptions.InsertBeforeName,\n\t\t\tInsertAfterName = nodeAttachmentOptions.InsertAfterName,\n\t\t\tQueueFreeReplacedNode = nodeAttachmentOptions.QueueFreeReplacedNode\n\t\t};\n\t}\n\n\tprivate static Node ResolveCardUiAttachParent(Node parent)\n\t{\n\t\tNCard val = (NCard)(object)((parent is NCard) ? parent : null);\n\t\tif (val != null)\n\t\t{\n\t\t\tControl body = val.Body;\n\t\t\tif (body != null)\n\t\t\t{\n\t\t\t\treturn (Node)(object)body;\n\t\t\t}\n\t\t}\n\t\treturn parent;\n\t}\n\n\tprivate static Node ResolveMultiplayerPlayerStateAttachParent(Node parent)\n\t{\n\t\tNMultiplayerPlayerState val = (NMultiplayerPlayerState)(object)((parent is NMultiplayerPlayerState) ? parent : null);\n\t\tif (val != null)\n\t\t{\n\t\t\tHBoxContainer nodeOrNull = ((Node)val).GetNodeOrNull<HBoxContainer>(NodePath.op_Implicit(\"TopInfoContainer\"));\n\t\t\tif (nodeOrNull != null)\n\t\t\t{\n\t\t\t\treturn (Node)(object)nodeOrNull;\n\t\t\t}\n\t\t}\n\t\treturn parent;\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n"
+    }
+  ],
+  "decompilationFailure": {
+    "exitCode": 70,
+    "type": "STS2RitsuLib.Cards.FreePlay.FreePlayCardVisuals",
+    "output": "System.InvalidOperationException: Could not find type definition STS2RitsuLib.Cards.FreePlay.FreePlayCardVisuals in type system.\n   at ICSharpCode.Decompiler.CSharp.CSharpDecompiler.DecompileType(FullTypeName fullTypeName) in /_/ICSharpCode.Decompiler/CSharp/CSharpDecompiler.cs:line 985\n   at ICSharpCode.Decompiler.CSharp.CSharpDecompiler.DecompileTypeAsString(FullTypeName fullTypeName) in /_/ICSharpCode.Decompiler/CSharp/CSharpDecompiler.cs:line 1005\n   at ICSharpCode.ILSpyCmd.ILSpyCmdProgram.Decompile(String assemblyFileName, TextWriter output, String typeName) in D:\\a\\ILSpy\\ILSpy\\ICSharpCode.ILSpyCmd\\IlspyCmdProgram.cs:line 399\n   at ICSharpCode.ILSpyCmd.ILSpyCmdProgram.<OnExecuteAsync>g__PerformPerFileAction|83_0(String fileName, <>c__DisplayClass83_0&) in D:\\a\\ILSpy\\ILSpy\\ICSharpCode.ILSpyCmd\\IlspyCmdProgram.cs:line 311\n   at ICSharpCode.ILSpyCmd.ILSpyCmdProgram.OnExecuteAsync(CommandLineApplication app) in D:\\a\\ILSpy\\ILSpy\\ICSharpCode.ILSpyCmd\\IlspyCmdProgram.cs:line 232\n",
+    "resolvedType": "STS2RitsuLib.Cards.FreePlay.Patches.FreePlayCardVisuals"
+  },
+  "rawInventories": [
+    {
+      "path": ".local/tool-tasks/exhaust-extension-writer-audit-20261007/runtime-reference-inventory.json",
+      "bytes": 99828644,
+      "sha256": "bba998263e76060ea9af4aaa811c714dec131c03b754c02f87a5867804df52b5"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-extension-writer-audit-20261007/game-reference-inventory-v6.json",
+      "bytes": 196740504,
+      "sha256": "0c2becc7ecbdab2bf72b012858da2a9228a931ccbcb709f50f492e1ad8ba1493"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-extension-writer-audit-20261007/writer-api-worklist.json",
+      "bytes": 212581,
+      "sha256": "d5be722b0eb1b65b07e7a927e735e66b5533e0089a7b79068cdb3f2f0b9be226"
+    }
+  ],
+  "writerWorklist": {
+    "schemaVersion": 1,
+    "summary": {
+      "runtimeTypes": 5057,
+      "runtimeMethods": 36800,
+      "runtimeDisplaySignatureGroups": 1,
+      "scopedWriterApiTargets": 35,
+      "directWriterApiReferences": 43,
+      "runtimePotentialCallerMethods": 62,
+      "possiblePatchBridges": 6,
+      "nativeTargetNames": 4,
+      "nativeMethodSeeds": 4,
+      "nativePotentialCallerMethods": 153,
+      "displaySignatureCollisionsInRuntimeClosure": 0
+    },
+    "isSafetyCertificate": false,
+    "writerApiTargets": [
+      "STS2RitsuLib.Cards.FreePlay.FreePlayResolution STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::Resolve(MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "STS2RitsuLib.Combat.SecondaryResources.ModSecondaryResourceRegistry STS2RitsuLib.Combat.SecondaryResources.ModSecondaryResourceRegistry::For(System.String)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Clone()",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::SetAllowingShortfall(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallPaymentHandler,System.Boolean,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallResolver,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Clone()",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Require(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Require(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::RequireAllowingShortfall(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallPaymentHandler,System.Boolean,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallResolver,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment,System.Nullable`1<System.Int32>)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::SpendIfAvailable(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "System.Boolean STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::ClearCardFreeAfterPlayed(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::ClearCardFreeThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryCostsThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryCostsUntilPlayed(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryResourceUsesThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryResourceUsesUntilPlayed(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::CopySecondaryCostsTo(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::CopySecondaryResourceUsesTo(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ResetSecondaryCostsForDowngradeFrom(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ResetSecondaryResourceUsesForDowngradeFrom(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::ClearDuration(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::ResetPermanentLayersFrom(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::ClearDuration(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::ResetPermanentLayersFrom(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet)",
+      "System.Collections.Generic.List`1<STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostLayer> STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::GetLayers(System.String)",
+      "System.Collections.Generic.List`1<STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseLayer> STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::GetLayers(System.String)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardBaseCostsFreeForRestOfTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardBaseCostsFreeThisCombat(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardBaseCostsFreeThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::Register(System.String,System.Func`2<MegaCrit.Sts2.Core.Entities.Cards.CardPlay,System.Boolean>)"
+    ],
+    "directWriterApiReferences": [
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.ModSecondaryResourceRegistry STS2RitsuLib.RitsuLibFramework::GetSecondaryResourceRegistry(System.String)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.ModSecondaryResourceRegistry STS2RitsuLib.Combat.SecondaryResources.ModSecondaryResourceRegistry::For(System.String)",
+        "Kind": "call",
+        "Offset": 1,
+        "Owner": "STS2RitsuLib.RitsuLibFramework",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100664770,
+        "OperandMetadataToken": 100682874
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.RitsuLibFramework::RegisterFreePlayBinding(System.String,System.Func`2<MegaCrit.Sts2.Core.Entities.Cards.CardPlay,System.Boolean>)",
+        "Target": "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::Register(System.String,System.Func`2<MegaCrit.Sts2.Core.Entities.Cards.CardPlay,System.Boolean>)",
+        "Kind": "call",
+        "Offset": 2,
+        "Owner": "STS2RitsuLib.RitsuLibFramework",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100664802,
+        "OperandMetadataToken": 100685698
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,System.Int32)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost)",
+        "Kind": "call",
+        "Offset": 16,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683299,
+        "OperandMetadataToken": 100683300
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Kind": "call",
+        "Offset": 4,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683300,
+        "OperandMetadataToken": 100683301
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment)",
+        "Kind": "call",
+        "Offset": 5,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683301,
+        "OperandMetadataToken": 100683304
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::SetAllowingShortfall(System.String,System.Int32,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallPaymentHandler,System.Boolean,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallResolver)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::SetAllowingShortfall(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallPaymentHandler,System.Boolean,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallResolver,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Kind": "call",
+        "Offset": 22,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683302,
+        "OperandMetadataToken": 100683303
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::SetAllowingShortfall(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallPaymentHandler,System.Boolean,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallResolver,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment)",
+        "Kind": "call",
+        "Offset": 15,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683303,
+        "OperandMetadataToken": 100683304
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment)",
+        "Target": "System.Collections.Generic.List`1<STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostLayer> STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::GetLayers(System.String)",
+        "Kind": "call",
+        "Offset": 43,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683304,
+        "OperandMetadataToken": 100683312
+      },
+      {
+        "Caller": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryCostsUntilPlayed(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::ClearDuration(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Kind": "callvirt",
+        "Offset": 12,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683317,
+        "OperandMetadataToken": 100683306
+      },
+      {
+        "Caller": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryCostsUntilPlayed(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryResourceUsesUntilPlayed(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 22,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683317,
+        "OperandMetadataToken": 100683325
+      },
+      {
+        "Caller": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryCostsThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::ClearDuration(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Kind": "callvirt",
+        "Offset": 12,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683318,
+        "OperandMetadataToken": 100683306
+      },
+      {
+        "Caller": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryCostsThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryResourceUsesThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 22,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683318,
+        "OperandMetadataToken": 100683326
+      },
+      {
+        "Caller": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::CopySecondaryCostsTo(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Clone()",
+        "Kind": "callvirt",
+        "Offset": 49,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683320,
+        "OperandMetadataToken": 100683310
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ResetSecondaryResourcesForDowngrade(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ResetSecondaryCostsForDowngradeFrom(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 29,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683321,
+        "OperandMetadataToken": 100683322
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ResetSecondaryResourcesForDowngrade(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ResetSecondaryResourceUsesForDowngradeFrom(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 36,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683321,
+        "OperandMetadataToken": 100683329
+      },
+      {
+        "Caller": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ResetSecondaryCostsForDowngradeFrom(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::ResetPermanentLayersFrom(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet)",
+        "Kind": "callvirt",
+        "Offset": 82,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683322,
+        "OperandMetadataToken": 100683311
+      },
+      {
+        "Caller": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryResourceUsesUntilPlayed(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::ClearDuration(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Kind": "callvirt",
+        "Offset": 12,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683325,
+        "OperandMetadataToken": 100684165
+      },
+      {
+        "Caller": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryResourceUsesThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::ClearDuration(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Kind": "callvirt",
+        "Offset": 12,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683326,
+        "OperandMetadataToken": 100684165
+      },
+      {
+        "Caller": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::CopySecondaryResourceUsesTo(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Clone()",
+        "Kind": "callvirt",
+        "Offset": 49,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683328,
+        "OperandMetadataToken": 100684167
+      },
+      {
+        "Caller": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ResetSecondaryResourceUsesForDowngradeFrom(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::ResetPermanentLayersFrom(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet)",
+        "Kind": "callvirt",
+        "Offset": 82,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683329,
+        "OperandMetadataToken": 100684168
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCloneBridge::CopySecondaryCosts(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::CopySecondaryCostsTo(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 2,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCloneBridge",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683332,
+        "OperandMetadataToken": 100683320
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCloneBridge::CopySecondaryCosts(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::CopySecondaryResourceUsesTo(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 10,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCloneBridge",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100683332,
+        "OperandMetadataToken": 100683328
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Require(System.String,System.String,System.Int32)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Require(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Kind": "call",
+        "Offset": 18,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100684153,
+        "OperandMetadataToken": 100684154
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Require(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Kind": "call",
+        "Offset": 7,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100684154,
+        "OperandMetadataToken": 100684161
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Require(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment)",
+        "Kind": "call",
+        "Offset": 9,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100684155,
+        "OperandMetadataToken": 100684162
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::RequireAllowingShortfall(System.String,System.String,System.Int32,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallPaymentHandler,System.Boolean,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallResolver)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::RequireAllowingShortfall(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallPaymentHandler,System.Boolean,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallResolver,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Kind": "call",
+        "Offset": 24,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100684156,
+        "OperandMetadataToken": 100684157
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::RequireAllowingShortfall(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallPaymentHandler,System.Boolean,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallResolver,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Require(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Kind": "call",
+        "Offset": 17,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100684157,
+        "OperandMetadataToken": 100684155
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::SpendIfAvailable(System.String,System.String,System.Int32)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::SpendIfAvailable(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Kind": "call",
+        "Offset": 18,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100684158,
+        "OperandMetadataToken": 100684159
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::SpendIfAvailable(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Kind": "call",
+        "Offset": 7,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100684159,
+        "OperandMetadataToken": 100684161
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::SpendExtra(System.String,System.String,System.Int32,System.Nullable`1<System.Int32>,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment,System.Nullable`1<System.Int32>)",
+        "Kind": "call",
+        "Offset": 58,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100684160,
+        "OperandMetadataToken": 100684163
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment)",
+        "Kind": "call",
+        "Offset": 9,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100684161,
+        "OperandMetadataToken": 100684162
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment)",
+        "Target": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment,System.Nullable`1<System.Int32>)",
+        "Kind": "call",
+        "Offset": 19,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100684162,
+        "OperandMetadataToken": 100684163
+      },
+      {
+        "Caller": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment,System.Nullable`1<System.Int32>)",
+        "Target": "System.Collections.Generic.List`1<STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseLayer> STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::GetLayers(System.String)",
+        "Kind": "call",
+        "Offset": 161,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100684163,
+        "OperandMetadataToken": 100684169
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.Combat.SecondaryResources.Patches.CardModelOnPlayWrapperSecondaryResourcesPatch/<After>d__9::MoveNext()",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryCostsUntilPlayed(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 107,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.Patches.CardModelOnPlayWrapperSecondaryResourcesPatch",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100698459,
+        "OperandMetadataToken": 100683317
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.Combat.SecondaryResources.Patches.CardModelEndOfTurnSecondaryResourcesPatch::Postfix(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryCostsThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 8,
+        "Owner": "STS2RitsuLib.Combat.SecondaryResources.Patches.CardModelEndOfTurnSecondaryResourcesPatch",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100684527,
+        "OperandMetadataToken": 100683318
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.Cards.FreePlay.CardModelFreePlayExtensions::SetToFreeForRestOfTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardBaseCostsFreeForRestOfTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 57,
+        "Owner": "STS2RitsuLib.Cards.FreePlay.CardModelFreePlayExtensions",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100685664,
+        "OperandMetadataToken": 100685702
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardFreeThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardBaseCostsFreeThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 1,
+        "Owner": "STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100685700,
+        "OperandMetadataToken": 100685701
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardFreeThisCombat(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardBaseCostsFreeThisCombat(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 1,
+        "Owner": "STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100685704,
+        "OperandMetadataToken": 100685703
+      },
+      {
+        "Caller": "System.Boolean STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::IsFreeForPlay(MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+        "Target": "STS2RitsuLib.Cards.FreePlay.FreePlayResolution STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::Resolve(MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+        "Kind": "call",
+        "Offset": 1,
+        "Owner": "STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100685707,
+        "OperandMetadataToken": 100685706
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.Cards.FreePlay.Patches.CardModelSetToFreeThisTurnBindingPatch::Postfix(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardBaseCostsFreeThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 1,
+        "Owner": "STS2RitsuLib.Cards.FreePlay.Patches.CardModelSetToFreeThisTurnBindingPatch",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100685721,
+        "OperandMetadataToken": 100685701
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.Cards.FreePlay.Patches.CardModelFreeThisTurnEndCleanupPatch::Postfix(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Boolean STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::ClearCardFreeThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 1,
+        "Owner": "STS2RitsuLib.Cards.FreePlay.Patches.CardModelFreeThisTurnEndCleanupPatch",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100685727,
+        "OperandMetadataToken": 100685710
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.Cards.FreePlay.Patches.CardModelFreeAfterPlayedCleanupPatch/<After>d__8::MoveNext()",
+        "Target": "System.Boolean STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::ClearCardFreeAfterPlayed(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 113,
+        "Owner": "STS2RitsuLib.Cards.FreePlay.Patches.CardModelFreeAfterPlayedCleanupPatch",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100699410,
+        "OperandMetadataToken": 100685711
+      },
+      {
+        "Caller": "System.Void STS2RitsuLib.Cards.FreePlay.Patches.CardModelSetToFreeThisCombatBindingPatch::Postfix(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Target": "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardBaseCostsFreeThisCombat(MegaCrit.Sts2.Core.Models.CardModel)",
+        "Kind": "call",
+        "Offset": 1,
+        "Owner": "STS2RitsuLib.Cards.FreePlay.Patches.CardModelSetToFreeThisCombatBindingPatch",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100685740,
+        "OperandMetadataToken": 100685703
+      }
+    ],
+    "runtimePotentialCallerMethods": [
+      "STS2RitsuLib.Cards.FreePlay.FreePlayResolution STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::Resolve(MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "STS2RitsuLib.Combat.SecondaryResources.ModSecondaryResourceRegistry STS2RitsuLib.Combat.SecondaryResources.ModSecondaryResourceRegistry::For(System.String)",
+      "STS2RitsuLib.Combat.SecondaryResources.ModSecondaryResourceRegistry STS2RitsuLib.RitsuLibFramework::GetSecondaryResourceRegistry(System.String)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Clone()",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::Set(System.String,System.Int32)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::SetAllowingShortfall(System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallPaymentHandler,System.Boolean,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallResolver,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::SetAllowingShortfall(System.String,System.Int32,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallPaymentHandler,System.Boolean,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallResolver)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Clone()",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Require(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Require(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Require(System.String,System.String,System.Int32)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::RequireAllowingShortfall(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallPaymentHandler,System.Boolean,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallResolver,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::RequireAllowingShortfall(System.String,System.String,System.Int32,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallPaymentHandler,System.Boolean,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceShortfallResolver)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::Set(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceUseKind,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceInsufficientPayment,System.Nullable`1<System.Int32>)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::SpendExtra(System.String,System.String,System.Int32,System.Nullable`1<System.Int32>,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::SpendIfAvailable(System.String,System.String,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCost,STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::SpendIfAvailable(System.String,System.String,System.Int32)",
+      "System.Boolean STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::ClearCardFreeAfterPlayed(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::ClearCardFreeThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::IsFreeForPlay(MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryCostsThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryCostsUntilPlayed(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryResourceUsesThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ClearSecondaryResourceUsesUntilPlayed(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::CopySecondaryCostsTo(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::CopySecondaryResourceUsesTo(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ResetSecondaryCostsForDowngradeFrom(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ResetSecondaryResourceUsesForDowngradeFrom(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::ClearDuration(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::ResetPermanentLayersFrom(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::ClearDuration(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostDuration)",
+      "System.Boolean STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::ResetPermanentLayersFrom(STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet)",
+      "System.Collections.Generic.List`1<STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostLayer> STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCostSet::GetLayers(System.String)",
+      "System.Collections.Generic.List`1<STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseLayer> STS2RitsuLib.Combat.SecondaryResources.SecondaryResourcePlayUseSet::GetLayers(System.String)",
+      "System.Threading.Tasks.Task STS2RitsuLib.Cards.FreePlay.Patches.CardModelFreeAfterPlayedCleanupPatch::After(MegaCrit.Sts2.Core.Models.CardModel,System.Threading.Tasks.Task)",
+      "System.Threading.Tasks.Task STS2RitsuLib.Combat.SecondaryResources.Patches.CardModelOnPlayWrapperSecondaryResourcesPatch::After(MegaCrit.Sts2.Core.Models.CardModel,System.IDisposable,System.Threading.Tasks.Task)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.CardModelFreePlayExtensions::SetToFreeForRestOfTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardBaseCostsFreeForRestOfTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardBaseCostsFreeThisCombat(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardBaseCostsFreeThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardFreeThisCombat(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::MarkCardFreeThisTurn(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.FreePlayBindingRegistry::Register(System.String,System.Func`2<MegaCrit.Sts2.Core.Entities.Cards.CardPlay,System.Boolean>)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.Patches.CardModelFreeAfterPlayedCleanupPatch/<After>d__8::MoveNext()",
+      "System.Void STS2RitsuLib.Cards.FreePlay.Patches.CardModelFreeAfterPlayedCleanupPatch::Postfix(MegaCrit.Sts2.Core.Models.CardModel,System.Threading.Tasks.Task&)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.Patches.CardModelFreeThisTurnEndCleanupPatch::Postfix(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.Patches.CardModelSetToFreeThisCombatBindingPatch::Postfix(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Cards.FreePlay.Patches.CardModelSetToFreeThisTurnBindingPatch::Postfix(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Combat.SecondaryResources.Patches.CardModelEndOfTurnSecondaryResourcesPatch::Postfix(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Combat.SecondaryResources.Patches.CardModelOnPlayWrapperSecondaryResourcesPatch/<After>d__9::MoveNext()",
+      "System.Void STS2RitsuLib.Combat.SecondaryResources.Patches.CardModelOnPlayWrapperSecondaryResourcesPatch::Postfix(MegaCrit.Sts2.Core.Models.CardModel,System.IDisposable,System.Threading.Tasks.Task&)",
+      "System.Void STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCardExtensions::ResetSecondaryResourcesForDowngrade(MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCloneBridge::CopySecondaryCosts(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Void STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCloneBridge::Initialize()",
+      "System.Void STS2RitsuLib.RitsuLibFramework/<>c::<Initialize>b__30_4()",
+      "System.Void STS2RitsuLib.RitsuLibFramework::Initialize()",
+      "System.Void STS2RitsuLib.RitsuLibFramework::RegisterFreePlayBinding(System.String,System.Func`2<MegaCrit.Sts2.Core.Entities.Cards.CardPlay,System.Boolean>)"
+    ],
+    "possibleNativePatchBridges": [
+      {
+        "Target": "MegaCrit.Sts2.Core.Models.CardModel.SetToFreeThisTurn",
+        "TargetAssembly": "sts2",
+        "Kind": "Postfix",
+        "Patch": "STS2RitsuLib.Cards.FreePlay.Patches.CardModelSetToFreeThisTurnBindingPatch.Postfix",
+        "PatchAssembly": "STS2-RitsuLib.Runtime"
+      },
+      {
+        "Target": "MegaCrit.Sts2.Core.Models.CardModel.EndOfTurnCleanup",
+        "TargetAssembly": "sts2",
+        "Kind": "Postfix",
+        "Patch": "STS2RitsuLib.Cards.FreePlay.Patches.CardModelFreeThisTurnEndCleanupPatch.Postfix",
+        "PatchAssembly": "STS2-RitsuLib.Runtime"
+      },
+      {
+        "Target": "MegaCrit.Sts2.Core.Models.CardModel.EndOfTurnCleanup",
+        "TargetAssembly": "sts2",
+        "Kind": "Postfix",
+        "Patch": "STS2RitsuLib.Combat.SecondaryResources.Patches.CardModelEndOfTurnSecondaryResourcesPatch.Postfix",
+        "PatchAssembly": "STS2-RitsuLib.Runtime"
+      },
+      {
+        "Target": "MegaCrit.Sts2.Core.Models.CardModel.OnPlayWrapper",
+        "TargetAssembly": "sts2",
+        "Kind": "Postfix",
+        "Patch": "STS2RitsuLib.Cards.FreePlay.Patches.CardModelFreeAfterPlayedCleanupPatch.Postfix",
+        "PatchAssembly": "STS2-RitsuLib.Runtime"
+      },
+      {
+        "Target": "MegaCrit.Sts2.Core.Models.CardModel.OnPlayWrapper",
+        "TargetAssembly": "sts2",
+        "Kind": "Postfix",
+        "Patch": "STS2RitsuLib.Combat.SecondaryResources.Patches.CardModelOnPlayWrapperSecondaryResourcesPatch.Postfix",
+        "PatchAssembly": "STS2-RitsuLib.Runtime"
+      },
+      {
+        "Target": "MegaCrit.Sts2.Core.Models.CardModel.SetToFreeThisCombat",
+        "TargetAssembly": "sts2",
+        "Kind": "Postfix",
+        "Patch": "STS2RitsuLib.Cards.FreePlay.Patches.CardModelSetToFreeThisCombatBindingPatch.Postfix",
+        "PatchAssembly": "STS2-RitsuLib.Runtime"
+      }
+    ],
+    "nativeMethodSeeds": [
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.CardModel::OnPlayWrapper(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Boolean,MegaCrit.Sts2.Core.Entities.Cards.ResourceInfo,System.Boolean)",
+      "System.Void MegaCrit.Sts2.Core.Models.CardModel::EndOfTurnCleanup()",
+      "System.Void MegaCrit.Sts2.Core.Models.CardModel::SetToFreeThisCombat()",
+      "System.Void MegaCrit.Sts2.Core.Models.CardModel::SetToFreeThisTurn()"
+    ],
+    "nativePotentialCallerMethods": [
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.AutoSlay.Handlers.Rooms.CombatRoomHandler::HandleAsync(MegaCrit.Sts2.Core.Random.Rng,System.Threading.CancellationToken)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Combat.CombatManager::AfterAllPlayersReadyToBeginEnemyTurn(MegaCrit.Sts2.Core.Combat.CombatTurnState)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Combat.CombatManager::EndEnemyTurn(MegaCrit.Sts2.Core.Combat.CombatTurnState)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Combat.CombatManager::EndEnemyTurnInternal(MegaCrit.Sts2.Core.Combat.CombatTurnState)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Combat.CombatManager::EndPlayerTurnPhaseTwoInternal()",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Combat.CombatManager::EndPlayerTurnPhaseTwoInternal(MegaCrit.Sts2.Core.Combat.CombatTurnState)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Combat.CombatManager::ExecuteEnemyTurn(MegaCrit.Sts2.Core.Combat.CombatTurnState,System.Func`1<System.Threading.Tasks.Task>)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Combat.CombatManager::FlushPlayerHand(MegaCrit.Sts2.Core.Combat.CombatTurnState,MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.GameActions.Multiplayer.HookPlayerChoiceContext)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Combat.CombatManager::RunTurnLoopAfter(System.Threading.Tasks.Task)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Combat.CombatManager::StartCombatInternal(MegaCrit.Sts2.Core.Combat.CombatTurnState)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Combat.CombatManager::StartTurn(MegaCrit.Sts2.Core.Combat.CombatTurnState,System.Func`1<System.Threading.Tasks.Task>)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Commands.CardCmd::AutoPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Entities.Cards.AutoPlayType,System.Boolean,System.Boolean)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Commands.CardCmd::Discard(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Models.CardModel)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Commands.CardCmd::Discard(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel>)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Commands.CardCmd::DiscardAndDraw(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel>,System.Int32)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Commands.CardPileCmd::AutoPlayFromDrawPile(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player,System.Int32,MegaCrit.Sts2.Core.Entities.Cards.CardPilePosition,System.Boolean)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.GameActions.PlayCardAction::ExecuteAction()",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.CardModel::OnPlayWrapper(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Boolean,MegaCrit.Sts2.Core.Entities.Cards.ResourceInfo,System.Boolean)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Abundance::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Acrobatics::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.BeatDown::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Bombardment::AfterAutoPrePlayPhaseEnteredEarly(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.BulletTime::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.CalculatedGamble::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Cascade::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Catastrophe::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.DaggerThrow::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.DecisionsDecisions::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Discovery::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Distraction::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Eidolon::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Havoc::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.HiddenDaggers::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.HowlFromBeyond::AfterAutoPostPlayPhaseEntered(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.IAmInvincible::AfterAutoPostPlayPhaseEntered(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.InfernalBlade::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.KnifeTrap::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.MadScience::ExecuteRider(MegaCrit.Sts2.Core.Models.Events.TinkerTime/RiderEffect,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.MadScience::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Metamorphosis::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Mocks.MockSkillCard::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Prepared::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Scrape::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.ShadowStep::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Splash::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.StormOfSteel::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Survivor::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.Uproar::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Cards.WhiteNoise::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Enchantments.Imbued::AfterAutoPrePlayPhaseEntered(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Potions.AttackPotion::OnUse(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Potions.ColorlessPotion::OnUse(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Potions.DistilledChaos::OnUse(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Potions.GamblersBrew::OnUse(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Potions.LiquidMemories::OnUse(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Potions.Mocks.MockDiscardAndAddShivsPotion::OnUse(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Potions.OrobicAcid::OnUse(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Potions.PowerPotion::OnUse(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Potions.SkillPotion::OnUse(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Potions.TouchOfInsanity::OnUse(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.HellraiserPower::AfterCardDrawnEarly(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Models.CardModel,System.Boolean)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.ImitationLearningPower::AfterCardPlayed(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.MayhemPower::AfterAutoPrePlayPhaseEntered(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.StampedePower::AfterAutoPostPlayPhaseEntered(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Powers.ToolsOfTheTradePower::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Relics.Crossbow::AfterSideTurnStart(MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Entities.Creatures.Creature>,MegaCrit.Sts2.Core.Combat.ICombatState)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Relics.GamblingChip::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Relics.HistoryCourse::AfterAutoPrePlayPhaseEntered(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Relics.JeweledMask::BeforeHandDraw(MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.ICombatState)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Relics.MummifiedHand::AfterCardPlayed(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Relics.VexingPuzzlebox::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Models.Relics.WhisperingEarring::AfterAutoPrePlayPhaseEnteredLate(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Rooms.CombatRoom::EnterInternal(MegaCrit.Sts2.Core.Runs.IRunState,System.Boolean)",
+      "System.Threading.Tasks.Task MegaCrit.Sts2.Core.Rooms.CombatRoom::StartCombat(MegaCrit.Sts2.Core.Runs.IRunState)",
+      "System.Threading.Tasks.Task`1<System.Func`1<System.Threading.Tasks.Task>> MegaCrit.Sts2.Core.Combat.CombatManager::AwaitTurnEndAndSwitchSides(MegaCrit.Sts2.Core.Combat.CombatTurnState)",
+      "System.Void MegaCrit.Sts2.Core.AutoSlay.Handlers.Rooms.CombatRoomHandler/<HandleAsync>d__4::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<AfterAllPlayersReadyToBeginEnemyTurn>d__137::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<AwaitTurnEndAndSwitchSides>d__99::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<EndEnemyTurn>d__110::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<EndEnemyTurnInternal>d__136::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<EndPlayerTurnPhaseTwoInternal>d__138::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<EndPlayerTurnPhaseTwoInternal>d__139::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<ExecuteEnemyTurn>d__126::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<FlushPlayerHand>d__140::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<RunTurnLoopAfter>d__96::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<StartCombatInternal>d__98::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Combat.CombatManager/<StartTurn>d__100::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Combat.CombatManager::AfterCombatRoomLoaded()",
+      "System.Void MegaCrit.Sts2.Core.Commands.CardCmd/<AutoPlay>d__0::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Commands.CardCmd/<Discard>d__2::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Commands.CardCmd/<Discard>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Commands.CardCmd/<DiscardAndDraw>d__4::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Commands.CardPileCmd/<AutoPlayFromDrawPile>d__23::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState::EndOfTurnCleanup()",
+      "System.Void MegaCrit.Sts2.Core.GameActions.PlayCardAction/<ExecuteAction>d__25::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.CardModel::EndOfTurnCleanup()",
+      "System.Void MegaCrit.Sts2.Core.Models.CardModel::SetToFreeThisCombat()",
+      "System.Void MegaCrit.Sts2.Core.Models.CardModel::SetToFreeThisTurn()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Abundance/<OnPlay>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Acrobatics/<OnPlay>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.BeatDown/<OnPlay>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Bombardment/<AfterAutoPrePlayPhaseEnteredEarly>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.BulletTime/<OnPlay>d__1::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.CalculatedGamble/<OnPlay>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Cascade/<OnPlay>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Catastrophe/<OnPlay>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.DaggerThrow/<OnPlay>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.DecisionsDecisions/<OnPlay>d__7::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Discovery/<OnPlay>d__4::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Distraction/<OnPlay>d__5::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Eidolon/<OnPlay>d__7::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Havoc/<OnPlay>d__1::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.HiddenDaggers/<OnPlay>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.HowlFromBeyond/<AfterAutoPostPlayPhaseEntered>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.IAmInvincible/<AfterAutoPostPlayPhaseEntered>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.InfernalBlade/<OnPlay>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.KnifeTrap/<OnPlay>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.MadScience/<ExecuteRider>d__57::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.MadScience/<OnPlay>d__51::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Metamorphosis/<OnPlay>d__5::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Mocks.MockSkillCard/<OnPlay>d__26::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Prepared/<OnPlay>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Scrape/<OnPlay>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.ShadowStep/<OnPlay>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Splash/<OnPlay>d__2::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.StormOfSteel/<OnPlay>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Survivor/<OnPlay>d__5::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.Uproar/<OnPlay>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Cards.WhiteNoise/<OnPlay>d__3::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Enchantments.Imbued/<AfterAutoPrePlayPhaseEntered>d__5::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Potions.AttackPotion/<OnUse>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Potions.ColorlessPotion/<OnUse>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Potions.DistilledChaos/<OnUse>d__8::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Potions.GamblersBrew/<OnUse>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Potions.LiquidMemories/<OnUse>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Potions.Mocks.MockDiscardAndAddShivsPotion/<OnUse>d__11::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Potions.OrobicAcid/<OnUse>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Potions.PowerPotion/<OnUse>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Potions.SkillPotion/<OnUse>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Potions.TouchOfInsanity/<OnUse>d__6::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Powers.HellraiserPower/<AfterCardDrawnEarly>d__7::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Powers.ImitationLearningPower/<AfterCardPlayed>d__16::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Powers.MayhemPower/<AfterAutoPrePlayPhaseEntered>d__4::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Powers.StampedePower/<AfterAutoPostPlayPhaseEntered>d__4::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Powers.ToolsOfTheTradePower/<AfterPlayerTurnStart>d__5::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Relics.Crossbow/<AfterSideTurnStart>d__2::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Relics.GamblingChip/<AfterPlayerTurnStart>d__2::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Relics.HistoryCourse/<AfterAutoPrePlayPhaseEntered>d__2::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Relics.JeweledMask/<BeforeHandDraw>d__2::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Relics.VexingPuzzlebox/<AfterPlayerTurnStart>d__2::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Models.Relics.WhisperingEarring/<AfterAutoPrePlayPhaseEnteredLate>d__8::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Rooms.CombatRoom/<EnterInternal>d__40::MoveNext()",
+      "System.Void MegaCrit.Sts2.Core.Rooms.CombatRoom/<StartCombat>d__46::MoveNext()"
+    ],
+    "limitations": [
+      "manually scoped API-name worklist is not all possible field/alias/reflection writers",
+      "static and ldftn/async edges indicate potential references, not runtime or branch reachability",
+      "patch bridge matching uses prior type/method names and does not resolve overload or execution order",
+      "only installed Runtime and game modules scanned; other callback assemblies remain unclosed",
+      "full-name graph nodes are investigation labels; MVID and per-edge definition/operand tokens are preserved",
+      "native method closure includes noncombat, UI, save and network entrypoints",
+      "no current root registration snapshot, finite future source closure or per-branch guard established"
+    ]
+  },
+  "limitations": [
+    "manually scoped API-name worklist is not all possible field/alias/reflection writers",
+    "static and ldftn/async edges indicate potential references, not runtime or branch reachability",
+    "patch bridge matching uses prior type/method names and does not resolve overload or execution order",
+    "only installed Runtime and game modules scanned; other callback assemblies remain unclosed",
+    "full-name graph nodes are investigation labels; MVID and per-edge definition/operand tokens are preserved",
+    "native method closure includes noncombat, UI, save and network entrypoints",
+    "no current root registration snapshot, finite future source closure or per-branch guard established",
+    "schema6 conservative signature collision refusal is not a full CLR dispatch resolver",
+    "method/async edges carry input-module tokens; field reference records do not",
+    "metadata boundary fixtures do not execute CLR or native gameplay",
+    "ClearCardFreeThisTurn may create empty state even when returning false",
+    "cost/use Changed and free detector delegate sources remain unclosed",
+    "zero material costs do not exclude layers or callbacks",
+    "no actual root registration capture or per-branch certification added this turn"
+  ],
+  "decision": {
+    "isWholeOrderCertificate": false,
+    "newProductionCertification": false,
+    "newActualPrunes": 0,
+    "newTwofoldScenarios": 0,
+    "newNativeRun": false,
+    "wholeRequestPerformanceAcceptance": false,
+    "peakRssAcceptance": false,
+    "certificationCostMeasured": false
+  },
+  "reusedEvidence": [
+    "docs/performance/exhaust-reader-closure-20261007.json",
+    "docs/performance/exhaust-root-extension-audit-20261007.json",
+    "docs/performance/exhaust-extension-registry-contract-20261007.json",
+    "docs/performance/exhaust-clone-binding-contract-20261007.json",
+    "docs/performance/exhaust-reader-footprint-20261007.json",
+    "docs/performance/exhaust-cleanup-contract-20261007.json",
+    "docs/performance/retained-victory-strict-hp-pruning-20261007.json"
+  ],
+  "cleanup": {
+    "pending": false,
+    "runtimeUnchanged": true,
+    "diagnosticDllDeployed": false,
+    "rawLogsAndReadOnlySourcesRetained": true,
+    "deploymentReusedFrom": "docs/performance/retained-victory-strict-hp-pruning-20261007.json",
+    "removed": [
+      ".local/tool-tasks/exhaust-extension-writer-audit-20261007/MetadataFixture.cs",
+      ".local/tool-tasks/exhaust-extension-writer-audit-20261007/MetadataFixture.csproj",
+      ".local/tool-tasks/exhaust-extension-writer-audit-20261007/writer_inventory_once.py",
+      ".local/tool-tasks/exhaust-extension-writer-audit-20261007/fixture-build",
+      ".local/tool-tasks/exhaust-extension-writer-audit-20261007/metadata-checks",
+      ".local/tool-tasks/exhaust-extension-writer-audit-20261007/obj"
+    ]
+  },
+  "gates": {
+    "documentation": {
+      "command": "python3 -B tools/inspection/verify-documentation.py",
+      "exitCode": 0,
+      "output": "DOCUMENTATION_OK files=552 links=2330 errors=0"
+    },
+    "trackedWhitespace": {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    "unchangedRuntimeStructureCoverageAndDeploymentReusedFrom": "docs/performance/retained-victory-strict-hp-pruning-20261007.json"
+  }
+}
