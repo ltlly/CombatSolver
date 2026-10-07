@@ -35,6 +35,8 @@
 
 [历史计数门槛研究](../../docs/performance/saturated-history-key-research-20261007.md)只读统计必须包含未调用Solve的并行展开worker；leader日志或leader导出不能代表完整请求。三根最终诊断保持14项质量/根/政策/预算，未观察到新增状态合并，未做新增原生语义合同或纯性能验收；三处探针源码及一次性入口已撤回。此前不完整导出只保留调查记录。
 
+[消耗堆等价研究](../../docs/performance/exhaust-order-pruning-research-20261007.md)另外观察真实准入/展开字典、原六项标签和租约旁路；五次完整只读请求14质量/根/政策/预算保持。潜在访问并非实际剪枝或速度证明，两个入口重叠不可相加。原生有序自动出牌/回调/返回引用尚需闭包证明，临时源码和构建已归档清理。
+
 [相同前缀原型](../../docs/performance/exact-action-prefix-replay-research-20261007.md)真实测试冷/热/不同前缀回退、生成牌/随机目标、当前评分和16缓存Fork；测试持有弱模板，未知风险为注入条目。完整请求变慢撤回，缺根绑定/GC/交互/最终回归，不作通用缓存或新速度结论。
 
 [完整动作重复回放研究](../../docs/performance/action-transition-opportunity-20261007.md)扩展离线宿主可选观察，按冻结根、完整动作、capture模式及实际worker拥有者分组；仅检查选定特征，未执行新原生/Fork合同，不替代完整历史或全部政策的安全证明。生产搜索及部署保持。 后续[历史前缀边界](../../docs/performance/transition-prefix-boundary-research-20261007.md)以临时夹具复现同键/同数量不同历史，并核对16个已Fork子分支并行修改及原生完整状态；不代表完整原合同、并发Fork或缓存安全。首版Power排列失败保留，临时路由恢复。
