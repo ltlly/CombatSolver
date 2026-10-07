@@ -1100,6 +1100,13 @@ internal sealed partial class UnattendedTestRunner
                 return Observation(combatEnded: false);
             }
 
+            if (request.ScenarioId == "NATIVE-HEALING-CALLBACK-BOUNDARY")
+            {
+                runner.SetStage("native_healing_callback_boundary");
+                await runner.AssertNativeHealingCallbackBoundaryAsync(combatState, player);
+                return Observation(combatEnded: false);
+            }
+
             if (request.ScenarioId == "POTION-COST-INCUMBENT")
             {
                 runner.SetStage("potion_cost_incumbent");

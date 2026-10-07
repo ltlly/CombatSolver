@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Runs;
 using CombatSolver.Engine.Common;
 using STS2RitsuLib;
@@ -211,10 +212,11 @@ internal sealed class PredictionModHookSubscriberCapture
     }
 
     /// <summary>
-    /// Every card type the root can reach without in-combat generation. Generated card types are not knowable at
-    /// capture time, so they stay outside this audit.
+    /// Initial cards plus a conservative native combat-generation superset.
+    /// Unlock/player-count restrictions only narrow the native random pools;
+    /// fixed status/curse sources also require audit independently of that filter.
     /// </summary>
-    private static IEnumerable<CardModel> EnumerateAuditableCards(RunState runState, CombatState combat)
+    private static IEnumerable<CardModel> EnumerateAuditableCards(IRunState runState, CombatState combat)
     {
         foreach (Player player in combat.Players)
         {
@@ -226,7 +228,26 @@ internal sealed class PredictionModHookSubscriberCapture
             foreach (CardModel card in player.Deck.Cards)
                 yield return card;
         }
+        foreach (CardModel card in EnumerateAuditableNativeGenerationCards())
+            yield return card;
     }
+
+    internal static IEnumerable<CardModel> EnumerateAuditableNativeGenerationCards()
+    {
+        CardPoolModel[] pools = [ModelDb.CardPool<IroncladCardPool>(), ModelDb.CardPool<SilentCardPool>(),
+            ModelDb.CardPool<RegentCardPool>(), ModelDb.CardPool<NecrobinderCardPool>(),
+            ModelDb.CardPool<DefectCardPool>(), ModelDb.CardPool<ColorlessCardPool>()];
+        foreach (CardPoolModel pool in pools)
+            foreach (CardModel card in pool.AllCards)
+                if (card.CanBeGeneratedInCombat && card.Rarity != CardRarity.Ancient && card.Rarity != CardRarity.Event)
+                    yield return card;
+        foreach (CardModel card in ModelDb.CardPool<StatusCardPool>().AllCards
+            .Concat(ModelDb.CardPool<CurseCardPool>().AllCards))
+            yield return card;
+    }
+
+    internal static void ValidateCardOnPlaySources(IRunState runState, CombatState combat)
+        => PredictionModPatchAudit.ValidateCardOnPlay(EnumerateAuditableCards(runState, combat));
 
     private static void ValidateSubscriber(
         AbstractModel subscriber,

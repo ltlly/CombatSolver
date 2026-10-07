@@ -342,6 +342,7 @@ StrategicEffectMirrors.Register<TYourPower>(requirements, evaluate, host);
 
 | 位置 | 症状 | 状态 |
 |---|---|---|
+| `PredictionRitsuHealingAudit.Validate` | 当前审计运行库的原生Heal入口只接受已核对的空补丁或精确Ritsu治疗前缀；进程级治疗监听器不属于ModHelper列表，也未被镜像，非空时根捕获和live采用边界明确拒绝。只缓存不可变方法/字段元数据，不执行监听器；运行库更新需重新审计，无外部放行入口。这不是其他Ritsu能力、回调或全部扩展的认证 | 封闭语义边界 |
 | `StrategicHpRecoveryBound.CanCertifyRemainingHealingEnvironment` / `RemainingHealingUpperBound` | 只在已审计的原版角色、敌人、卡牌、持续效果、遗物和药水闭包内收紧剩余治疗上界；包括固定Shiv来源、Slither费用随机化及Inky虚弱；敌人集合包含逐项审计的精确SoulNexus，其三个行动与生命周期不授予玩家治疗；另含精确Regent／LouseProgenitor闭包，BurningSticks复制消耗技能的例外仍保守处理。未知来源、附魔／苦难、消耗牌被动与取回来源保守回退无限余量；再生及战后治疗继续计入。第三方语义登记不等于治疗上界证明，没有外部证书注册入口；原战斗模拟支持范围不因此扩大 | 封闭性能证明 |
 | `StrategicHpRecoveryBound.ComponentHealingRejection` / `ComponentHealingUpperBound` | 按审计版本和精确组件表组合严格回复证明，根捕获全部初始牌堆、永久牌组与全局监听来源，分支保留有效再生并检查剩余合法剂量。扩展初始来源另冻资格，只供原整体认证拒绝的零额度成长战损消费者；原前置/窄搜索/Smart资格保持。未知来源、附件、获取链和目标拒绝；未知分支的无限界不与已知来源估计取最小值。没有第三方注册入口，模拟镜像登记不会自动获得资格。回复认证不能单独证明成长或用药支配；跨成长桶严格战损比较还要求完整合规胜利、无遗物/追回目标及已知成本不更高，保留相等战损和更便宜分支 | 封闭组件证明 |
 | `CombatSearchCoordinator.CanFinishNativeLouseZeroDamageRoute` / `CombatRootSnapshot.InitialRemainingHealingUpperBound` | 精确原生Regent／Louse闭包的初始治疗上界为零，且无风险满血零损无药完整胜利才停止可选药水后验；固定预算、强制药水、死亡保护、成长／遗物目标与未追回资源阻止退出。未知初始Power／药水／生成牌和剩余再生保守拒绝；没有外部证书登记入口。BurningSticks存在时拒绝消耗BundleOfJoy快捷证书；新增7牌／5Power／3遗物／2药水只在此闭包，其他环境的原表不变 | 封闭性能证明 |

@@ -1,8 +1,9 @@
 # CombatSolver 测试入口
 
-2026-10-07 [初始生成/有限回复剪枝研究](performance/initial-generation-finite-recovery-pruning-20261007.md)：原生完整状态/32Fork/最终稳定P0门禁通过；11根44交错质量/内存通过，无稳定提速。额外原生反例复现未知未来OnPlay认证接纳，原型撤回，生产部署复用；源码与各次结果归档。
+2026-10-07 [原生回复回调边界](performance/native-generation-callback-proof-20261007.md)：再生回复上界15/原生实际30反例复现；最终未知治疗、Heal及生成OnPlay来源、晚注册拒绝，16Fork完整状态/历史/RNG/隔离通过。固定交错质量与峰值另列，未完成全部来源认证。
+2026-10-07 [有限回复剪枝原型](performance/initial-generation-finite-recovery-pruning-20261007.md)：未来OnPlay认证接纳反例复现，原型撤回；原生合同及11根44次质量/内存通过，无稳定提速。
 
-2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
+2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：原生GC生命周期通过；No-GC信息能力夹具修复前后结果留存。48次纯请求保存，最终11根44次内存通过，但猎手首领战损54→57，原型撤回；未做全29根或上传包验收。
 
 2026-10-06 [完整胜利见证交接剪枝](performance/late-plan-incumbent-research-20261006.md)：原生 `bf1630d428a84140a544f92805b456b2` / `39341182130347b3934cfdbbb0ca54c0` Passed；实际完整胜利、政策/目标门禁、未知Feed消耗堆保留、16Fork全状态/RNG/父/live、DOP1/16真实续搜派发与调用者保留胜利通过，实例清理。最终11根44次纯Coordinator交错质量/根/政策/预算一致，铁甲3.765倍，但亡灵精英内存超门槛；2次诊断工作/质量匹配，源码撤回。全部原始慢根未达标；没有新DOP1/16整协调器合同或上传包验收。
 

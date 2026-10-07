@@ -74,6 +74,8 @@
 
 ## 4. 模拟与 Prediction
 
+`PredictionRitsuHealingAudit` 在主线程根捕获与live采用边界核对原生Heal补丁和进程级治疗监听器；未知回调显式拒绝，Fork不读取运行时注册表。OnPlay来源审计另纳入原生战斗生成超集和固定状态/诅咒来源，初始/永久牌组仍单独覆盖；仅模型身份元数据共享，不扩大任意扩展的语义支持。
+
 | 位置 | 职责 |
 | --- | --- |
 | `src/Engine/InCombat/Simulation/` | 通用命令时序、历史、RNG、牌堆、伤害和 Fork |
