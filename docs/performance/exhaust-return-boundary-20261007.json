@@ -1,0 +1,546 @@
+{
+  "schemaVersion": 1,
+  "task": "exhaust-return-boundary",
+  "date": "2026-10-07",
+  "sourceBase": "614a01ba0b37eb42908be1fb3b08e104fd348486",
+  "retainedRuntimeSource": "27c28f66",
+  "game": {
+    "version": "0.111.0 / 41cef1ea",
+    "sha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+    "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+  },
+  "build": {
+    "exit_code": 0,
+    "seconds": 13.76,
+    "warnings": 0,
+    "errors": 0,
+    "taskDllSha256": "0a3e1c7428e00c0479fe50f8183a05155adf2855d9dbea31426fc5a2ea7ea2be",
+    "command": [
+      "dotnet",
+      "build",
+      "CombatSolver.csproj",
+      "-c",
+      "Release",
+      "-o",
+      "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-return-boundary-20261007/build-native",
+      "-p:CopyModOnBuild=false",
+      "-p:CustomAfterMicrosoftCommonTargets=/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-return-boundary-20261007/native.props"
+    ]
+  },
+  "native": [
+    {
+      "variant": "bolas",
+      "summary": {
+        "variant": "BOLAS",
+        "command": [
+          "bash",
+          "tools/testing/run-unattended-test.sh",
+          "--scenario-id",
+          "EXHAUST-RETURN-BOLAS",
+          "--generated-scenario-path",
+          "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+          "--combat-solver-build-dir",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-return-boundary-20261007/build-native",
+          "--headless-instance",
+          "exhaust-return-bolas-20261007",
+          "--timeout-seconds",
+          "120",
+          "--evidence-directory",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-return-boundary-20261007/evidence-bolas",
+          "--cleanup-instance-on-exit",
+          "--exit-on-complete"
+        ],
+        "exit_code": 0,
+        "seconds": 34.91161621700303
+      },
+      "result": {
+        "processReusable": false,
+        "processId": 379385,
+        "reusedProcess": false,
+        "developmentStrategyScriptHash": null,
+        "developmentStrategyParametersHash": null,
+        "mainAssemblyHash": "0A3E1C7428E00C0479FE50F8183A05155ADF2855D9DBEA31426FC5A2EA7EA2BE",
+        "schemaVersion": 1,
+        "runId": "d61288fe43e841b9924fee9e201a20dd",
+        "scenarioId": "EXHAUST-RETURN-BOLAS",
+        "status": "Passed",
+        "stage": "passed",
+        "characterId": "CHARACTER.SILENT",
+        "encounterId": "ENCOUNTER.THE_INSATIABLE_BOSS",
+        "seed": "NOVELTY-DEV-20260915-06",
+        "startedAtUtc": "2026-10-07T09:43:41.6905947+00:00",
+        "elapsedMilliseconds": 27464.3284,
+        "mainThread": true,
+        "combatEnded": false,
+        "startedTurn": 1,
+        "finishedTurn": 2,
+        "managedHeapBytes": 75355976,
+        "managedFragmentedBytes": 5053704,
+        "workingSetBytes": 1535283200,
+        "privateMemoryBytes": 1662771200,
+        "solverMetrics": null,
+        "replayVerification": null,
+        "generatedScenario": {
+          "schemaVersion": 1,
+          "mode": "Search",
+          "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+          "resolvedConfiguration": "generated-scenario.resolved.json",
+          "loadout": "generated-scenario.loadout.json",
+          "opening": "generated-scenario.opening.json",
+          "relicObtainEffects": false,
+          "combatEnded": false,
+          "actualOutcome": {
+            "initialHp": 56,
+            "finalHp": 56,
+            "hpLost": 0,
+            "hpHealed": 0,
+            "selfDamage": 0,
+            "combatEnded": false,
+            "survived": true,
+            "finalEnemyHp": 242,
+            "potions": [],
+            "unattributedHpLoss": 0
+          }
+        },
+        "stageTimings": [
+          {
+            "stage": "created",
+            "startedMilliseconds": 0,
+            "durationMilliseconds": 1.6545
+          },
+          {
+            "stage": "strategy_load",
+            "startedMilliseconds": 1.6545,
+            "durationMilliseconds": 5.646100000000001
+          },
+          {
+            "stage": "game_startup",
+            "startedMilliseconds": 7.3006,
+            "durationMilliseconds": 12880.139299999999
+          },
+          {
+            "stage": "start_run",
+            "startedMilliseconds": 12887.4399,
+            "durationMilliseconds": 10920.728100000002
+          },
+          {
+            "stage": "inject_run_relics",
+            "startedMilliseconds": 23808.168,
+            "durationMilliseconds": 276.9267
+          },
+          {
+            "stage": "enter_encounter",
+            "startedMilliseconds": 24085.0947,
+            "durationMilliseconds": 1959.6323999999986
+          },
+          {
+            "stage": "wait_player_turn",
+            "startedMilliseconds": 26044.7271,
+            "durationMilliseconds": 1.5594999999993888
+          },
+          {
+            "stage": "inject_state",
+            "startedMilliseconds": 26046.2866,
+            "durationMilliseconds": 1294.3307000000023
+          },
+          {
+            "stage": "cleanup",
+            "startedMilliseconds": 27340.6173,
+            "durationMilliseconds": 118.27829999999813
+          },
+          {
+            "stage": "passed",
+            "startedMilliseconds": 27458.8956,
+            "durationMilliseconds": 5.6336000000010245
+          }
+        ],
+        "completedChecks": [
+          "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+          "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+          "GeneratedScenario:NativeOpeningCaptured",
+          "ReturnCapacity:TwoRealPlays:HistoryEligibility:ExhaustOrder:OneHandSlot:NativeFullStateRng:OppositeShadowOutcome:SixteenParallelReturnsTwoGenerationFork:ParentLiveIsolation",
+          "TASK_RETURN_CAPACITY {\"hatchetFirst\":false,\"order\":[\"BOLAS\",\"THRUMMING_HATCHET\"],\"actualHand\":[\"BOLAS\"],\"actualDiscard\":[\"THRUMMING_HATCHET\"],\"oppositeHand\":[\"THRUMMING_HATCHET\"],\"forkCount\":16,\"nativeSha256\":\"05CA421E617344C6ACE9F2E9E33F239F175852919028BE8340659E776284F957\",\"parentUnchanged\":true,\"actualPrunes\":0,\"wholeRootCertified\":false}",
+          "NativeOutcome:combatEnded=False:turn=2:hp=56:maxHp=70"
+        ],
+        "error": null,
+        "finishedAtUtc": "2026-10-07T09:44:09.154758+00:00"
+      },
+      "facts": {
+        "hatchetFirst": false,
+        "order": [
+          "BOLAS",
+          "THRUMMING_HATCHET"
+        ],
+        "actualHand": [
+          "BOLAS"
+        ],
+        "actualDiscard": [
+          "THRUMMING_HATCHET"
+        ],
+        "oppositeHand": [
+          "THRUMMING_HATCHET"
+        ],
+        "forkCount": 16,
+        "nativeSha256": "05CA421E617344C6ACE9F2E9E33F239F175852919028BE8340659E776284F957",
+        "parentUnchanged": true,
+        "actualPrunes": 0,
+        "wholeRootCertified": false
+      }
+    },
+    {
+      "variant": "hatchet",
+      "summary": {
+        "variant": "HATCHET",
+        "command": [
+          "bash",
+          "tools/testing/run-unattended-test.sh",
+          "--scenario-id",
+          "EXHAUST-RETURN-HATCHET",
+          "--generated-scenario-path",
+          "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+          "--combat-solver-build-dir",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-return-boundary-20261007/build-native",
+          "--headless-instance",
+          "exhaust-return-hatchet-20261007",
+          "--timeout-seconds",
+          "120",
+          "--evidence-directory",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-return-boundary-20261007/evidence-hatchet",
+          "--cleanup-instance-on-exit",
+          "--exit-on-complete"
+        ],
+        "exit_code": 0,
+        "seconds": 35.035379034998186
+      },
+      "result": {
+        "processReusable": false,
+        "processId": 381881,
+        "reusedProcess": false,
+        "developmentStrategyScriptHash": null,
+        "developmentStrategyParametersHash": null,
+        "mainAssemblyHash": "0A3E1C7428E00C0479FE50F8183A05155ADF2855D9DBEA31426FC5A2EA7EA2BE",
+        "schemaVersion": 1,
+        "runId": "b29fb5c179b646b38223ddba8a81d71b",
+        "scenarioId": "EXHAUST-RETURN-HATCHET",
+        "status": "Passed",
+        "stage": "passed",
+        "characterId": "CHARACTER.SILENT",
+        "encounterId": "ENCOUNTER.THE_INSATIABLE_BOSS",
+        "seed": "NOVELTY-DEV-20260915-06",
+        "startedAtUtc": "2026-10-07T09:44:16.66245+00:00",
+        "elapsedMilliseconds": 27484.7944,
+        "mainThread": true,
+        "combatEnded": false,
+        "startedTurn": 1,
+        "finishedTurn": 2,
+        "managedHeapBytes": 75323584,
+        "managedFragmentedBytes": 5345464,
+        "workingSetBytes": 1534590976,
+        "privateMemoryBytes": 1664151552,
+        "solverMetrics": null,
+        "replayVerification": null,
+        "generatedScenario": {
+          "schemaVersion": 1,
+          "mode": "Search",
+          "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+          "resolvedConfiguration": "generated-scenario.resolved.json",
+          "loadout": "generated-scenario.loadout.json",
+          "opening": "generated-scenario.opening.json",
+          "relicObtainEffects": false,
+          "combatEnded": false,
+          "actualOutcome": {
+            "initialHp": 56,
+            "finalHp": 56,
+            "hpLost": 0,
+            "hpHealed": 0,
+            "selfDamage": 0,
+            "combatEnded": false,
+            "survived": true,
+            "finalEnemyHp": 242,
+            "potions": [],
+            "unattributedHpLoss": 0
+          }
+        },
+        "stageTimings": [
+          {
+            "stage": "created",
+            "startedMilliseconds": 0,
+            "durationMilliseconds": 1.5676
+          },
+          {
+            "stage": "strategy_load",
+            "startedMilliseconds": 1.5676,
+            "durationMilliseconds": 5.4452
+          },
+          {
+            "stage": "game_startup",
+            "startedMilliseconds": 7.0128,
+            "durationMilliseconds": 12838.405999999999
+          },
+          {
+            "stage": "start_run",
+            "startedMilliseconds": 12845.4188,
+            "durationMilliseconds": 10955.052899999999
+          },
+          {
+            "stage": "inject_run_relics",
+            "startedMilliseconds": 23800.4717,
+            "durationMilliseconds": 277.88570000000254
+          },
+          {
+            "stage": "enter_encounter",
+            "startedMilliseconds": 24078.3574,
+            "durationMilliseconds": 1997.4097000000002
+          },
+          {
+            "stage": "wait_player_turn",
+            "startedMilliseconds": 26075.7671,
+            "durationMilliseconds": 2.5121999999973923
+          },
+          {
+            "stage": "inject_state",
+            "startedMilliseconds": 26078.2793,
+            "durationMilliseconds": 1287.686600000001
+          },
+          {
+            "stage": "cleanup",
+            "startedMilliseconds": 27365.9659,
+            "durationMilliseconds": 113.34619999999995
+          },
+          {
+            "stage": "passed",
+            "startedMilliseconds": 27479.3121,
+            "durationMilliseconds": 5.652700000002369
+          }
+        ],
+        "completedChecks": [
+          "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+          "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+          "GeneratedScenario:NativeOpeningCaptured",
+          "ReturnCapacity:TwoRealPlays:HistoryEligibility:ExhaustOrder:OneHandSlot:NativeFullStateRng:OppositeShadowOutcome:SixteenParallelReturnsTwoGenerationFork:ParentLiveIsolation",
+          "TASK_RETURN_CAPACITY {\"hatchetFirst\":true,\"order\":[\"THRUMMING_HATCHET\",\"BOLAS\"],\"actualHand\":[\"THRUMMING_HATCHET\"],\"actualDiscard\":[\"BOLAS\"],\"oppositeHand\":[\"BOLAS\"],\"forkCount\":16,\"nativeSha256\":\"32593F009F62B460ADD7E12E6577E7A06A803063F61BC543BF36B3A44D65D72C\",\"parentUnchanged\":true,\"actualPrunes\":0,\"wholeRootCertified\":false}",
+          "NativeOutcome:combatEnded=False:turn=2:hp=56:maxHp=70"
+        ],
+        "error": null,
+        "finishedAtUtc": "2026-10-07T09:44:44.1470456+00:00"
+      },
+      "facts": {
+        "hatchetFirst": true,
+        "order": [
+          "THRUMMING_HATCHET",
+          "BOLAS"
+        ],
+        "actualHand": [
+          "THRUMMING_HATCHET"
+        ],
+        "actualDiscard": [
+          "BOLAS"
+        ],
+        "oppositeHand": [
+          "BOLAS"
+        ],
+        "forkCount": 16,
+        "nativeSha256": "32593F009F62B460ADD7E12E6577E7A06A803063F61BC543BF36B3A44D65D72C",
+        "parentUnchanged": true,
+        "actualPrunes": 0,
+        "wholeRootCertified": false
+      }
+    }
+  ],
+  "returnAccessorWorklist": {
+    "sourceSha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+    "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+    "references": [
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Bolas/<BeforeHandDraw>d__6::MoveNext()",
+        "Target": "MegaCrit.Sts2.Core.Entities.Cards.CardPile MegaCrit.Sts2.Core.Models.CardModel::get_Pile()",
+        "Kind": "call",
+        "Offset": 76,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Bolas",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100706314,
+        "OperandMetadataToken": 100669542
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.Bolas/<BeforeHandDraw>d__6::MoveNext()",
+        "Target": "System.Threading.Tasks.Task`1<MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult> MegaCrit.Sts2.Core.Commands.CardPileCmd::Add(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.PileType,MegaCrit.Sts2.Core.Entities.Cards.CardPilePosition,MegaCrit.Sts2.Core.Models.AbstractModel,System.Boolean)",
+        "Kind": "call",
+        "Offset": 106,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.Bolas",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100706314,
+        "OperandMetadataToken": 100685204
+      },
+      {
+        "Caller": "MegaCrit.Sts2.Core.Models.CardModel[] MegaCrit.Sts2.Core.Models.CardPools.ColorlessCardPool::GenerateAllCards()",
+        "Target": "T MegaCrit.Sts2.Core.Models.ModelDb::Card()",
+        "Kind": "call",
+        "Offset": 57,
+        "Owner": "MegaCrit.Sts2.Core.Models.CardPools.ColorlessCardPool",
+        "GenericArguments": [
+          "MegaCrit.Sts2.Core.Models.Cards.Bolas"
+        ],
+        "CallerDefinitionToken": 100681672,
+        "OperandMetadataToken": 721425154
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.ThrummingHatchet/<BeforeHandDraw>d__4::MoveNext()",
+        "Target": "MegaCrit.Sts2.Core.Entities.Cards.CardPile MegaCrit.Sts2.Core.Models.CardModel::get_Pile()",
+        "Kind": "call",
+        "Offset": 76,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.ThrummingHatchet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100707661,
+        "OperandMetadataToken": 100669542
+      },
+      {
+        "Caller": "System.Void MegaCrit.Sts2.Core.Models.Cards.ThrummingHatchet/<BeforeHandDraw>d__4::MoveNext()",
+        "Target": "System.Threading.Tasks.Task`1<MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult> MegaCrit.Sts2.Core.Commands.CardPileCmd::Add(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.PileType,MegaCrit.Sts2.Core.Entities.Cards.CardPilePosition,MegaCrit.Sts2.Core.Models.AbstractModel,System.Boolean)",
+        "Kind": "call",
+        "Offset": 106,
+        "Owner": "MegaCrit.Sts2.Core.Models.Cards.ThrummingHatchet",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100707661,
+        "OperandMetadataToken": 100685204
+      },
+      {
+        "Caller": "MegaCrit.Sts2.Core.Models.CardModel[] MegaCrit.Sts2.Core.Models.CardPools.ColorlessCardPool::GenerateAllCards()",
+        "Target": "T MegaCrit.Sts2.Core.Models.ModelDb::Card()",
+        "Kind": "call",
+        "Offset": 550,
+        "Owner": "MegaCrit.Sts2.Core.Models.CardPools.ColorlessCardPool",
+        "GenericArguments": [
+          "MegaCrit.Sts2.Core.Models.Cards.ThrummingHatchet"
+        ],
+        "CallerDefinitionToken": 100681672,
+        "OperandMetadataToken": 721425196
+      }
+    ],
+    "isSafetyCertificate": false
+  },
+  "oneShotSources": [
+    {
+      "path": ".local/tool-tasks/exhaust-return-boundary-20261007/TaskReturnCapacity.cs",
+      "sha256": "51d8926dc76ccc922391b0646b3e753362d29d6c81410f591e04be10033aba17",
+      "body": "using System.Text.Json;\nusing System.Security.Cryptography;\nusing System.Text;\nusing CombatSolver.Engine.Common;\nusing CombatSolver.Engine.InCombat.Simulation;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Commands;\nusing MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing MegaCrit.Sts2.Core.GameActions.Multiplayer;\nusing MegaCrit.Sts2.Core.Hooks;\nusing MegaCrit.Sts2.Core.Models;\nusing MegaCrit.Sts2.Core.Models.Cards;\nusing MegaCrit.Sts2.Core.Runs;\n\nnamespace CombatSolver;\ninternal sealed partial class UnattendedTestRunner\n{\n    private async Task RunTaskReturnCapacityAsync(CombatState live, Player player, bool hatchetFirst)\n    {\n        var enemy = live.Enemies.First(candidate => candidate.IsAlive);\n        foreach (RelicModel relic in player.Relics.ToArray()) await RelicCmd.Remove(relic);\n        foreach (PowerModel power in live.Creatures.SelectMany(creature => creature.Powers).ToArray())\n            await PowerCmd.Remove(power);\n        await ClearPlayerPilesAsync(player);\n        await SetBlockAsync(player.Creature, 0);await SetBlockAsync(enemy, 0);\n        await CreatureCmd.SetMaxHp(enemy, Math.Max(256, enemy.MaxHp));\n        await CreatureCmd.SetCurrentHp(enemy, 256);SetEnergy(player, 6);\n        foreach (string id in new[] { \"BOLAS\", \"THRUMMING_HATCHET\" })\n            await InjectCardAsync(live, player, new() { CardId = id, Pile = \"Hand\" });\n        await RunManager.Instance.ActionExecutor.FinishedExecutingActions();\n        CombatRootSnapshot playRoot = CombatRootSnapshot.Capture(live);\n        ReturnToHandComparisonLane[] playLanes =\n        [new(\"continuous\", playRoot.ForkSimulator(), false), new(\"forked\", playRoot.ForkSimulator(), true)];\n        await PlayReturningCardAsync(live, player, enemy, playLanes, \"BOLAS\");\n        await PlayReturningCardAsync(live, player, enemy, playLanes, \"THRUMMING_HATCHET\");\n        CardModel[] returns = player.PlayerCombatState!.AllCards.Where(card => card is Bolas or ThrummingHatchet).ToArray();\n        AssertReturningCardsPlayedThisTurn(live, returns);\n        string[] order = hatchetFirst ? [\"THRUMMING_HATCHET\", \"BOLAS\"] : [\"BOLAS\", \"THRUMMING_HATCHET\"];\n        foreach (string id in order)\n        {\n            CardModel actual = returns.Single(card => card.Id.Entry == id);\n            foreach (ReturnToHandComparisonLane lane in playLanes)\n            {\n                _ = lane.BeginStep();lane.Simulator.AddToPile(lane.Simulator.State.FindCard(actual)!, PileType.Exhaust);\n            }\n            var moved = await CardPileCmd.Add(actual, PileType.Exhaust);\n            if (!moved.success) throw new InvalidOperationException(\"Native fixture exhaust move rejected.\");\n        }\n        AssertReturnToHandLanes(live, player, enemy, playLanes, \"exhaust_order\");\n        for (int index = 0; index < 9; index++)\n            await InjectCardAsync(live, player, new() { CardId = \"DEFEND_SILENT\", Pile = \"Hand\" });\n        await RunManager.Instance.ActionExecutor.FinishedExecutingActions();\n        CombatRootSnapshot root = CombatRootSnapshot.Capture(live);\n        var parent = root.ForkSimulator();\n        string State(CombatPredictionSimulator sim) => ContinuationStamp.CapturePredicted(player, sim,\n            ((SimulatedCombatState)sim.State.CombatState).GetPlayerTurnNumber(player), root.Forecast, root.StartTurnNumber).StateText;\n        string Full(CombatPredictionSimulator sim) => State(sim) + \"\\nHISTORY=\" + CardContinuationContractHistoryText(sim);\n        string parentBefore = Full(parent), liveBefore = ContinuationStamp.CaptureLive(live).StateText;\n        var direct = parent.Fork();var opposite = parent.Fork();\n        SimPlayerCombatState oppositePlayer = opposite.State.GetPlayerCombatState(player);\n        var reversed = oppositePlayer.ExhaustPile.Cards.Reverse().ToArray();\n        oppositePlayer.ExhaustPile.Clear();foreach (var card in reversed) oppositePlayer.ExhaustPile.Add(card);\n        void Resolve(CombatPredictionSimulator sim)\n        {\n            using IDisposable isolation = SimulationNotificationIsolation.Enter();\n            var combat = (SimulatedCombatState)sim.State.CombatState;\n            combat.CurrentSide = CombatSide.Player;combat.RoundNumber++;combat.AdvancePlayerTurn(player);\n            combat.BeginSideTurn(player.Creature);\n            if (combat.PrepareBeforeHandDraw(sim, player, new TurnStartChoiceCursor(null))\n                || !combat.TriggerSideTurnStart(sim, CombatSide.Player, [player.Creature], decrementPlating: true))\n                throw new InvalidOperationException(\"Return capacity fixture introduced an unexpected choice.\");\n            combat.AssertForkable();\n        }\n        Resolve(direct);Resolve(opposite);\n        string[] ReturningHand(CombatPredictionSimulator sim) => sim.State.GetPlayerCombatState(player).Hand.Cards\n            .Where(card => card.Preview is Bolas or ThrummingHatchet).Select(card => card.Preview.Id.Entry).ToArray();\n        if (!ReturningHand(direct).SequenceEqual(order.Take(1))\n            || !ReturningHand(opposite).SequenceEqual(order.Skip(1)) || Full(direct) == Full(opposite))\n            throw new InvalidOperationException(\"Capacity-sensitive exhaust order difference did not reproduce.\");\n        if (Full(parent) != parentBefore || ContinuationStamp.CaptureLive(live).StateText != liveBefore)\n            throw new InvalidOperationException(\"Shadow return resolution leaked into parent/live.\");\n        string beforeNative = Full(direct);\n        var children = Enumerable.Range(0, 16).Select(_ => parent.Fork()).ToArray();\n        await Task.WhenAll(children.Select(child => Task.Run(() => Resolve(child))));\n        foreach (var child in children)\n            if (Full(child) != beforeNative || Full(child.Fork()) != beforeNative)\n                throw new InvalidOperationException(\"Parallel return resolution or second-generation Fork differed.\");\n        if (Full(parent) != parentBefore || ContinuationStamp.CaptureLive(live).StateText != liveBefore)\n            throw new InvalidOperationException(\"Parallel returns leaked into parent/live.\");\n\n        live.CurrentSide = CombatSide.Player;live.RoundNumber++;\n        player.PlayerCombatState!.IncrementTurnNumber();player.PlayerCombatState.Phase = PlayerTurnPhase.Start;\n        try\n        {\n            await Hook.BeforeHandDraw(live, player, new BlockingPlayerChoiceContext());\n            await TriggerActualSideTurnStartAsync(live, CombatSide.Player, player.Creature);\n            await RunManager.Instance.ActionExecutor.FinishedExecutingActions();\n            if (State(direct) != ContinuationStamp.CaptureLive(live).StateText)\n                throw new InvalidOperationException(\"Native capacity boundary differed in complete state/RNG.\");\n            AssertSnapshotEqual(CaptureSimulated(direct, (SimulatedCombatState)direct.State.CombatState, player, enemy),\n                CaptureActual(live, player, enemy), \"RETURN-CAPACITY\", \"native\");\n            string[] actualHand = player.PlayerCombatState.Hand.Cards.Where(card => card is Bolas or ThrummingHatchet)\n                .Select(card => card.Id.Entry).ToArray();\n            string[] actualDiscard = player.PlayerCombatState.DiscardPile.Cards.Where(card => card is Bolas or ThrummingHatchet)\n                .Select(card => card.Id.Entry).ToArray();\n            if (!actualHand.SequenceEqual(order.Take(1)) || !actualDiscard.SequenceEqual(order.Skip(1)))\n                throw new InvalidOperationException(\"Native overflow did not follow exhaust listener order.\");\n            _completedChecks.Add(\"ReturnCapacity:TwoRealPlays:HistoryEligibility:ExhaustOrder:OneHandSlot:NativeFullStateRng:OppositeShadowOutcome:SixteenParallelReturnsTwoGenerationFork:ParentLiveIsolation\");\n            _completedChecks.Add(\"TASK_RETURN_CAPACITY \" + JsonSerializer.Serialize(new { hatchetFirst, order,\n                actualHand, actualDiscard, oppositeHand = ReturningHand(opposite), forkCount = children.Length,\n                nativeSha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(State(direct)))),\n                parentUnchanged = Full(parent) == parentBefore, actualPrunes = 0, wholeRootCertified = false }));\n        }\n        finally { player.PlayerCombatState.Phase = PlayerTurnPhase.Play; }\n    }\n}\n"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-return-boundary-20261007/native.props",
+      "sha256": "8ab0622885f8a2ae1ee4dbfe5a542f9c7f63c2d21f9de129c4beb9d92c9a60f8",
+      "body": "<Project><ItemGroup><Compile Include=\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-return-boundary-20261007/TaskReturnCapacity.cs\" /></ItemGroup></Project>\n"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-return-boundary-20261007/run-native.py",
+      "sha256": "31ec3e3b8fe0be27f2a6ce58bc5057fb5a860ee148c970facde24aaa6d62d833",
+      "body": "from pathlib import Path\nimport json,subprocess,time\nbase=Path(__file__).resolve().parent\nfor variant in ['BOLAS','HATCHET']:\n evidence=base/('evidence-'+variant.lower())\n command=['bash','tools/testing/run-unattended-test.sh','--scenario-id','EXHAUST-RETURN-'+variant,\n  '--generated-scenario-path','/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json',\n  '--combat-solver-build-dir',str(base/'build-native'),'--headless-instance','exhaust-return-'+variant.lower()+'-20261007',\n  '--timeout-seconds','120','--evidence-directory',str(evidence),'--cleanup-instance-on-exit','--exit-on-complete']\n started=time.perf_counter()\n with (base/('launcher-'+variant.lower()+'.log')).open('w') as log:\n  result=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT)\n summary={'variant':variant,'command':command,'exit_code':result.returncode,'seconds':time.perf_counter()-started}\n (base/('summary-'+variant.lower()+'.json')).write_text(json.dumps(summary,indent=2)+'\\n')\n print(json.dumps(summary),flush=True)\n if result.returncode:\n  print((base/('launcher-'+variant.lower()+'.log')).read_text()[-6500:],flush=True)\n  raise SystemExit(result.returncode)\n print((base/('launcher-'+variant.lower()+'.log')).read_text()[-800:],flush=True)\n"
+    }
+  ],
+  "nativeSourceEvidence": [
+    {
+      "path": ".local/tool-tasks/exhaust-return-boundary-20261007/native/Bolas.cs",
+      "sha256": "ec450c4076bd828d2ef4c35fdd5056cadf6b93ea2747f46f159e9bbd100ed71d",
+      "body": "using System;\nusing System.Collections.Generic;\nusing System.Linq;\nusing System.Threading.Tasks;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Combat.History.Entries;\nusing MegaCrit.Sts2.Core.Commands;\nusing MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing MegaCrit.Sts2.Core.GameActions.Multiplayer;\nusing MegaCrit.Sts2.Core.Helpers;\nusing MegaCrit.Sts2.Core.Localization.DynamicVars;\nusing MegaCrit.Sts2.Core.Nodes.Rooms;\nusing MegaCrit.Sts2.Core.Nodes.Vfx.Cards;\nusing MegaCrit.Sts2.Core.ValueProps;\n\nnamespace MegaCrit.Sts2.Core.Models.Cards;\n\npublic sealed class Bolas : CardModel\n{\n\tprotected override IEnumerable<DynamicVar> CanonicalVars => new global::<>z__ReadOnlySingleElementList<DynamicVar>(new DamageVar(3m, ValueProp.Move));\n\n\tprotected override IEnumerable<string> ExtraRunAssetPaths => NBolasVfx.AssetPaths;\n\n\tpublic Bolas()\n\t\t: base(0, CardType.Attack, CardRarity.Rare, TargetType.AnyEnemy)\n\t{\n\t}\n\n\tprotected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)\n\t{\n\t\tArgumentNullException.ThrowIfNull(cardPlay.Target, \"cardPlay.Target\");\n\t\tNCombatRoom.Instance?.CombatVfxContainer.AddChildSafely(NBolasVfx.Create(base.Owner.Creature, cardPlay.Target));\n\t\tawait DamageCmd.Attack(base.DynamicVars.Damage.BaseValue).FromCard(this, cardPlay).Targeting(cardPlay.Target)\n\t\t\t.WithHitFx(\"vfx/vfx_attack_blunt\", null, \"blunt_attack.mp3\")\n\t\t\t.Execute(choiceContext);\n\t}\n\n\tpublic override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, ICombatState combatState)\n\t{\n\t\tif (player == base.Owner && CombatManager.Instance.History.CardPlaysFinished.Any((CardPlayFinishedEntry e) => e.HappenedLastPlayerTurn(base.Owner) && e.CardPlay.Card == this))\n\t\t{\n\t\t\tCardPile? pile = base.Pile;\n\t\t\tif (pile == null || pile.Type != PileType.Hand)\n\t\t\t{\n\t\t\t\tawait CardPileCmd.Add(this, PileType.Hand);\n\t\t\t}\n\t\t}\n\t}\n\n\tprotected override void OnUpgrade()\n\t{\n\t\tbase.DynamicVars.Damage.UpgradeValueBy(1m);\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-return-boundary-20261007/native/ThrummingHatchet.cs",
+      "sha256": "9d6590357270d647fb942bb076a796f57ea9154c15a7ebc227522e19eff517f8",
+      "body": "using System;\nusing System.Collections.Generic;\nusing System.Linq;\nusing System.Threading.Tasks;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Combat.History.Entries;\nusing MegaCrit.Sts2.Core.Commands;\nusing MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing MegaCrit.Sts2.Core.GameActions.Multiplayer;\nusing MegaCrit.Sts2.Core.Localization.DynamicVars;\nusing MegaCrit.Sts2.Core.ValueProps;\n\nnamespace MegaCrit.Sts2.Core.Models.Cards;\n\npublic sealed class ThrummingHatchet : CardModel\n{\n\tprotected override IEnumerable<DynamicVar> CanonicalVars => new global::<>z__ReadOnlySingleElementList<DynamicVar>(new DamageVar(11m, ValueProp.Move));\n\n\tpublic ThrummingHatchet()\n\t\t: base(1, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy)\n\t{\n\t}\n\n\tprotected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)\n\t{\n\t\tArgumentNullException.ThrowIfNull(cardPlay.Target, \"cardPlay.Target\");\n\t\tawait DamageCmd.Attack(base.DynamicVars.Damage.BaseValue).FromCard(this, cardPlay).Targeting(cardPlay.Target)\n\t\t\t.WithHitFx(\"vfx/vfx_attack_blunt\", null, \"blunt_attack.mp3\")\n\t\t\t.Execute(choiceContext);\n\t}\n\n\tpublic override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, ICombatState combatState)\n\t{\n\t\tif (player == base.Owner && CombatManager.Instance.History.CardPlaysFinished.Any((CardPlayFinishedEntry e) => e.HappenedLastPlayerTurn(base.Owner) && e.CardPlay.Card == this))\n\t\t{\n\t\t\tCardPile? pile = base.Pile;\n\t\t\tif (pile == null || pile.Type != PileType.Hand)\n\t\t\t{\n\t\t\t\tawait CardPileCmd.Add(this, PileType.Hand);\n\t\t\t}\n\t\t}\n\t}\n\n\tprotected override void OnUpgrade()\n\t{\n\t\tbase.DynamicVars.Damage.UpgradeValueBy(3m);\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n"
+    }
+  ],
+  "executorTemporaryPatch": "diff --git a/src/Testing/Host/UnattendedTestRunner.Executor.cs b/src/Testing/Host/UnattendedTestRunner.Executor.cs\nindex fe1b2da5..412b399d 100644\n--- a/src/Testing/Host/UnattendedTestRunner.Executor.cs\n+++ b/src/Testing/Host/UnattendedTestRunner.Executor.cs\n@@ -39,6 +39,11 @@ internal sealed partial class UnattendedTestRunner\n             bool expectedCardPlayed = request.ExpectedPlayedCardId == null;\n             bool expectedPotionUsed = request.ExpectedUsedPotionId == null;\n             bool expectedPlayerPowerObserved = request.ExpectedObservedPlayerPowerId == null;\n+            if (request.ScenarioId is \"EXHAUST-RETURN-BOLAS\" or \"EXHAUST-RETURN-HATCHET\")\n+            {\n+                await runner.RunTaskReturnCapacityAsync(combatState, player, request.ScenarioId.EndsWith(\"-HATCHET\", StringComparison.Ordinal));\n+                return Observation(combatEnded: false);\n+            }\n             if (request.ScenarioId is \"ZERO-CREDIT-GROWTH-PROOF\" or \"ZERO-CREDIT-GROWTH-PROOF-REGEN\")\n             {\n                 await runner.AssertZeroCreditGrowthProofAsync(combatState, player,\n",
+  "verificationScope": {
+    "realActions": "Two real native card plays establish return eligibility; continuous and fork-each-step mirrors agree.",
+    "orderedExhaustMoves": "Both real cards moved into Exhaust in specified order; mirrored state compared.",
+    "capacity": "Nine native DefendSilent cards leave one hand slot; native BeforeHandDraw and isolated turn-start hooks match complete predicted state/RNG and move snapshot.",
+    "oppositeOrder": "Independent reversed-exhaust shadow produces opposite last hand occupant; rich history/full continuation differs.",
+    "fork": "Sixteen serially created children resolve in parallel; each full state/history equals reference, with sequential second-generation Fork checks; parent and live stay isolated.",
+    "fullTurn": false,
+    "nativeQueueReplay": false,
+    "sameProjectedKeyProved": false,
+    "wholeRootCertificate": false,
+    "performanceAcceptance": false
+  },
+  "sourceFindings": [
+    {
+      "file": "src/Search/SimulatedCombatState.CardLifecycle.cs",
+      "members": [
+        "PrepareBeforeHandDraw",
+        "AppendCardLifecycleFingerprint"
+      ],
+      "conclusion": "Return membership is a set, but resolution enumerates ordered AllCards; lifecycle fingerprint records pile type and position for pending returns."
+    },
+    {
+      "file": "src/Search/StrategicHpRecoveryBound.Remaining.cs",
+      "members": [
+        "RemainingHealingUpperBound"
+      ],
+      "conclusion": "Rejects unaudited pending card types/attachments individually; ThrummingHatchet is already safe. No blanket pending-return rejection."
+    },
+    {
+      "file": "src/Search/StrategicHpRecoveryBound.Components.cs",
+      "members": [
+        "ComponentHealingEnvironmentRejection",
+        "ComponentHealingUpperBound"
+      ],
+      "conclusion": "Root and branch component checks include pending returning cards individually."
+    },
+    {
+      "file": "src/Testing/Contracts/Search/UnattendedTestRunner.RemainingHealing.cs",
+      "members": [
+        "AssertRemainingHealingSilentAsync",
+        "AssertRemainingHealingBoundAsync"
+      ],
+      "conclusion": "Existing certified Hatchet self-return remains zero across Fork; unaudited off-pile Bolas conservatively keeps unknown healing. Existing successful tests reused, not repeated."
+    }
+  ],
+  "limitations": [
+    "Changing raw exhaust order does not prove identical production state keys: the pending lifecycle fingerprint also contains position.",
+    "Card.Pile and BeforeHandDraw are indirect exhaust-order observers; direct get_ExhaustPile inventories alone are incomplete.",
+    "Colorless GenerateAllCards references only establish a source candidate, not actual filtered generation reachability or a closed proof.",
+    "Fixture removes initial relics/powers and uses isolated next-player-turn hooks. It is not the original full combat, enemy turn, full draw, auto-preplay, Coordinator search, or deployment.",
+    "Actual native complete state/RNG compared; rich history compared across simulation lanes. No claim of all native history fields or every future action.",
+    "Diagnostic request timing and current working set are not complete Coordinator timing or process peak RSS acceptance.",
+    "No broader HP-recovery certification, production pruning, performance acceptance, or regression result added."
+  ],
+  "decision": {
+    "searchChanged": false,
+    "actualNewPrunes": 0,
+    "wholeRootCertified": false,
+    "newTwofoldScenarios": 0,
+    "pruningRule": "Use a complete compliant victory and conservatively bounded future recovery to reject strictly worse battle-loss branches. Merge state only after a closed proof of all future observable behavior; keep order-sensitive slots and unknown sources."
+  },
+  "reusedEvidence": [
+    "docs/performance/exhaust-positive-native-contract-20261007.json",
+    "docs/performance/exhaust-card-creation-contract-20261007.json",
+    "docs/performance/exhaust-event-reference-audit-20261007.json",
+    "docs/performance/retained-victory-strict-hp-pruning-20261007.json"
+  ],
+  "cleanup": {
+    "removed": [
+      "TaskReturnCapacity.cs",
+      "native.props",
+      "run-native.py",
+      "executor.original",
+      "build-native"
+    ],
+    "executorRestored": true,
+    "instanceRemovedByLauncher": true,
+    "rawNativeEvidenceRetained": true,
+    "diagnosticModDeployed": false,
+    "productionDeployment": "Reuse unchanged 27c28f66 five-file success from retained-victory-strict-hp-pruning-20261007.json."
+  },
+  "gates": {
+    "documentation": {
+      "passed": true,
+      "files": 556,
+      "links": 2357,
+      "errors": 0,
+      "command": "python3 -B tools/inspection/verify-documentation.py"
+    },
+    "diff": {
+      "passed": true,
+      "command": "git diff --check"
+    },
+    "toolsReusedFrom": "exhaust-event-reference-audit-20261007.json"
+  }
+}

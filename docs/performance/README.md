@@ -1,6 +1,6 @@
 # 性能工作入口
 
-- [创建、复制及订阅清理原生合同](exhaust-card-creation-contract-20261007.md)：复制前未知订阅和显式Quest创建差异复现，20空创建阶段与16路复制隔离通过；承接[事件清单](exhaust-event-reference-audit-20261007.md)，生成可达性仍按具体入口证明，未启用剪枝。
+- [消耗堆回手顺序与容量合同](exhaust-return-boundary-20261007.md)：两种原生排列及16路两代Fork证明最后手牌位置受顺序影响；既有回复上界已逐张认证待回手牌，未新增剪枝。承接[创建与复制合同](exhaust-card-creation-contract-20261007.md)，保留完整状态等价与回复证明的边界。
 
 - [历史计数门槛与状态等价研究](saturated-history-key-research-20261007.md)：三根含并行worker约145万次构键，三项门槛投影没有合并不同完整键；原生读取链说明局部门槛不能作为完整根认证，未接入剪枝。
 

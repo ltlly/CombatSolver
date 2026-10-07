@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-07 [创建与复制合同](performance/exhaust-card-creation-contract-20261007.md)：原生237e2c7c115d4a68837593bc6bbb23fe通过复制前回调反例、继承清理、显式Quest创建差异及16路自有玩法复制/两代Fork完整状态历史RNG隔离。无整根/性能验收，临时入口恢复、实例与构建清理。
+2026-10-07 [消耗堆回手容量合同](performance/exhaust-return-boundary-20261007.md)：两种排列原生Passed，9张手牌时先回手者占末位、另一张弃牌；每组16路两代Fork及完整状态/RNG隔离通过。既有逐张回复认证复用，无整根/性能验收；临时入口恢复、构建清理。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 
