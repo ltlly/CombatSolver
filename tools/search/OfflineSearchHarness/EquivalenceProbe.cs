@@ -127,6 +127,12 @@ internal static class EquivalenceProbe
         private static readonly Dictionary<Input, Entry> Inputs = [];
         private static readonly List<object> Examples = [];
         private static readonly Dictionary<int, long> Modes = [];
+        private static readonly Dictionary<PrefixInput, Entry> PrefixInputs = [];
+        private static readonly ConditionalWeakTable<object, RootIdentity> HistoryIdentities = new();
+        private static bool ObservePrefix;
+        private static int NextHistoryIdentity;
+        private static long PrefixRepeats, PrefixLimitBypasses, PrefixSelectedMatches,
+            PrefixBeforeMismatches, PrefixAfterMismatches, PrefixDifferentProfileMatches;
         private static int NextMember, NextRoot;
         private static long Started, Completed, Repeats, SameMember, CrossMember, LimitBypasses,
             BeforeMismatches, AfterStateMismatches, AfterFeatureMismatches, HistoryOnlyMismatches,
@@ -144,6 +150,8 @@ internal static class EquivalenceProbe
                 .Single(field => field.FieldType == typeof(CombatRootSnapshot));
             internal static readonly System.Reflection.FieldInfo Profile =
                 AccessTools.Field(typeof(CombatBeamSolver), "_profile");
+            internal static readonly System.Reflection.FieldInfo ForkGate =
+                AccessTools.Field(typeof(CombatBeamSolver), "_parallelActionReplayForkGate");
         }
 
         private readonly record struct Input(int Root, StateFingerprint State, int Actions,
@@ -163,14 +171,54 @@ internal static class EquivalenceProbe
         }
         private readonly record struct PathLabel(int Potions, int Cost, int SoldHp, long ScoreBits,
             SearchRouteTraits Traits, bool HasNonPotionAction);
+        // Head identity preserves the entire sealed segment chain and its completion maps.
+        // Tail entry order and the mutable completion-map identity are read without sealing
+        // or modifying history. Different segment layouts deliberately remain different.
+        private readonly record struct PrefixStamp(int Head, string Tail, int CompletionMap, int Pending);
+        private readonly record struct PrefixInput(Input Input, PrefixStamp Prefix);
         private sealed record Observation(Input Input, int Member, string Profile,
-            Features Before, PathLabel Label, int BeforeHistory);
+            Features Before, PathLabel Label, int BeforeHistory, PrefixStamp Prefix);
         private sealed record Entry(Observation First, StateFingerprint AfterState,
             Features After, int AfterHistory);
+
+        private static class HistoryMetadata
+        {
+            private static readonly Type HistoryType = typeof(CombatSolver.Engine.InCombat.Simulation.CombatPredictionHistory);
+            internal static readonly System.Reflection.FieldInfo Head = AccessTools.Field(HistoryType, "_prefix");
+            internal static readonly System.Reflection.FieldInfo Tail = AccessTools.Field(HistoryType, "_tail");
+            internal static readonly System.Reflection.FieldInfo Completions = AccessTools.Field(HistoryType, "_tailCompletions");
+            internal static readonly System.Reflection.FieldInfo Pending = AccessTools.Field(HistoryType, "_pendingDeferredEntries");
+        }
+
+        // Called under ReplayGate. Weak identities and detached integer/string stamps
+        // never retain a simulator, history entry, segment, CardPlay, trace or model graph.
+        private static PrefixStamp CapturePrefix(CombatBeamSolver solver, SearchNode parent)
+        {
+            // Ordinary Fork seals the parent's tail. Use the same owner gate as
+            // parallel seed preparation so the observation cannot mix before/after fields.
+            object? forkGate = Metadata.ForkGate.GetValue(solver);
+            if (forkGate == null) return CapturePrefixOwned(parent);
+            lock (forkGate) return CapturePrefixOwned(parent);
+        }
+
+        private static PrefixStamp CapturePrefixOwned(SearchNode parent)
+        {
+            object history = parent.Snapshot.Simulator.History;
+            int Id(object? item) => item == null ? 0
+                : HistoryIdentities.GetValue(item, _ => new(++NextHistoryIdentity)).Id;
+            System.Collections.IEnumerable? tail =
+                (System.Collections.IEnumerable?)HistoryMetadata.Tail.GetValue(history);
+            string entries = tail == null ? "" : string.Join(",", tail.Cast<object>().Select(Id));
+            return new(Id(HistoryMetadata.Head.GetValue(history)), entries,
+                Id(HistoryMetadata.Completions.GetValue(history)),
+                (int)(HistoryMetadata.Pending.GetValue(history)
+                    ?? throw new InvalidOperationException("Prefix probe requires deferred-entry count.")));
+        }
 
         internal static void Install(string output)
         {
             if (Environment.GetEnvironmentVariable("OFFLINE_HARNESS_TRANSITION_PROBE") != "1") return;
+            ObservePrefix = Environment.GetEnvironmentVariable("OFFLINE_HARNESS_TRANSITION_PREFIX_PROBE") == "1";
             GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(CombatBeamSolver), "CreateExpansionWorker"),
                 postfix: new HarmonyMethod(typeof(ReplayRequests), nameof(ObserveWorker)));
             GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(CombatBeamSolver), "ReplayAction"),
@@ -181,12 +229,17 @@ internal static class EquivalenceProbe
                 lock (ReplayGate)
                     File.WriteAllText(Path.Combine(output, "action-transition-probe.json"),
                         JsonSerializer.Serialize(new {
-                            schemaVersion = 1, observationOnly = true, maximumInputs = MaximumInputs,
+                            schemaVersion = 2, observationOnly = true, maximumInputs = MaximumInputs,
                             scope = "Exact frozen root identity, existing state key, action count, boundary, full serialized PlanAction and capture mode. Selected path/snapshot features and profile equality are diagnostic checks, not full state/history/callback/policy proof. No simulator or snapshot graph retained.",
                             Started, Completed, Repeats, SameMember, CrossMember, LimitBypasses,
                             BeforeMismatches, AfterStateMismatches, AfterFeatureMismatches,
                             HistoryOnlyMismatches, SelectedMatches, SameProfileSelectedMatches,
                             DifferentProfileSelectedMatches, retainedInputs = Inputs.Count,
+                            prefixObservationEnabled = ObservePrefix,
+                            prefixScope = "Existing input plus exact sealed history head identity, ordered tail entry identities, tail completion-map identity and pending count. Reads use the existing parallel fork owner gate; different segment layouts are not normalized. This is a conservative identity census, not a complete policy/state/checkpoint or cache proof.",
+                            PrefixRepeats, PrefixLimitBypasses, PrefixSelectedMatches,
+                            PrefixBeforeMismatches, PrefixAfterMismatches, PrefixDifferentProfileMatches,
+                            retainedPrefixInputs = PrefixInputs.Count,
                             modes = Modes, members = MemberResults.Select(m => new {
                                 m.Id, m.Root, m.Workers, m.Profile
                             }).ToArray(), Examples
@@ -232,7 +285,8 @@ internal static class EquivalenceProbe
                 Started++;
                 __state = new(new(member.Root, parent.StateKey, parent.ActionCount,
                     parent.BoundaryReason, actionText, mode), member.Id, member.Profile,
-                    features, label, parent.Snapshot.HistoryEntryCount);
+                    features, label, parent.Snapshot.HistoryEntryCount,
+                    ObservePrefix ? CapturePrefix(__instance, parent) : default);
             }
         }
 
@@ -244,6 +298,28 @@ internal static class EquivalenceProbe
                 Completed++;
                 Modes.TryGetValue(__state.Input.CaptureMode, out long modeCount);
                 Modes[__state.Input.CaptureMode] = modeCount + 1;
+                if (ObservePrefix)
+                {
+                    PrefixInput prefixInput = new(__state.Input, __state.Prefix);
+                    if (PrefixInputs.TryGetValue(prefixInput, out Entry? prefixPrior))
+                    {
+                        PrefixRepeats++;
+                        bool prefixBefore = prefixPrior.First.Before == __state.Before
+                            && prefixPrior.First.Label == __state.Label
+                            && prefixPrior.First.BeforeHistory == __state.BeforeHistory;
+                        bool prefixAfter = prefixPrior.AfterState == __result.StateKey
+                            && prefixPrior.After == after && prefixPrior.AfterHistory == __result.HistoryEntryCount;
+                        if (!prefixBefore) PrefixBeforeMismatches++;
+                        if (!prefixAfter) PrefixAfterMismatches++;
+                        if (prefixBefore && prefixAfter)
+                        {
+                            PrefixSelectedMatches++;
+                            if (prefixPrior.First.Profile != __state.Profile) PrefixDifferentProfileMatches++;
+                        }
+                    }
+                    else if (PrefixInputs.Count >= MaximumInputs) PrefixLimitBypasses++;
+                    else PrefixInputs.Add(prefixInput, new(__state, __result.StateKey, after, __result.HistoryEntryCount));
+                }
                 if (!Inputs.TryGetValue(__state.Input, out Entry? prior))
                 {
                     if (Inputs.Count >= MaximumInputs) { LimitBypasses++; return; }
@@ -272,7 +348,8 @@ internal static class EquivalenceProbe
                         action = __state.Input.Action, priorMember = prior.First.Member,
                         member = __state.Member, beforeMatches, stateMatches, afterMatches,
                         historyMatches, priorBefore = prior.First.Before, before = __state.Before,
-                        priorAfter = prior.After, currentAfter = after
+                        priorAfter = prior.After, currentAfter = after,
+                        priorLabel = prior.First.Label, currentLabel = __state.Label
                     });
             }
         }

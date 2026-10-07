@@ -78,6 +78,8 @@ dotnet .local/tool-build/OfflineSearchHarness/bin/Release/net9.0/OfflineSearchHa
 
 `OFFLINE_HARNESS_TRANSITION_PROBE=1` 在现有EquivalenceProbe中独立观察ReplayAction，输出 `action-transition-probe.json`。按精确冻结根、父状态键/动作数/边界、完整序列化PlanAction及round/card capture存在标志索引，真实CreateExpansionWorker归属用于同/跨成员计数。请求表最多250000个纯值/字符串输入，不保留模拟器、Snapshot或Model图；容量旁路后的比例只作下限。比较16项前/后特征、六项路径标签、历史数量及profile；它们不是完整状态、历史前缀、全部政策或隐藏checkpoint的相等证明。默认关闭，关闭时不解析私有字段或安装此入口；开启时ABI不匹配显式失败。用于重复转移研究，不能用于性能验收，命令、实测及下一步证明门槛见[完整动作研究](performance/action-transition-opportunity-20261007.md)。
 
+`OFFLINE_HARNESS_TRANSITION_PREFIX_PROBE=1`须同时开启上述TRANSITION_PROBE，额外统计封存历史段身份、有序尾事件身份、尾部延迟配对表身份及pending数。使用已有并行Fork拥有者锁读取，不封存或修改历史；弱身份表不保留对象图，独立250000输入上限后的计数只作下限。不同段布局不归一化，选定特征相同也不是缓存/剪枝证明；具体标签差异随样本输出，原生边界及命令见[历史前缀研究](performance/transition-prefix-boundary-research-20261007.md)。
+
 `tools/search/OfflineSearchHarness/run_plan.py` 吃一份 plan JSON（数组），起 N 个宿主进程并行消费：
 
 ```
