@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-07 [已保留胜利的严格剪枝](performance/retained-victory-strict-hp-pruning-20261007.md)：两原生验证完整胜利、P0/P1/P2、目标/未知拒绝及16消费者/Fork隔离；11根44次完整交错质量/根/政策/预算一致，峰值最大+0.30%。新增378/268剪枝，整请求仅1.014/1.006倍；能力保留并部署，无新两倍达标。
+2026-10-07 [精确用药续搜剪枝研究](performance/exact-retained-victory-pruning-research-20261007.md)：两原生合同通过；八次完整交错质量及内存通过。猎手新增83剪枝，查询27.257ms；1.013/1.000倍无稳定收益，原型撤回，沿用[27c运行时与部署](performance/retained-victory-strict-hp-pruning-20261007.md)。未新增库存认证、全根回归或两倍达标。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 
