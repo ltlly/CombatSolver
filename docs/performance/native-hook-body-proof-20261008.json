@@ -6605,15 +6605,30 @@
       "path": ".local/tool-tasks/native-hook-body-proof-20261008/MetadataFixture.cs",
       "text": "using System.Diagnostics;\nusing System.Text.Json;\nusing Mono.Cecil;\nusing Mono.Cecil.Cil;\n\nif (args.Length != 2) throw new ArgumentException(\"Usage: fixture audit.dll output-directory\");\nstring directory = Path.GetFullPath(args[1]);\nDirectory.CreateDirectory(directory);\nusing AssemblyDefinition assembly = AssemblyDefinition.CreateAssembly(\n    new AssemblyNameDefinition(\"SlotMetadataFixture\", new Version(1, 0)), \"SlotMetadataFixture.dll\", ModuleKind.Dll);\nModuleDefinition module = assembly.MainModule;\nconst string ns = \"MegaCrit.Sts2.Core.Models\";\nTypeDefinition root = AddType(ns, \"AbstractModel\", module.TypeSystem.Object);\nMethodDefinition rootDo = AddMethod(root, \"Do\", module.TypeSystem.Void, newSlot: true);\nMethodDefinition rootGet = AddMethod(root, \"GetValue\", module.TypeSystem.Object, newSlot: true);\nMethodDefinition rootOther = AddMethod(root, \"Other\", module.TypeSystem.Void, newSlot: true);\nTypeDefinition middle = AddType(ns, \"Middle\", root);\nMethodDefinition middleDo = AddMethod(middle, \"Do\", module.TypeSystem.Void, newSlot: false);\nTypeDefinition leaf = AddType(ns, \"Leaf\", middle);\nMethodDefinition leafDo = AddMethod(leaf, \"Do\", module.TypeSystem.Void, newSlot: false);\nMethodDefinition leafOverload = AddMethod(leaf, \"Do\", module.TypeSystem.Void, newSlot: true);\nleafOverload.Parameters.Add(new ParameterDefinition(\"value\", ParameterAttributes.None, module.TypeSystem.Int32));\nTypeDefinition newLeaf = AddType(ns, \"NewLeaf\", middle);\nMethodDefinition hiding = AddMethod(newLeaf, \"Do\", module.TypeSystem.Void, newSlot: true);\n\n// The external parent has exactly the same FullName as the local root. The\n// scanner must preserve its different assembly scope rather than bind locally.\nvar externalAssembly = new AssemblyNameReference(\"ForeignModels\", new Version(1, 0));\nmodule.AssemblyReferences.Add(externalAssembly);\nvar externalParent = new TypeReference(ns, \"AbstractModel\", module, externalAssembly);\nTypeDefinition externalLeaf = AddType(ns, \"ExternalLeaf\", externalParent);\nMethodDefinition externalDo = AddMethod(externalLeaf, \"Do\", module.TypeSystem.Void, newSlot: false);\nTypeDefinition localValue = AddType(ns, \"Value\", module.TypeSystem.Object);\nvar externalValue = new TypeReference(ns, \"Value\", module, externalAssembly);\nMethodDefinition rootWithValue = AddMethod(root, \"WithValue\", module.TypeSystem.Void, newSlot: true);\nrootWithValue.Parameters.Add(new ParameterDefinition(\"value\", ParameterAttributes.None, localValue));\nMethodDefinition externalParameter = AddMethod(leaf, \"WithValue\", module.TypeSystem.Void, newSlot: false);\nexternalParameter.Parameters.Add(new ParameterDefinition(\"value\", ParameterAttributes.None, externalValue));\n\n// Covariant-looking reuse is an explicit unknown for this metadata tool.\n// The closest base must not be skipped to bind an older matching return type.\nTypeDefinition covariant = AddType(ns, \"Covariant\", root);\nMethodDefinition covariantGet = AddMethod(covariant, \"GetValue\", module.TypeSystem.String, newSlot: false);\nTypeDefinition afterCovariant = AddType(ns, \"AfterCovariant\", covariant);\nMethodDefinition afterCovariantGet = AddMethod(afterCovariant, \"GetValue\", module.TypeSystem.Object, newSlot: false);\nTypeDefinition explicitLeaf = AddType(ns, \"ExplicitLeaf\", root);\nMethodDefinition renamed = AddMethod(explicitLeaf, \"Renamed\", module.TypeSystem.Void, newSlot: true);\nrenamed.Overrides.Add(rootDo);\nMethodDefinition multiple = AddMethod(explicitLeaf, \"Multiple\", module.TypeSystem.Void, newSlot: true);\nmultiple.Overrides.Add(rootDo);\nmultiple.Overrides.Add(rootOther);\n\n// Supply one actual Hook call edge, so same-name hiding is checked against\n// the referenced root slot rather than inferred from its name.\nTypeDefinition hook = AddType(\"MegaCrit.Sts2.Core.Hooks\", \"Hook\", module.TypeSystem.Object);\nvar dispatch = new MethodDefinition(\"Dispatch\", MethodAttributes.Public | MethodAttributes.Static, module.TypeSystem.Void);\nhook.Methods.Add(dispatch);\ndispatch.Parameters.Add(new ParameterDefinition(\"model\", ParameterAttributes.None, root));\ndispatch.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));\ndispatch.Body.Instructions.Add(Instruction.Create(OpCodes.Callvirt, rootDo));\ndispatch.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));\nstring dll = Path.Combine(directory, \"fixture.dll\");\nassembly.Write(dll);\nstring output = Path.Combine(directory, \"audit.json\");\nvar start = new ProcessStartInfo(\"dotnet\") { RedirectStandardOutput = true, RedirectStandardError = true };\nstart.ArgumentList.Add(Path.GetFullPath(args[0])); start.ArgumentList.Add(dll); start.ArgumentList.Add(output);\nusing Process process = Process.Start(start) ?? throw new InvalidOperationException(\"Could not start audit tool\");\nTask<string> stdout = process.StandardOutput.ReadToEndAsync();\nTask<string> stderr = process.StandardError.ReadToEndAsync();\nawait process.WaitForExitAsync();\nif (process.ExitCode != 0) throw new InvalidOperationException(await stdout + await stderr);\nusing JsonDocument json = JsonDocument.Parse(File.ReadAllText(output));\nDictionary<string, JsonElement> slots = json.RootElement.GetProperty(\"virtualModelSlots\")\n    .EnumerateArray().ToDictionary(slot => slot.GetProperty(\"Method\").GetString()!);\nvar checks = new List<object>();\nCheck(\"inherited-chain\", leafDo, \"resolved-local\", rootDo.FullName, true, 3);\nCheck(\"overload-new-slot\", leafOverload, \"resolved-local\", leafOverload.FullName, false, 1);\nCheck(\"same-name-hiding\", hiding, \"resolved-local\", hiding.FullName, false, 1);\nCheck(\"external-homonym\", externalDo, \"external-or-unresolved-base\", externalParent.FullName, false, 1);\nCheck(\"external-parameter-homonym\", externalParameter, \"external-or-unresolved-base\", module.TypeSystem.Object.FullName, false, 1);\nCheck(\"covariant-return\", covariantGet, \"covariant-or-unresolved-return\", rootGet.FullName, false, 1);\nCheck(\"closest-covariant-base\", afterCovariantGet, \"covariant-or-unresolved-return\", covariantGet.FullName, false, 1);\nCheck(\"explicit-renamed-slot\", renamed, \"resolved-local\", rootDo.FullName, true, 2);\nCheck(\"multiple-explicit-slots\", multiple, \"multiple-explicit-slots\", null, false, 1);\nstring result = JsonSerializer.Serialize(new { passed = checks.Count, checks, nativeExecution = false,\n    scannerOutput = await stdout, scannerError = await stderr }, new JsonSerializerOptions { WriteIndented = true });\nFile.WriteAllText(Path.Combine(directory, \"result.json\"), result + \"\\n\");\nConsole.WriteLine($\"SLOT_METADATA_BOUNDARIES_OK cases={checks.Count}\");\n\n\nusing (AssemblyDefinition ambiguityAssembly = AssemblyDefinition.CreateAssembly(\n    new AssemblyNameDefinition(\"AmbiguityMetadataFixture\", new Version(1, 0)), \"AmbiguityMetadataFixture.dll\", ModuleKind.Dll))\n{\n    ModuleDefinition am = ambiguityAssembly.MainModule;\n    TypeDefinition AT(string name, TypeReference parent)\n    {\n        var type = new TypeDefinition(ns, name, TypeAttributes.Public | TypeAttributes.Class, parent);\n        am.Types.Add(type); return type;\n    }\n    MethodDefinition AM(TypeDefinition type, string name, bool isNewSlot = true)\n    {\n        var attrs = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig;\n        if (isNewSlot) attrs |= MethodAttributes.NewSlot;\n        var method = new MethodDefinition(name, attrs, am.TypeSystem.Void);\n        type.Methods.Add(method);method.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));return method;\n    }\n    var ar = AT(\"GenericArityRoot\", am.TypeSystem.Object);\n    var nonGeneric = AM(ar, \"Same\");\n    var generic = AM(ar, \"Same\");\n    generic.GenericParameters.Add(new GenericParameter(\"Unused\", generic));\n    if (nonGeneric.FullName != generic.FullName) throw new InvalidOperationException(\"No display-signature collision in fixture.\");\n    var alias = AM(AT(\"ExplicitAlias\", ar), \"Alias\");alias.Overrides.Add(nonGeneric);\n    var twinOne = AT(\"DuplicateType\", am.TypeSystem.Object);\n    var twinTwo = AT(\"DuplicateType\", am.TypeSystem.Object);\n    AM(twinOne, \"Do\");AM(twinTwo, \"Do\");\n    AM(AT(\"DerivedFromDuplicateType\", twinOne), \"Do\", false);\n    var calls = AT(\"CallSites\", am.TypeSystem.Object);\n    foreach (var (name, target) in new[] { (\"CallPlain\", (MethodReference)nonGeneric),\n        (\"CallGeneric\", (MethodReference)new GenericInstanceMethod(generic)) })\n    {\n        if (target is GenericInstanceMethod constructed) constructed.GenericArguments.Add(am.TypeSystem.String);\n        var method = new MethodDefinition(name, MethodAttributes.Public | MethodAttributes.Static, am.TypeSystem.Void);\n        calls.Methods.Add(method);\n        method.Body.Instructions.Add(Instruction.Create(OpCodes.Ldnull));\n        method.Body.Instructions.Add(Instruction.Create(OpCodes.Callvirt, target));\n        method.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));\n    }\n    string ambiguityDll = Path.Combine(directory, \"ambiguity-fixture.dll\");ambiguityAssembly.Write(ambiguityDll);\n    string ambiguityOutput = Path.Combine(directory, \"ambiguity-audit.json\");\n    var astart = new ProcessStartInfo(\"dotnet\") { RedirectStandardOutput = true, RedirectStandardError = true };\n    astart.ArgumentList.Add(Path.GetFullPath(args[0]));astart.ArgumentList.Add(ambiguityDll);astart.ArgumentList.Add(ambiguityOutput);\n    using Process ap = Process.Start(astart) ?? throw new InvalidOperationException(\"Could not start ambiguity scan.\");\n    Task<string> aout = ap.StandardOutput.ReadToEndAsync(), aerr = ap.StandardError.ReadToEndAsync();\n    await ap.WaitForExitAsync();\n    if (ap.ExitCode != 0) throw new InvalidOperationException(await aout + await aerr);\n    using JsonDocument aj = JsonDocument.Parse(File.ReadAllText(ambiguityOutput));\n    JsonElement[] aslots = aj.RootElement.GetProperty(\"virtualModelSlots\").EnumerateArray().ToArray();\n    var achecks = new List<string>();\n    void ACheck(string name, bool passed)\n    {\n        if (!passed) throw new InvalidOperationException(name);achecks.Add(name);\n    }\n    JsonElement[] dupSlots = aslots.Where(row => row.GetProperty(\"Method\").GetString() == nonGeneric.FullName).ToArray();\n    ACheck(\"same-display-generic-arity-retained-and-conservative\", dupSlots.Length == 2\n        && dupSlots.All(row => row.GetProperty(\"Status\").GetString() == \"ambiguous-method-identity\")\n        && aj.RootElement.GetProperty(\"ambiguousMethodSignatures\").EnumerateArray()\n            .Single(row => row.GetProperty(\"signature\").GetString() == nonGeneric.FullName)\n            .GetProperty(\"methods\").EnumerateArray().Select(row => row.GetProperty(\"genericParameterCount\").GetInt32())\n            .Order().SequenceEqual(new[] { 0, 1 }));\n    ACheck(\"ambiguous-explicit-slot-refused\", aslots.Single(row => row.GetProperty(\"Method\").GetString() == alias.FullName)\n        .GetProperty(\"Status\").GetString() == \"ambiguous-explicit-slot\");\n    ACheck(\"duplicate-declaring-types-retained-and-refused\", aj.RootElement.GetProperty(\"ambiguousTypeSignatures\").GetArrayLength() == 1\n        && aslots.Count(row => row.GetProperty(\"Status\").GetString() == \"ambiguous-declaring-type\") == 2);\n    ACheck(\"duplicate-base-type-refused\", aslots.Count(row => row.GetProperty(\"Status\").GetString() == \"ambiguous-base-type\") == 1);\n    JsonElement[] edges = aj.RootElement.GetProperty(\"staticReferences\").EnumerateArray()\n        .Where(row => row.GetProperty(\"Target\").GetString() == nonGeneric.FullName).ToArray();\n    ACheck(\"caller-and-operand-tokens-distinguish-call-sites\", edges.Length == 2\n        && edges.Select(row => row.GetProperty(\"CallerDefinitionToken\").GetInt32()).Distinct().Count() == 2\n        && edges.Select(row => row.GetProperty(\"OperandMetadataToken\").GetInt32()).Distinct().Count() == 2\n        && edges.Select(row => row.GetProperty(\"GenericArguments\").GetArrayLength()).Order().SequenceEqual(new[] { 0, 1 }));\n    File.WriteAllText(Path.Combine(directory, \"ambiguity-result.json\"), JsonSerializer.Serialize(new {\n        passed = achecks.Count, checks = achecks, nativeExecution = false,\n        scannerOutput = await aout, scannerError = await aerr }, new JsonSerializerOptions { WriteIndented = true }) + \"\\n\");\n    Console.WriteLine($\"AMBIGUITY_METADATA_BOUNDARIES_OK cases={achecks.Count}\");\n}\n\nawait EventFixture.Run(args[0], directory);\nawait BodyShapeFixture.Run(args[0], directory);\n\nTypeDefinition AddType(string typeNamespace, string name, TypeReference parent)\n{\n    var type = new TypeDefinition(typeNamespace, name, TypeAttributes.Public | TypeAttributes.Class, parent);\n    module.Types.Add(type); return type;\n}\nMethodDefinition AddMethod(TypeDefinition type, string name, TypeReference resultType, bool newSlot)\n{\n    var attributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig;\n    if (newSlot) attributes |= MethodAttributes.NewSlot;\n    var method = new MethodDefinition(name, attributes, resultType); type.Methods.Add(method);\n    if (resultType.FullName != module.TypeSystem.Void.FullName)\n        method.Body.Instructions.Add(Instruction.Create(OpCodes.Ldnull));\n    method.Body.Instructions.Add(Instruction.Create(OpCodes.Ret)); return method;\n}\nvoid Check(string name, MethodDefinition method, string status, string? rootSlot, bool hookTarget, int chainLength)\n{\n    JsonElement slot = slots[method.FullName];\n    if (slot.GetProperty(\"Status\").GetString() != status\n        || slot.GetProperty(\"RootOrUnresolved\").GetString() != rootSlot\n        || slot.GetProperty(\"IsNativeHookTarget\").GetBoolean() != hookTarget\n        || slot.GetProperty(\"Chain\").GetArrayLength() != chainLength)\n        throw new InvalidOperationException($\"{name}: {slot.GetRawText()}\");\n    checks.Add(new { name, method = method.FullName, status, rootSlot, hookTarget, chainLength });\n}\n",
       "sha256": "beb1415a81cb1c6798d5b68c4b3960140a25dd38e4f6f42753ad1d5a62512d04"
+    },
+    {
+      "path": ".local/tool-tasks/native-hook-body-proof-20261008/NativeCallerFixture.csproj",
+      "sha256": "b71a064ed0ca3b9108e74f00aa7d32957aade64a71ebca7c3159cdeff96df4c8",
+      "text": "<Project>\n  <PropertyGroup>\n    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)caller-obj/</BaseIntermediateOutputPath>\n  </PropertyGroup>\n  <Import Project=\"Sdk.props\" Sdk=\"Microsoft.NET.Sdk\" />\n  <PropertyGroup>\n    <OutputType>Exe</OutputType>\n    <TargetFramework>net9.0</TargetFramework>\n    <ImplicitUsings>enable</ImplicitUsings>\n    <Nullable>enable</Nullable>\n    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>\n    <AssemblyName>NativeCallerFixture</AssemblyName>\n    <OutputPath>$(MSBuildThisFileDirectory)caller-build/</OutputPath>\n    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>\n  </PropertyGroup>\n  <ItemGroup>\n    <Compile Include=\"NativeCallerFixture.cs\" />\n    <Reference Include=\"sts2\" HintPath=\"/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/data_sts2_linuxbsd_x86_64/sts2.dll\" Private=\"false\" />\n    <Reference Include=\"GodotSharp\" HintPath=\"/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/data_sts2_linuxbsd_x86_64/GodotSharp.dll\" Private=\"false\" />\n  </ItemGroup>\n  <Import Project=\"Sdk.targets\" Sdk=\"Microsoft.NET.Sdk\" />\n</Project>\n"
+    },
+    {
+      "path": ".local/tool-tasks/native-hook-body-proof-20261008/NativeCallerFixture.cs",
+      "sha256": "f0810322174fcaa67a82741eb9441fb72a6e1f9e596301694df1bb6707178000",
+      "text": "using System.Reflection;\nusing System.Runtime.CompilerServices;\nusing System.Runtime.Loader;\nusing System.Text.Json;\nusing MegaCrit.Sts2.Core.Hooks;\nusing MegaCrit.Sts2.Core.Models;\nusing MegaCrit.Sts2.Core.Models.Cards;\nusing MegaCrit.Sts2.Core.Rooms;\nusing MegaCrit.Sts2.Core.Runs;\n\ninternal static class NativeCallerFixture\n{\n    [ModuleInitializer]\n    internal static void ResolveGame()\n        => AssemblyLoadContext.Default.Resolving += (context, name) =>\n        {\n            string file = Path.Combine(\"/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/data_sts2_linuxbsd_x86_64\", name.Name + \".dll\");\n            return File.Exists(file) ? context.LoadFromAssemblyPath(file) : null;\n        };\n\n    private static void Assert(bool condition, string message)\n    {\n        if (!condition) throw new InvalidOperationException(message);\n    }\n\n    private static int Main(string[] args)\n    {\n        IRunState run = DispatchProxy.Create<IRunState, RunProxy>();\n        RunProxy proxy = (RunProxy)(object)run;\n        RoomType[] roomTypes = Enum.GetValues<RoomType>();\n        var input = new HashSet<RoomType> { roomTypes[0] };\n        IReadOnlySet<RoomType> emptyResult = Hook.ModifyUnknownMapPointRoomTypes(run, input);\n        Assert(input.SetEquals(emptyResult) && !ReferenceEquals(input, emptyResult), \"empty listener hook must copy set\");\n        ((HashSet<RoomType>)emptyResult).Add(roomTypes[1]);\n        Assert(input.Count == 1, \"returned set must not alias caller input\");\n\n        var model = (DefendSilent)RuntimeHelpers.GetUninitializedObject(typeof(DefendSilent));\n        Assert(ReferenceEquals(model.ModifyUnknownMapPointRoomTypes(input), input), \"default model returns original set\");\n        proxy.Models = [model];\n        IReadOnlySet<RoomType> defaultResult = Hook.ModifyUnknownMapPointRoomTypes(run, input);\n        Assert(input.SetEquals(defaultResult) && !ReferenceEquals(input, defaultResult), \"default model does not undo hook copy\");\n\n        int finished = 0;\n        model.ExecutionFinished += _ => finished++;\n        Assert(ReferenceEquals(model.ModifyGeneratedMap(run, null!, 0), null) && finished == 0,\n            \"default model method has no completion dispatch\");\n        Hook.ModifyGeneratedMap(run, null!, 0);\n        Assert(finished == 2, \"early and late map hooks dispatch completion even for default methods\");\n\n        decimal largeAmount = (decimal)int.MaxValue + 1;\n        Assert(model.ModifyGoldGained(null!, largeAmount) == largeAmount, \"default model returns large amount\");\n        proxy.Models = [];\n        Assert(Hook.ModifyGoldGained(run, null, largeAmount, null!, out _) == largeAmount,\n            \"empty hook returns large amount\");\n        proxy.Models = [model];\n        bool overflow = false;\n        try { Hook.ModifyGoldGained(run, null, largeAmount, null!, out _); }\n        catch (OverflowException) { overflow = true; }\n        Assert(overflow, \"default listener still executes caller integer conversion\");\n\n        var result = new { passed = true, gameMvid = typeof(Hook).Module.ModuleVersionId,\n            nativeHookMethods = new[] { nameof(Hook.ModifyUnknownMapPointRoomTypes), nameof(Hook.ModifyGeneratedMap), nameof(Hook.ModifyGoldGained) }\n                .Select(name => typeof(Hook).GetMethod(name)!.MetadataToken).ToArray(),\n            setCopy = true, inputIsolation = true, completionEvents = finished, callerOverflow = overflow,\n            runProxyEnumerations = proxy.Enumerations,\n            scope = \"Installed native method bodies in .NET host with synthetic IRunState and uninitialized default receiver; no Mod, Ritsu, Harmony, Godot, search, Fork, RNG or root eligibility proof.\" };\n        File.WriteAllText(args[0], JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }) + \"\\n\");\n        Console.WriteLine(\"NATIVE_CALLER_BOUNDARIES_OK set-copy completion-event numeric-conversion\");\n        return 0;\n    }\n}\n\npublic class RunProxy : DispatchProxy\n{\n    public AbstractModel[] Models = [];\n    public int Enumerations;\n    protected override object? Invoke(MethodInfo? method, object?[]? args)\n    {\n        if (method?.Name != nameof(IRunState.IterateHookListeners))\n            throw new InvalidOperationException(\"Unreviewed IRunState member: \" + method);\n        Enumerations++;\n        return Models;\n    }\n}\n"
+    },
+    {
+      "path": ".local/tool-tasks/native-hook-body-proof-20261008/CollectCallerEvidence.py",
+      "sha256": "bb8fa9fef70528d09a7767e100e38326507878f509110b98e0ba85bca8ee3182",
+      "text": "from pathlib import Path\nimport collections\nimport hashlib\nimport json\nimport re\n\nreport = Path('docs/performance/native-hook-body-proof-20261008.json')\ndata = json.loads(report.read_text())\nsource = Path('.local/tool-tasks/excess-star-hook-20261006/native-hook.cs')\nlines = source.read_text().splitlines()\nregions = []\nfor first, line in enumerate(lines):\n    if not re.search(r'public static (?:async )?', line) or '(' not in line:\n        continue\n    opening = first\n    while '{' not in lines[opening]:\n        opening += 1\n    depth = 0\n    for last in range(opening, len(lines)):\n        depth += lines[last].count('{') - lines[last].count('}')\n        if depth == 0:\n            break\n    regions.append((first + 1, last + 1, '\\n'.join(lines[first:last+1])))\n\nreview = []\nfor definition in data['nativeHookBodies']:\n    if definition['Shape'] not in ['return-argument', 'return-int32-constant', 'empty-void']:\n        continue\n    name = definition['Method'].split('::')[1].split('(')[0]\n    matching = [(first, last, text) for first, last, text in regions\n                if re.search(r'\\.' + name + r'\\s*\\(', text)]\n    assert len(matching) == 1, (name, len(matching))\n    first, last, text = matching[0]\n    category = ('returned-current-accumulator' if definition['Shape'] == 'return-argument'\n                else 'empty-mutation-body' if definition['Shape'] == 'empty-void'\n                else 'false-mutation-indicator' if name.startswith('Try')\n                else 'true-allow-vote' if definition['Instructions'][0]['OpCode'] == 'ldc.i4.1'\n                else 'false-enable-vote')\n    review.append({'modelDefinitionToken': definition['DefinitionToken'], 'modelMethod': definition['Method'],\n                   'contribution': category, 'hookSourceFirstLine': first, 'hookSourceLastLine': last,\n                   'wholeCallerHasCompletionDispatch': '.InvokeExecutionFinished(' in text,\n                   'callerSource': text, 'isRuntimeCertificate': False})\nassert len(review) == 68\nnative = json.loads(Path('.local/tool-tasks/native-hook-body-proof-20261008/native-caller-result.json').read_text())\nassert native['gameMvid'] == data['game']['mvid'] and native['passed']\ndata['callerReview'] = {'source': str(source), 'sourceSha256': hashlib.sha256(source.read_bytes()).hexdigest(),\n                        'modelDefinitionCount': len(review),\n                        'uniqueHookSourceBodies': len({x['hookSourceFirstLine'] for x in review}),\n                        'contributionCounts': dict(collections.Counter(x['contribution'] for x in review)),\n                        'rows': review,\n                        'scope': 'Source-linked return/vote/mutation contribution only. Does not resolve patches, inherited events, enumeration/getter effects, operators or runtime/future closure; source parser is evidence collection, not a certifier.'}\ndata['nativeCallerBoundaryChecks'] = native\ndata['nativeCallerBoundaryChecks']['build'] = {'status': 'Passed', 'releaseSeconds': 2.06, 'warnings': 0, 'errors': 0}\ndata['nativeCallerBoundaryChecks']['syntheticInputs'] = {'runState': 'DispatchProxy permitting only IterateHookListeners',\n    'receiver': 'uninitialized DefendSilent; reviewed default methods only',\n    'map': 'null; default identity methods and completion dispatch only',\n    'goldAmount': 2147483648, 'goldReachableInNormalBattleProved': False}\ndata['newOfflineNativeEntrypoints'] = 3\ntask = Path('.local/tool-tasks/native-hook-body-proof-20261008')\nfor name in ['NativeCallerFixture.csproj', 'NativeCallerFixture.cs', 'CollectCallerEvidence.py']:\n    path = task / name\n    data['sourceArchive'].append({'path': str(path), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'text': path.read_text()})\ndata['cleanup']['temporaryCallerFiles'] = ['NativeCallerFixture.csproj', 'NativeCallerFixture.cs', 'CollectCallerEvidence.py']\ndata['cleanup']['temporaryCallerBuilds'] = ['caller-build', 'caller-obj']\ndata['cleanup']['callerCleanupComplete'] = False\ndata['decision'] = 'Reuse body and caller-contribution evidence. Native caller checks refute whole-hook identity from a default identity method; no runtime certificate or pruning consumer is enabled.'\ndata['proofObligationsRemaining'][0] = '68 source-linked default contributions are recorded; enumeration, operators, default-completion events and patches are not thereby proved neutral. Native alias/event/conversion boundaries refute blanket whole-hook identity.'\ndata['gates']['documentation']['status'] = 'Pending after caller evidence was added'\nreport.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\\n')\nprint(json.dumps({'callerModelDefinitions': 68, 'hookBodies': data['callerReview']['uniqueHookSourceBodies'],\n                  'contributions': data['callerReview']['contributionCounts'], 'nativeEntrypoints': 3}))\n"
     }
   ],
   "toolSourceDigests": {
     "tools/inspection/HealingSourceAudit/Program.cs": "3a3436fd8d0d8d653d37e972e13bcfcf19eeb9e76fe5addd3424cec1143feb98",
     "tools/inspection/HealingSourceAudit/NativeHookBodyInspection.cs": "468bb45c0824109925036965a9434abbd6715b52f098484cb13922b3f5f1c752"
   },
-  "decision": "Reuse the body catalog for explicit default-method/caller/patch proof. Do not label default implementations or native assembly membership as a whole order certificate.",
+  "decision": "Reuse body and caller-contribution evidence. Native caller checks refute whole-hook identity from a default identity method; no runtime certificate or pruning consumer is enabled.",
   "proofObligationsRemaining": [
-    "Each constant/argument result must be neutral under its actual caller aggregation rule.",
+    "68 source-linked default contributions are recorded; enumeration, operators, default-completion events and patches are not thereby proved neutral. Native alias/event/conversion boundaries refute blanket whole-hook identity.",
     "Task.CompletedTask and all other call/field/constructor operands require definition/binding/patch review.",
     "InvokeExecutionFinished active delegates, lifecycle wrappers, dispatcher/CombatManager getters and complete callback order remain separate.",
     "Initial, generated, cloned, recovered, attached and private sources require lifetime closure and branch-owned eligibility.",
@@ -6646,20 +6661,763 @@
     "temporaryBuildToRemove": ".local/tool-build/EventMetadataFixture",
     "rawMetadataRetained": true,
     "runtimeDllChangedOrDeployed": false,
-    "complete": true
+    "complete": true,
+    "temporaryCallerFiles": [
+      "NativeCallerFixture.csproj",
+      "NativeCallerFixture.cs",
+      "CollectCallerEvidence.py"
+    ],
+    "temporaryCallerBuilds": [
+      "caller-build",
+      "caller-obj"
+    ],
+    "callerCleanupComplete": true
   },
   "gates": {
     "documentation": {
       "exitCode": 0,
-      "output": "DOCUMENTATION_OK files=566 links=2406 errors=0"
+      "output": "DOCUMENTATION_OK files=566 links=2406 errors=0",
+      "status": "Passed after caller evidence and cleanup"
     },
     "tools": {
       "exitCode": 0,
-      "output": "TOOLS_OK files=295 projects=37 errors=0"
+      "output": "TOOLS_OK files=295 projects=37 errors=0",
+      "reusedFrom": "091e073b: source and tool paths unchanged"
     },
     "coverage": {
       "exitCode": 0,
-      "output": "COVERAGE_OK data=529 fixtures=479 groups=37 errors=0"
+      "output": "COVERAGE_OK data=529 fixtures=479 groups=37 errors=0",
+      "reusedFrom": "091e073b: catalog and fixture paths unchanged"
     }
-  }
+  },
+  "callerReview": {
+    "source": ".local/tool-tasks/excess-star-hook-20261006/native-hook.cs",
+    "sourceSha256": "01e13b66dc18a7a6f24d85ceefa5eba1aa62d038ecee6d319e6ffd6ad78acd04",
+    "modelDefinitionCount": 68,
+    "uniqueHookSourceBodies": 60,
+    "contributionCounts": {
+      "returned-current-accumulator": 30,
+      "empty-mutation-body": 2,
+      "false-mutation-indicator": 8,
+      "true-allow-vote": 21,
+      "false-enable-vote": 7
+    },
+    "rows": [
+      {
+        "modelDefinitionToken": 100669238,
+        "modelMethod": "System.Int32 MegaCrit.Sts2.Core.Models.AbstractModel::ModifyAttackHitCount(MegaCrit.Sts2.Core.Commands.Builders.AttackCommand,System.Int32)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1309,
+        "hookSourceLastLine": 1317,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyAttackHitCount(ICombatState combatState, AttackCommand attackCommand, int originalHitCount)\n\t{\n\t\tint num = originalHitCount;\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tnum = item.ModifyAttackHitCount(attackCommand, num);\n\t\t}\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669241,
+        "modelMethod": "System.Int32 MegaCrit.Sts2.Core.Models.AbstractModel::ModifyCardPlayCount(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Int32)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1384,
+        "hookSourceLastLine": 1398,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static int ModifyCardPlayCount(ICombatState combatState, CardModel card, int playCount, Creature? target, out List<AbstractModel> modifyingModels)\n\t{\n\t\tmodifyingModels = new List<AbstractModel>();\n\t\tint num = playCount;\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tint num2 = num;\n\t\t\tnum = item.ModifyCardPlayCount(card, target, num);\n\t\t\tif (num != num2)\n\t\t\t{\n\t\t\t\tmodifyingModels.Add(item);\n\t\t\t}\n\t\t}\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669242,
+        "modelMethod": "MegaCrit.Sts2.Core.Entities.Cards.CardLocation MegaCrit.Sts2.Core.Models.AbstractModel::ModifyCardPlayResultLocation(MegaCrit.Sts2.Core.Models.CardModel,System.Boolean,MegaCrit.Sts2.Core.Entities.Cards.ResourceInfo,MegaCrit.Sts2.Core.Entities.Cards.CardLocation)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1403,
+        "hookSourceLastLine": 1417,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static CardLocation ModifyCardPlayResultLocation(ICombatState combatState, CardModel card, bool isAutoPlay, ResourceInfo resources, CardLocation cardLocation, out IEnumerable<AbstractModel> modifiers)\n\t{\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tCardLocation cardLocation2 = cardLocation;\n\t\t\tcardLocation = item.ModifyCardPlayResultLocation(card, isAutoPlay, resources, cardLocation);\n\t\t\tif (cardLocation2 != cardLocation)\n\t\t\t{\n\t\t\t\tlist.Add(item);\n\t\t\t}\n\t\t}\n\t\tmodifiers = list;\n\t\treturn cardLocation;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669243,
+        "modelMethod": "System.Int32 MegaCrit.Sts2.Core.Models.AbstractModel::ModifyOrbPassiveTriggerCounts(MegaCrit.Sts2.Core.Models.OrbModel,System.Int32)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1864,
+        "hookSourceLastLine": 1878,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static int ModifyOrbPassiveTriggerCount(ICombatState combatState, OrbModel orb, int triggerCount, out List<AbstractModel> modifyingModels)\n\t{\n\t\tmodifyingModels = new List<AbstractModel>();\n\t\tint num = triggerCount;\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tint num2 = num;\n\t\t\tnum = item.ModifyOrbPassiveTriggerCounts(orb, num);\n\t\t\tif (num != num2)\n\t\t\t{\n\t\t\t\tmodifyingModels.Add(item);\n\t\t\t}\n\t\t}\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669244,
+        "modelMethod": "MegaCrit.Sts2.Core.Runs.CardCreationOptions MegaCrit.Sts2.Core.Models.AbstractModel::ModifyCardRewardCreationOptions(MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.Runs.CardCreationOptions)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1438,
+        "hookSourceLastLine": 1449,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static CardCreationOptions ModifyCardRewardCreationOptions(IRunState runState, Player player, CardCreationOptions options)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\toptions = item.ModifyCardRewardCreationOptions(player, options);\n\t\t}\n\t\tforeach (AbstractModel item2 in runState.IterateHookListeners(null))\n\t\t{\n\t\t\toptions = item2.ModifyCardRewardCreationOptionsLate(player, options);\n\t\t}\n\t\treturn options;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669245,
+        "modelMethod": "MegaCrit.Sts2.Core.Runs.CardCreationOptions MegaCrit.Sts2.Core.Models.AbstractModel::ModifyCardRewardCreationOptionsLate(MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.Runs.CardCreationOptions)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1438,
+        "hookSourceLastLine": 1449,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static CardCreationOptions ModifyCardRewardCreationOptions(IRunState runState, Player player, CardCreationOptions options)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\toptions = item.ModifyCardRewardCreationOptions(player, options);\n\t\t}\n\t\tforeach (AbstractModel item2 in runState.IterateHookListeners(null))\n\t\t{\n\t\t\toptions = item2.ModifyCardRewardCreationOptionsLate(player, options);\n\t\t}\n\t\treturn options;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669246,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyCardRewardUpgradeOdds(MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.Models.CardModel,System.Decimal)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1482,
+        "hookSourceLastLine": 1490,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyCardRewardUpgradeOdds(IRunState runState, Player player, CardModel card, decimal originalOdds)\n\t{\n\t\tdecimal num = originalOdds;\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tnum = item.ModifyCardRewardUpgradeOdds(player, card, num);\n\t\t}\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669250,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyEnergyGain(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1615,
+        "hookSourceLastLine": 1630,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyEnergyGain(ICombatState combatState, Player player, decimal originalAmount, out IEnumerable<AbstractModel> modifiers)\n\t{\n\t\tdecimal num = originalAmount;\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tdecimal num2 = num;\n\t\t\tnum = item.ModifyEnergyGain(player, num);\n\t\t\tif ((int)num2 != (int)num)\n\t\t\t{\n\t\t\t\tlist.Add(item);\n\t\t\t}\n\t\t}\n\t\tmodifiers = list;\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669251,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyGoldGained(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1635,
+        "hookSourceLastLine": 1650,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyGoldGained(IRunState runState, ICombatState? combatState, decimal amount, Player player, out IEnumerable<AbstractModel> modifiers)\n\t{\n\t\tdecimal num = amount;\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(combatState))\n\t\t{\n\t\t\tdecimal num2 = num;\n\t\t\tnum = item.ModifyGoldGained(player, num);\n\t\t\tif ((int)num2 != (int)num)\n\t\t\t{\n\t\t\t\tlist.Add(item);\n\t\t\t}\n\t\t}\n\t\tmodifiers = list;\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669252,
+        "modelMethod": "MegaCrit.Sts2.Core.Map.ActMap MegaCrit.Sts2.Core.Models.AbstractModel::ModifyGeneratedMap(MegaCrit.Sts2.Core.Runs.IRunState,MegaCrit.Sts2.Core.Map.ActMap,System.Int32)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1667,
+        "hookSourceLastLine": 1675,
+        "wholeCallerHasCompletionDispatch": true,
+        "callerSource": "\tpublic static ActMap ModifyGeneratedMap(IRunState runState, ActMap map, int actIndex)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tmap = item.ModifyGeneratedMap(runState, map, actIndex);\n\t\t\titem.InvokeExecutionFinished();\n\t\t}\n\t\treturn ModifyGeneratedMapLate(runState, map, actIndex);\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669253,
+        "modelMethod": "MegaCrit.Sts2.Core.Map.ActMap MegaCrit.Sts2.Core.Models.AbstractModel::ModifyGeneratedMapLate(MegaCrit.Sts2.Core.Runs.IRunState,MegaCrit.Sts2.Core.Map.ActMap,System.Int32)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1680,
+        "hookSourceLastLine": 1688,
+        "wholeCallerHasCompletionDispatch": true,
+        "callerSource": "\tpublic static ActMap ModifyGeneratedMapLate(IRunState runState, ActMap map, int actIndex)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tmap = item.ModifyGeneratedMapLate(runState, map, actIndex);\n\t\t\titem.InvokeExecutionFinished();\n\t\t}\n\t\treturn map;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669254,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyHandDraw(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1693,
+        "hookSourceLastLine": 1717,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyHandDraw(ICombatState combatState, Player player, decimal originalCardCount, out IEnumerable<AbstractModel> modifiers)\n\t{\n\t\tdecimal num = originalCardCount;\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tdecimal num2 = num;\n\t\t\tnum = item.ModifyHandDraw(player, num);\n\t\t\tif ((int)num2 != (int)num)\n\t\t\t{\n\t\t\t\tlist.Add(item);\n\t\t\t}\n\t\t}\n\t\tforeach (AbstractModel item2 in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tdecimal num3 = num;\n\t\t\tnum = item2.ModifyHandDrawLate(player, num);\n\t\t\tif ((int)num3 != (int)num)\n\t\t\t{\n\t\t\t\tlist.Add(item2);\n\t\t\t}\n\t\t}\n\t\tmodifiers = list;\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669255,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyHandDrawLate(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1693,
+        "hookSourceLastLine": 1717,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyHandDraw(ICombatState combatState, Player player, decimal originalCardCount, out IEnumerable<AbstractModel> modifiers)\n\t{\n\t\tdecimal num = originalCardCount;\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tdecimal num2 = num;\n\t\t\tnum = item.ModifyHandDraw(player, num);\n\t\t\tif ((int)num2 != (int)num)\n\t\t\t{\n\t\t\t\tlist.Add(item);\n\t\t\t}\n\t\t}\n\t\tforeach (AbstractModel item2 in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tdecimal num3 = num;\n\t\t\tnum = item2.ModifyHandDrawLate(player, num);\n\t\t\tif ((int)num3 != (int)num)\n\t\t\t{\n\t\t\t\tlist.Add(item2);\n\t\t\t}\n\t\t}\n\t\tmodifiers = list;\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669256,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyHpLostBeforeOsty(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1726,
+        "hookSourceLastLine": 1774,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyHpLost(IRunState runState, ICombatState? combatState, Creature target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource, HpLossHookPhase phases, out IEnumerable<AbstractModel> modifiers)\n\t{\n\t\tdecimal num = amount;\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tif (phases.HasFlag(HpLossHookPhase.BeforeOsty))\n\t\t{\n\t\t\tforeach (AbstractModel item in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d = num;\n\t\t\t\tnum = item.ModifyHpLostBeforeOsty(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item);\n\t\t\t\t}\n\t\t\t}\n\t\t\tforeach (AbstractModel item2 in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d2 = num;\n\t\t\t\tnum = item2.ModifyHpLostBeforeOstyLate(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d2) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item2);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tif (phases.HasFlag(HpLossHookPhase.AfterOsty))\n\t\t{\n\t\t\tforeach (AbstractModel item3 in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d3 = num;\n\t\t\t\tnum = item3.ModifyHpLostAfterOsty(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d3) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item3);\n\t\t\t\t}\n\t\t\t}\n\t\t\tforeach (AbstractModel item4 in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d4 = num;\n\t\t\t\tnum = item4.ModifyHpLostAfterOstyLate(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d4) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item4);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tmodifiers = list;\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669257,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyHpLostBeforeOstyLate(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1726,
+        "hookSourceLastLine": 1774,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyHpLost(IRunState runState, ICombatState? combatState, Creature target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource, HpLossHookPhase phases, out IEnumerable<AbstractModel> modifiers)\n\t{\n\t\tdecimal num = amount;\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tif (phases.HasFlag(HpLossHookPhase.BeforeOsty))\n\t\t{\n\t\t\tforeach (AbstractModel item in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d = num;\n\t\t\t\tnum = item.ModifyHpLostBeforeOsty(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item);\n\t\t\t\t}\n\t\t\t}\n\t\t\tforeach (AbstractModel item2 in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d2 = num;\n\t\t\t\tnum = item2.ModifyHpLostBeforeOstyLate(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d2) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item2);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tif (phases.HasFlag(HpLossHookPhase.AfterOsty))\n\t\t{\n\t\t\tforeach (AbstractModel item3 in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d3 = num;\n\t\t\t\tnum = item3.ModifyHpLostAfterOsty(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d3) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item3);\n\t\t\t\t}\n\t\t\t}\n\t\t\tforeach (AbstractModel item4 in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d4 = num;\n\t\t\t\tnum = item4.ModifyHpLostAfterOstyLate(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d4) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item4);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tmodifiers = list;\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669258,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyHpLostAfterOsty(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1726,
+        "hookSourceLastLine": 1774,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyHpLost(IRunState runState, ICombatState? combatState, Creature target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource, HpLossHookPhase phases, out IEnumerable<AbstractModel> modifiers)\n\t{\n\t\tdecimal num = amount;\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tif (phases.HasFlag(HpLossHookPhase.BeforeOsty))\n\t\t{\n\t\t\tforeach (AbstractModel item in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d = num;\n\t\t\t\tnum = item.ModifyHpLostBeforeOsty(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item);\n\t\t\t\t}\n\t\t\t}\n\t\t\tforeach (AbstractModel item2 in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d2 = num;\n\t\t\t\tnum = item2.ModifyHpLostBeforeOstyLate(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d2) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item2);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tif (phases.HasFlag(HpLossHookPhase.AfterOsty))\n\t\t{\n\t\t\tforeach (AbstractModel item3 in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d3 = num;\n\t\t\t\tnum = item3.ModifyHpLostAfterOsty(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d3) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item3);\n\t\t\t\t}\n\t\t\t}\n\t\t\tforeach (AbstractModel item4 in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d4 = num;\n\t\t\t\tnum = item4.ModifyHpLostAfterOstyLate(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d4) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item4);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tmodifiers = list;\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669259,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyHpLostAfterOstyLate(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1726,
+        "hookSourceLastLine": 1774,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyHpLost(IRunState runState, ICombatState? combatState, Creature target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource, HpLossHookPhase phases, out IEnumerable<AbstractModel> modifiers)\n\t{\n\t\tdecimal num = amount;\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tif (phases.HasFlag(HpLossHookPhase.BeforeOsty))\n\t\t{\n\t\t\tforeach (AbstractModel item in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d = num;\n\t\t\t\tnum = item.ModifyHpLostBeforeOsty(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item);\n\t\t\t\t}\n\t\t\t}\n\t\t\tforeach (AbstractModel item2 in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d2 = num;\n\t\t\t\tnum = item2.ModifyHpLostBeforeOstyLate(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d2) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item2);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tif (phases.HasFlag(HpLossHookPhase.AfterOsty))\n\t\t{\n\t\t\tforeach (AbstractModel item3 in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d3 = num;\n\t\t\t\tnum = item3.ModifyHpLostAfterOsty(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d3) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item3);\n\t\t\t\t}\n\t\t\t}\n\t\t\tforeach (AbstractModel item4 in runState.IterateHookListeners(combatState))\n\t\t\t{\n\t\t\t\tdecimal d4 = num;\n\t\t\t\tnum = item4.ModifyHpLostAfterOstyLate(target, num, props, dealer, cardSource);\n\t\t\t\tif (decimal.Truncate(d4) != decimal.Truncate(num))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(item4);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tmodifiers = list;\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669260,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyMaxEnergy(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1779,
+        "hookSourceLastLine": 1787,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyMaxEnergy(ICombatState combatState, Player player, decimal amount)\n\t{\n\t\tdecimal num = amount;\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tnum = item.ModifyMaxEnergy(player, num);\n\t\t}\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669261,
+        "modelMethod": "System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel> MegaCrit.Sts2.Core.Models.AbstractModel::ModifyMerchantCardPool(MegaCrit.Sts2.Core.Entities.Players.Player,System.Collections.Generic.IEnumerable`1<MegaCrit.Sts2.Core.Models.CardModel>)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1803,
+        "hookSourceLastLine": 1810,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static IEnumerable<CardModel> ModifyMerchantCardPool(IRunState runState, Player player, IEnumerable<CardModel> options)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\toptions = item.ModifyMerchantCardPool(player, options);\n\t\t}\n\t\treturn options;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669262,
+        "modelMethod": "MegaCrit.Sts2.Core.Entities.Cards.CardRarity MegaCrit.Sts2.Core.Models.AbstractModel::ModifyMerchantCardRarity(MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.Entities.Cards.CardRarity)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1815,
+        "hookSourceLastLine": 1822,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static CardRarity ModifyMerchantCardRarity(IRunState runState, Player player, CardRarity rarity)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\trarity = item.ModifyMerchantCardRarity(player, rarity);\n\t\t}\n\t\treturn rarity;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669263,
+        "modelMethod": "System.Void MegaCrit.Sts2.Core.Models.AbstractModel::ModifyMerchantCardCreationResults(MegaCrit.Sts2.Core.Entities.Players.Player,System.Collections.Generic.List`1<MegaCrit.Sts2.Core.Entities.Cards.CardCreationResult>)",
+        "contribution": "empty-mutation-body",
+        "hookSourceFirstLine": 1792,
+        "hookSourceLastLine": 1798,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static void ModifyMerchantCardCreationResults(IRunState runState, Player player, List<CardCreationResult> cards)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\titem.ModifyMerchantCardCreationResults(player, cards);\n\t\t}\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669264,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyMerchantPrice(MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.Entities.Merchant.MerchantEntry,System.Decimal)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1827,
+        "hookSourceLastLine": 1834,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyMerchantPrice(IRunState runState, Player player, MerchantEntry entry, decimal result)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tresult = item.ModifyMerchantPrice(player, entry, result);\n\t\t}\n\t\treturn result;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669265,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyOrbValue(MegaCrit.Sts2.Core.Models.OrbModel,System.Decimal)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1883,
+        "hookSourceLastLine": 1891,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyOrbValue(ICombatState combatState, OrbModel orb, decimal amount)\n\t{\n\t\tdecimal num = amount;\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tnum = item.ModifyOrbValue(orb, num);\n\t\t}\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669268,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifyRestSiteHealAmount(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1945,
+        "hookSourceLastLine": 1953,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifyRestSiteHealAmount(IRunState runState, Creature creature, decimal amount)\n\t{\n\t\tdecimal num = amount;\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tnum = item.ModifyRestSiteHealAmount(creature, num);\n\t\t}\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669269,
+        "modelMethod": "System.Void MegaCrit.Sts2.Core.Models.AbstractModel::ModifyShuffleOrder(MegaCrit.Sts2.Core.Entities.Players.Player,System.Collections.Generic.List`1<MegaCrit.Sts2.Core.Models.CardModel>,System.Boolean)",
+        "contribution": "empty-mutation-body",
+        "hookSourceFirstLine": 2013,
+        "hookSourceLastLine": 2019,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static void ModifyShuffleOrder(ICombatState combatState, Player player, List<CardModel> cards, bool isInitialShuffle)\n\t{\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\titem.ModifyShuffleOrder(player, cards, isInitialShuffle);\n\t\t}\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669270,
+        "modelMethod": "System.Decimal MegaCrit.Sts2.Core.Models.AbstractModel::ModifySummonAmount(MegaCrit.Sts2.Core.Entities.Players.Player,System.Decimal,MegaCrit.Sts2.Core.Models.AbstractModel)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 2041,
+        "hookSourceLastLine": 2049,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static decimal ModifySummonAmount(ICombatState combatState, Player summoner, decimal amount, AbstractModel? source)\n\t{\n\t\tdecimal num = amount;\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tnum = item.ModifySummonAmount(summoner, num, source);\n\t\t}\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669271,
+        "modelMethod": "MegaCrit.Sts2.Core.Entities.Creatures.Creature MegaCrit.Sts2.Core.Models.AbstractModel::ModifyUnblockedDamageTarget(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.ValueProps.ValueProp,MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 2057,
+        "hookSourceLastLine": 2065,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static Creature ModifyUnblockedDamageTarget(ICombatState combatState, Creature originalTarget, decimal amount, ValueProp props, Creature? dealer)\n\t{\n\t\tCreature creature = originalTarget;\n\t\tforeach (AbstractModel item in combatState.IterateHookListeners())\n\t\t{\n\t\t\tcreature = item.ModifyUnblockedDamageTarget(creature, amount, props, dealer);\n\t\t}\n\t\treturn creature;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669272,
+        "modelMethod": "MegaCrit.Sts2.Core.Models.EventModel MegaCrit.Sts2.Core.Models.AbstractModel::ModifyNextEvent(MegaCrit.Sts2.Core.Models.EventModel)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1839,
+        "hookSourceLastLine": 1847,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static EventModel ModifyNextEvent(IRunState runState, EventModel currentEvent)\n\t{\n\t\tEventModel eventModel = currentEvent;\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\teventModel = item.ModifyNextEvent(eventModel);\n\t\t}\n\t\treturn eventModel;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669273,
+        "modelMethod": "System.Collections.Generic.IReadOnlySet`1<MegaCrit.Sts2.Core.Rooms.RoomType> MegaCrit.Sts2.Core.Models.AbstractModel::ModifyUnknownMapPointRoomTypes(System.Collections.Generic.IReadOnlySet`1<MegaCrit.Sts2.Core.Rooms.RoomType>)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 2070,
+        "hookSourceLastLine": 2078,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static IReadOnlySet<RoomType> ModifyUnknownMapPointRoomTypes(IRunState runState, IReadOnlySet<RoomType> roomTypes)\n\t{\n\t\tIReadOnlySet<RoomType> readOnlySet = new HashSet<RoomType>(roomTypes);\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\treadOnlySet = item.ModifyUnknownMapPointRoomTypes(readOnlySet);\n\t\t}\n\t\treturn readOnlySet;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669274,
+        "modelMethod": "System.Single MegaCrit.Sts2.Core.Models.AbstractModel::ModifyOddsIncreaseForUnrolledRoomType(MegaCrit.Sts2.Core.Rooms.RoomType,System.Single)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1852,
+        "hookSourceLastLine": 1859,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static float ModifyOddsIncreaseForUnrolledRoomType(IRunState runState, RoomType roomType, float oddsIncrease)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\toddsIncrease = item.ModifyOddsIncreaseForUnrolledRoomType(roomType, oddsIncrease);\n\t\t}\n\t\treturn oddsIncrease;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669275,
+        "modelMethod": "System.Int32 MegaCrit.Sts2.Core.Models.AbstractModel::ModifyXValue(MegaCrit.Sts2.Core.Models.CardModel,System.Int32)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 2080,
+        "hookSourceLastLine": 2088,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static int ModifyXValue(ICombatState combatState, CardModel card, int originalValue)\n\t{\n\t\tint num = originalValue;\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tnum = item.ModifyXValue(card, num);\n\t\t}\n\t\treturn num;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669278,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::TryModifyCardRewardAlternatives(MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.Rewards.CardReward,System.Collections.Generic.List`1<MegaCrit.Sts2.Core.Entities.CardRewardAlternatives.CardRewardAlternative>)",
+        "contribution": "false-mutation-indicator",
+        "hookSourceFirstLine": 1422,
+        "hookSourceLastLine": 1433,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static IEnumerable<AbstractModel> ModifyCardRewardAlternatives(IRunState runState, Player player, CardReward cardReward, List<CardRewardAlternative> alternatives)\n\t{\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (item.TryModifyCardRewardAlternatives(player, cardReward, alternatives))\n\t\t\t{\n\t\t\t\tlist.Add(item);\n\t\t\t}\n\t\t}\n\t\treturn list;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669279,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::TryModifyCardRewardOptions(MegaCrit.Sts2.Core.Entities.Players.Player,System.Collections.Generic.List`1<MegaCrit.Sts2.Core.Entities.Cards.CardCreationResult>,MegaCrit.Sts2.Core.Runs.CardCreationOptions)",
+        "contribution": "false-mutation-indicator",
+        "hookSourceFirstLine": 1454,
+        "hookSourceLastLine": 1477,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool TryModifyCardRewardOptions(IRunState runState, Player player, List<CardCreationResult> cardRewardOptions, CardCreationOptions creationOptions, out List<AbstractModel> modifiers)\n\t{\n\t\tbool flag = false;\n\t\tmodifiers = new List<AbstractModel>();\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tbool flag2 = item.TryModifyCardRewardOptions(player, cardRewardOptions, creationOptions);\n\t\t\tflag = flag || flag2;\n\t\t\tif (flag2)\n\t\t\t{\n\t\t\t\tmodifiers.Add(item);\n\t\t\t}\n\t\t}\n\t\tforeach (AbstractModel item2 in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tbool flag3 = item2.TryModifyCardRewardOptionsLate(player, cardRewardOptions, creationOptions);\n\t\t\tflag = flag || flag3;\n\t\t\tif (flag3)\n\t\t\t{\n\t\t\t\tmodifiers.Add(item2);\n\t\t\t}\n\t\t}\n\t\treturn flag;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669280,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::TryModifyCardRewardOptionsLate(MegaCrit.Sts2.Core.Entities.Players.Player,System.Collections.Generic.List`1<MegaCrit.Sts2.Core.Entities.Cards.CardCreationResult>,MegaCrit.Sts2.Core.Runs.CardCreationOptions)",
+        "contribution": "false-mutation-indicator",
+        "hookSourceFirstLine": 1454,
+        "hookSourceLastLine": 1477,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool TryModifyCardRewardOptions(IRunState runState, Player player, List<CardCreationResult> cardRewardOptions, CardCreationOptions creationOptions, out List<AbstractModel> modifiers)\n\t{\n\t\tbool flag = false;\n\t\tmodifiers = new List<AbstractModel>();\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tbool flag2 = item.TryModifyCardRewardOptions(player, cardRewardOptions, creationOptions);\n\t\t\tflag = flag || flag2;\n\t\t\tif (flag2)\n\t\t\t{\n\t\t\t\tmodifiers.Add(item);\n\t\t\t}\n\t\t}\n\t\tforeach (AbstractModel item2 in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tbool flag3 = item2.TryModifyCardRewardOptionsLate(player, cardRewardOptions, creationOptions);\n\t\t\tflag = flag || flag3;\n\t\t\tif (flag3)\n\t\t\t{\n\t\t\t\tmodifiers.Add(item2);\n\t\t\t}\n\t\t}\n\t\treturn flag;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669283,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::TryModifyKeywordsInCombat(MegaCrit.Sts2.Core.Models.CardModel,System.Collections.Generic.ISet`1<MegaCrit.Sts2.Core.Entities.Cards.CardKeyword>)",
+        "contribution": "false-mutation-indicator",
+        "hookSourceFirstLine": 1604,
+        "hookSourceLastLine": 1610,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static void ModifyKeywordsInCombat(ICombatState combatState, CardModel card, ISet<CardKeyword> keywords)\n\t{\n\t\tforeach (AbstractModel item in combatState.IterateHookListeners())\n\t\t{\n\t\t\titem.TryModifyKeywordsInCombat(card, keywords);\n\t\t}\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669286,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::TryModifyRestSiteOptions(MegaCrit.Sts2.Core.Entities.Players.Player,System.Collections.Generic.ICollection`1<MegaCrit.Sts2.Core.Entities.RestSite.RestSiteOption>)",
+        "contribution": "false-mutation-indicator",
+        "hookSourceFirstLine": 1958,
+        "hookSourceLastLine": 1969,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static IEnumerable<AbstractModel> ModifyRestSiteOptions(IRunState runState, Player player, ICollection<RestSiteOption> options)\n\t{\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (item.TryModifyRestSiteOptions(player, options))\n\t\t\t{\n\t\t\t\tlist.Add(item);\n\t\t\t}\n\t\t}\n\t\treturn list;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669287,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::TryModifyRestSiteHealRewards(MegaCrit.Sts2.Core.Entities.Players.Player,System.Collections.Generic.List`1<MegaCrit.Sts2.Core.Rewards.Reward>,System.Boolean)",
+        "contribution": "false-mutation-indicator",
+        "hookSourceFirstLine": 1974,
+        "hookSourceLastLine": 1985,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static IEnumerable<AbstractModel> ModifyRestSiteHealRewards(IRunState runState, Player player, List<Reward> rewards, bool isMimicked)\n\t{\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (item.TryModifyRestSiteHealRewards(player, rewards, isMimicked))\n\t\t\t{\n\t\t\t\tlist.Add(item);\n\t\t\t}\n\t\t}\n\t\treturn list;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669288,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::TryModifyRewards(MegaCrit.Sts2.Core.Entities.Players.Player,System.Collections.Generic.List`1<MegaCrit.Sts2.Core.Rewards.Reward>,MegaCrit.Sts2.Core.Rooms.AbstractRoom)",
+        "contribution": "false-mutation-indicator",
+        "hookSourceFirstLine": 1990,
+        "hookSourceLastLine": 2008,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static IEnumerable<AbstractModel> ModifyRewards(IRunState runState, Player player, List<Reward> rewards, AbstractRoom? room)\n\t{\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (item.TryModifyRewards(player, rewards, room))\n\t\t\t{\n\t\t\t\tlist.Add(item);\n\t\t\t}\n\t\t}\n\t\tforeach (AbstractModel item2 in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (item2.TryModifyRewardsLate(player, rewards, room))\n\t\t\t{\n\t\t\t\tlist.Add(item2);\n\t\t\t}\n\t\t}\n\t\treturn list;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669289,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::TryModifyRewardsLate(MegaCrit.Sts2.Core.Entities.Players.Player,System.Collections.Generic.List`1<MegaCrit.Sts2.Core.Rewards.Reward>,MegaCrit.Sts2.Core.Rooms.AbstractRoom)",
+        "contribution": "false-mutation-indicator",
+        "hookSourceFirstLine": 1990,
+        "hookSourceLastLine": 2008,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static IEnumerable<AbstractModel> ModifyRewards(IRunState runState, Player player, List<Reward> rewards, AbstractRoom? room)\n\t{\n\t\tList<AbstractModel> list = new List<AbstractModel>();\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (item.TryModifyRewards(player, rewards, room))\n\t\t\t{\n\t\t\t\tlist.Add(item);\n\t\t\t}\n\t\t}\n\t\tforeach (AbstractModel item2 in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (item2.TryModifyRewardsLate(player, rewards, room))\n\t\t\t{\n\t\t\t\tlist.Add(item2);\n\t\t\t}\n\t\t}\n\t\treturn list;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669290,
+        "modelMethod": "System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Localization.LocString> MegaCrit.Sts2.Core.Models.AbstractModel::ModifyExtraRestSiteHealText(MegaCrit.Sts2.Core.Entities.Players.Player,System.Collections.Generic.IReadOnlyList`1<MegaCrit.Sts2.Core.Localization.LocString>)",
+        "contribution": "returned-current-accumulator",
+        "hookSourceFirstLine": 1655,
+        "hookSourceLastLine": 1662,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static IReadOnlyList<LocString> ModifyExtraRestSiteHealText(IRunState runState, Player player, IReadOnlyList<LocString> extraText)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\textraText = item.ModifyExtraRestSiteHealText(player, extraText);\n\t\t}\n\t\treturn extraText;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669291,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldAddToDeck(MegaCrit.Sts2.Core.Models.CardModel)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2093,
+        "hookSourceLastLine": 2105,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldAddToDeck(IRunState runState, CardModel card, out AbstractModel? preventer)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (!item.ShouldAddToDeck(card))\n\t\t\t{\n\t\t\t\tpreventer = item;\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\tpreventer = null;\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669292,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldAfflict(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Models.AfflictionModel)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2110,
+        "hookSourceLastLine": 2120,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldAfflict(ICombatState combatState, CardModel card, AfflictionModel affliction)\n\t{\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tif (!item.ShouldAfflict(card, affliction))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669293,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldAllowAncient(MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.Models.AncientEventModel)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2125,
+        "hookSourceLastLine": 2135,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldAllowAncient(IRunState runState, Player player, AncientEventModel ancient)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (!item.ShouldAllowAncient(player, ancient))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669294,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldAllowHitting(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2140,
+        "hookSourceLastLine": 2150,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldAllowHitting(ICombatState combatState, Creature creature)\n\t{\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tif (!item.ShouldAllowHitting(creature))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669295,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldAllowTargeting(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2185,
+        "hookSourceLastLine": 2197,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldAllowTargeting(ICombatState combatState, Creature target, out AbstractModel? preventer)\n\t{\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tif (!item.ShouldAllowTargeting(target))\n\t\t\t{\n\t\t\t\tpreventer = item;\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\tpreventer = null;\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669296,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldAllowSelectingMoreCardRewards(MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.Rewards.CardReward)",
+        "contribution": "false-enable-vote",
+        "hookSourceFirstLine": 2170,
+        "hookSourceLastLine": 2180,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldAllowSelectingMoreCardRewards(IRunState runState, Player player, CardReward reward)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (item.ShouldAllowSelectingMoreCardRewards(player, reward))\n\t\t\t{\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669297,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldClearBlock(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2202,
+        "hookSourceLastLine": 2214,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldClearBlock(ICombatState combatState, Creature creature, out AbstractModel? preventer)\n\t{\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tif (!item.ShouldClearBlock(creature))\n\t\t\t{\n\t\t\t\tpreventer = item;\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\tpreventer = null;\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669298,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldDie(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2238,
+        "hookSourceLastLine": 2258,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldDie(IRunState runState, ICombatState? combatState, Creature creature, out AbstractModel? preventer)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(combatState))\n\t\t{\n\t\t\tif (!item.ShouldDie(creature))\n\t\t\t{\n\t\t\t\tpreventer = item;\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\tforeach (AbstractModel item2 in runState.IterateHookListeners(combatState))\n\t\t{\n\t\t\tif (!item2.ShouldDieLate(creature))\n\t\t\t{\n\t\t\t\tpreventer = item2;\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\tpreventer = null;\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669299,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldDieLate(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2238,
+        "hookSourceLastLine": 2258,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldDie(IRunState runState, ICombatState? combatState, Creature creature, out AbstractModel? preventer)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(combatState))\n\t\t{\n\t\t\tif (!item.ShouldDie(creature))\n\t\t\t{\n\t\t\t\tpreventer = item;\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\tforeach (AbstractModel item2 in runState.IterateHookListeners(combatState))\n\t\t{\n\t\t\tif (!item2.ShouldDieLate(creature))\n\t\t\t{\n\t\t\t\tpreventer = item2;\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\tpreventer = null;\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669300,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldDisableRemainingRestSiteOptions(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2263,
+        "hookSourceLastLine": 2273,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldDisableRemainingRestSiteOptions(IRunState runState, Player player)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (!item.ShouldDisableRemainingRestSiteOptions(player))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669301,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldDraw(MegaCrit.Sts2.Core.Entities.Players.Player,System.Boolean)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2278,
+        "hookSourceLastLine": 2290,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldDraw(ICombatState combatState, Player player, bool fromHandDraw, out AbstractModel? modifier)\n\t{\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tif (!item.ShouldDraw(player, fromHandDraw))\n\t\t\t{\n\t\t\t\tmodifier = item;\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\tmodifier = null;\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669302,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldEtherealTrigger(MegaCrit.Sts2.Core.Models.CardModel)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2295,
+        "hookSourceLastLine": 2305,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldEtherealTrigger(ICombatState combatState, CardModel card)\n\t{\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tif (!item.ShouldEtherealTrigger(card))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669303,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldFlush(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2310,
+        "hookSourceLastLine": 2320,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldFlush(ICombatState combatState, Player player)\n\t{\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tif (!item.ShouldFlush(player))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669304,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldGainStars(System.Decimal,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2340,
+        "hookSourceLastLine": 2350,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldGainStars(ICombatState combatState, decimal amount, Player player)\n\t{\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tif (!item.ShouldGainStars(amount, player))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669305,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldGenerateTreasure(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2325,
+        "hookSourceLastLine": 2335,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldGenerateTreasure(IRunState runState, Player player)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (!item.ShouldGenerateTreasure(player))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669306,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldPayExcessEnergyCostWithStars(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "contribution": "false-enable-vote",
+        "hookSourceFirstLine": 2355,
+        "hookSourceLastLine": 2365,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldPayExcessEnergyCostWithStars(ICombatState combatState, Player player)\n\t{\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tif (item.ShouldPayExcessEnergyCostWithStars(player))\n\t\t\t{\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669307,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldPlay(MegaCrit.Sts2.Core.Models.CardModel,MegaCrit.Sts2.Core.Entities.Cards.AutoPlayType)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2370,
+        "hookSourceLastLine": 2382,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldPlay(ICombatState combatState, CardModel card, out AbstractModel? preventer, AutoPlayType autoPlayType)\n\t{\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tif (!item.ShouldPlay(card, autoPlayType))\n\t\t\t{\n\t\t\t\tpreventer = item;\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\tpreventer = null;\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669308,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldPlayerResetEnergy(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2387,
+        "hookSourceLastLine": 2397,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldPlayerResetEnergy(ICombatState combatState, Player player)\n\t{\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tif (!item.ShouldPlayerResetEnergy(player))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669309,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldProceedToNextMapPoint()",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2402,
+        "hookSourceLastLine": 2412,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldProceedToNextMapPoint(IRunState runState)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (!item.ShouldProceedToNextMapPoint())\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669310,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldProcurePotion(MegaCrit.Sts2.Core.Models.PotionModel,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2417,
+        "hookSourceLastLine": 2427,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldProcurePotion(IRunState runState, ICombatState? combatState, PotionModel potion, Player player)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(combatState))\n\t\t{\n\t\t\tif (!item.ShouldProcurePotion(potion, player))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669311,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldPowerBeRemovedOnDeath(MegaCrit.Sts2.Core.Models.PowerModel)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2504,
+        "hookSourceLastLine": 2518,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldPowerBeRemovedOnDeath(PowerModel power)\n\t{\n\t\tif (power.Owner.CombatState == null)\n\t\t{\n\t\t\treturn true;\n\t\t}\n\t\tforeach (AbstractModel item in power.CombatState.IterateHookListeners())\n\t\t{\n\t\t\tif (!item.ShouldPowerBeRemovedOnDeath(power))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669312,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldRefillMerchantEntry(MegaCrit.Sts2.Core.Entities.Merchant.MerchantEntry,MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "contribution": "false-enable-vote",
+        "hookSourceFirstLine": 2432,
+        "hookSourceLastLine": 2442,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldRefillMerchantEntry(IRunState runState, MerchantEntry entry, Player player)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (item.ShouldRefillMerchantEntry(entry, player))\n\t\t\t{\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669313,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldAllowMerchantCardRemoval(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2155,
+        "hookSourceLastLine": 2165,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldAllowMerchantCardRemoval(IRunState runState, Player player)\n\t{\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tif (!item.ShouldAllowMerchantCardRemoval(player))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669314,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldCreatureBeRemovedFromCombatAfterDeath(MegaCrit.Sts2.Core.Entities.Creatures.Creature)",
+        "contribution": "true-allow-vote",
+        "hookSourceFirstLine": 2223,
+        "hookSourceLastLine": 2233,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldCreatureBeRemovedFromCombatAfterDeath(ICombatState combatState, Creature creature)\n\t{\n\t\tforeach (AbstractModel item in combatState.IterateHookListeners())\n\t\t{\n\t\t\tif (!item.ShouldCreatureBeRemovedFromCombatAfterDeath(creature))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669315,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldStopCombatFromEnding()",
+        "contribution": "false-enable-vote",
+        "hookSourceFirstLine": 2451,
+        "hookSourceLastLine": 2461,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldStopCombatFromEnding(ICombatState combatState)\n\t{\n\t\tforeach (AbstractModel item in combatState.IterateHookListeners())\n\t\t{\n\t\t\tif (item.ShouldStopCombatFromEnding())\n\t\t\t{\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669316,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldTakeExtraTurn(MegaCrit.Sts2.Core.Entities.Players.Player)",
+        "contribution": "false-enable-vote",
+        "hookSourceFirstLine": 2466,
+        "hookSourceLastLine": 2476,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldTakeExtraTurn(ICombatState combatState, Player player)\n\t{\n\t\tforeach (AbstractModel item in IterateCombatHookListeners(combatState))\n\t\t{\n\t\t\tif (item.ShouldTakeExtraTurn(player))\n\t\t\t{\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669317,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldForcePotionReward(MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.Rooms.RoomType)",
+        "contribution": "false-enable-vote",
+        "hookSourceFirstLine": 2481,
+        "hookSourceLastLine": 2489,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldForcePotionReward(IRunState runState, Player player, RoomType roomType)\n\t{\n\t\tbool flag = false;\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tflag = flag || item.ShouldForcePotionReward(player, roomType);\n\t\t}\n\t\treturn flag;\n\t}",
+        "isRuntimeCertificate": false
+      },
+      {
+        "modelDefinitionToken": 100669318,
+        "modelMethod": "System.Boolean MegaCrit.Sts2.Core.Models.AbstractModel::ShouldAllowFreeTravel()",
+        "contribution": "false-enable-vote",
+        "hookSourceFirstLine": 2494,
+        "hookSourceLastLine": 2502,
+        "wholeCallerHasCompletionDispatch": false,
+        "callerSource": "\tpublic static bool ShouldAllowFreeTravel(IRunState runState)\n\t{\n\t\tbool flag = false;\n\t\tforeach (AbstractModel item in runState.IterateHookListeners(null))\n\t\t{\n\t\t\tflag = flag || item.ShouldAllowFreeTravel();\n\t\t}\n\t\treturn flag;\n\t}",
+        "isRuntimeCertificate": false
+      }
+    ],
+    "scope": "Source-linked return/vote/mutation contribution only. Does not resolve patches, inherited events, enumeration/getter effects, operators or runtime/future closure; source parser is evidence collection, not a certifier."
+  },
+  "nativeCallerBoundaryChecks": {
+    "passed": true,
+    "gameMvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+    "nativeHookMethods": [
+      100682979,
+      100682956,
+      100682954
+    ],
+    "setCopy": true,
+    "inputIsolation": true,
+    "completionEvents": 2,
+    "callerOverflow": true,
+    "runProxyEnumerations": 6,
+    "scope": "Installed native method bodies in .NET host with synthetic IRunState and uninitialized default receiver; no Mod, Ritsu, Harmony, Godot, search, Fork, RNG or root eligibility proof.",
+    "build": {
+      "status": "Passed",
+      "releaseSeconds": 2.06,
+      "warnings": 0,
+      "errors": 0
+    },
+    "syntheticInputs": {
+      "runState": "DispatchProxy permitting only IterateHookListeners",
+      "receiver": "uninitialized DefendSilent; reviewed default methods only",
+      "map": "null; default identity methods and completion dispatch only",
+      "goldAmount": 2147483648,
+      "goldReachableInNormalBattleProved": false
+    },
+    "run": {
+      "exitCode": 0,
+      "output": "SentryGodotInitializer: Sentry GDExtension not loaded in this process; skipping. If you see this in a running game (not during project export or IDE script analysis), check Godot's log for extension load failures.\nNATIVE_CALLER_BOUNDARIES_OK set-copy completion-event numeric-conversion\n",
+      "runtimeNotice": "Plain .NET host does not load Sentry GDExtension; no game engine was launched."
+    }
+  },
+  "newOfflineNativeEntrypoints": 3
 }
