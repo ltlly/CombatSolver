@@ -1,0 +1,828 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-08",
+  "branch": "perf/common-state-cost-20261005",
+  "baseCommit": "4f00da2e",
+  "priorBehaviorCommit": "36370e54",
+  "scope": "Current instance completion audience in inferred ModHelper subscriber admission; no new search pruning, full future certificate or performance claim",
+  "gameIdentity": {
+    "version": "0.111.0 / 41cef1ea",
+    "sha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+    "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+    "evidence": "Prior unchanged installed DLL audit reused"
+  },
+  "runtime": ".NET 9.0.7 in actual Godot host; RitsuLib 0.6.6 unchanged audited source",
+  "nativeEvidence": {
+    "evidence-incomplete-probe": {
+      "processReusable": false,
+      "processId": 609658,
+      "reusedProcess": false,
+      "developmentStrategyScriptHash": null,
+      "developmentStrategyParametersHash": null,
+      "mainAssemblyHash": "BB0CE8103D0E5225F05105C3B65A5C8BDBC216DF004A8354CDF311BCB09C58C8",
+      "schemaVersion": 1,
+      "runId": "d729fb3b73e84ab1a39e1a11a7ba5ec7",
+      "scenarioId": "INERT-SUBSCRIBER-CALL-BOUNDARY",
+      "status": "Failed",
+      "stage": "inert_subscriber_call_boundary",
+      "characterId": "SILENT",
+      "encounterId": "THE_INSATIABLE_BOSS",
+      "seed": "NOVELTY-DEV-20260915-06",
+      "startedAtUtc": "2026-10-07T20:27:11.9325258+00:00",
+      "elapsedMilliseconds": 26025.2744,
+      "mainThread": true,
+      "combatEnded": false,
+      "startedTurn": 1,
+      "finishedTurn": 1,
+      "managedHeapBytes": 73246832,
+      "managedFragmentedBytes": 5208592,
+      "workingSetBytes": 1480470528,
+      "privateMemoryBytes": 1609662464,
+      "solverMetrics": null,
+      "replayVerification": null,
+      "generatedScenario": {
+        "schemaVersion": 1,
+        "mode": "Search",
+        "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+        "resolvedConfiguration": "generated-scenario.resolved.json",
+        "loadout": "generated-scenario.loadout.json",
+        "opening": "generated-scenario.opening.json",
+        "relicObtainEffects": false
+      },
+      "stageTimings": [
+        {
+          "stage": "created",
+          "startedMilliseconds": 0,
+          "durationMilliseconds": 1.5185
+        },
+        {
+          "stage": "strategy_load",
+          "startedMilliseconds": 1.5185,
+          "durationMilliseconds": 4.995800000000001
+        },
+        {
+          "stage": "game_startup",
+          "startedMilliseconds": 6.5143,
+          "durationMilliseconds": 12804.9216
+        },
+        {
+          "stage": "start_run",
+          "startedMilliseconds": 12811.4359,
+          "durationMilliseconds": 10907.616399999999
+        },
+        {
+          "stage": "inject_run_relics",
+          "startedMilliseconds": 23719.0523,
+          "durationMilliseconds": 283.27820000000065
+        },
+        {
+          "stage": "enter_encounter",
+          "startedMilliseconds": 24002.3305,
+          "durationMilliseconds": 1968.4573999999993
+        },
+        {
+          "stage": "wait_player_turn",
+          "startedMilliseconds": 25970.7879,
+          "durationMilliseconds": 1.6736000000018976
+        },
+        {
+          "stage": "inject_state",
+          "startedMilliseconds": 25972.4615,
+          "durationMilliseconds": 28.55240000000049
+        },
+        {
+          "stage": "inert_subscriber_call_boundary",
+          "startedMilliseconds": 26001.0139,
+          "durationMilliseconds": 24.456899999997404
+        }
+      ],
+      "completedChecks": [
+        "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+        "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+        "GeneratedScenario:NativeOpeningCaptured"
+      ],
+      "error": "System.InvalidOperationException: Native caller did not expose both effects.\n   at CombatSolver.UnattendedTestRunner.AssertInertSubscriberCallBoundaryAsync(CombatState live, Player player)\n   at CombatSolver.UnattendedTestRunner.Executor.ExecuteAsync(ScenarioContext scenario)\n   at CombatSolver.UnattendedTestRunner.RunAsync()",
+      "finishedAtUtc": "2026-10-07T20:27:37.9575778+00:00"
+    },
+    "evidence-baseline": {
+      "processReusable": false,
+      "processId": 613031,
+      "reusedProcess": false,
+      "developmentStrategyScriptHash": null,
+      "developmentStrategyParametersHash": null,
+      "mainAssemblyHash": "F5929E8917859B39D7DDA3069CD4A857D960FA3EC6C39C01A5F9A459BE88F507",
+      "schemaVersion": 1,
+      "runId": "4c2d8734ca3b4246a81fd86470394090",
+      "scenarioId": "INERT-SUBSCRIBER-CALL-BOUNDARY",
+      "status": "Passed",
+      "stage": "passed",
+      "characterId": "CHARACTER.SILENT",
+      "encounterId": "ENCOUNTER.THE_INSATIABLE_BOSS",
+      "seed": "NOVELTY-DEV-20260915-06",
+      "startedAtUtc": "2026-10-07T20:30:45.8303057+00:00",
+      "elapsedMilliseconds": 26205.7198,
+      "mainThread": true,
+      "combatEnded": false,
+      "startedTurn": 1,
+      "finishedTurn": 1,
+      "managedHeapBytes": 85813664,
+      "managedFragmentedBytes": 17406344,
+      "workingSetBytes": 1528324096,
+      "privateMemoryBytes": 1656893440,
+      "solverMetrics": null,
+      "replayVerification": null,
+      "generatedScenario": {
+        "schemaVersion": 1,
+        "mode": "Search",
+        "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+        "resolvedConfiguration": "generated-scenario.resolved.json",
+        "loadout": "generated-scenario.loadout.json",
+        "opening": "generated-scenario.opening.json",
+        "relicObtainEffects": false,
+        "combatEnded": false,
+        "actualOutcome": {
+          "initialHp": 56,
+          "finalHp": 56,
+          "hpLost": 0,
+          "hpHealed": 0,
+          "selfDamage": 0,
+          "combatEnded": false,
+          "survived": true,
+          "finalEnemyHp": 332,
+          "potions": [],
+          "unattributedHpLoss": 0
+        }
+      },
+      "stageTimings": [
+        {
+          "stage": "created",
+          "startedMilliseconds": 0,
+          "durationMilliseconds": 1.6287
+        },
+        {
+          "stage": "strategy_load",
+          "startedMilliseconds": 1.6287,
+          "durationMilliseconds": 5.3911
+        },
+        {
+          "stage": "game_startup",
+          "startedMilliseconds": 7.0198,
+          "durationMilliseconds": 12839.3228
+        },
+        {
+          "stage": "start_run",
+          "startedMilliseconds": 12846.3426,
+          "durationMilliseconds": 10950.0821
+        },
+        {
+          "stage": "inject_run_relics",
+          "startedMilliseconds": 23796.4247,
+          "durationMilliseconds": 279.70660000000134
+        },
+        {
+          "stage": "enter_encounter",
+          "startedMilliseconds": 24076.1313,
+          "durationMilliseconds": 1963.6479999999974
+        },
+        {
+          "stage": "wait_player_turn",
+          "startedMilliseconds": 26039.7793,
+          "durationMilliseconds": 2.426900000002206
+        },
+        {
+          "stage": "inject_state",
+          "startedMilliseconds": 26042.2062,
+          "durationMilliseconds": 30.681000000000495
+        },
+        {
+          "stage": "inert_subscriber_call_boundary",
+          "startedMilliseconds": 26072.8872,
+          "durationMilliseconds": 21.601800000000367
+        },
+        {
+          "stage": "cleanup",
+          "startedMilliseconds": 26094.489,
+          "durationMilliseconds": 105.6404999999977
+        },
+        {
+          "stage": "passed",
+          "startedMilliseconds": 26200.1295,
+          "durationMilliseconds": 5.82589999999982
+        }
+      ],
+      "completedChecks": [
+        "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+        "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+        "GeneratedScenario:NativeOpeningCaptured",
+        "InertSubscriberBoundary:CurrentAcceptance:GetterNotCalledByNativeCombatDispatch:DefaultCompletedEvent:InstanceObserverAccepted:OwnedObjectsOnly:LiveCapturedStateIsolation",
+        "TASK_INERT_SUBSCRIBER_BOUNDARY {\"getterAccepted\":true,\"literalAccepted\":true,\"getterHooks\":\"\",\"literalHooks\":\"\",\"getterReads\":0,\"completionCallbacks\":3,\"Enumerations\":3,\"liveCapturedStateUnchanged\":true,\"rawNativeCtorInvoked\":false,\"actualPrunes\":0,\"wholeRootCertificate\":false}",
+        "NativeOutcome:combatEnded=False:turn=1:hp=56:maxHp=70"
+      ],
+      "error": null,
+      "finishedAtUtc": "2026-10-07T20:31:12.0358182+00:00"
+    },
+    "evidence-baseline-gameplay": {
+      "processReusable": false,
+      "processId": 618605,
+      "reusedProcess": false,
+      "developmentStrategyScriptHash": null,
+      "developmentStrategyParametersHash": null,
+      "mainAssemblyHash": "F5929E8917859B39D7DDA3069CD4A857D960FA3EC6C39C01A5F9A459BE88F507",
+      "schemaVersion": 1,
+      "runId": "4082980184814c46a214d0e7dbefca12",
+      "scenarioId": "INERT-SUBSCRIBER-CALL-BOUNDARY",
+      "status": "Passed",
+      "stage": "passed",
+      "characterId": "CHARACTER.SILENT",
+      "encounterId": "ENCOUNTER.THE_INSATIABLE_BOSS",
+      "seed": "NOVELTY-DEV-20260915-06",
+      "startedAtUtc": "2026-10-07T20:35:32.0090205+00:00",
+      "elapsedMilliseconds": 26280.9729,
+      "mainThread": true,
+      "combatEnded": false,
+      "startedTurn": 1,
+      "finishedTurn": 1,
+      "managedHeapBytes": 73162384,
+      "managedFragmentedBytes": 5202536,
+      "workingSetBytes": 1536770048,
+      "privateMemoryBytes": 1672728576,
+      "solverMetrics": null,
+      "replayVerification": null,
+      "generatedScenario": {
+        "schemaVersion": 1,
+        "mode": "Search",
+        "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+        "resolvedConfiguration": "generated-scenario.resolved.json",
+        "loadout": "generated-scenario.loadout.json",
+        "opening": "generated-scenario.opening.json",
+        "relicObtainEffects": false,
+        "combatEnded": false,
+        "actualOutcome": {
+          "initialHp": 56,
+          "finalHp": 56,
+          "hpLost": 0,
+          "hpHealed": 0,
+          "selfDamage": 0,
+          "combatEnded": false,
+          "survived": true,
+          "finalEnemyHp": 332,
+          "potions": [],
+          "unattributedHpLoss": 0
+        }
+      },
+      "stageTimings": [
+        {
+          "stage": "created",
+          "startedMilliseconds": 0,
+          "durationMilliseconds": 1.5796
+        },
+        {
+          "stage": "strategy_load",
+          "startedMilliseconds": 1.5796,
+          "durationMilliseconds": 5.6528
+        },
+        {
+          "stage": "game_startup",
+          "startedMilliseconds": 7.2324,
+          "durationMilliseconds": 12865.2159
+        },
+        {
+          "stage": "start_run",
+          "startedMilliseconds": 12872.4483,
+          "durationMilliseconds": 10933.5642
+        },
+        {
+          "stage": "inject_run_relics",
+          "startedMilliseconds": 23806.0125,
+          "durationMilliseconds": 282.6883999999991
+        },
+        {
+          "stage": "enter_encounter",
+          "startedMilliseconds": 24088.7009,
+          "durationMilliseconds": 2016.8810000000012
+        },
+        {
+          "stage": "wait_player_turn",
+          "startedMilliseconds": 26105.5819,
+          "durationMilliseconds": 2.497400000000198
+        },
+        {
+          "stage": "inject_state",
+          "startedMilliseconds": 26108.0793,
+          "durationMilliseconds": 30.542999999997846
+        },
+        {
+          "stage": "inert_subscriber_call_boundary",
+          "startedMilliseconds": 26138.6223,
+          "durationMilliseconds": 28.182800000002317
+        },
+        {
+          "stage": "cleanup",
+          "startedMilliseconds": 26166.8051,
+          "durationMilliseconds": 108.47669999999925
+        },
+        {
+          "stage": "passed",
+          "startedMilliseconds": 26275.2818,
+          "durationMilliseconds": 5.876299999999901
+        }
+      ],
+      "completedChecks": [
+        "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+        "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+        "GeneratedScenario:NativeOpeningCaptured",
+        "InertSubscriberBoundary:CurrentAcceptance:GetterNotCalledByNativeCombatDispatch:DefaultCompletedEvent:InstanceObserverAccepted:OwnedObjectsOnly:LiveCapturedStateIsolation",
+        "TASK_INERT_SUBSCRIBER_BOUNDARY {\"getterAccepted\":true,\"literalAccepted\":true,\"getterHooks\":\"\",\"literalHooks\":\"\",\"getterReads\":0,\"completionCallbacks\":3,\"Enumerations\":3,\"liveCapturedStateUnchanged\":true,\"rawNativeCtorInvoked\":false,\"actualPrunes\":0,\"wholeRootCertificate\":false}",
+        "NativeOutcome:combatEnded=False:turn=1:hp=56:maxHp=70"
+      ],
+      "error": null,
+      "finishedAtUtc": "2026-10-07T20:35:58.289792+00:00"
+    },
+    "evidence-candidate-nongameplay": {
+      "processReusable": false,
+      "processId": 615918,
+      "reusedProcess": false,
+      "developmentStrategyScriptHash": null,
+      "developmentStrategyParametersHash": null,
+      "mainAssemblyHash": "268F557A08CAC922AB281948A7599E39FAD6A1088F1A24A2965BC2DE81002440",
+      "schemaVersion": 1,
+      "runId": "d6543b6a8d4b415696f4112b500fcc74",
+      "scenarioId": "INERT-SUBSCRIBER-CALL-BOUNDARY",
+      "status": "Failed",
+      "stage": "inert_subscriber_call_boundary",
+      "characterId": "SILENT",
+      "encounterId": "THE_INSATIABLE_BOSS",
+      "seed": "NOVELTY-DEV-20260915-06",
+      "startedAtUtc": "2026-10-07T20:33:50.3892794+00:00",
+      "elapsedMilliseconds": 26043.8456,
+      "mainThread": true,
+      "combatEnded": false,
+      "startedTurn": 1,
+      "finishedTurn": 1,
+      "managedHeapBytes": 85507840,
+      "managedFragmentedBytes": 17138456,
+      "workingSetBytes": 1494335488,
+      "privateMemoryBytes": 1619726336,
+      "solverMetrics": null,
+      "replayVerification": null,
+      "generatedScenario": {
+        "schemaVersion": 1,
+        "mode": "Search",
+        "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+        "resolvedConfiguration": "generated-scenario.resolved.json",
+        "loadout": "generated-scenario.loadout.json",
+        "opening": "generated-scenario.opening.json",
+        "relicObtainEffects": false
+      },
+      "stageTimings": [
+        {
+          "stage": "created",
+          "startedMilliseconds": 0,
+          "durationMilliseconds": 1.6028
+        },
+        {
+          "stage": "strategy_load",
+          "startedMilliseconds": 1.6028,
+          "durationMilliseconds": 5.2909999999999995
+        },
+        {
+          "stage": "game_startup",
+          "startedMilliseconds": 6.8938,
+          "durationMilliseconds": 12833.6061
+        },
+        {
+          "stage": "start_run",
+          "startedMilliseconds": 12840.4999,
+          "durationMilliseconds": 10906.9537
+        },
+        {
+          "stage": "inject_run_relics",
+          "startedMilliseconds": 23747.4536,
+          "durationMilliseconds": 284.3941999999988
+        },
+        {
+          "stage": "enter_encounter",
+          "startedMilliseconds": 24031.8478,
+          "durationMilliseconds": 1962.5600000000013
+        },
+        {
+          "stage": "wait_player_turn",
+          "startedMilliseconds": 25994.4078,
+          "durationMilliseconds": 1.6622999999999593
+        },
+        {
+          "stage": "inject_state",
+          "startedMilliseconds": 25996.0701,
+          "durationMilliseconds": 28.658699999999953
+        },
+        {
+          "stage": "inert_subscriber_call_boundary",
+          "startedMilliseconds": 26024.7288,
+          "durationMilliseconds": 19.330299999997806
+        }
+      ],
+      "completedChecks": [
+        "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+        "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+        "GeneratedScenario:NativeOpeningCaptured"
+      ],
+      "error": "System.InvalidOperationException: Unknown completion audience accepted by root subscriber validation.\n   at CombatSolver.UnattendedTestRunner.AssertInertSubscriberCallBoundaryAsync(CombatState live, Player player)\n   at CombatSolver.UnattendedTestRunner.Executor.ExecuteAsync(ScenarioContext scenario)\n   at CombatSolver.UnattendedTestRunner.RunAsync()",
+      "finishedAtUtc": "2026-10-07T20:34:16.4329345+00:00"
+    },
+    "evidence-candidate": {
+      "processReusable": false,
+      "processId": 627924,
+      "reusedProcess": false,
+      "developmentStrategyScriptHash": null,
+      "developmentStrategyParametersHash": null,
+      "mainAssemblyHash": "268F557A08CAC922AB281948A7599E39FAD6A1088F1A24A2965BC2DE81002440",
+      "schemaVersion": 1,
+      "runId": "8154a2ae511a415e95443bd0f6cae8ec",
+      "scenarioId": "INERT-SUBSCRIBER-CALL-BOUNDARY",
+      "status": "Passed",
+      "stage": "passed",
+      "characterId": "CHARACTER.SILENT",
+      "encounterId": "ENCOUNTER.THE_INSATIABLE_BOSS",
+      "seed": "NOVELTY-DEV-20260915-06",
+      "startedAtUtc": "2026-10-07T20:36:46.2502843+00:00",
+      "elapsedMilliseconds": 26208.0542,
+      "mainThread": true,
+      "combatEnded": false,
+      "startedTurn": 1,
+      "finishedTurn": 1,
+      "managedHeapBytes": 73568632,
+      "managedFragmentedBytes": 5368544,
+      "workingSetBytes": 1531879424,
+      "privateMemoryBytes": 1662189568,
+      "solverMetrics": null,
+      "replayVerification": null,
+      "generatedScenario": {
+        "schemaVersion": 1,
+        "mode": "Search",
+        "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+        "resolvedConfiguration": "generated-scenario.resolved.json",
+        "loadout": "generated-scenario.loadout.json",
+        "opening": "generated-scenario.opening.json",
+        "relicObtainEffects": false,
+        "combatEnded": false,
+        "actualOutcome": {
+          "initialHp": 56,
+          "finalHp": 56,
+          "hpLost": 0,
+          "hpHealed": 0,
+          "selfDamage": 0,
+          "combatEnded": false,
+          "survived": true,
+          "finalEnemyHp": 332,
+          "potions": [],
+          "unattributedHpLoss": 0
+        }
+      },
+      "stageTimings": [
+        {
+          "stage": "created",
+          "startedMilliseconds": 0,
+          "durationMilliseconds": 1.5544
+        },
+        {
+          "stage": "strategy_load",
+          "startedMilliseconds": 1.5544,
+          "durationMilliseconds": 5.317699999999999
+        },
+        {
+          "stage": "game_startup",
+          "startedMilliseconds": 6.8721,
+          "durationMilliseconds": 12812.3512
+        },
+        {
+          "stage": "start_run",
+          "startedMilliseconds": 12819.2233,
+          "durationMilliseconds": 10902.2374
+        },
+        {
+          "stage": "inject_run_relics",
+          "startedMilliseconds": 23721.4607,
+          "durationMilliseconds": 278.8292000000001
+        },
+        {
+          "stage": "enter_encounter",
+          "startedMilliseconds": 24000.2899,
+          "durationMilliseconds": 2036.2027999999991
+        },
+        {
+          "stage": "wait_player_turn",
+          "startedMilliseconds": 26036.4927,
+          "durationMilliseconds": 2.5794000000023516
+        },
+        {
+          "stage": "inject_state",
+          "startedMilliseconds": 26039.0721,
+          "durationMilliseconds": 32.82099999999991
+        },
+        {
+          "stage": "inert_subscriber_call_boundary",
+          "startedMilliseconds": 26071.8931,
+          "durationMilliseconds": 23.563399999999092
+        },
+        {
+          "stage": "cleanup",
+          "startedMilliseconds": 26095.4565,
+          "durationMilliseconds": 106.89540000000125
+        },
+        {
+          "stage": "passed",
+          "startedMilliseconds": 26202.3519,
+          "durationMilliseconds": 5.921099999999569
+        }
+      ],
+      "completedChecks": [
+        "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+        "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+        "GeneratedScenario:NativeOpeningCaptured",
+        "InertSubscriberBoundary:InstanceGate:GetterNotCalledByNativeCombatDispatch:DefaultCompletedEvent:InstanceObserverRejected:ObserverRemovalRechecked:TenTypeCases:FourAudienceCases:OwnedObjectsOnly:LiveCapturedStateIsolation",
+        "TASK_INERT_SUBSCRIBER_BOUNDARY {\"getterAccepted\":true,\"literalAccepted\":true,\"getterHooks\":\"\",\"literalHooks\":\"\",\"getterReads\":0,\"completionCallbacks\":3,\"observerRejected\":true,\"captureRejected\":true,\"removedObserverAccepted\":true,\"permanentTypeAndAudienceAssertionsPassed\":true,\"Enumerations\":3,\"liveCapturedStateUnchanged\":true,\"rawNativeCtorInvoked\":false,\"actualPrunes\":0,\"wholeRootCertificate\":false}",
+        "NativeOutcome:combatEnded=False:turn=1:hp=56:maxHp=70"
+      ],
+      "error": null,
+      "finishedAtUtc": "2026-10-07T20:37:12.4581477+00:00"
+    }
+  },
+  "baseline": {
+    "getterAccepted": true,
+    "literalAccepted": true,
+    "getterHooks": "",
+    "literalHooks": "",
+    "getterReads": 0,
+    "completionCallbacks": 3,
+    "Enumerations": 3,
+    "liveCapturedStateUnchanged": true,
+    "rawNativeCtorInvoked": false,
+    "actualPrunes": 0,
+    "wholeRootCertificate": false
+  },
+  "candidate": {
+    "getterAccepted": true,
+    "literalAccepted": true,
+    "getterHooks": "",
+    "literalHooks": "",
+    "getterReads": 0,
+    "completionCallbacks": 3,
+    "observerRejected": true,
+    "captureRejected": true,
+    "removedObserverAccepted": true,
+    "permanentTypeAndAudienceAssertionsPassed": true,
+    "Enumerations": 3,
+    "liveCapturedStateUnchanged": true,
+    "rawNativeCtorInvoked": false,
+    "actualPrunes": 0,
+    "wholeRootCertificate": false
+  },
+  "runSummaries": {
+    "native-incomplete-summary.json": {
+      "command": [
+        "bash",
+        "tools/testing/run-unattended-test.sh",
+        "--scenario-id",
+        "INERT-SUBSCRIBER-CALL-BOUNDARY",
+        "--generated-scenario-path",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+        "--combat-solver-build-dir",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/build-native",
+        "--headless-instance",
+        "inert-subscriber-call-boundary-20261008",
+        "--timeout-seconds",
+        "120",
+        "--evidence-directory",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/evidence",
+        "--cleanup-instance-on-exit",
+        "--exit-on-complete"
+      ],
+      "exitCode": 1,
+      "wallSeconds": 43.35272094501124
+    },
+    "native-baseline-summary.json": {
+      "command": [
+        "bash",
+        "tools/testing/run-unattended-test.sh",
+        "--scenario-id",
+        "INERT-SUBSCRIBER-CALL-BOUNDARY",
+        "--generated-scenario-path",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+        "--combat-solver-build-dir",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/build-native",
+        "--headless-instance",
+        "inert-subscriber-call-boundary-20261008",
+        "--timeout-seconds",
+        "120",
+        "--evidence-directory",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/evidence",
+        "--cleanup-instance-on-exit",
+        "--exit-on-complete"
+      ],
+      "exitCode": 0,
+      "wallSeconds": 33.74957788801112
+    },
+    "native-baseline-gameplay-summary.json": {
+      "command": [
+        "bash",
+        "tools/testing/run-unattended-test.sh",
+        "--scenario-id",
+        "INERT-SUBSCRIBER-CALL-BOUNDARY",
+        "--generated-scenario-path",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+        "--combat-solver-build-dir",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/build-native",
+        "--headless-instance",
+        "inert-subscriber-call-boundary-20261008",
+        "--timeout-seconds",
+        "120",
+        "--evidence-directory",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/evidence-baseline-gameplay",
+        "--cleanup-instance-on-exit",
+        "--exit-on-complete"
+      ],
+      "exitCode": 0,
+      "wallSeconds": 33.84297069699096
+    },
+    "native-candidate-nongameplay-summary.json": {
+      "command": [
+        "bash",
+        "tools/testing/run-unattended-test.sh",
+        "--scenario-id",
+        "INERT-SUBSCRIBER-CALL-BOUNDARY",
+        "--generated-scenario-path",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+        "--combat-solver-build-dir",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/build-candidate",
+        "--headless-instance",
+        "inert-subscriber-call-boundary-20261008",
+        "--timeout-seconds",
+        "120",
+        "--evidence-directory",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/evidence-candidate",
+        "--cleanup-instance-on-exit",
+        "--exit-on-complete"
+      ],
+      "exitCode": 1,
+      "wallSeconds": 37.93597525499354
+    },
+    "native-candidate-summary.json": {
+      "command": [
+        "bash",
+        "tools/testing/run-unattended-test.sh",
+        "--scenario-id",
+        "INERT-SUBSCRIBER-CALL-BOUNDARY",
+        "--generated-scenario-path",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+        "--combat-solver-build-dir",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/build-candidate",
+        "--headless-instance",
+        "inert-subscriber-call-boundary-20261008",
+        "--timeout-seconds",
+        "120",
+        "--evidence-directory",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/evidence-candidate",
+        "--cleanup-instance-on-exit",
+        "--exit-on-complete"
+      ],
+      "exitCode": 0,
+      "wallSeconds": 33.725292816001456
+    }
+  },
+  "fixtureScope": {
+    "models": "Two test-owned uninitialized AbstractModel objects, not ModelDb registrations",
+    "combat": "DispatchProxy provides these models and original player; invokes actual native Hook.BeforeSideTurnEnd, including installed Ritsu patch",
+    "admission": "Invokes actual private root subscriber validator without adding a global ModHelper subscription",
+    "manifest": "Final baseline and candidate diagnostic builds declare affects_gameplay=true to exercise inferred admission; formal manifest remains false",
+    "state": "ContinuationStamp.StateText before/after; no claim of full heap, Fork or all RNG behavior",
+    "typeCases": 10,
+    "instanceAudienceCases": 4,
+    "nativeCompletionCallbacks": 3
+  },
+  "rejectionReasons": [
+    "Inferred type admission cannot exclude a nonempty AbstractModel.ExecutionFinished audience",
+    "Event field unavailable or different delegate type cannot satisfy instance admission",
+    "Read native base backing field rather than same-named derived field"
+  ],
+  "limits": [
+    "Known explicit adapters and affects_gameplay=false bypass retain prior policy",
+    "No new certification of arbitrary getter purity, default callback patches or late event registration",
+    "No complete reachable generation or exhaust-order certificate",
+    "No new pure complete Coordinator request, quality/peak RSS regression or twofold speed claim",
+    "Existing strict recovery certification uses separate exact audited subscriber sources and is not expanded by generic inertness"
+  ],
+  "metrics": {
+    "actualAdditionalPrunes": 0,
+    "completeRootCertificates": 0,
+    "performanceAcceptanceRuns": 0,
+    "certificationCost": "Not measured; native fixture timings include dispatch/diagnostics and do not isolate production instance guard"
+  },
+  "sourceArchive": {
+    "prepare.py": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/prepare.py",
+      "sha256": "f7dd3459f79086beae4a6eb93c8bc5894d25b96191098566e258cb634f7d06b9",
+      "text": "from pathlib import Path\nimport json\nbase=Path(__file__).resolve().parent;repo=base.parents[2]\nold=json.loads((repo/'docs/performance/task-caller-order-proof-20261008.json').read_text())['sourceArchive']['run-native.py']\nold=old.get('text',old.get('body')) if isinstance(old,dict) else old\n(base/'run-native.py').write_text(old.replace('task-caller-order-proof-20261008','inert-subscriber-call-boundary-20261008').replace('TASK-CALLER-ORDER-PROOF','INERT-SUBSCRIBER-CALL-BOUNDARY'))\n(base/'native.props').write_text('<Project><PropertyGroup><CopyModOnBuild>false</CopyModOnBuild></PropertyGroup><ItemGroup><Compile Include=\"'+str(base/'TaskInertSubscriberBoundary.cs')+'\" /></ItemGroup></Project>\\n')\np=repo/'src/Testing/Host/UnattendedTestRunner.Executor.cs';original=p.read_bytes();(base/'original-executor.txt').write_bytes(original)\nmarker=b'            if (request.ScenarioId is \"ZERO-CREDIT-GROWTH-PROOF\"';assert original.count(marker)==1\nroute=b'''            if (request.ScenarioId == \"INERT-SUBSCRIBER-CALL-BOUNDARY\")\n            {\n                await runner.AssertInertSubscriberCallBoundaryAsync(combatState, player);\n                return Observation(combatEnded: false);\n            }\n''';temporary=original.replace(marker,route+marker);p.write_bytes(temporary);(base/'temporary-executor.txt').write_bytes(temporary)\n"
+    },
+    "TaskInertSubscriberBoundary.cs": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/TaskInertSubscriberBoundary.cs",
+      "sha256": "314754252b98e6774b2043c34a527a6b91d66b559446adba6ab8af7fc700dbf3",
+      "text": "using System.Reflection;\nusing CombatSolver.Engine.Common;\nusing System.Runtime.CompilerServices;\nusing System.Text.Json;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing MegaCrit.Sts2.Core.Hooks;\nusing MegaCrit.Sts2.Core.Models;\n\nnamespace CombatSolver;\n\npublic class TaskInertSubscriberCombatProxy:DispatchProxy\n{\n    public AbstractModel[] Models=[];\n    public Player[] Players=[];\n    public int Enumerations;\n    protected override object? Invoke(MethodInfo? method,object?[]? args)\n    {\n        if(method?.Name==\"get_Players\")return Players;\n        if(method?.Name!=nameof(ICombatState.IterateHookListeners))throw new InvalidOperationException(\"Unknown combat proxy member: \"+method);\n        Enumerations++;return Models;\n    }\n}\n\ninternal sealed partial class UnattendedTestRunner\n{\n    private sealed class TaskEffectfulEligibilitySubscriber:AbstractModel\n    {\n        internal int Reads;\n        public override bool ShouldReceiveCombatHooks {get{Reads++;return true;}}\n    }\n    private sealed class TaskLiteralEligibilitySubscriber:AbstractModel\n    {\n        public override bool ShouldReceiveCombatHooks=>true;\n    }\n    private async Task AssertInertSubscriberCallBoundaryAsync(CombatState live,Player player)\n    {\n        SetStage(\"inert_subscriber_call_boundary\");\n        string before=ContinuationStamp.CaptureLive(live).StateText;\n        var effectful=(TaskEffectfulEligibilitySubscriber)RuntimeHelpers.GetUninitializedObject(typeof(TaskEffectfulEligibilitySubscriber));\n        var literal=(TaskLiteralEligibilitySubscriber)RuntimeHelpers.GetUninitializedObject(typeof(TaskLiteralEligibilitySubscriber));\n        bool getterAccepted=PredictionModHookSubscriberInertness.IsCombatInert(effectful.GetType(),out string getterHooks);\n        AssertModHookSubscriberInertness();\n        bool literalAccepted=PredictionModHookSubscriberInertness.IsCombatInert(literal.GetType(),out string literalHooks);\n        if(!getterAccepted||!literalAccepted)throw new InvalidOperationException(\"Expected current classifier acceptance before change.\");\n        ICombatState proxy=DispatchProxy.Create<ICombatState,TaskInertSubscriberCombatProxy>();\n        var source=(TaskInertSubscriberCombatProxy)(object)proxy;source.Models=[effectful,literal];source.Players=[player];\n        int completions=0;\n        void Completed(AbstractModel _) {completions++;}\n        literal.ExecutionFinished+=Completed;\n        var validate=typeof(PredictionModHookSubscriberCapture).GetMethod(\"ValidateSubscriber\",BindingFlags.Static|BindingFlags.NonPublic)!;\n        bool observerRejected=!PredictionModHookSubscriberInertness.IsCombatInert(literal,out _);\n        if(!observerRejected)throw new InvalidOperationException(\"Unknown completion audience accepted by instance gate.\");\n        bool captureRejected=false;\n        try { validate.Invoke(null,[literal,\"combat\"]); }\n        catch(TargetInvocationException ex) when(ex.InnerException is PredictionUnsupportedException or IncompatibleGameplayModException) {captureRejected=true;}\n        if(!captureRejected)throw new InvalidOperationException(\"Unknown completion audience accepted by root subscriber validation.\");\n        try{await Hook.BeforeSideTurnEnd(proxy,CombatSide.Player,[player.Creature]);}\n        finally{literal.ExecutionFinished-=Completed;}\n        if(effectful.Reads!=0||completions!=3)throw new InvalidOperationException($\"Native caller evidence differs: getter reads {effectful.Reads}, callbacks {completions}.\");\n        if(!PredictionModHookSubscriberInertness.IsCombatInert(literal,out _))throw new InvalidOperationException(\"Removed observer still rejected.\");\n        validate.Invoke(null,[literal,\"combat\"]);\n        if(before!=ContinuationStamp.CaptureLive(live).StateText)throw new InvalidOperationException(\"Owned subscriber probe changed live captured state.\");\n        var output=new{getterAccepted,literalAccepted,getterHooks,literalHooks,getterReads=effectful.Reads,completionCallbacks=completions,\n            observerRejected,captureRejected,removedObserverAccepted=true,permanentTypeAndAudienceAssertionsPassed=true,source.Enumerations,liveCapturedStateUnchanged=true,rawNativeCtorInvoked=false,actualPrunes=0,wholeRootCertificate=false};\n        File.WriteAllText(\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/candidate-details.json\",JsonSerializer.Serialize(output,new JsonSerializerOptions{WriteIndented=true}));\n        _completedChecks.Add(\"InertSubscriberBoundary:InstanceGate:GetterNotCalledByNativeCombatDispatch:DefaultCompletedEvent:InstanceObserverRejected:ObserverRemovalRechecked:TenTypeCases:FourAudienceCases:OwnedObjectsOnly:LiveCapturedStateIsolation\");\n        _completedChecks.Add(\"TASK_INERT_SUBSCRIBER_BOUNDARY \"+JsonSerializer.Serialize(output));\n    }\n}\n"
+    },
+    "TaskInertSubscriberBoundary.baseline.txt": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/TaskInertSubscriberBoundary.baseline.txt",
+      "sha256": "35cacd4e10f445833d1f28a39e0bf69bd4ca5c14aba4ad30fdf2112882cc35c2",
+      "text": "using System.Reflection;\nusing System.Runtime.CompilerServices;\nusing System.Text.Json;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing MegaCrit.Sts2.Core.Hooks;\nusing MegaCrit.Sts2.Core.Models;\n\nnamespace CombatSolver;\n\npublic class TaskInertSubscriberCombatProxy:DispatchProxy\n{\n    public AbstractModel[] Models=[];\n    public Player[] Players=[];\n    public int Enumerations;\n    protected override object? Invoke(MethodInfo? method,object?[]? args)\n    {\n        if(method?.Name==\"get_Players\")return Players;\n        if(method?.Name!=nameof(ICombatState.IterateHookListeners))throw new InvalidOperationException(\"Unknown combat proxy member: \"+method);\n        Enumerations++;return Models;\n    }\n}\n\ninternal sealed partial class UnattendedTestRunner\n{\n    private sealed class TaskEffectfulEligibilitySubscriber:AbstractModel\n    {\n        internal int Reads;\n        public override bool ShouldReceiveCombatHooks {get{Reads++;return true;}}\n    }\n    private sealed class TaskLiteralEligibilitySubscriber:AbstractModel\n    {\n        public override bool ShouldReceiveCombatHooks=>true;\n    }\n    private async Task AssertInertSubscriberCallBoundaryAsync(CombatState live,Player player)\n    {\n        SetStage(\"inert_subscriber_call_boundary\");\n        string before=ContinuationStamp.CaptureLive(live).StateText;\n        var effectful=(TaskEffectfulEligibilitySubscriber)RuntimeHelpers.GetUninitializedObject(typeof(TaskEffectfulEligibilitySubscriber));\n        var literal=(TaskLiteralEligibilitySubscriber)RuntimeHelpers.GetUninitializedObject(typeof(TaskLiteralEligibilitySubscriber));\n        bool getterAccepted=PredictionModHookSubscriberInertness.IsCombatInert(effectful.GetType(),out string getterHooks);\n        bool literalAccepted=PredictionModHookSubscriberInertness.IsCombatInert(literal.GetType(),out string literalHooks);\n        if(!getterAccepted||!literalAccepted)throw new InvalidOperationException(\"Expected current classifier acceptance before change.\");\n        ICombatState proxy=DispatchProxy.Create<ICombatState,TaskInertSubscriberCombatProxy>();\n        var source=(TaskInertSubscriberCombatProxy)(object)proxy;source.Models=[effectful,literal];source.Players=[player];\n        int completions=0;\n        void Completed(AbstractModel _) {completions++;}\n        literal.ExecutionFinished+=Completed;\n        var validate=typeof(PredictionModHookSubscriberCapture).GetMethod(\"ValidateSubscriber\",BindingFlags.Static|BindingFlags.NonPublic)!;\n        validate.Invoke(null,[literal,\"combat\"]);\n        try{await Hook.BeforeSideTurnEnd(proxy,CombatSide.Player,[player.Creature]);}\n        finally{literal.ExecutionFinished-=Completed;}\n        if(effectful.Reads!=0||completions!=3)throw new InvalidOperationException($\"Native caller evidence differs: getter reads {effectful.Reads}, callbacks {completions}.\");\n        if(before!=ContinuationStamp.CaptureLive(live).StateText)throw new InvalidOperationException(\"Owned subscriber probe changed live captured state.\");\n        var output=new{getterAccepted,literalAccepted,getterHooks,literalHooks,getterReads=effectful.Reads,completionCallbacks=completions,\n            source.Enumerations,liveCapturedStateUnchanged=true,rawNativeCtorInvoked=false,actualPrunes=0,wholeRootCertificate=false};\n        File.WriteAllText(\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/baseline-details.json\",JsonSerializer.Serialize(output,new JsonSerializerOptions{WriteIndented=true}));\n        _completedChecks.Add(\"InertSubscriberBoundary:CurrentAcceptance:GetterNotCalledByNativeCombatDispatch:DefaultCompletedEvent:InstanceObserverAccepted:OwnedObjectsOnly:LiveCapturedStateIsolation\");\n        _completedChecks.Add(\"TASK_INERT_SUBSCRIBER_BOUNDARY \"+JsonSerializer.Serialize(output));\n    }\n}\n"
+    },
+    "native.props": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/native.props",
+      "sha256": "a8757b42593b4c5b132a26900de6741d69a3e786d279ab44485bcf77818ea2de",
+      "text": "<Project><PropertyGroup><CopyModOnBuild>false</CopyModOnBuild></PropertyGroup><ItemGroup><Compile Include=\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/TaskInertSubscriberBoundary.cs\" /></ItemGroup></Project>\n"
+    },
+    "run-native.py": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/run-native.py",
+      "sha256": "c36cf9f96d36771f598831e72350eac770006b11fa79d1c6ef40f7a7de7e44a0",
+      "text": "from pathlib import Path\nimport subprocess,time,json\nbase=Path(__file__).resolve().parent\ncommand=['bash', 'tools/testing/run-unattended-test.sh', '--scenario-id', 'INERT-SUBSCRIBER-CALL-BOUNDARY', '--generated-scenario-path', '/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json', '--combat-solver-build-dir', '/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/build-candidate', '--headless-instance', 'inert-subscriber-call-boundary-20261008', '--timeout-seconds', '120', '--evidence-directory', '/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/evidence-candidate', '--cleanup-instance-on-exit', '--exit-on-complete']\nstarted=time.perf_counter()\nwith (base/\"launcher-candidate.log\").open(\"w\") as log:\n result=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT)\nsummary={\"command\":command,\"exitCode\":result.returncode,\"wallSeconds\":time.perf_counter()-started}\n(base/\"native-candidate-summary.json\").write_text(json.dumps(summary,indent=2)+\"\\n\")\nprint(json.dumps(summary))\nprint((base/\"launcher-candidate.log\").read_text()[-1800:])\nraise SystemExit(result.returncode)\n"
+    },
+    "run-baseline-gameplay.py": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/run-baseline-gameplay.py",
+      "sha256": "dcd6ff4e72356e7948e88afe80e433003c736df7f097d9b79e95d3f05a6744da",
+      "text": "from pathlib import Path\nimport subprocess,time,json\nbase=Path(__file__).resolve().parent\ncommand=['bash', 'tools/testing/run-unattended-test.sh', '--scenario-id', 'INERT-SUBSCRIBER-CALL-BOUNDARY', '--generated-scenario-path', '/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json', '--combat-solver-build-dir', '/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/build-native', '--headless-instance', 'inert-subscriber-call-boundary-20261008', '--timeout-seconds', '120', '--evidence-directory', '/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/evidence-baseline-gameplay', '--cleanup-instance-on-exit', '--exit-on-complete']\nstarted=time.perf_counter()\nwith (base/\"launcher-baseline-gameplay.log\").open(\"w\") as log:\n result=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT)\nsummary={\"command\":command,\"exitCode\":result.returncode,\"wallSeconds\":time.perf_counter()-started}\n(base/\"native-baseline-gameplay-summary.json\").write_text(json.dumps(summary,indent=2)+\"\\n\")\nprint(json.dumps(summary))\nprint((base/\"launcher-baseline-gameplay.log\").read_text()[-1800:])\nraise SystemExit(result.returncode)\n"
+    },
+    "executor-route.diff": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/executor-route.diff",
+      "sha256": "90ccee2bbf0381bfcb3d2eedb7609063ead7264bf16fbde6110119c01f4153b6",
+      "text": "--- original\n+++ temporary\n@@ -39,6 +39,11 @@\n             bool expectedCardPlayed = request.ExpectedPlayedCardId == null;\n             bool expectedPotionUsed = request.ExpectedUsedPotionId == null;\n             bool expectedPlayerPowerObserved = request.ExpectedObservedPlayerPowerId == null;\n+            if (request.ScenarioId == \"INERT-SUBSCRIBER-CALL-BOUNDARY\")\n+            {\n+                await runner.AssertInertSubscriberCallBoundaryAsync(combatState, player);\n+                return Observation(combatEnded: false);\n+            }\n             if (request.ScenarioId is \"ZERO-CREDIT-GROWTH-PROOF\" or \"ZERO-CREDIT-GROWTH-PROOF-REGEN\")\n             {\n                 await runner.AssertZeroCreditGrowthProofAsync(combatState, player,\n"
+    },
+    "native-mod-helper.cs": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/native-mod-helper.cs",
+      "sha256": "fa9609ffb40b139b4ffbd57c5dd2141921902e8c549270d2b2d8d51afc4a97d8",
+      "text": "using System;\nusing System.Collections.Generic;\nusing System.Linq;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Logging;\nusing MegaCrit.Sts2.Core.Models;\nusing MegaCrit.Sts2.Core.Runs;\n\nnamespace MegaCrit.Sts2.Core.Modding;\n\n/// <summary>\n/// Some helper methods for modding.\n/// </summary>\npublic static class ModHelper\n{\n\tprivate class ModPoolContent\n\t{\n\t\tpublic bool isFrozen;\n\n\t\tpublic List<Type>? modelsToAdd;\n\t}\n\n\tprivate class ModRunHookSubscriber\n\t{\n\t\tpublic required string id;\n\n\t\tpublic required RunHookSubscriptionDelegate del;\n\t}\n\n\tprivate class ModCombatHookSubscriber\n\t{\n\t\tpublic required string id;\n\n\t\tpublic required CombatHookSubscriptionDelegate del;\n\t}\n\n\tprivate static readonly Dictionary<Type, ModPoolContent> _moddedContentForPools = new Dictionary<Type, ModPoolContent>();\n\n\tprivate static readonly List<ModRunHookSubscriber> _runHookSubscribers = new List<ModRunHookSubscriber>();\n\n\tprivate static readonly List<ModCombatHookSubscriber> _combatHookSubscribers = new List<ModCombatHookSubscriber>();\n\n\t/// <summary>\n\t/// Called by mods to add their models to a pool.\n\t/// Throws if the pool has already concatenated models to that pool (i.e. the mod was too late in calling this method).\n\t/// </summary>\n\t/// <typeparam name=\"TPoolType\">The pool type to add to.</typeparam>\n\t/// <typeparam name=\"TModelType\">The model to add to the pool.</typeparam>\n\tpublic static void AddModelToPool<TPoolType, TModelType>() where TPoolType : AbstractModel, IPoolModel where TModelType : AbstractModel\n\t{\n\t\tAddModelToPool(typeof(TPoolType), typeof(TModelType));\n\t}\n\n\tpublic static void AddModelToPool(Type poolType, Type modelType)\n\t{\n\t\tif (!_moddedContentForPools.TryGetValue(poolType, out ModPoolContent value))\n\t\t{\n\t\t\tvalue = new ModPoolContent\n\t\t\t{\n\t\t\t\tmodelsToAdd = new List<Type>()\n\t\t\t};\n\t\t\t_moddedContentForPools.Add(poolType, value);\n\t\t}\n\t\tif (value.isFrozen)\n\t\t{\n\t\t\tthrow new InvalidOperationException($\"Tried to add model {modelType} to pool {poolType}, but it's too late! You must add content before the game is initialized.\");\n\t\t}\n\t\tvalue.modelsToAdd.Add(modelType);\n\t}\n\n\t/// <summary>\n\t/// Called by a pool when it is ready to add modded content to its pool of content.\n\t/// </summary>\n\t/// <param name=\"poolModel\">The pool that is consuming the content.</param>\n\t/// <param name=\"pool\">The current pool of content.</param>\n\t/// <typeparam name=\"TModelType\">The model type of the content that should have been added by mods.</typeparam>\n\t/// <returns>A new pool with all modded content concatenated to pool.</returns>\n\tpublic static IEnumerable<TModelType> ConcatModelsFromMods<TModelType>(IPoolModel poolModel, IEnumerable<TModelType> pool) where TModelType : AbstractModel\n\t{\n\t\tType type = poolModel.GetType();\n\t\tif (!_moddedContentForPools.TryGetValue(type, out ModPoolContent value))\n\t\t{\n\t\t\tvalue = new ModPoolContent();\n\t\t\t_moddedContentForPools.Add(type, value);\n\t\t}\n\t\tvalue.isFrozen = true;\n\t\tif (value.modelsToAdd == null)\n\t\t{\n\t\t\treturn pool;\n\t\t}\n\t\tIEnumerable<TModelType> second = value.modelsToAdd.Select((Type t) => ModelDb.GetById<TModelType>(ModelDb.GetId(t)));\n\t\treturn pool.Concat(second);\n\t}\n\n\t/// <summary>\n\t/// Called by mods when they wish to provide custom model types to a RunState when IterateHookListeners is called.\n\t/// </summary>\n\t/// <param name=\"id\">An ID to identify the subscription. Usually the name of the mod.</param>\n\t/// <param name=\"del\">The delegate provided by the mod, which returns the models to iterate over.</param>\n\tpublic static void SubscribeForRunStateHooks(string id, RunHookSubscriptionDelegate del)\n\t{\n\t\tif (_runHookSubscribers.Any((ModRunHookSubscriber s) => s.id == id))\n\t\t{\n\t\t\tLog.Error(\"Tried to subscribe for RunState hooks with id \" + id + \", but it's already been used! Ignoring subscription\");\n\t\t\treturn;\n\t\t}\n\t\t_runHookSubscribers.Add(new ModRunHookSubscriber\n\t\t{\n\t\t\tid = id,\n\t\t\tdel = del\n\t\t});\n\t\t_runHookSubscribers.Sort((ModRunHookSubscriber x, ModRunHookSubscriber y) => string.CompareOrdinal(x.id, y.id));\n\t}\n\n\t/// <summary>\n\t/// Called by mods when they wish to provide custom model types to a CombatState when IterateHookListeners is called.\n\t/// </summary>\n\t/// <param name=\"id\">An ID to identify the subscription. Usually the name of the mod.</param>\n\t/// <param name=\"del\">The delegate provided by the mod, which returns the models to iterate over.</param>\n\tpublic static void SubscribeForCombatStateHooks(string id, CombatHookSubscriptionDelegate del)\n\t{\n\t\tif (_combatHookSubscribers.Any((ModCombatHookSubscriber s) => s.id == id))\n\t\t{\n\t\t\tLog.Error(\"Tried to subscribe for CombatState hooks with id \" + id + \", but it's already been used! Ignoring subscription\");\n\t\t\treturn;\n\t\t}\n\t\t_combatHookSubscribers.Add(new ModCombatHookSubscriber\n\t\t{\n\t\t\tid = id,\n\t\t\tdel = del\n\t\t});\n\t\t_combatHookSubscribers.Sort((ModCombatHookSubscriber x, ModCombatHookSubscriber y) => string.CompareOrdinal(x.id, y.id));\n\t}\n\n\t/// <summary>\n\t/// Called by RunState when it is iterating hook listeners, so that custom mod AbstractModel types have hooks called\n\t/// on them.\n\t/// </summary>\n\t/// <param name=\"runState\">The RunState which is iterating hook listeners.</param>\n\t/// <returns>All the model types from all subscribing mods who wish to receive hooks.</returns>\n\tpublic static IEnumerable<AbstractModel> IterateAllRunStateSubscribers(RunState runState)\n\t{\n\t\tforeach (ModRunHookSubscriber runHookSubscriber in _runHookSubscribers)\n\t\t{\n\t\t\tIEnumerable<AbstractModel> enumerable = runHookSubscriber.del(runState);\n\t\t\tif (enumerable == null)\n\t\t\t{\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tforeach (AbstractModel item in enumerable)\n\t\t\t{\n\t\t\t\tif (item != null)\n\t\t\t\t{\n\t\t\t\t\tyield return item;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// Called by CombatState when it is iterating hook listeners, so that custom mod AbstractModel types have hooks\n\t/// called on them.\n\t/// </summary>\n\t/// <param name=\"combatState\">The CombatState which is iterating hook listeners.</param>\n\t/// <returns>All the model types from all subscribing mods who wish to receive hooks.</returns>\n\tpublic static IEnumerable<AbstractModel> IterateAllCombatStateSubscribers(CombatState combatState)\n\t{\n\t\tforeach (ModCombatHookSubscriber combatHookSubscriber in _combatHookSubscribers)\n\t\t{\n\t\t\tIEnumerable<AbstractModel> enumerable = combatHookSubscriber.del(combatState);\n\t\t\tif (enumerable == null)\n\t\t\t{\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tforeach (AbstractModel item in enumerable)\n\t\t\t{\n\t\t\t\tif (item != null)\n\t\t\t\t{\n\t\t\t\t\tyield return item;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n"
+    }
+  },
+  "buildAndStructureLogs": {
+    "build-baseline.log": "  Determining projects to restore...\n  All projects are up-to-date for restore.\n  CombatSolver -> /home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/build-native/CombatSolver.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:14.40\n",
+    "build-baseline-corrected.log": "  Determining projects to restore...\n  All projects are up-to-date for restore.\n  CombatSolver -> /home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/build-native/CombatSolver.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:13.84\n",
+    "build-candidate.log": "  Determining projects to restore...\n  All projects are up-to-date for restore.\n/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/TaskInertSubscriberBoundary.cs(55,71): error CS0103: The name 'PredictionUnsupportedException' does not exist in the current context [/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/CombatSolver.csproj]\n\nBuild FAILED.\n\n/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/TaskInertSubscriberBoundary.cs(55,71): error CS0103: The name 'PredictionUnsupportedException' does not exist in the current context [/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/CombatSolver.csproj]\n    0 Warning(s)\n    1 Error(s)\n\nTime Elapsed 00:00:11.86\n",
+    "build-candidate-corrected.log": "  Determining projects to restore...\n  All projects are up-to-date for restore.\n  CombatSolver -> /home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/build-candidate/CombatSolver.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:14.17\n",
+    "build-final.log": "  Determining projects to restore...\n  All projects are up-to-date for restore.\n  CombatSolver -> /home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/build-final/CombatSolver.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:14.74\n",
+    "structure-gate.log": "REFACTOR_BOUNDARIES_OK search_files=254\n"
+  },
+  "deployment": {
+    "status": "Passed",
+    "method": "Exact source bytes read once and written to each destination; successful write is completion evidence",
+    "files": [
+      {
+        "name": "CombatSolver.json",
+        "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/CombatSolver.json",
+        "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/CombatSolver.json",
+        "sourceSha256": "292d741498072c6678b473d31c98c2ea8288ce742a894cb0e33634dc008ea22b",
+        "bytesWritten": 422
+      },
+      {
+        "name": "CombatSolver.dll",
+        "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/inert-subscriber-call-boundary-20261008/build-final/CombatSolver.dll",
+        "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/CombatSolver.dll",
+        "sourceSha256": "017b3f4d24b8c5cfaadb606f9aaecba44ca9b4bd929170f4a3ff4f7cc8920725",
+        "bytesWritten": 7494144
+      },
+      {
+        "name": "CombatSolver.MemoryCleaner.exe",
+        "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-pr213-sync-20261006/installed-before-sync/CombatSolver.MemoryCleaner.exe",
+        "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/CombatSolver.MemoryCleaner.exe",
+        "sourceSha256": "5474c2d6e59df76430484d2ed4230231b5026a32e0796986520bc2ac41569415",
+        "bytesWritten": 7168
+      },
+      {
+        "name": "LICENSE",
+        "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/LICENSE",
+        "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/LICENSE",
+        "sourceSha256": "e6e86edc9dac3448c67240d4b3b588b7354299c5c4488ffa1e920715e53fca96",
+        "bytesWritten": 1154
+      },
+      {
+        "name": "THIRD_PARTY_NOTICES.md",
+        "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/THIRD_PARTY_NOTICES.md",
+        "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/THIRD_PARTY_NOTICES.md",
+        "sourceSha256": "309dcd321323622bc8bb1f906556aabfc9806b3661f2ac824bad950fc5a6bbc0",
+        "bytesWritten": 2444
+      }
+    ],
+    "manifestSource": "Repository manifest remains affects_gameplay=false, version=0.50.0",
+    "temporaryRouteExcluded": true,
+    "versionBump": false,
+    "publication": false
+  },
+  "finalSourceSha256": {
+    "src/Prediction/PredictionModHookSubscriberInertness.cs": "fe99d5b52cefa9c3c1935039fa4faf8079d896d0c44e5a0f57670aa11f4113f4",
+    "src/Prediction/PredictionModHookSubscriberCapture.cs": "93384d230d64a01f9c9b20f608230e71bab57cd3dea9b556605a9eb4c3253aa7",
+    "src/Testing/Contracts/Combat/UnattendedTestRunner.FailureBoundaries.cs": "14ca322d5c41df7bf08fce5d4c8fe4a225feb5c5270dda0260eafb81ec73be46",
+    "src/Testing/Host/UnattendedTestRunner.Executor.cs": "933d290348e4603224f8ce7a8f7ae2e7cd9de3a0011f78c211d0045056f6af89"
+  },
+  "gates": {
+    "tools": "TOOLS_OK files=295 projects=37 errors=0",
+    "coverage": "COVERAGE_OK data=529 fixtures=479 groups=37 errors=0",
+    "structure": "REFACTOR_BOUNDARIES_OK search_files=254",
+    "documentation": "DOCUMENTATION_OK files=576 links=2455 errors=0"
+  },
+  "cleanup": "Temporary Executor route restored byte-for-byte; probe sources, custom props, scripts and diagnostic builds removed after archive; raw evidence, readonly native source and formal final build retained"
+}

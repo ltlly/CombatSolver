@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-08 [消耗堆直接来源链](performance/exhaust-finite-source-pipeline-20261008.md)：保留猎手重根来源，三排列七动作边界、Shiv/Inky、Sly弃牌自动出牌与原生六张FranticEscape生成的完整状态/历史/RNG一致，旧父分支保持；Sandpit实际4层。5直接生成操作数与42 ToString槽根另定位。完整未来证书/实际剪枝/纯性能仍0。
+2026-10-08 [订阅器实例通知边界](performance/inert-subscriber-call-boundary-20261008.md)：无战斗覆写实例的默认回调仍触发三次完成通知；根准入改为核对原生事件受众，保留无受众类型，不缓存可变结果。类型、添加/移除及同名派生字段合同与原生对照结果见报告。没有新增等价剪枝或提速结论。
 
 [默认方法局部验证归档](archive/testing/volume-25.md)。
 

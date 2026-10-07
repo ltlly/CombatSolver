@@ -67,7 +67,10 @@ CrabRagePower 的同伴死亡结算由 `AfterDeathMirrors` 独占：力量、格
 1. 清单 `affects_gameplay: false`；
 2. `PredictionModHookSubscriberInertness.IsCombatInert` 判定为战斗惰性——只重写了战斗外的
    hook，或者只重写了战斗开始 / 战斗结束 hook（前者的效果已经落在被捕获的根状态里，后者在
-   胜负判定之后才分发，求解器搜到战斗结束就停）；
+   胜负判定之后才分发，求解器搜到战斗结束就停）。这条类型推断的实例准入还要求
+   `AbstractModel.ExecutionFinished` 没有监听器；原生调用方在默认回调完成后也会触发该事件。
+   主线程捕获时逐实例核对，不缓存监听器是否为空，不能用派生同名字段替代原生事件。
+   这一准入不等于回复来源或未来状态等价性证书；
 3. 在 `PredictionModHookSubscriberCapture.KnownPreRootSubscriberTypeNames` 白名单里。
 4. Loadout 的 `PowerGiverSummonHook`：主线程检查实际加载的公开计数快照接口及怪物能力配置，把空配置写入续用状态戳。版本号变化不会阻止搜索；接口变化或配置非空时明确失败。这不放行 Loadout 的其他战斗效果。
 5. BaseLib `CardModifier`：侧表状态随预测卡牌独立复制并重绑 Owner，Hook 仍由对应镜像处理。修饰器的战斗监听成员与原生 BaseLib 一致，按玩家五种战斗牌堆枚举；生成牌完成战斗域登记后，在入堆时参与监听，离开所有牌堆后退出监听。复跑使用 `-VerifyBaseLibCardModifierBoundary`，合同直接对照原生生成牌及各牌堆的生命周期。

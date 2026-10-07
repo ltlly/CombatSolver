@@ -274,9 +274,9 @@ internal sealed class PredictionModHookSubscriberCapture
         {
             return;
         }
-        // 只覆写了地图/进幕/事件/休息处/商店这类战斗外 hook 的订阅器不可能改变战斗模拟结果，
-        // 不必把整个 Mod 判为不兼容。任何战斗 hook 覆写（含继承来的）仍走下面的拒绝路径。
-        if (PredictionModHookSubscriberInertness.IsCombatInert(type, out string overriddenHooks))
+        // 类型只覆写窗口外 hook 还不够：默认战斗回调也会分派实例的 ExecutionFinished。
+        // 未知事件受众与战斗 hook 覆写（含继承来的）都继续原有拒绝路径。
+        if (PredictionModHookSubscriberInertness.IsCombatInert(subscriber, out string overriddenHooks))
         {
             Entry.Logger.Info(
                 $"[CombatSolver/Test] MOD_HOOK_SUBSCRIBER_COMBAT_INERT scope={scope} " +
