@@ -63,4 +63,4 @@
 
 [扩展写入审计](../../docs/performance/exhaust-extension-writer-audit-20261007.md)的14项检查只验证Cecil元数据边界及调用token，不执行CLR/游戏语义；已有游戏合同按原范围复用。一次性项目、夹具、生成脚本和构建已归档清理，未扩生产认证。
 
-[免费根合同](../../docs/performance/exhaust-free-root-contract-20261007.md)只读捕获真实54根牌，验证检测器替换恢复、空绑定创建、无层容器回调及零收费层。无新Fork/完整EndTurn或搜索；临时入口逐字恢复、独立实例及源码/构建清理，未扩生产认证。
+[事件来源审计](../../docs/performance/exhaust-event-reference-audit-20261007.md)的21项检查只验证Cecil元数据，覆盖跨程序集/版本、实例签名、委托创建及伪访问器拒绝认证；没有新增原生/Fork/搜索测试。[免费根合同](../../docs/performance/exhaust-free-root-contract-20261007.md)按原范围复用，临时元数据源码/项目/构建清理，生产部署保持。

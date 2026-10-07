@@ -1,0 +1,623 @@
+{
+  "schemaVersion": 1,
+  "task": "exhaust-event-reference-audit",
+  "date": "2026-10-07",
+  "sourceBase": "8b272893",
+  "retainedRuntimeSource": "27c28f66",
+  "game": {
+    "assembly": "sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+    "dllSha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+    "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+  },
+  "runtime": {
+    "assembly": "STS2-RitsuLib.Runtime, Version=0.6.6.0, Culture=neutral, PublicKeyToken=null",
+    "dllSha256": "fe387f765a3951690b161c129731e6c10016215c06074aa3356dd96290f13b52",
+    "mvid": "f7f18a36-8ebb-4db2-b1ea-7bd340579646"
+  },
+  "tool": {
+    "schemaVersion": 7,
+    "source": {
+      "path": "tools/inspection/HealingSourceAudit/Program.cs",
+      "bytes": 27913,
+      "sha256": "da112deffb486fb450a52f3aa90463b6664e6afa2d6ff973f78ba5a8f69e87c6",
+      "text": "using System.Security.Cryptography;\nusing System.Text.Json;\nusing Mono.Cecil;\nusing Mono.Cecil.Cil;\n\nif (args.Length != 2)\n    throw new ArgumentException(\"Usage: HealingSourceAudit input.dll output.json\");\nstring dll = Path.GetFullPath(args[0]);\nusing ModuleDefinition module = ModuleDefinition.ReadModule(dll, new ReaderParameters\n    { InMemory = true, ReadSymbols = false });\nTypeDefinition[] types = Flatten(module.Types).ToArray();\nMethodDefinition[] methods = types.SelectMany(type => type.Methods).ToArray();\nvar typeGroups = types.GroupBy(type => type.FullName, StringComparer.Ordinal).ToArray();\nvar methodGroups = methods.GroupBy(method => method.FullName, StringComparer.Ordinal).ToArray();\nDictionary<string, TypeDefinition> localTypes = typeGroups.Where(group => group.Count() == 1)\n    .ToDictionary(group => group.Key, group => group.Single(), StringComparer.Ordinal);\nDictionary<string, MethodDefinition> localMethods = methodGroups.Where(group => group.Count() == 1)\n    .ToDictionary(group => group.Key, group => group.Single(), StringComparer.Ordinal);\nHashSet<string> ambiguousTypes = typeGroups.Where(group => group.Count() > 1)\n    .Select(group => group.Key).ToHashSet(StringComparer.Ordinal);\nHashSet<string> ambiguousMethods = methodGroups.Where(group => group.Count() > 1)\n    .Select(group => group.Key).ToHashSet(StringComparer.Ordinal);\nvar references = new List<Reference>();\nvar cardEventAccessorCandidates = new List<EventAccessorCandidate>();\nvar fieldWrites = new List<Reference>();\nvar fieldAddresses = new List<Reference>();\nvar potionSlotFieldReferences = new List<Reference>();\nvar cardPileFieldReferences = new List<Reference>();\nvar asyncMappings = new List<Reference>();\nvar sinks = new HashSet<string>(StringComparer.Ordinal);\nvar potionInventoryEntries = new HashSet<string>(StringComparer.Ordinal);\nvar cardPileEntries = new HashSet<string>(StringComparer.Ordinal);\nTypeDefinition? playerType = types.FirstOrDefault(type =>\n    type.FullName == \"MegaCrit.Sts2.Core.Entities.Players.Player\");\nEventDefinition[] potionInventoryEvents = playerType?.Events.Where(@event =>\n    @event.Name.Contains(\"Potion\", StringComparison.Ordinal)).ToArray() ?? [];\nEventDefinition[] potionUseEvents = types.FirstOrDefault(type =>\n    type.FullName == \"MegaCrit.Sts2.Core.Models.PotionModel\")?.Events.ToArray() ?? [];\npotionInventoryEvents = potionInventoryEvents.Concat(potionUseEvents).ToArray();\nvar potionEventAccessors = potionInventoryEvents.SelectMany(@event =>\n    new[] { @event.AddMethod, @event.RemoveMethod }).Where(method => method is not null)\n    .Select(method => method!.FullName).ToHashSet(StringComparer.Ordinal);\nEventDefinition[] cardStateEvents = types.Where(type => IsCardStateEventOwner(type.FullName))\n    .SelectMany(type => type.Events).ToArray();\nHashSet<string> cardEventAccessors = cardStateEvents.SelectMany(@event =>\n        new[] { @event.AddMethod, @event.RemoveMethod }).Where(method => method is not null)\n    .Select(method => method!.FullName).ToHashSet(StringComparer.Ordinal);\nforeach (MethodDefinition method in methods)\n{\n    if (IsHealthEntry(method)) sinks.Add(method.FullName);\n    if (IsPotionInventoryEntry(method)) potionInventoryEntries.Add(method.FullName);\n    if (IsCardPileEntry(method)) cardPileEntries.Add(method.FullName);\n    foreach (CustomAttribute attribute in method.CustomAttributes)\n    {\n        if (attribute.AttributeType.FullName == \"System.Runtime.CompilerServices.AsyncStateMachineAttribute\"\n            && attribute.ConstructorArguments.Count == 1\n            && attribute.ConstructorArguments[0].Value is TypeReference machine)\n        {\n            MethodDefinition? body = types.FirstOrDefault(type => type.FullName == machine.FullName)?\n                .Methods.FirstOrDefault(candidate => candidate.Name == \"MoveNext\");\n            if (body is not null)\n                asyncMappings.Add(new(method.FullName, body.FullName, \"async_body\", -1,\n                    Owner(method.DeclaringType), CallerDefinitionToken: method.MetadataToken.ToInt32(),\n                    OperandMetadataToken: body.MetadataToken.ToInt32()));\n        }\n    }\n    if (!method.HasBody) continue;\n    foreach (Instruction instruction in method.Body.Instructions)\n    {\n        if (instruction.Operand is MethodReference callee)\n        {\n            MethodReference definition = callee is GenericInstanceMethod generic ? generic.ElementMethod : callee;\n            Reference reference = new(method.FullName, definition.FullName, instruction.OpCode.Name,\n                instruction.Offset, Owner(method.DeclaringType),\n                callee is GenericInstanceMethod constructed\n                    ? constructed.GenericArguments.Select(type => type.FullName).ToArray() : [],\n                method.MetadataToken.ToInt32(), callee.MetadataToken.ToInt32());\n            references.Add(reference);\n            // Dependency inputs do not define the game's events. Keep their\n            // apparent accessor references too, including unknown scopes and\n            // same-name methods; names alone do not resolve an event definition.\n            if (IsCardStateEventOwner(definition.DeclaringType.FullName)\n                && (definition.Name.StartsWith(\"add_\", StringComparison.Ordinal)\n                    || definition.Name.StartsWith(\"remove_\", StringComparison.Ordinal)))\n                cardEventAccessorCandidates.Add(new(reference, definition.DeclaringType.FullName,\n                    definition.Name, definition.DeclaringType.Scope?.MetadataScopeType.ToString(),\n                    definition.DeclaringType.Scope is ModuleDefinition scopeModule\n                        ? scopeModule.Assembly.Name.FullName : definition.DeclaringType.Scope?.ToString(),\n                    definition.HasThis, definition.ExplicitThis, definition.CallingConvention.ToString(),\n                    definition.GenericParameters.Count, SlotTypeIdentity(definition.ReturnType),\n                    definition.Parameters.Select(parameter => SlotTypeIdentity(parameter.ParameterType)).ToArray(),\n                    \"not-resolved\"));\n        }\n        if (instruction.OpCode.Code is Code.Stfld or Code.Stsfld\n            && instruction.Operand is FieldReference field\n            && field.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Entities.Creatures.Creature\"\n            && field.Name is \"_currentHp\" or \"_maxHp\")\n            fieldWrites.Add(new(method.FullName, field.FullName, instruction.OpCode.Name,\n                instruction.Offset, Owner(method.DeclaringType)));\n        if (instruction.OpCode.Code is Code.Ldflda or Code.Ldsflda\n            && instruction.Operand is FieldReference address\n            && address.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Entities.Creatures.Creature\"\n            && address.Name is \"_currentHp\" or \"_maxHp\")\n            fieldAddresses.Add(new(method.FullName, address.FullName, instruction.OpCode.Name,\n                instruction.Offset, Owner(method.DeclaringType)));\n        // Read access matters too: callers can mutate the List after ldfld, or\n        // expose its alias through PotionSlots. A write-only scan misses both.\n        if (instruction.Operand is FieldReference potionField\n            && potionField.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Entities.Players.Player\"\n            && potionField.Name == \"_potionSlots\")\n            potionSlotFieldReferences.Add(new(method.FullName, potionField.FullName,\n                instruction.OpCode.Name, instruction.Offset, Owner(method.DeclaringType)));\n        // A read-only Cards/AllPiles view does not prove order independence:\n        // fields can expose mutable collection aliases and indirect pile roots.\n        if (instruction.Operand is FieldReference pileField && IsCardPileField(pileField))\n            cardPileFieldReferences.Add(new(method.FullName, pileField.FullName,\n                instruction.OpCode.Name, instruction.Offset, Owner(method.DeclaringType)));\n    }\n}\nReference[] directHealthReferences = references.Where(reference => sinks.Contains(reference.Target))\n    .OrderBy(reference => reference.Owner, StringComparer.Ordinal)\n    .ThenBy(reference => reference.Caller, StringComparer.Ordinal).ThenBy(reference => reference.Offset).ToArray();\nHashSet<string> nativeHookTargets = references.Where(reference =>\n        reference.Owner == \"MegaCrit.Sts2.Core.Hooks.Hook\"\n        && reference.Target.Contains(\" MegaCrit.Sts2.Core.Models.AbstractModel::\", StringComparison.Ordinal))\n    .Select(reference => reference.Target).ToHashSet(StringComparer.Ordinal);\nVirtualSlot[] virtualModelSlots = methods.Where(method => method.IsVirtual\n        && method.DeclaringType.Namespace.StartsWith(\"MegaCrit.Sts2.Core.Models\", StringComparison.Ordinal))\n    .Select(method => InspectLocalVirtualSlot(method, localTypes, localMethods, nativeHookTargets,\n        ambiguousTypes, ambiguousMethods)).ToArray();\n// The graph inventories possible static edges, including delegate creation. It\n// cannot resolve virtual hook dispatch or prove a target, condition or HP amount.\nvar audit = new\n{\n    schemaVersion = 7,\n    assembly = module.Assembly.Name.FullName,\n    mvid = module.Mvid,\n    dllSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dll))).ToLowerInvariant(),\n    typeCount = types.Length,\n    methodCount = methods.Length,\n    methodsWithBody = methods.Count(method => method.HasBody),\n    referenceCount = references.Count,\n    // FullName is a display signature. Different metadata rows can render the\n    // same text; preserve them and refuse signature-only slot resolution.\n    ambiguousTypeSignatures = typeGroups.Where(group => group.Count() > 1)\n        .Select(group => new { signature = group.Key,\n            tokens = group.Select(type => type.MetadataToken.ToInt32()).ToArray() }).ToArray(),\n    ambiguousMethodSignatures = methodGroups.Where(group => group.Count() > 1)\n        .Select(group => new { signature = group.Key, methods = group.Select(method => new\n        {\n            token = method.MetadataToken.ToInt32(), method.IsStatic, method.HasThis,\n            callingConvention = method.CallingConvention.ToString(),\n            genericParameterCount = method.GenericParameters.Count,\n        }).ToArray() }).ToArray(),\n    healthEntries = sinks.Order(StringComparer.Ordinal).ToArray(),\n    directHealthReferences,\n    directCreatureFieldWrites = fieldWrites,\n    creatureHealthFieldAddresses = fieldAddresses,\n    potionInventoryEntries = potionInventoryEntries.Order(StringComparer.Ordinal).ToArray(),\n    directPotionInventoryReferences = references.Where(reference =>\n        potionInventoryEntries.Contains(reference.Target)).ToArray(),\n    potionSlotFieldDefinitions = playerType?.Fields.Where(field => field.Name == \"_potionSlots\")\n        .Select(field => new { field = field.FullName, field.IsInitOnly, field.IsStatic }).ToArray() ?? [],\n    potionSlotFieldReferences,\n    cardPileEntries = cardPileEntries.Order(StringComparer.Ordinal).ToArray(),\n    directCardPileReferences = references.Where(reference =>\n        cardPileEntries.Contains(reference.Target)).ToArray(),\n    cardPileFieldDefinitions = types.SelectMany(type => type.Fields).Where(IsCardPileField)\n        .Select(field => new { field = field.FullName, field.IsInitOnly, field.IsStatic }).ToArray(),\n    cardPileFieldReferences,\n    cardStateEventDefinitions = cardStateEvents.Select(@event => new\n        { owner = @event.DeclaringType.FullName, @event.Name, type = @event.EventType.FullName,\n            add = @event.AddMethod?.FullName, remove = @event.RemoveMethod?.FullName }).ToArray(),\n    cardStateEventReferences = references.Where(reference => cardEventAccessors.Contains(reference.Target)).ToArray(),\n    cardStateEventAccessorCandidates = cardEventAccessorCandidates,\n    potionInventoryEventDefinitions = potionInventoryEvents.Select(@event => new\n        { owner = @event.DeclaringType.FullName, @event.Name, type = @event.EventType.FullName, add = @event.AddMethod?.FullName,\n            remove = @event.RemoveMethod?.FullName }).ToArray(),\n    potionInventoryEventReferences = references.Where(reference =>\n        potionEventAccessors.Contains(reference.Target)).ToArray(),\n    potionCallbackDefinitions = methods.Where(method => method.IsVirtual\n        && method.DeclaringType.Namespace.StartsWith(\"MegaCrit.Sts2.Core.Models\", StringComparison.Ordinal)\n        && method.Name is \"BeforePotionUsed\" or \"AfterPotionUsed\" or \"AfterPotionDiscarded\"\n            or \"AfterPotionProcured\" or \"ShouldProcurePotion\" or \"ShouldForcePotionReward\")\n        .Select(method => new { owner = Owner(method.DeclaringType), method = method.FullName,\n            method.HasBody, method.IsAbstract, baseType = method.DeclaringType.BaseType?.FullName })\n        .ToArray(),\n    sourceOwners = directHealthReferences.Select(reference => reference.Owner)\n        .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),\n    healthCallbackDefinitions = methods.Where(method => method.Name is \"ShouldDie\"\n        or \"ShouldDieLate\" or \"BeforeDeath\" or \"AfterDeath\" or \"AfterPreventingDeath\"\n        or \"AfterCurrentHpChanged\" or \"AfterCombatEnd\" or \"BeforeCombatStart\"\n        or \"AfterOstyHpChanged\" or \"AfterCombatVictory\" or \"AfterCombatVictoryEarly\"\n        or \"AfterPlayerTurnStartLate\" or \"AfterRoomEntered\" or \"AfterObtained\"\n        or \"AfterRestSiteHeal\" or \"AfterDiedToDoom\" or \"AfterDamageReceived\" or \"AfterDamageGiven\")\n        .Select(method => new { owner = Owner(method.DeclaringType), method = method.FullName,\n            method.IsVirtual, method.HasBody, baseType = method.DeclaringType.BaseType?.FullName })\n        .ToArray(),\n    // Keep every virtual model method as an additional inventory. A manually\n    // selected health-hook list alone misses indirect gold, permanent-deck,\n    // summoning and side-turn callbacks. Neither list is a reachability proof.\n    allVirtualModelMethods = methods.Where(method => method.IsVirtual\n        && method.DeclaringType.Namespace.StartsWith(\"MegaCrit.Sts2.Core.Models\", StringComparison.Ordinal))\n        .Select(method => new { owner = Owner(method.DeclaringType), method = method.FullName,\n            method.HasBody, method.IsAbstract, baseType = method.DeclaringType.BaseType?.FullName })\n        .ToArray(),\n    // Exact IL slots distinguish a reused inherited hook from a same-name\n    // declaration. Resolution stays inside the input module; external or\n    // ambiguous slots remain explicit unknowns rather than being treated safe.\n    nativeHookModelTargets = nativeHookTargets.Order(StringComparer.Ordinal).ToArray(),\n    virtualModelSlots,\n    hookDispatchReferences = references.Where(reference =>\n        reference.Target.Contains(\" MegaCrit.Sts2.Core.Hooks.Hook::\", StringComparison.Ordinal)).ToArray(),\n    modelTypes = types.Where(type => type.DeclaringType is null\n        && type.Namespace.StartsWith(\"MegaCrit.Sts2.Core.Models.\", StringComparison.Ordinal))\n        .Select(type => new { type = type.FullName, baseType = type.BaseType?.FullName,\n            type.IsAbstract, methods = type.Methods.Select(method => method.FullName).ToArray() })\n        .ToArray(),\n    asyncMappings,\n    staticReferences = references,\n    limitations = new[]\n    {\n        \"Inventory only: a reference is not proof of healing, reachability, target or finite bound.\",\n        \"Health setters include damage, initialization, save restoration and network sync.\",\n        \"Static calls/delegate creation cannot resolve virtual hooks, reflection or third-party extensions.\",\n        \"HP amounts, callback dispatch and generation closure require source and native differential review.\",\n        \"Potion slot reads include mutable List aliases; event subscribers and indirect relic acquisition require review.\",\n        \"Pile fields/aliases and commands are an inventory, not proof of order independence or a complete reachable callback closure.\",\n        \"Local virtual-slot identities do not prove hook bodies, active listeners, patches or recursively reachable generation safe.\",\n        \"Card event accessors inventory static subscriptions; reflective subscribers and delegate-body effects require review.\",\n        \"Display signatures are not method identities; ambiguity is retained. Operand tokens belong to this input module and need not identify a resolved target definition.\",\n        \"Event definitions/references are local to the input. Accessor candidates also retain dependency references, but no candidate is resolved or certified from its name; scope/signature metadata requires definition and callback review.\",\n    },\n};\nstring output = Path.GetFullPath(args[1]);\nDirectory.CreateDirectory(Path.GetDirectoryName(output)!);\nFile.WriteAllText(output, JsonSerializer.Serialize(audit, new JsonSerializerOptions { WriteIndented = true }) + \"\\n\");\nConsole.WriteLine(JsonSerializer.Serialize(new\n{\n    audit.dllSha256, audit.typeCount, audit.methodCount, audit.methodsWithBody,\n    healthEntryCount = sinks.Count, healthReferenceCount = directHealthReferences.Length,\n    sourceOwnerCount = audit.sourceOwners.Length, fieldWriteCount = fieldWrites.Count,\n    potionEntryCount = potionInventoryEntries.Count,\n    potionSlotFieldReferenceCount = potionSlotFieldReferences.Count,\n    potionEventReferenceCount = audit.potionInventoryEventReferences.Length,\n    cardPileEntryCount = cardPileEntries.Count,\n    cardPileFieldReferenceCount = cardPileFieldReferences.Count,\n    cardStateEventCount = cardStateEvents.Length,\n    cardStateEventReferenceCount = audit.cardStateEventReferences.Length,\n    cardStateEventAccessorCandidateCount = cardEventAccessorCandidates.Count,\n    nativeHookModelTargetCount = nativeHookTargets.Count,\n    virtualModelSlotCount = virtualModelSlots.Length,\n    unresolvedVirtualModelSlotCount = virtualModelSlots.Count(slot => slot.Status != \"resolved-local\"),\n}));\n\nstatic IEnumerable<TypeDefinition> Flatten(IEnumerable<TypeDefinition> types)\n{\n    foreach (TypeDefinition type in types)\n    {\n        yield return type;\n        foreach (TypeDefinition nested in Flatten(type.NestedTypes)) yield return nested;\n    }\n}\n\nstatic string Owner(TypeDefinition type)\n{\n    while (type.DeclaringType is not null) type = type.DeclaringType;\n    return type.FullName;\n}\n\nstatic bool IsHealthEntry(MethodDefinition method)\n    => method.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Commands.CreatureCmd\"\n        && method.Name is \"Heal\" or \"GainMaxHp\" or \"LoseMaxHp\" or \"SetCurrentHp\"\n            or \"SetMaxHp\" or \"SetMaxAndCurrentHp\"\n        || method.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Entities.Creatures.Creature\"\n        && method.Name is \"HealInternal\" or \"SetCurrentHpInternal\" or \"SetMaxHpInternal\"\n            or \"set_CurrentHp\" or \"set_MaxHp\";\n\nstatic bool IsPotionInventoryEntry(MethodDefinition method)\n    => method.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Commands.PotionCmd\"\n        && method.Name is \"TryToProcure\" or \"Discard\"\n        || method.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Entities.Players.Player\"\n        && method.Name is \"AddPotionInternal\" or \"DiscardPotionInternal\" or \"RemoveUsedPotionInternal\"\n            or \"RemovePotionInternal\" or \"SetMaxPotionCountInternal\" or \"AddToMaxPotionCount\"\n            or \"SubtractFromMaxPotionCount\" or \"LoadPotions\" or \"PopulateStartingInventory\"\n        || method.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Commands.PlayerCmd\"\n        && method.Name is \"GainMaxPotionCount\" or \"LoseMaxPotionCount\"\n        || method.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Models.PotionModel\"\n        && method.Name is \"Discard\" or \"RemoveBeforeUse\" or \"OnUseWrapper\" or \"EnqueueManualUse\";\n\nstatic bool IsCardPileEntry(MethodDefinition method)\n    => method.DeclaringType.FullName is \"MegaCrit.Sts2.Core.Entities.Cards.CardPile\"\n        or \"MegaCrit.Sts2.Core.Commands.CardPileCmd\" or \"MegaCrit.Sts2.Core.Commands.CardCmd\"\n        || ContainsCardPileType(method.ReturnType)\n        || method.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState\"\n        && method.Name is \"get_AllPiles\" or \"get_AllCards\" or \"get_ExhaustPile\"\n        || method.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Entities.Players.Player\"\n        && method.Name == \"get_Piles\"\n        || method.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Entities.Cards.PileTypeExtensions\"\n        && method.Name == \"GetPile\"\n        || method.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Combat.CombatState\"\n        && method.Name == \"IterateHookListeners\";\n\nstatic bool IsCardPileField(FieldReference field)\n    => field.DeclaringType.FullName == \"MegaCrit.Sts2.Core.Entities.Cards.CardPile\"\n        || ContainsCardPileType(field.FieldType);\n\nstatic bool IsCardStateEventOwner(string fullName)\n    => fullName is \"MegaCrit.Sts2.Core.Models.AbstractModel\" or \"MegaCrit.Sts2.Core.Models.CardModel\"\n        or \"MegaCrit.Sts2.Core.Models.EnchantmentModel\" or \"MegaCrit.Sts2.Core.Models.AfflictionModel\"\n        or \"MegaCrit.Sts2.Core.Entities.Cards.CardPile\"\n        or \"MegaCrit.Sts2.Core.Entities.Cards.CardEnergyCost\"\n        or \"MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState\";\n\nstatic bool ContainsCardPileType(TypeReference type)\n    => type.FullName == \"MegaCrit.Sts2.Core.Entities.Cards.CardPile\"\n        || type is GenericInstanceType generic && generic.GenericArguments.Any(ContainsCardPileType)\n        || type is TypeSpecification specification && ContainsCardPileType(specification.ElementType);\n\nstatic VirtualSlot InspectLocalVirtualSlot(MethodDefinition method,\n    IReadOnlyDictionary<string, TypeDefinition> localTypes,\n    IReadOnlyDictionary<string, MethodDefinition> localMethods,\n    IReadOnlySet<string> nativeHookTargets,\n    IReadOnlySet<string> ambiguousTypes,\n    IReadOnlySet<string> ambiguousMethods)\n{\n    var chain = new List<string>();\n    var seen = new HashSet<string>(StringComparer.Ordinal);\n    MethodDefinition current = method;\n    while (true)\n    {\n        if (ambiguousTypes.Contains(current.DeclaringType.FullName))\n            return Result(\"ambiguous-declaring-type\", current.DeclaringType.FullName);\n        if (ambiguousMethods.Contains(current.FullName))\n            return Result(\"ambiguous-method-identity\", current.FullName);\n        if (!seen.Add(current.FullName)) return Result(\"cyclic-slot\", null);\n        chain.Add(current.FullName);\n        // Explicit overrides can name an interface slot. Do not replace them\n        // with a heuristic name match, including when several are present.\n        if (current.Overrides.Count > 0)\n        {\n            if (current.Overrides.Count != 1) return Result(\"multiple-explicit-slots\", null);\n            MethodReference target = current.Overrides[0];\n            if (IsLocalTypeScope(target.DeclaringType, method.Module)\n                && ambiguousMethods.Contains(target.FullName))\n                return Result(\"ambiguous-explicit-slot\", target.FullName);\n            if (!IsLocalTypeScope(target.DeclaringType, method.Module)\n                || !localMethods.TryGetValue(target.FullName, out MethodDefinition? overridden))\n                return Result(\"external-or-unresolved-explicit-slot\", target.FullName);\n            current = overridden;\n            continue;\n        }\n        if (current.IsNewSlot) return Result(\"resolved-local\", current.FullName);\n\n        TypeReference? parent = current.DeclaringType.BaseType;\n        while (parent is not null)\n        {\n            if (IsLocalTypeScope(parent, method.Module) && ambiguousTypes.Contains(parent.FullName))\n                return Result(\"ambiguous-base-type\", parent.FullName);\n            if (!IsLocalTypeScope(parent, method.Module)\n                || !localTypes.TryGetValue(parent.FullName, out TypeDefinition? definition))\n                return Result(\"external-or-unresolved-base\", parent.FullName);\n            MethodDefinition[] candidates = definition.Methods.Where(candidate => candidate.IsVirtual\n                && HasSameSlotParameters(candidate, current)).ToArray();\n            if (candidates.Length > 1) return Result(\"ambiguous-base-slot\", null);\n            if (candidates.Length == 1)\n            {\n                if (SlotTypeIdentity(candidates[0].ReturnType) != SlotTypeIdentity(current.ReturnType))\n                    return Result(\"covariant-or-unresolved-return\", candidates[0].FullName);\n                current = candidates[0];\n                break;\n            }\n            parent = definition.BaseType;\n        }\n        if (parent is null) return Result(\"missing-base-slot\", null);\n    }\n\n    VirtualSlot Result(string status, string? rootOrUnresolved)\n        => new(Owner(method.DeclaringType), method.FullName, method.IsNewSlot, method.IsFinal,\n            method.IsAbstract, method.HasBody, method.Overrides.Select(@override => @override.FullName).ToArray(),\n            status, rootOrUnresolved, chain.ToArray(),\n            status == \"resolved-local\" && rootOrUnresolved is not null && nativeHookTargets.Contains(rootOrUnresolved));\n}\n\nstatic bool HasSameSlotParameters(MethodDefinition left, MethodDefinition right)\n    => left.Name == right.Name && left.GenericParameters.Count == right.GenericParameters.Count\n        && left.Parameters.Select(parameter => parameter.ParameterType.FullName)\n            .SequenceEqual(right.Parameters.Select(parameter => parameter.ParameterType.FullName), StringComparer.Ordinal)\n        && left.Parameters.Select(parameter => SlotTypeIdentity(parameter.ParameterType))\n            .SequenceEqual(right.Parameters.Select(parameter => SlotTypeIdentity(parameter.ParameterType)), StringComparer.Ordinal);\n\nstatic string SlotTypeIdentity(TypeReference type)\n    => type switch\n    {\n        GenericParameter parameter => $\"{parameter.Type}:{parameter.Position}\",\n        GenericInstanceType generic => SlotTypeIdentity(generic.ElementType) + \"<\"\n            + string.Join(\",\", generic.GenericArguments.Select(SlotTypeIdentity)) + \">\",\n        RequiredModifierType required => \"modreq:\" + SlotTypeIdentity(required.ModifierType)\n            + \":\" + SlotTypeIdentity(required.ElementType),\n        OptionalModifierType optional => \"modopt:\" + SlotTypeIdentity(optional.ModifierType)\n            + \":\" + SlotTypeIdentity(optional.ElementType),\n        FunctionPointerType pointer => $\"fn:{pointer.CallingConvention}:{pointer.HasThis}:{pointer.ExplicitThis}:\"\n            + SlotTypeIdentity(pointer.ReturnType) + \"(\"\n            + string.Join(\",\", pointer.Parameters.Select(parameter => SlotTypeIdentity(parameter.ParameterType))) + \")\",\n        TypeSpecification specification => specification.FullName + \":\" + SlotTypeIdentity(specification.ElementType),\n        _ => type.FullName + \"@\" + (type.Scope is ModuleDefinition definition\n            ? definition.Assembly.Name.FullName : type.Scope?.ToString()),\n    };\n\nstatic bool IsLocalTypeScope(TypeReference type, ModuleDefinition module)\n    => type.Scope switch\n    {\n        ModuleDefinition definition => ReferenceEquals(definition, module),\n        AssemblyNameReference assembly => assembly.FullName == module.Assembly.Name.FullName,\n        _ => false,\n    };\n\nsealed record VirtualSlot(string Owner, string Method, bool IsNewSlot, bool IsFinal,\n    bool IsAbstract, bool HasBody, string[] ExplicitOverrides, string Status,\n    string? RootOrUnresolved, string[] Chain, bool IsNativeHookTarget);\n\nsealed record Reference(string Caller, string Target, string Kind, int Offset, string Owner,\n    string[]? GenericArguments = null, int? CallerDefinitionToken = null, int? OperandMetadataToken = null);\n\nsealed record EventAccessorCandidate(Reference Reference, string DeclaringType, string AccessorName,\n    string? ScopeKind, string? ScopeIdentity, bool HasThis, bool ExplicitThis, string CallingConvention,\n    int GenericParameterCount, string ReturnTypeIdentity, string[] ParameterTypeIdentities,\n    string DefinitionResolution);\n"
+    },
+    "build": {
+      "exit_code": 0,
+      "seconds": 1.98,
+      "warnings": 0,
+      "errors": 0
+    },
+    "preliminaryFailure": {
+      "exit_code": 1,
+      "seconds": 0.32,
+      "cause": "Relative CecilAssemblyPath interpreted relative to tool project; corrected to an existing absolute Cecil path."
+    }
+  },
+  "inventoryComparison": [
+    {
+      "input": "game",
+      "originalFieldsEqual": 35,
+      "limitationsPrefixEqual": true,
+      "candidateCount": 82,
+      "notResolved": true
+    },
+    {
+      "input": "runtime",
+      "originalFieldsEqual": 35,
+      "limitationsPrefixEqual": true,
+      "candidateCount": 10,
+      "notResolved": true
+    }
+  ],
+  "gameCounts": {
+    "localEvents": 21,
+    "localAccessorReferences": 82,
+    "candidateReferences": 82
+  },
+  "runtimeCounts": {
+    "localEvents": 0,
+    "localAccessorReferences": 0,
+    "candidateReferences": 10,
+    "add": 5,
+    "remove": 5
+  },
+  "runtimeCandidates": [
+    {
+      "Reference": {
+        "Caller": "System.Boolean STS2RitsuLib.CardPiles.ModExtraHandPlayCoordinator::TryBegin(STS2RitsuLib.CardPiles.Nodes.NModExtraHand,MegaCrit.Sts2.Core.Nodes.Cards.Holders.NHandCardHolder)",
+        "Target": "System.Void MegaCrit.Sts2.Core.Entities.Cards.CardPile::add_CardRemoved(System.Action`1<MegaCrit.Sts2.Core.Models.CardModel>)",
+        "Kind": "callvirt",
+        "Offset": 134,
+        "Owner": "STS2RitsuLib.CardPiles.ModExtraHandPlayCoordinator",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100686319,
+        "OperandMetadataToken": 167784551
+      },
+      "DeclaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+      "AccessorName": "add_CardRemoved",
+      "ScopeKind": "AssemblyNameReference",
+      "ScopeIdentity": "sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+      "HasThis": true,
+      "ExplicitThis": false,
+      "CallingConvention": "Default",
+      "GenericParameterCount": 0,
+      "ReturnTypeIdentity": "System.Void@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+      "ParameterTypeIdentities": [
+        "System.Action`1@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a<MegaCrit.Sts2.Core.Models.CardModel@sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null>"
+      ],
+      "DefinitionResolution": "not-resolved"
+    },
+    {
+      "Reference": {
+        "Caller": "System.Void STS2RitsuLib.CardPiles.ModExtraHandPlayCoordinator::ClearOrigin(STS2RitsuLib.CardPiles.ModExtraHandPlayCoordinator/PlayOrigin)",
+        "Target": "System.Void MegaCrit.Sts2.Core.Entities.Cards.CardPile::remove_CardRemoved(System.Action`1<MegaCrit.Sts2.Core.Models.CardModel>)",
+        "Kind": "callvirt",
+        "Offset": 67,
+        "Owner": "STS2RitsuLib.CardPiles.ModExtraHandPlayCoordinator",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100686331,
+        "OperandMetadataToken": 167784566
+      },
+      "DeclaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+      "AccessorName": "remove_CardRemoved",
+      "ScopeKind": "AssemblyNameReference",
+      "ScopeIdentity": "sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+      "HasThis": true,
+      "ExplicitThis": false,
+      "CallingConvention": "Default",
+      "GenericParameterCount": 0,
+      "ReturnTypeIdentity": "System.Void@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+      "ParameterTypeIdentities": [
+        "System.Action`1@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a<MegaCrit.Sts2.Core.Models.CardModel@sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null>"
+      ],
+      "DefinitionResolution": "not-resolved"
+    },
+    {
+      "Reference": {
+        "Caller": "System.Void STS2RitsuLib.CardPiles.Patches.ModCardPileScreenViewController::Install()",
+        "Target": "System.Void MegaCrit.Sts2.Core.Entities.Cards.CardPile::add_ContentsChanged(System.Action)",
+        "Kind": "callvirt",
+        "Offset": 80,
+        "Owner": "STS2RitsuLib.CardPiles.Patches.ModCardPileScreenViewController",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100686407,
+        "OperandMetadataToken": 167784589
+      },
+      "DeclaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+      "AccessorName": "add_ContentsChanged",
+      "ScopeKind": "AssemblyNameReference",
+      "ScopeIdentity": "sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+      "HasThis": true,
+      "ExplicitThis": false,
+      "CallingConvention": "Default",
+      "GenericParameterCount": 0,
+      "ReturnTypeIdentity": "System.Void@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+      "ParameterTypeIdentities": [
+        "System.Action@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+      ],
+      "DefinitionResolution": "not-resolved"
+    },
+    {
+      "Reference": {
+        "Caller": "System.Void STS2RitsuLib.CardPiles.Patches.ModCardPileScreenViewController::OnScreenTreeExiting()",
+        "Target": "System.Void MegaCrit.Sts2.Core.Entities.Cards.CardPile::remove_ContentsChanged(System.Action)",
+        "Kind": "callvirt",
+        "Offset": 23,
+        "Owner": "STS2RitsuLib.CardPiles.Patches.ModCardPileScreenViewController",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100686409,
+        "OperandMetadataToken": 167784592
+      },
+      "DeclaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+      "AccessorName": "remove_ContentsChanged",
+      "ScopeKind": "AssemblyNameReference",
+      "ScopeIdentity": "sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+      "HasThis": true,
+      "ExplicitThis": false,
+      "CallingConvention": "Default",
+      "GenericParameterCount": 0,
+      "ReturnTypeIdentity": "System.Void@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+      "ParameterTypeIdentities": [
+        "System.Action@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+      ],
+      "DefinitionResolution": "not-resolved"
+    },
+    {
+      "Reference": {
+        "Caller": "System.Void STS2RitsuLib.CardPiles.Nodes.NModCardPileButton::AttachPile(STS2RitsuLib.CardPiles.ModCardPile)",
+        "Target": "System.Void MegaCrit.Sts2.Core.Entities.Cards.CardPile::add_ContentsChanged(System.Action)",
+        "Kind": "callvirt",
+        "Offset": 64,
+        "Owner": "STS2RitsuLib.CardPiles.Nodes.NModCardPileButton",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100686560,
+        "OperandMetadataToken": 167784589
+      },
+      "DeclaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+      "AccessorName": "add_ContentsChanged",
+      "ScopeKind": "AssemblyNameReference",
+      "ScopeIdentity": "sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+      "HasThis": true,
+      "ExplicitThis": false,
+      "CallingConvention": "Default",
+      "GenericParameterCount": 0,
+      "ReturnTypeIdentity": "System.Void@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+      "ParameterTypeIdentities": [
+        "System.Action@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+      ],
+      "DefinitionResolution": "not-resolved"
+    },
+    {
+      "Reference": {
+        "Caller": "System.Void STS2RitsuLib.CardPiles.Nodes.NModCardPileButton::AttachPile(STS2RitsuLib.CardPiles.ModCardPile)",
+        "Target": "System.Void MegaCrit.Sts2.Core.Entities.Cards.CardPile::add_CardAddFinished(System.Action)",
+        "Kind": "callvirt",
+        "Offset": 87,
+        "Owner": "STS2RitsuLib.CardPiles.Nodes.NModCardPileButton",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100686560,
+        "OperandMetadataToken": 167784642
+      },
+      "DeclaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+      "AccessorName": "add_CardAddFinished",
+      "ScopeKind": "AssemblyNameReference",
+      "ScopeIdentity": "sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+      "HasThis": true,
+      "ExplicitThis": false,
+      "CallingConvention": "Default",
+      "GenericParameterCount": 0,
+      "ReturnTypeIdentity": "System.Void@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+      "ParameterTypeIdentities": [
+        "System.Action@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+      ],
+      "DefinitionResolution": "not-resolved"
+    },
+    {
+      "Reference": {
+        "Caller": "System.Void STS2RitsuLib.CardPiles.Nodes.NModCardPileButton::AttachPile(STS2RitsuLib.CardPiles.ModCardPile)",
+        "Target": "System.Void MegaCrit.Sts2.Core.Entities.Cards.CardPile::add_CardRemoveFinished(System.Action)",
+        "Kind": "callvirt",
+        "Offset": 110,
+        "Owner": "STS2RitsuLib.CardPiles.Nodes.NModCardPileButton",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100686560,
+        "OperandMetadataToken": 167784643
+      },
+      "DeclaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+      "AccessorName": "add_CardRemoveFinished",
+      "ScopeKind": "AssemblyNameReference",
+      "ScopeIdentity": "sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+      "HasThis": true,
+      "ExplicitThis": false,
+      "CallingConvention": "Default",
+      "GenericParameterCount": 0,
+      "ReturnTypeIdentity": "System.Void@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+      "ParameterTypeIdentities": [
+        "System.Action@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+      ],
+      "DefinitionResolution": "not-resolved"
+    },
+    {
+      "Reference": {
+        "Caller": "System.Void STS2RitsuLib.CardPiles.Nodes.NModCardPileButton::DetachPile()",
+        "Target": "System.Void MegaCrit.Sts2.Core.Entities.Cards.CardPile::remove_ContentsChanged(System.Action)",
+        "Kind": "callvirt",
+        "Offset": 27,
+        "Owner": "STS2RitsuLib.CardPiles.Nodes.NModCardPileButton",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100686566,
+        "OperandMetadataToken": 167784592
+      },
+      "DeclaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+      "AccessorName": "remove_ContentsChanged",
+      "ScopeKind": "AssemblyNameReference",
+      "ScopeIdentity": "sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+      "HasThis": true,
+      "ExplicitThis": false,
+      "CallingConvention": "Default",
+      "GenericParameterCount": 0,
+      "ReturnTypeIdentity": "System.Void@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+      "ParameterTypeIdentities": [
+        "System.Action@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+      ],
+      "DefinitionResolution": "not-resolved"
+    },
+    {
+      "Reference": {
+        "Caller": "System.Void STS2RitsuLib.CardPiles.Nodes.NModCardPileButton::DetachPile()",
+        "Target": "System.Void MegaCrit.Sts2.Core.Entities.Cards.CardPile::remove_CardAddFinished(System.Action)",
+        "Kind": "callvirt",
+        "Offset": 50,
+        "Owner": "STS2RitsuLib.CardPiles.Nodes.NModCardPileButton",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100686566,
+        "OperandMetadataToken": 167784648
+      },
+      "DeclaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+      "AccessorName": "remove_CardAddFinished",
+      "ScopeKind": "AssemblyNameReference",
+      "ScopeIdentity": "sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+      "HasThis": true,
+      "ExplicitThis": false,
+      "CallingConvention": "Default",
+      "GenericParameterCount": 0,
+      "ReturnTypeIdentity": "System.Void@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+      "ParameterTypeIdentities": [
+        "System.Action@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+      ],
+      "DefinitionResolution": "not-resolved"
+    },
+    {
+      "Reference": {
+        "Caller": "System.Void STS2RitsuLib.CardPiles.Nodes.NModCardPileButton::DetachPile()",
+        "Target": "System.Void MegaCrit.Sts2.Core.Entities.Cards.CardPile::remove_CardRemoveFinished(System.Action)",
+        "Kind": "callvirt",
+        "Offset": 73,
+        "Owner": "STS2RitsuLib.CardPiles.Nodes.NModCardPileButton",
+        "GenericArguments": [],
+        "CallerDefinitionToken": 100686566,
+        "OperandMetadataToken": 167784649
+      },
+      "DeclaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+      "AccessorName": "remove_CardRemoveFinished",
+      "ScopeKind": "AssemblyNameReference",
+      "ScopeIdentity": "sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+      "HasThis": true,
+      "ExplicitThis": false,
+      "CallingConvention": "Default",
+      "GenericParameterCount": 0,
+      "ReturnTypeIdentity": "System.Void@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+      "ParameterTypeIdentities": [
+        "System.Action@System.Runtime, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+      ],
+      "DefinitionResolution": "not-resolved"
+    }
+  ],
+  "candidateSemantics": [
+    {
+      "source": "ModExtraHandPlayCoordinator",
+      "references": 2,
+      "bodyFinding": "TryBegin installs a closure for OnSourceCardRemoved; ClearOrigin mutates _active, PendingOrigins and origin.Closed, then removes the subscription.",
+      "certified": false
+    },
+    {
+      "source": "ModCardPileScreenViewController",
+      "references": 2,
+      "bodyFinding": "Install subscribes RefreshCards, which calls NCardGrid.SetCards with current pile order. It is not resolved as gameplay-pure by this audit.",
+      "certified": false
+    },
+    {
+      "source": "NModCardPileButton",
+      "references": 6,
+      "bodyFinding": "AttachPile installs three handlers. Contents/finished handlers read pile count and change node text/tweens; the whole indirect UI/extension chain remains unaudited.",
+      "certified": false
+    }
+  ],
+  "nativeSourceEvidence": [
+    {
+      "path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/native/ModExtraHandPlayCoordinator.cs",
+      "sha256": "bcf5c8eb4c98039843dbf27d6a661a20842486939787c5d9937e1f643a2b80eb",
+      "signature": "private static void OnSourceCardRemoved(",
+      "line": 352,
+      "text": "private static void OnSourceCardRemoved(PlayOrigin origin, CardModel removed)\n\t{\n\t\tif (origin.Card == removed)\n\t\t{\n\t\t\tClearOrigin(origin);\n\t\t}\n\t}"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/native/ModExtraHandPlayCoordinator.cs",
+      "sha256": "bcf5c8eb4c98039843dbf27d6a661a20842486939787c5d9937e1f643a2b80eb",
+      "signature": "private static void ClearOrigin(",
+      "line": 360,
+      "text": "private static void ClearOrigin(PlayOrigin origin)\n\t{\n\t\tif (_active == origin)\n\t\t{\n\t\t\t_active = null;\n\t\t}\n\t\tif (!origin.Closed)\n\t\t{\n\t\t\torigin.Closed = true;\n\t\t\tPendingOrigins.Remove(origin.Card);\n\t\t\tif (origin.SourceCardRemoved != null)\n\t\t\t{\n\t\t\t\torigin.SourcePile.CardRemoved -= origin.SourceCardRemoved;\n\t\t\t}\n\t\t\torigin.SourceCardRemoved = null;\n\t\t}\n\t}"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/native/ModCardPileScreenViewController.cs",
+      "sha256": "10883ab5a55ce6622738868be717066b359435abcca01af813bdc2d96235ce6a",
+      "signature": "public void Install(",
+      "line": 57,
+      "text": "public void Install()\n\t{\n\t\tif (<view>P.EnableCardInspect)\n\t\t{\n\t\t\tInstallCardInspection();\n\t\t}\n\t\tif (<view>P.EnableSortBar)\n\t\t{\n\t\t\tInstallToolbar();\n\t\t}\n\t\tif (<view>P.EnableUpgradePreviewToggle)\n\t\t{\n\t\t\tInstallUpgradeToggle();\n\t\t}\n\t\t<screen>P.Pile.ContentsChanged += RefreshCards;\n\t\t((Node)<screen>P).TreeExiting += OnScreenTreeExiting;\n\t\t((Control)<grid>P).Resized += LayoutToolbar;\n\t\tActiveScreenContext.Instance.Updated += UpdateInputState;\n\t\tUpdateInputState();\n\t\tRefreshCards();\n\t}"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/native/ModCardPileScreenViewController.cs",
+      "sha256": "10883ab5a55ce6622738868be717066b359435abcca01af813bdc2d96235ce6a",
+      "signature": "public void RefreshCards(",
+      "line": 79,
+      "text": "public void RefreshCards()\n\t{\n\t\t//IL_0039: Unknown result type (might be due to invalid IL or missing references)\n\t\tif (GodotObject.IsInstanceValid((GodotObject)(object)<grid>P))\n\t\t{\n\t\t\t<grid>P.SetCards((IReadOnlyList<CardModel>)new global::<>z__ReadOnlyArray<CardModel>(<screen>P.Pile.Cards.ToArray()), <screen>P.Pile.Type, _sortingPriority.ToList(), (Task)null);\n\t\t}\n\t}"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/native/NModCardPileButton.cs",
+      "sha256": "8dbdffcf3b9dfc75a8e7bc5a0f6aba5a6a7609c94740191d3590807412f4e882",
+      "signature": "private void AttachPile(",
+      "line": 1282,
+      "text": "private void AttachPile(ModCardPile? pile)\n\t{\n\t\t//IL_0080: Unknown result type (might be due to invalid IL or missing references)\n\t\tif (_pile != pile)\n\t\t{\n\t\t\tDetachPile();\n\t\t\t_pile = pile;\n\t\t\tif (_pile != null && !(Definition == null))\n\t\t\t{\n\t\t\t\t((CardPile)_pile).ContentsChanged += OnPileContentsChanged;\n\t\t\t\t((CardPile)_pile).CardAddFinished += OnCardAddFinished;\n\t\t\t\t((CardPile)_pile).CardRemoveFinished += OnCardRemoveFinished;\n\t\t\t\tRefreshPileCount();\n\t\t\t\t_hoverTip = ModCardPileHoverTipFactory.Create(Definition);\n\t\t\t}\n\t\t}\n\t}"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/native/NModCardPileButton.cs",
+      "sha256": "8dbdffcf3b9dfc75a8e7bc5a0f6aba5a6a7609c94740191d3590807412f4e882",
+      "signature": "private void DetachPile(",
+      "line": 1508,
+      "text": "private void DetachPile()\n\t{\n\t\tif (_pile != null)\n\t\t{\n\t\t\t((CardPile)_pile).ContentsChanged -= OnPileContentsChanged;\n\t\t\t((CardPile)_pile).CardAddFinished -= OnCardAddFinished;\n\t\t\t((CardPile)_pile).CardRemoveFinished -= OnCardRemoveFinished;\n\t\t\t_pile = null;\n\t\t}\n\t}"
+    }
+  ],
+  "nativeSimulationBoundary": {
+    "nativeCardPileAdd": "IsCombatPile && CombatManager.IsInProgress => Tracker.Subscribe(card), even when silent; silent skips pile event invocations.",
+    "nativeCardPileRemove": "IsCombatPile => Tracker.Unsubscribe(card); silent skips CardRemoved/ContentsChanged/CardRemoveFinished.",
+    "simulationPile": "SimCardPile changes its list/owner/cache only. AddToPile invokes a prediction card-event sink for a first combat entry; generation then invokes AfterCardGeneratedForCombat mirrors.",
+    "nativeClone": "CardModel.DeepCloneFields reattaches cloned enchantment/affliction before CardModel.AfterCloned clears ten declared events.",
+    "simulationClone": "PredictionUtils removes declared CardModel event fields before DeepCloneFields. AbstractModel.ExecutionFinished is inherited, so this detacher alone does not clear it.",
+    "conclusion": "Order of subscription removal is different; no complete cloning, generation or future event equivalence is certified by this metadata check.",
+    "evidencePaths": [
+      "src/Engine/Common/SimCardPile.cs",
+      "src/Engine/Common/PredictionUtils.cs",
+      "src/Engine/InCombat/Simulation/CombatPredictionSimulator.CardPile.cs",
+      ".local/tool-tasks/exhaust-equivalence-certification-20261007/native/CardPile.cs",
+      ".local/tool-tasks/intrinsic-card-value-20261006/native-source/CardModel.cs"
+    ]
+  },
+  "metadataChecks": {
+    "result.json": {
+      "passed": 9,
+      "checks": [
+        {
+          "name": "inherited-chain",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.Leaf::Do()",
+          "status": "resolved-local",
+          "rootSlot": "System.Void MegaCrit.Sts2.Core.Models.AbstractModel::Do()",
+          "hookTarget": true,
+          "chainLength": 3
+        },
+        {
+          "name": "overload-new-slot",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.Leaf::Do(System.Int32)",
+          "status": "resolved-local",
+          "rootSlot": "System.Void MegaCrit.Sts2.Core.Models.Leaf::Do(System.Int32)",
+          "hookTarget": false,
+          "chainLength": 1
+        },
+        {
+          "name": "same-name-hiding",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.NewLeaf::Do()",
+          "status": "resolved-local",
+          "rootSlot": "System.Void MegaCrit.Sts2.Core.Models.NewLeaf::Do()",
+          "hookTarget": false,
+          "chainLength": 1
+        },
+        {
+          "name": "external-homonym",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.ExternalLeaf::Do()",
+          "status": "external-or-unresolved-base",
+          "rootSlot": "MegaCrit.Sts2.Core.Models.AbstractModel",
+          "hookTarget": false,
+          "chainLength": 1
+        },
+        {
+          "name": "external-parameter-homonym",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.Leaf::WithValue(MegaCrit.Sts2.Core.Models.Value)",
+          "status": "external-or-unresolved-base",
+          "rootSlot": "System.Object",
+          "hookTarget": false,
+          "chainLength": 1
+        },
+        {
+          "name": "covariant-return",
+          "method": "System.String MegaCrit.Sts2.Core.Models.Covariant::GetValue()",
+          "status": "covariant-or-unresolved-return",
+          "rootSlot": "System.Object MegaCrit.Sts2.Core.Models.AbstractModel::GetValue()",
+          "hookTarget": false,
+          "chainLength": 1
+        },
+        {
+          "name": "closest-covariant-base",
+          "method": "System.Object MegaCrit.Sts2.Core.Models.AfterCovariant::GetValue()",
+          "status": "covariant-or-unresolved-return",
+          "rootSlot": "System.String MegaCrit.Sts2.Core.Models.Covariant::GetValue()",
+          "hookTarget": false,
+          "chainLength": 1
+        },
+        {
+          "name": "explicit-renamed-slot",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.ExplicitLeaf::Renamed()",
+          "status": "resolved-local",
+          "rootSlot": "System.Void MegaCrit.Sts2.Core.Models.AbstractModel::Do()",
+          "hookTarget": true,
+          "chainLength": 2
+        },
+        {
+          "name": "multiple-explicit-slots",
+          "method": "System.Void MegaCrit.Sts2.Core.Models.ExplicitLeaf::Multiple()",
+          "status": "multiple-explicit-slots",
+          "rootSlot": null,
+          "hookTarget": false,
+          "chainLength": 1
+        }
+      ],
+      "nativeExecution": false,
+      "scannerOutput": "{\"dllSha256\":\"8b0555dbff08f76eaf413c681a4a6d29e392e05a3a669e5e564a0d349a7880a7\",\"typeCount\":11,\"methodCount\":15,\"methodsWithBody\":15,\"healthEntryCount\":0,\"healthReferenceCount\":0,\"sourceOwnerCount\":0,\"fieldWriteCount\":0,\"potionEntryCount\":0,\"potionSlotFieldReferenceCount\":0,\"potionEventReferenceCount\":0,\"cardPileEntryCount\":0,\"cardPileFieldReferenceCount\":0,\"cardStateEventCount\":0,\"cardStateEventReferenceCount\":0,\"cardStateEventAccessorCandidateCount\":0,\"nativeHookModelTargetCount\":1,\"virtualModelSlotCount\":14,\"unresolvedVirtualModelSlotCount\":5}\n",
+      "scannerError": ""
+    },
+    "ambiguity-result.json": {
+      "passed": 5,
+      "checks": [
+        "same-display-generic-arity-retained-and-conservative",
+        "ambiguous-explicit-slot-refused",
+        "duplicate-declaring-types-retained-and-refused",
+        "duplicate-base-type-refused",
+        "caller-and-operand-tokens-distinguish-call-sites"
+      ],
+      "nativeExecution": false,
+      "scannerOutput": "{\"dllSha256\":\"61ad13bcb90a44b1c0684e601d032be7bd3838f9ca11f1f7966fcfc9d836abd7\",\"typeCount\":7,\"methodCount\":8,\"methodsWithBody\":8,\"healthEntryCount\":0,\"healthReferenceCount\":0,\"sourceOwnerCount\":0,\"fieldWriteCount\":0,\"potionEntryCount\":0,\"potionSlotFieldReferenceCount\":0,\"potionEventReferenceCount\":0,\"cardPileEntryCount\":0,\"cardPileFieldReferenceCount\":0,\"cardStateEventCount\":0,\"cardStateEventReferenceCount\":0,\"cardStateEventAccessorCandidateCount\":0,\"nativeHookModelTargetCount\":0,\"virtualModelSlotCount\":6,\"unresolvedVirtualModelSlotCount\":6}\n",
+      "scannerError": ""
+    },
+    "event-result.json": {
+      "passed": 7,
+      "checks": [
+        "local-event-list-stays-local",
+        "external-add-and-remove-retained",
+        "assembly-and-version-homonyms-distinguished",
+        "instance-shape-retained",
+        "delegate-creation-is-not-execution",
+        "unknown-name-never-certified-and-nonaccessors-excluded",
+        "caller-and-operand-tokens-preserved"
+      ],
+      "nativeExecution": false,
+      "scannerOutput": "{\"dllSha256\":\"f67324598fafd3989f9812025696304e654649d858d24b497b2ee45042296531\",\"typeCount\":3,\"methodCount\":11,\"methodsWithBody\":11,\"healthEntryCount\":0,\"healthReferenceCount\":0,\"sourceOwnerCount\":0,\"fieldWriteCount\":0,\"potionEntryCount\":0,\"potionSlotFieldReferenceCount\":0,\"potionEventReferenceCount\":0,\"cardPileEntryCount\":0,\"cardPileFieldReferenceCount\":0,\"cardStateEventCount\":1,\"cardStateEventReferenceCount\":1,\"cardStateEventAccessorCandidateCount\":8,\"nativeHookModelTargetCount\":0,\"virtualModelSlotCount\":0,\"unresolvedVirtualModelSlotCount\":0}\n",
+      "scannerError": ""
+    }
+  },
+  "fixtureBuild": {
+    "exit_code": 0,
+    "seconds": 2.11,
+    "warnings": 0,
+    "errors": 0
+  },
+  "fixtureSources": [
+    {
+      "path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/MetadataFixture.cs",
+      "bytes": 13649,
+      "sha256": "5863cb6e7ccb45ac5bb57e2a0c09531454e89c951e05336fa03fe06bc06a4584",
+      "text": "using System.Diagnostics;\nusing System.Text.Json;\nusing Mono.Cecil;\nusing Mono.Cecil.Cil;\n\nif (args.Length != 2) throw new ArgumentException(\"Usage: fixture audit.dll output-directory\");\nstring directory = Path.GetFullPath(args[1]);\nDirectory.CreateDirectory(directory);\nusing AssemblyDefinition assembly = AssemblyDefinition.CreateAssembly(\n    new AssemblyNameDefinition(\"SlotMetadataFixture\", new Version(1, 0)), \"SlotMetadataFixture.dll\", ModuleKind.Dll);\nModuleDefinition module = assembly.MainModule;\nconst string ns = \"MegaCrit.Sts2.Core.Models\";\nTypeDefinition root = AddType(ns, \"AbstractModel\", module.TypeSystem.Object);\nMethodDefinition rootDo = AddMethod(root, \"Do\", module.TypeSystem.Void, newSlot: true);\nMethodDefinition rootGet = AddMethod(root, \"GetValue\", module.TypeSystem.Object, newSlot: true);\nMethodDefinition rootOther = AddMethod(root, \"Other\", module.TypeSystem.Void, newSlot: true);\nTypeDefinition middle = AddType(ns, \"Middle\", root);\nMethodDefinition middleDo = AddMethod(middle, \"Do\", module.TypeSystem.Void, newSlot: false);\nTypeDefinition leaf = AddType(ns, \"Leaf\", middle);\nMethodDefinition leafDo = AddMethod(leaf, \"Do\", module.TypeSystem.Void, newSlot: false);\nMethodDefinition leafOverload = AddMethod(leaf, \"Do\", module.TypeSystem.Void, newSlot: true);\nleafOverload.Parameters.Add(new ParameterDefinition(\"value\", ParameterAttributes.None, module.TypeSystem.Int32));\nTypeDefinition newLeaf = AddType(ns, \"NewLeaf\", middle);\nMethodDefinition hiding = AddMethod(newLeaf, \"Do\", module.TypeSystem.Void, newSlot: true);\n\n// The external parent has exactly the same FullName as the local root. The\n// scanner must preserve its different assembly scope rather than bind locally.\nvar externalAssembly = new AssemblyNameReference(\"ForeignModels\", new Version(1, 0));\nmodule.AssemblyReferences.Add(externalAssembly);\nvar externalParent = new TypeReference(ns, \"AbstractModel\", module, externalAssembly);\nTypeDefinition externalLeaf = AddType(ns, \"ExternalLeaf\", externalParent);\nMethodDefinition externalDo = AddMethod(externalLeaf, \"Do\", module.TypeSystem.Void, newSlot: false);\nTypeDefinition localValue = AddType(ns, \"Value\", module.TypeSystem.Object);\nvar externalValue = new TypeReference(ns, \"Value\", module, externalAssembly);\nMethodDefinition rootWithValue = AddMethod(root, \"WithValue\", module.TypeSystem.Void, newSlot: true);\nrootWithValue.Parameters.Add(new ParameterDefinition(\"value\", ParameterAttributes.None, localValue));\nMethodDefinition externalParameter = AddMethod(leaf, \"WithValue\", module.TypeSystem.Void, newSlot: false);\nexternalParameter.Parameters.Add(new ParameterDefinition(\"value\", ParameterAttributes.None, externalValue));\n\n// Covariant-looking reuse is an explicit unknown for this metadata tool.\n// The closest base must not be skipped to bind an older matching return type.\nTypeDefinition covariant = AddType(ns, \"Covariant\", root);\nMethodDefinition covariantGet = AddMethod(covariant, \"GetValue\", module.TypeSystem.String, newSlot: false);\nTypeDefinition afterCovariant = AddType(ns, \"AfterCovariant\", covariant);\nMethodDefinition afterCovariantGet = AddMethod(afterCovariant, \"GetValue\", module.TypeSystem.Object, newSlot: false);\nTypeDefinition explicitLeaf = AddType(ns, \"ExplicitLeaf\", root);\nMethodDefinition renamed = AddMethod(explicitLeaf, \"Renamed\", module.TypeSystem.Void, newSlot: true);\nrenamed.Overrides.Add(rootDo);\nMethodDefinition multiple = AddMethod(explicitLeaf, \"Multiple\", module.TypeSystem.Void, newSlot: true);\nmultiple.Overrides.Add(rootDo);\nmultiple.Overrides.Add(rootOther);\n\n// Supply one actual Hook call edge, so same-name hiding is checked against\n// the referenced root slot rather than inferred from its name.\nTypeDefinition hook = AddType(\"MegaCrit.Sts2.Core.Hooks\", \"Hook\", module.TypeSystem.Object);\nvar dispatch = new MethodDefinition(\"Dispatch\", MethodAttributes.Public | MethodAttributes.Static, module.TypeSystem.Void);\nhook.Methods.Add(dispatch);\ndispatch.Parameters.Add(new ParameterDefinition(\"model\", ParameterAttributes.None, root));\ndispatch.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));\ndispatch.Body.Instructions.Add(Instruction.Create(OpCodes.Callvirt, rootDo));\ndispatch.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));\nstring dll = Path.Combine(directory, \"fixture.dll\");\nassembly.Write(dll);\nstring output = Path.Combine(directory, \"audit.json\");\nvar start = new ProcessStartInfo(\"dotnet\") { RedirectStandardOutput = true, RedirectStandardError = true };\nstart.ArgumentList.Add(Path.GetFullPath(args[0])); start.ArgumentList.Add(dll); start.ArgumentList.Add(output);\nusing Process process = Process.Start(start) ?? throw new InvalidOperationException(\"Could not start audit tool\");\nTask<string> stdout = process.StandardOutput.ReadToEndAsync();\nTask<string> stderr = process.StandardError.ReadToEndAsync();\nawait process.WaitForExitAsync();\nif (process.ExitCode != 0) throw new InvalidOperationException(await stdout + await stderr);\nusing JsonDocument json = JsonDocument.Parse(File.ReadAllText(output));\nDictionary<string, JsonElement> slots = json.RootElement.GetProperty(\"virtualModelSlots\")\n    .EnumerateArray().ToDictionary(slot => slot.GetProperty(\"Method\").GetString()!);\nvar checks = new List<object>();\nCheck(\"inherited-chain\", leafDo, \"resolved-local\", rootDo.FullName, true, 3);\nCheck(\"overload-new-slot\", leafOverload, \"resolved-local\", leafOverload.FullName, false, 1);\nCheck(\"same-name-hiding\", hiding, \"resolved-local\", hiding.FullName, false, 1);\nCheck(\"external-homonym\", externalDo, \"external-or-unresolved-base\", externalParent.FullName, false, 1);\nCheck(\"external-parameter-homonym\", externalParameter, \"external-or-unresolved-base\", module.TypeSystem.Object.FullName, false, 1);\nCheck(\"covariant-return\", covariantGet, \"covariant-or-unresolved-return\", rootGet.FullName, false, 1);\nCheck(\"closest-covariant-base\", afterCovariantGet, \"covariant-or-unresolved-return\", covariantGet.FullName, false, 1);\nCheck(\"explicit-renamed-slot\", renamed, \"resolved-local\", rootDo.FullName, true, 2);\nCheck(\"multiple-explicit-slots\", multiple, \"multiple-explicit-slots\", null, false, 1);\nstring result = JsonSerializer.Serialize(new { passed = checks.Count, checks, nativeExecution = false,\n    scannerOutput = await stdout, scannerError = await stderr }, new JsonSerializerOptions { WriteIndented = true });\nFile.WriteAllText(Path.Combine(directory, \"result.json\"), result + \"\\n\");\nConsole.WriteLine($\"SLOT_METADATA_BOUNDARIES_OK cases={checks.Count}\");\n\n\nusing (AssemblyDefinition ambiguityAssembly = AssemblyDefinition.CreateAssembly(\n    new AssemblyNameDefinition(\"AmbiguityMetadataFixture\", new Version(1, 0)), \"AmbiguityMetadataFixture.dll\", ModuleKind.Dll))\n{\n    ModuleDefinition am = ambiguityAssembly.MainModule;\n    TypeDefinition AT(string name, TypeReference parent)\n    {\n        var type = new TypeDefinition(ns, name, TypeAttributes.Public | TypeAttributes.Class, parent);\n        am.Types.Add(type); return type;\n    }\n    MethodDefinition AM(TypeDefinition type, string name, bool isNewSlot = true)\n    {\n        var attrs = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig;\n        if (isNewSlot) attrs |= MethodAttributes.NewSlot;\n        var method = new MethodDefinition(name, attrs, am.TypeSystem.Void);\n        type.Methods.Add(method);method.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));return method;\n    }\n    var ar = AT(\"GenericArityRoot\", am.TypeSystem.Object);\n    var nonGeneric = AM(ar, \"Same\");\n    var generic = AM(ar, \"Same\");\n    generic.GenericParameters.Add(new GenericParameter(\"Unused\", generic));\n    if (nonGeneric.FullName != generic.FullName) throw new InvalidOperationException(\"No display-signature collision in fixture.\");\n    var alias = AM(AT(\"ExplicitAlias\", ar), \"Alias\");alias.Overrides.Add(nonGeneric);\n    var twinOne = AT(\"DuplicateType\", am.TypeSystem.Object);\n    var twinTwo = AT(\"DuplicateType\", am.TypeSystem.Object);\n    AM(twinOne, \"Do\");AM(twinTwo, \"Do\");\n    AM(AT(\"DerivedFromDuplicateType\", twinOne), \"Do\", false);\n    var calls = AT(\"CallSites\", am.TypeSystem.Object);\n    foreach (var (name, target) in new[] { (\"CallPlain\", (MethodReference)nonGeneric),\n        (\"CallGeneric\", (MethodReference)new GenericInstanceMethod(generic)) })\n    {\n        if (target is GenericInstanceMethod constructed) constructed.GenericArguments.Add(am.TypeSystem.String);\n        var method = new MethodDefinition(name, MethodAttributes.Public | MethodAttributes.Static, am.TypeSystem.Void);\n        calls.Methods.Add(method);\n        method.Body.Instructions.Add(Instruction.Create(OpCodes.Ldnull));\n        method.Body.Instructions.Add(Instruction.Create(OpCodes.Callvirt, target));\n        method.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));\n    }\n    string ambiguityDll = Path.Combine(directory, \"ambiguity-fixture.dll\");ambiguityAssembly.Write(ambiguityDll);\n    string ambiguityOutput = Path.Combine(directory, \"ambiguity-audit.json\");\n    var astart = new ProcessStartInfo(\"dotnet\") { RedirectStandardOutput = true, RedirectStandardError = true };\n    astart.ArgumentList.Add(Path.GetFullPath(args[0]));astart.ArgumentList.Add(ambiguityDll);astart.ArgumentList.Add(ambiguityOutput);\n    using Process ap = Process.Start(astart) ?? throw new InvalidOperationException(\"Could not start ambiguity scan.\");\n    Task<string> aout = ap.StandardOutput.ReadToEndAsync(), aerr = ap.StandardError.ReadToEndAsync();\n    await ap.WaitForExitAsync();\n    if (ap.ExitCode != 0) throw new InvalidOperationException(await aout + await aerr);\n    using JsonDocument aj = JsonDocument.Parse(File.ReadAllText(ambiguityOutput));\n    JsonElement[] aslots = aj.RootElement.GetProperty(\"virtualModelSlots\").EnumerateArray().ToArray();\n    var achecks = new List<string>();\n    void ACheck(string name, bool passed)\n    {\n        if (!passed) throw new InvalidOperationException(name);achecks.Add(name);\n    }\n    JsonElement[] dupSlots = aslots.Where(row => row.GetProperty(\"Method\").GetString() == nonGeneric.FullName).ToArray();\n    ACheck(\"same-display-generic-arity-retained-and-conservative\", dupSlots.Length == 2\n        && dupSlots.All(row => row.GetProperty(\"Status\").GetString() == \"ambiguous-method-identity\")\n        && aj.RootElement.GetProperty(\"ambiguousMethodSignatures\").EnumerateArray()\n            .Single(row => row.GetProperty(\"signature\").GetString() == nonGeneric.FullName)\n            .GetProperty(\"methods\").EnumerateArray().Select(row => row.GetProperty(\"genericParameterCount\").GetInt32())\n            .Order().SequenceEqual(new[] { 0, 1 }));\n    ACheck(\"ambiguous-explicit-slot-refused\", aslots.Single(row => row.GetProperty(\"Method\").GetString() == alias.FullName)\n        .GetProperty(\"Status\").GetString() == \"ambiguous-explicit-slot\");\n    ACheck(\"duplicate-declaring-types-retained-and-refused\", aj.RootElement.GetProperty(\"ambiguousTypeSignatures\").GetArrayLength() == 1\n        && aslots.Count(row => row.GetProperty(\"Status\").GetString() == \"ambiguous-declaring-type\") == 2);\n    ACheck(\"duplicate-base-type-refused\", aslots.Count(row => row.GetProperty(\"Status\").GetString() == \"ambiguous-base-type\") == 1);\n    JsonElement[] edges = aj.RootElement.GetProperty(\"staticReferences\").EnumerateArray()\n        .Where(row => row.GetProperty(\"Target\").GetString() == nonGeneric.FullName).ToArray();\n    ACheck(\"caller-and-operand-tokens-distinguish-call-sites\", edges.Length == 2\n        && edges.Select(row => row.GetProperty(\"CallerDefinitionToken\").GetInt32()).Distinct().Count() == 2\n        && edges.Select(row => row.GetProperty(\"OperandMetadataToken\").GetInt32()).Distinct().Count() == 2\n        && edges.Select(row => row.GetProperty(\"GenericArguments\").GetArrayLength()).Order().SequenceEqual(new[] { 0, 1 }));\n    File.WriteAllText(Path.Combine(directory, \"ambiguity-result.json\"), JsonSerializer.Serialize(new {\n        passed = achecks.Count, checks = achecks, nativeExecution = false,\n        scannerOutput = await aout, scannerError = await aerr }, new JsonSerializerOptions { WriteIndented = true }) + \"\\n\");\n    Console.WriteLine($\"AMBIGUITY_METADATA_BOUNDARIES_OK cases={achecks.Count}\");\n}\n\nawait EventFixture.Run(args[0], directory);\n\nTypeDefinition AddType(string typeNamespace, string name, TypeReference parent)\n{\n    var type = new TypeDefinition(typeNamespace, name, TypeAttributes.Public | TypeAttributes.Class, parent);\n    module.Types.Add(type); return type;\n}\nMethodDefinition AddMethod(TypeDefinition type, string name, TypeReference resultType, bool newSlot)\n{\n    var attributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig;\n    if (newSlot) attributes |= MethodAttributes.NewSlot;\n    var method = new MethodDefinition(name, attributes, resultType); type.Methods.Add(method);\n    if (resultType.FullName != module.TypeSystem.Void.FullName)\n        method.Body.Instructions.Add(Instruction.Create(OpCodes.Ldnull));\n    method.Body.Instructions.Add(Instruction.Create(OpCodes.Ret)); return method;\n}\nvoid Check(string name, MethodDefinition method, string status, string? rootSlot, bool hookTarget, int chainLength)\n{\n    JsonElement slot = slots[method.FullName];\n    if (slot.GetProperty(\"Status\").GetString() != status\n        || slot.GetProperty(\"RootOrUnresolved\").GetString() != rootSlot\n        || slot.GetProperty(\"IsNativeHookTarget\").GetBoolean() != hookTarget\n        || slot.GetProperty(\"Chain\").GetArrayLength() != chainLength)\n        throw new InvalidOperationException($\"{name}: {slot.GetRawText()}\");\n    checks.Add(new { name, method = method.FullName, status, rootSlot, hookTarget, chainLength });\n}\n"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/EventFixture.cs",
+      "bytes": 7707,
+      "sha256": "796b037f62a74abb1a5536d87ef00c6005e51b96844307e01f6978ea2999fc78",
+      "text": "using System.Diagnostics;\nusing System.Text.Json;\nusing Mono.Cecil;\nusing Mono.Cecil.Cil;\n\nstatic class EventFixture\n{\n    public static async Task Run(string audit, string directory)\n    {\n        using AssemblyDefinition assembly = AssemblyDefinition.CreateAssembly(\n            new AssemblyNameDefinition(\"EventMetadataFixture\", new Version(1, 0)),\n            \"EventMetadataFixture.dll\", ModuleKind.Dll);\n        ModuleDefinition module = assembly.MainModule;\n        TypeReference action = module.ImportReference(typeof(Action));\n        var card = new TypeDefinition(\"MegaCrit.Sts2.Core.Models\", \"CardModel\",\n            TypeAttributes.Public | TypeAttributes.Class, module.TypeSystem.Object);\n        module.Types.Add(card);\n        var add = new MethodDefinition(\"add_Played\", MethodAttributes.Public | MethodAttributes.SpecialName,\n            module.TypeSystem.Void);\n        add.Parameters.Add(new ParameterDefinition(action));\n        add.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));card.Methods.Add(add);\n        card.Events.Add(new EventDefinition(\"Played\", EventAttributes.None, action) { AddMethod = add });\n        var calls = new TypeDefinition(\"Fixture\", \"Calls\", TypeAttributes.Public | TypeAttributes.Class,\n            module.TypeSystem.Object);module.Types.Add(calls);\n        var real = new AssemblyNameReference(\"ActualGame\", new Version(1, 0));\n        var wrong = new AssemblyNameReference(\"OtherGame\", new Version(1, 0));\n        var next = new AssemblyNameReference(\"ActualGame\", new Version(2, 0));\n        module.AssemblyReferences.Add(real);module.AssemblyReferences.Add(wrong);module.AssemblyReferences.Add(next);\n        MethodReference External(string ns, string type, string method, IMetadataScope scope, bool instance = true)\n        {\n            var reference = new MethodReference(method, module.TypeSystem.Void,\n                new TypeReference(ns, type, module, scope)) { HasThis = instance };\n            reference.Parameters.Add(new ParameterDefinition(action));return reference;\n        }\n        void Edge(string name, MethodReference target, bool delegateOnly = false)\n        {\n            var caller = new MethodDefinition(name, MethodAttributes.Public | MethodAttributes.Static,\n                module.TypeSystem.Void);calls.Methods.Add(caller);\n            if (delegateOnly) {\n                caller.Body.Instructions.Add(Instruction.Create(OpCodes.Ldftn, target));\n                caller.Body.Instructions.Add(Instruction.Create(OpCodes.Pop));\n            } else {\n                if (target.HasThis) caller.Body.Instructions.Add(Instruction.Create(OpCodes.Ldnull));\n                caller.Body.Instructions.Add(Instruction.Create(OpCodes.Ldnull));\n                caller.Body.Instructions.Add(Instruction.Create(OpCodes.Call, target));\n            }\n            caller.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));\n        }\n        const string ns = \"MegaCrit.Sts2.Core.Entities.Cards\";\n        Edge(\"LocalEvent\", add);\n        Edge(\"ExternalAdd\", External(ns, \"CardPile\", \"add_ContentsChanged\", real));\n        Edge(\"ExternalRemove\", External(ns, \"CardPile\", \"remove_ContentsChanged\", real));\n        Edge(\"WrongAssembly\", External(ns, \"CardPile\", \"add_ContentsChanged\", wrong));\n        Edge(\"OtherVersion\", External(ns, \"CardPile\", \"add_ContentsChanged\", next));\n        Edge(\"DifferentShape\", External(ns, \"CardPile\", \"add_ContentsChanged\", real, false));\n        Edge(\"DelegateOnly\", External(ns, \"CardPile\", \"add_CardRemoved\", real), true);\n        Edge(\"NotDefinedAsEvent\", External(ns, \"CardPile\", \"add_NotAnEvent\", real));\n        Edge(\"OrdinaryName\", External(ns, \"CardPile\", \"NotifyContentsChanged\", real));\n        Edge(\"OtherType\", External(\"Other\", \"CardPile\", \"add_ContentsChanged\", real));\n        string dll = Path.Combine(directory, \"event-fixture.dll\");assembly.Write(dll);\n        string output = Path.Combine(directory, \"event-audit.json\");\n        var start = new ProcessStartInfo(\"dotnet\") { RedirectStandardOutput = true, RedirectStandardError = true };\n        start.ArgumentList.Add(Path.GetFullPath(audit));start.ArgumentList.Add(dll);start.ArgumentList.Add(output);\n        using Process process = Process.Start(start) ?? throw new InvalidOperationException(\"Failed to start scan.\");\n        Task<string> stdout = process.StandardOutput.ReadToEndAsync(), stderr = process.StandardError.ReadToEndAsync();\n        await process.WaitForExitAsync();\n        if (process.ExitCode != 0) throw new InvalidOperationException(await stdout + await stderr);\n        using JsonDocument result = JsonDocument.Parse(File.ReadAllText(output));\n        JsonElement root = result.RootElement;\n        JsonElement[] rows = root.GetProperty(\"cardStateEventAccessorCandidates\").EnumerateArray().ToArray();\n        var checks = new List<string>();\n        void Check(string name, bool pass) {\n            if (!pass) throw new InvalidOperationException(name);checks.Add(name);\n        }\n        JsonElement Row(string name) => rows.Single(x => x.GetProperty(\"Reference\").GetProperty(\"Caller\")\n            .GetString()!.Contains(\"::\" + name + \"(\", StringComparison.Ordinal));\n        Check(\"local-event-list-stays-local\", root.GetProperty(\"cardStateEventDefinitions\").GetArrayLength() == 1\n            && root.GetProperty(\"cardStateEventReferences\").GetArrayLength() == 1 && rows.Length == 8);\n        Check(\"external-add-and-remove-retained\", Row(\"ExternalAdd\").GetProperty(\"AccessorName\").GetString() == \"add_ContentsChanged\"\n            && Row(\"ExternalRemove\").GetProperty(\"AccessorName\").GetString() == \"remove_ContentsChanged\");\n        Check(\"assembly-and-version-homonyms-distinguished\", new[] { \"ExternalAdd\", \"WrongAssembly\", \"OtherVersion\" }\n            .Select(name => Row(name).GetProperty(\"ScopeIdentity\").GetString()).Distinct().Count() == 3\n            && new[] { \"ExternalAdd\", \"WrongAssembly\", \"OtherVersion\" }.Select(name => Row(name)\n                .GetProperty(\"Reference\").GetProperty(\"Target\").GetString()).Distinct().Count() == 1);\n        Check(\"instance-shape-retained\", Row(\"ExternalAdd\").GetProperty(\"HasThis\").GetBoolean()\n            && !Row(\"DifferentShape\").GetProperty(\"HasThis\").GetBoolean()\n            && Row(\"DifferentShape\").GetProperty(\"ParameterTypeIdentities\").GetArrayLength() == 1);\n        Check(\"delegate-creation-is-not-execution\", Row(\"DelegateOnly\").GetProperty(\"Reference\")\n            .GetProperty(\"Kind\").GetString() == \"ldftn\");\n        Check(\"unknown-name-never-certified-and-nonaccessors-excluded\", rows.All(x => x\n            .GetProperty(\"DefinitionResolution\").GetString() == \"not-resolved\")\n            && Row(\"NotDefinedAsEvent\").GetProperty(\"AccessorName\").GetString() == \"add_NotAnEvent\"\n            && !rows.Any(x => x.GetProperty(\"Reference\").GetProperty(\"Caller\").GetString()!\n                .Contains(\"::OrdinaryName(\", StringComparison.Ordinal)));\n        Check(\"caller-and-operand-tokens-preserved\", rows.All(x => x.GetProperty(\"Reference\")\n            .GetProperty(\"CallerDefinitionToken\").GetInt32() != 0\n            && x.GetProperty(\"Reference\").GetProperty(\"OperandMetadataToken\").GetInt32() != 0)\n            && rows.Select(x => x.GetProperty(\"Reference\").GetProperty(\"CallerDefinitionToken\").GetInt32())\n                .Distinct().Count() == rows.Length);\n        File.WriteAllText(Path.Combine(directory, \"event-result.json\"), JsonSerializer.Serialize(new {\n            passed = checks.Count, checks, nativeExecution = false, scannerOutput = await stdout,\n            scannerError = await stderr }, new JsonSerializerOptions { WriteIndented = true }) + \"\\n\");\n        Console.WriteLine($\"EVENT_METADATA_BOUNDARIES_OK cases={checks.Count}\");\n    }\n}\n"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/EventMetadataFixture.csproj",
+      "bytes": 576,
+      "sha256": "171bc7ad1fe3bda591d676e6f3c4b5fd27caf9f8495d266a3ef4e356487eccae",
+      "text": "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <Import Project=\"../../../tools/Directory.Build.props\" />\n  <PropertyGroup>\n    <OutputType>Exe</OutputType><TargetFramework>net9.0</TargetFramework>\n    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>\n    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>\n  </PropertyGroup>\n  <ItemGroup>\n    <Compile Include=\"MetadataFixture.cs\" /><Compile Include=\"EventFixture.cs\" />\n    <Reference Include=\"Mono.Cecil\"><HintPath>$(CecilAssemblyPath)</HintPath><Private>true</Private></Reference>\n  </ItemGroup>\n</Project>\n"
+    }
+  ],
+  "fixtureInputs": [
+    {
+      "name": "event-fixture.dll",
+      "sha256": "f67324598fafd3989f9812025696304e654649d858d24b497b2ee45042296531",
+      "base64": "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AAAAACAlAAAAAAAAAAAAAAAAAAAAAAAAAABfQ29yRGxsTWFpbgBtc2NvcmVlLmRsbAAAAAAA/yUAIEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAADAAAAEA1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "name": "ambiguity-fixture.dll",
+      "sha256": "61ad13bcb90a44b1c0684e601d032be7bd3838f9ca11f1f7966fcfc9d836abd7",
+      "base64": "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"
+    },
+    {
+      "name": "fixture.dll",
+      "sha256": "8b0555dbff08f76eaf413c681a4a6d29e392e05a3a669e5e564a0d349a7880a7",
+      "base64": "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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAADAAAAKA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    }
+  ],
+  "proofRequirements": [
+    "Local empty state and absence of local event definitions are not certificates of absent future callbacks.",
+    "Freeze exact delegate method/target/order and relevant patch/registry identities on the main thread; no background live reads.",
+    "Generation/copy/return and attachment paths must preserve source certification recursively; unknown accessor candidates and new registrations reject only the proposed optimization.",
+    "Do not merge ordered states until all remaining reachable observers and writers are proved invariant, including deferred and inherited ExecutionFinished paths.",
+    "A complete legal victory and the existing resource/growth/revival/relic policy remain prerequisites for bound pruning. Unknown future semantics retain original search."
+  ],
+  "decision": {
+    "productionCertification": false,
+    "newCertifiedCandidates": 0,
+    "actualNewPrunes": 0,
+    "searchChanged": false,
+    "performanceAcceptance": false,
+    "newTwofoldScenarios": 0
+  },
+  "limitations": [
+    "Seven new checks and fourteen affected existing checks inspect Cecil metadata; no new CLR/gameplay/Fork/RNG/native differential test ran.",
+    "Accessor-name candidates include methods which are not actual event accessors; DefinitionResolution is always not-resolved.",
+    "Only seven explicit native owner types are inventoried. Reflection, aliases, inherited/interface dispatch, unknown mods and complete generation closure remain outside this candidate scan.",
+    "ILSpy cache contains missing-reference/unknown-result decompilation comments; snippets do not prove exact execution order or patch semantics.",
+    "No Coordinator request or performance measurement ran. Search speed, battle loss, potion use, turns, peak RSS and full certificate overhead have no new measurements."
+  ],
+  "rawInventories": [
+    ".local/tool-tasks/exhaust-event-reference-audit-20261007/game-reference-inventory-v7.json",
+    ".local/tool-tasks/exhaust-event-reference-audit-20261007/runtime-reference-inventory-v7.json"
+  ],
+  "reusedEvidence": [
+    "docs/performance/exhaust-free-root-contract-20261007.json",
+    "docs/performance/exhaust-cleanup-contract-20261007.json",
+    "docs/performance/retained-victory-strict-hp-pruning-20261007.json"
+  ],
+  "cleanup": {
+    "removed": [
+      {
+        "item_path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/MetadataFixture.cs",
+        "archived": true
+      },
+      {
+        "item_path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/EventFixture.cs",
+        "archived": true
+      },
+      {
+        "item_path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/EventMetadataFixture.csproj",
+        "archived": true
+      },
+      {
+        "item_path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/fixture-build",
+        "archived": true
+      },
+      {
+        "item_path": ".local/tool-tasks/exhaust-event-reference-audit-20261007/metadata-checks",
+        "archived": true
+      }
+    ],
+    "rawEvidenceRetained": true,
+    "testExecutorModified": false,
+    "headlessInstanceStarted": false,
+    "modRebuildRequired": false,
+    "deployment": "Unchanged production source/build/five-file deployment reused from retained-victory-strict-hp-pruning-20261007.json"
+  },
+  "gates": {
+    "tools": {
+      "exit_code": 0,
+      "output": "TOOLS_OK files=294 projects=37 errors=0"
+    },
+    "documentation": {
+      "exit_code": 0,
+      "output": "DOCUMENTATION_OK files=554 links=2345 errors=0"
+    },
+    "diff": {
+      "exit_code": 0,
+      "scope": "All current task modifications before staging"
+    }
+  }
+}

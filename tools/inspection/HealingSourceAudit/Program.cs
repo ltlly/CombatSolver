@@ -21,6 +21,7 @@ HashSet<string> ambiguousTypes = typeGroups.Where(group => group.Count() > 1)
 HashSet<string> ambiguousMethods = methodGroups.Where(group => group.Count() > 1)
     .Select(group => group.Key).ToHashSet(StringComparer.Ordinal);
 var references = new List<Reference>();
+var cardEventAccessorCandidates = new List<EventAccessorCandidate>();
 var fieldWrites = new List<Reference>();
 var fieldAddresses = new List<Reference>();
 var potionSlotFieldReferences = new List<Reference>();
@@ -39,12 +40,7 @@ potionInventoryEvents = potionInventoryEvents.Concat(potionUseEvents).ToArray();
 var potionEventAccessors = potionInventoryEvents.SelectMany(@event =>
     new[] { @event.AddMethod, @event.RemoveMethod }).Where(method => method is not null)
     .Select(method => method!.FullName).ToHashSet(StringComparer.Ordinal);
-EventDefinition[] cardStateEvents = types.Where(type => type.FullName is
-        "MegaCrit.Sts2.Core.Models.AbstractModel" or "MegaCrit.Sts2.Core.Models.CardModel"
-        or "MegaCrit.Sts2.Core.Models.EnchantmentModel" or "MegaCrit.Sts2.Core.Models.AfflictionModel"
-        or "MegaCrit.Sts2.Core.Entities.Cards.CardPile"
-        or "MegaCrit.Sts2.Core.Entities.Cards.CardEnergyCost"
-        or "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState")
+EventDefinition[] cardStateEvents = types.Where(type => IsCardStateEventOwner(type.FullName))
     .SelectMany(type => type.Events).ToArray();
 HashSet<string> cardEventAccessors = cardStateEvents.SelectMany(@event =>
         new[] { @event.AddMethod, @event.RemoveMethod }).Where(method => method is not null)
@@ -74,11 +70,26 @@ foreach (MethodDefinition method in methods)
         if (instruction.Operand is MethodReference callee)
         {
             MethodReference definition = callee is GenericInstanceMethod generic ? generic.ElementMethod : callee;
-            references.Add(new(method.FullName, definition.FullName, instruction.OpCode.Name,
+            Reference reference = new(method.FullName, definition.FullName, instruction.OpCode.Name,
                 instruction.Offset, Owner(method.DeclaringType),
                 callee is GenericInstanceMethod constructed
                     ? constructed.GenericArguments.Select(type => type.FullName).ToArray() : [],
-                method.MetadataToken.ToInt32(), callee.MetadataToken.ToInt32()));
+                method.MetadataToken.ToInt32(), callee.MetadataToken.ToInt32());
+            references.Add(reference);
+            // Dependency inputs do not define the game's events. Keep their
+            // apparent accessor references too, including unknown scopes and
+            // same-name methods; names alone do not resolve an event definition.
+            if (IsCardStateEventOwner(definition.DeclaringType.FullName)
+                && (definition.Name.StartsWith("add_", StringComparison.Ordinal)
+                    || definition.Name.StartsWith("remove_", StringComparison.Ordinal)))
+                cardEventAccessorCandidates.Add(new(reference, definition.DeclaringType.FullName,
+                    definition.Name, definition.DeclaringType.Scope?.MetadataScopeType.ToString(),
+                    definition.DeclaringType.Scope is ModuleDefinition scopeModule
+                        ? scopeModule.Assembly.Name.FullName : definition.DeclaringType.Scope?.ToString(),
+                    definition.HasThis, definition.ExplicitThis, definition.CallingConvention.ToString(),
+                    definition.GenericParameters.Count, SlotTypeIdentity(definition.ReturnType),
+                    definition.Parameters.Select(parameter => SlotTypeIdentity(parameter.ParameterType)).ToArray(),
+                    "not-resolved"));
         }
         if (instruction.OpCode.Code is Code.Stfld or Code.Stsfld
             && instruction.Operand is FieldReference field
@@ -121,7 +132,7 @@ VirtualSlot[] virtualModelSlots = methods.Where(method => method.IsVirtual
 // cannot resolve virtual hook dispatch or prove a target, condition or HP amount.
 var audit = new
 {
-    schemaVersion = 6,
+    schemaVersion = 7,
     assembly = module.Assembly.Name.FullName,
     mvid = module.Mvid,
     dllSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dll))).ToLowerInvariant(),
@@ -161,6 +172,7 @@ var audit = new
         { owner = @event.DeclaringType.FullName, @event.Name, type = @event.EventType.FullName,
             add = @event.AddMethod?.FullName, remove = @event.RemoveMethod?.FullName }).ToArray(),
     cardStateEventReferences = references.Where(reference => cardEventAccessors.Contains(reference.Target)).ToArray(),
+    cardStateEventAccessorCandidates = cardEventAccessorCandidates,
     potionInventoryEventDefinitions = potionInventoryEvents.Select(@event => new
         { owner = @event.DeclaringType.FullName, @event.Name, type = @event.EventType.FullName, add = @event.AddMethod?.FullName,
             remove = @event.RemoveMethod?.FullName }).ToArray(),
@@ -217,6 +229,7 @@ var audit = new
         "Local virtual-slot identities do not prove hook bodies, active listeners, patches or recursively reachable generation safe.",
         "Card event accessors inventory static subscriptions; reflective subscribers and delegate-body effects require review.",
         "Display signatures are not method identities; ambiguity is retained. Operand tokens belong to this input module and need not identify a resolved target definition.",
+        "Event definitions/references are local to the input. Accessor candidates also retain dependency references, but no candidate is resolved or certified from its name; scope/signature metadata requires definition and callback review.",
     },
 };
 string output = Path.GetFullPath(args[1]);
@@ -234,6 +247,7 @@ Console.WriteLine(JsonSerializer.Serialize(new
     cardPileFieldReferenceCount = cardPileFieldReferences.Count,
     cardStateEventCount = cardStateEvents.Length,
     cardStateEventReferenceCount = audit.cardStateEventReferences.Length,
+    cardStateEventAccessorCandidateCount = cardEventAccessorCandidates.Count,
     nativeHookModelTargetCount = nativeHookTargets.Count,
     virtualModelSlotCount = virtualModelSlots.Length,
     unresolvedVirtualModelSlotCount = virtualModelSlots.Count(slot => slot.Status != "resolved-local"),
@@ -290,6 +304,13 @@ static bool IsCardPileEntry(MethodDefinition method)
 static bool IsCardPileField(FieldReference field)
     => field.DeclaringType.FullName == "MegaCrit.Sts2.Core.Entities.Cards.CardPile"
         || ContainsCardPileType(field.FieldType);
+
+static bool IsCardStateEventOwner(string fullName)
+    => fullName is "MegaCrit.Sts2.Core.Models.AbstractModel" or "MegaCrit.Sts2.Core.Models.CardModel"
+        or "MegaCrit.Sts2.Core.Models.EnchantmentModel" or "MegaCrit.Sts2.Core.Models.AfflictionModel"
+        or "MegaCrit.Sts2.Core.Entities.Cards.CardPile"
+        or "MegaCrit.Sts2.Core.Entities.Cards.CardEnergyCost"
+        or "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState";
 
 static bool ContainsCardPileType(TypeReference type)
     => type.FullName == "MegaCrit.Sts2.Core.Entities.Cards.CardPile"
@@ -400,3 +421,8 @@ sealed record VirtualSlot(string Owner, string Method, bool IsNewSlot, bool IsFi
 
 sealed record Reference(string Caller, string Target, string Kind, int Offset, string Owner,
     string[]? GenericArguments = null, int? CallerDefinitionToken = null, int? OperandMetadataToken = null);
+
+sealed record EventAccessorCandidate(Reference Reference, string DeclaringType, string AccessorName,
+    string? ScopeKind, string? ScopeIdentity, bool HasThis, bool ExplicitThis, string CallingConvention,
+    int GenericParameterCount, string ReturnTypeIdentity, string[] ParameterTypeIdentities,
+    string DefinitionResolution);

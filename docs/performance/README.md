@@ -1,6 +1,6 @@
 # 性能工作入口
 
-- [剪枝免费根合同](exhaust-free-root-contract-20261007.md)：54根牌的绑定/附加资源及检测器/定义/PlayStates为空；原生空绑定与无层回调条件通过。承接[扩展写入](exhaust-extension-writer-audit-20261007.md)核对未来来源，整根证书未完成、未启用新剪枝。
+- [跨程序集事件来源审计](exhaust-event-reference-audit-20261007.md)：schema7补全10处依赖事件访问候选，21项元数据检查通过；候选全部未解析。承接[免费根合同](exhaust-free-root-contract-20261007.md)核对订阅与克隆时点，未来闭包未完成、未启用剪枝。
 
 - [历史计数门槛与状态等价研究](saturated-history-key-research-20261007.md)：三根含并行worker约145万次构键，三项门槛投影没有合并不同完整键；原生读取链说明局部门槛不能作为完整根认证，未接入剪枝。
 

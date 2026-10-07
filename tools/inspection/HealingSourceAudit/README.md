@@ -10,6 +10,8 @@ schema5追加原生Hook实际引用的AbstractModel入口及模型虚方法槽�
 
 schema6保留同文本签名的全部定义及token、泛型参数数量、实例/静态和调用约定，不再因FullName字典键重复丢失整份清单。当前Ritsu Runtime存在同文本的普通/泛型方法；文本签名不能作为唯一身份。只按文本的虚槽/显式override解析遇到这种碰撞时保守拒绝，重复类型的声明或基类也明确报告。静态方法引用和异步映射增加CallerDefinitionToken与OperandMetadataToken；与输入MVID一起解释，operand可能是MemberRef/MethodSpec，不能冒充已解析目标MethodDef。字段访问等记录目前没有这两个token；非游戏程序集的附着容器事件、字段别名和完整写入闭包仍需另审计。14项托管元数据边界及实际依赖调查见[扩展写入审计](../../../docs/performance/exhaust-extension-writer-audit-20261007.md)。
 
+schema7另列`cardStateEventAccessorCandidates`：在同一七个明确类型上保留所有`add_`/`remove_`方法引用，含依赖DLL对原生事件的引用；原有事件定义/引用列表仍只使用输入自身定义。候选记录操作码、调用token、声明类型范围及程序集身份、参数/返回类型身份、实例标志和调用约定。名称可能对应普通方法，全部`DefinitionResolution=not-resolved`，不作为事件解析或安全认证；不同程序集/版本的同名类型不能合并。工具不增加外部程序集加载/自动解析。21项元数据检查及Ritsu新增10处候选见[跨程序集事件审计](../../../docs/performance/exhaust-event-reference-audit-20261007.md)。
+
 构建时传入已安装 ILSpy 的 `Mono.Cecil.dll`，不把该依赖或游戏二进制提交到仓库：
 
 ```bash
