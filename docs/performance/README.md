@@ -1,6 +1,6 @@
 # 性能工作入口
 
-- [消耗堆保序认证](exhaust-positive-native-contract-20261007.md)：两种顺序的四原生动作、跨回合及32串行Fork隔离通过；结合[来源闭包](exhaust-reader-closure-20261007.md)、[机会统计](exhaust-projection-subsets-20261007.md)及[原生反例](exhaust-equivalence-certification-20261007.md)限定认证。并行研究的[生命支配](hp-state-dominance-research-20261007.md)机会较少，条件回复禁止通用高HP支配；未启用新剪枝。
+- [剪枝根与扩展安全边界](exhaust-root-extension-audit-20261007.md)：真实猎手根的来源盘点、未知事件/浮动来源及16初始Fork检查通过；Ritsu生命周期、能力、保存槽和克隆回调需要独立认证。结合既有[保序正例](exhaust-positive-native-contract-20261007.md)、[来源闭包](exhaust-reader-closure-20261007.md)、[机会统计](exhaust-projection-subsets-20261007.md)、[顺序反例](exhaust-equivalence-certification-20261007.md)及[生命支配](hp-state-dominance-research-20261007.md)，未启用新剪枝。
 
 - [历史计数门槛与状态等价研究](saturated-history-key-research-20261007.md)：三根含并行worker约145万次构键，三项门槛投影没有合并不同完整键；原生读取链说明局部门槛不能作为完整根认证，未接入剪枝。
 
