@@ -54,3 +54,5 @@
 2026-10-07 [剪枝根与扩展审计](../../docs/performance/exhaust-root-extension-audit-20261007.md)保存真实生成器根的一次性盘点与16初始Fork读取证据；临时入口/源码已撤回，未形成生产认证或性能验收。
 
 [扩展注册原生合同](../../docs/performance/exhaust-extension-registry-contract-20261007.md)补齐真实根的生命周期、克隆、默认能力与保存槽盘点；最终登记变化/原生克隆/16初始Fork通过，临时入口撤回。完整证书和性能未验证，失败/崩溃保留。
+
+[克隆真实绑定合同](../../docs/performance/exhaust-clone-binding-contract-20261007.md)核对实际内部方法、同名同数量替换、零费用层拒绝及原生资源复制隔离；初始54根牌/20原型无资源层。临时入口撤回，无新Fork或整请求验收。

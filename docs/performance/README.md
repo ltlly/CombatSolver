@@ -1,6 +1,6 @@
 # 性能工作入口
 
-- [剪枝扩展注册合同](exhaust-extension-registry-contract-20261007.md)：真实猎手根24生命周期/1克隆/58bag，未知登记变化及16初始Fork隔离通过；内部委托与完整闭包未证明，未启用剪枝。[根审计](exhaust-root-extension-audit-20261007.md)连接已有保序正反例、来源闭包、机会统计和生命支配边界。
+- [剪枝克隆真实绑定](exhaust-clone-binding-contract-20261007.md)：实际内部委托、同名同数量替换拒绝、54根牌/20原型无资源层及零层/原生复制隔离通过；结合[扩展注册](exhaust-extension-registry-contract-20261007.md)和[根审计](exhaust-root-extension-audit-20261007.md)推进读写闭包，未启用新剪枝。
 
 - [历史计数门槛与状态等价研究](saturated-history-key-research-20261007.md)：三根含并行worker约145万次构键，三项门槛投影没有合并不同完整键；原生读取链说明局部门槛不能作为完整根认证，未接入剪枝。
 

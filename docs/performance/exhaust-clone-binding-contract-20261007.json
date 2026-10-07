@@ -1,0 +1,934 @@
+{
+  "schemaVersion": 1,
+  "task": "exhaust clone inner binding native contract",
+  "date": "2026-10-07",
+  "sourceBase": "c82aa4e9",
+  "retainedRuntimeSource": "27c28f66",
+  "game": {
+    "version": "0.111.0",
+    "build": "41cef1ea",
+    "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+    "sha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f"
+  },
+  "runtimeDll": {
+    "path": "/home/ltlly/.local/share/Steam/steamapps/workshop/content/2868840/3747602295/compat/0.111.0/STS2-RitsuLib.Runtime.dll",
+    "sha256": "fe387f765a3951690b161c129731e6c10016215c06074aa3356dd96290f13b52",
+    "size": 6476288
+  },
+  "build": {
+    "command": [
+      "dotnet",
+      "build",
+      "CombatSolver.csproj",
+      "-c",
+      "Release",
+      "-p:CopyModOnBuild=false",
+      "-p:CustomAfterMicrosoftCommonTargets=/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-clone-binding-20261007/native.props",
+      "-p:OutputPath=/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-clone-binding-20261007/build-native/",
+      "--nologo"
+    ],
+    "exitCode": 0,
+    "seconds": 14.19,
+    "warnings": 0,
+    "errors": 0,
+    "output": "  Determining projects to restore...\n  All projects are up-to-date for restore.\n  CombatSolver -> /home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-clone-binding-20261007/build-native/CombatSolver.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:14.19\n",
+    "taskDllSha256": "6a1928c967a36e17318205965079a3e4219ada670fdefa2f8dbeba4dfaf0d993"
+  },
+  "preparationFailure": {
+    "kind": "CS1503 generic ToHashSet inference",
+    "log": "  Determining projects to restore...\n  All projects are up-to-date for restore.\n/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-clone-binding-20261007/TaskExhaustCloneBinding.cs(129,111): error CS1503: Argument 1: cannot convert from 'object' to 'MegaCrit.Sts2.Core.Models.CardModel' [/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/CombatSolver.csproj]\n\nBuild FAILED.\n\n/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-clone-binding-20261007/TaskExhaustCloneBinding.cs(129,111): error CS1503: Argument 1: cannot convert from 'object' to 'MegaCrit.Sts2.Core.Models.CardModel' [/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/CombatSolver.csproj]\n    0 Warning(s)\n    1 Error(s)\n\nTime Elapsed 00:00:11.84\n",
+    "fix": "explicit HashSet<CardModel> construction"
+  },
+  "native": {
+    "summary": {
+      "exitCode": 0,
+      "seconds": 33.82433196600323,
+      "command": [
+        "bash",
+        "tools/testing/run-unattended-test.sh",
+        "--scenario-id",
+        "EXHAUST-CLONE-BINDING",
+        "--generated-scenario-path",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+        "--combat-solver-build-dir",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-clone-binding-20261007/build-native",
+        "--headless-instance",
+        "exhaust-clone-binding-20261007",
+        "--timeout-seconds",
+        "120",
+        "--evidence-directory",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-clone-binding-20261007/native",
+        "--cleanup-instance-on-exit",
+        "--exit-on-complete"
+      ]
+    },
+    "result": {
+      "processReusable": false,
+      "processId": 341311,
+      "reusedProcess": false,
+      "developmentStrategyScriptHash": null,
+      "developmentStrategyParametersHash": null,
+      "mainAssemblyHash": "6A1928C967A36E17318205965079A3E4219ADA670FDEFA2F8DBEBA4DFAF0D993",
+      "schemaVersion": 1,
+      "runId": "da5f78a5cb994392ae425ac15083f60d",
+      "scenarioId": "EXHAUST-CLONE-BINDING",
+      "status": "Passed",
+      "stage": "passed",
+      "characterId": "CHARACTER.SILENT",
+      "encounterId": "ENCOUNTER.THE_INSATIABLE_BOSS",
+      "seed": "NOVELTY-DEV-20260915-06",
+      "startedAtUtc": "2026-10-07T06:59:32.9417096+00:00",
+      "elapsedMilliseconds": 26269.455,
+      "mainThread": true,
+      "combatEnded": false,
+      "startedTurn": 1,
+      "finishedTurn": 1,
+      "managedHeapBytes": 73655584,
+      "managedFragmentedBytes": 5336952,
+      "workingSetBytes": 1533054976,
+      "privateMemoryBytes": 1670356992,
+      "solverMetrics": null,
+      "replayVerification": null,
+      "generatedScenario": {
+        "schemaVersion": 1,
+        "mode": "Search",
+        "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+        "resolvedConfiguration": "generated-scenario.resolved.json",
+        "loadout": "generated-scenario.loadout.json",
+        "opening": "generated-scenario.opening.json",
+        "relicObtainEffects": false,
+        "combatEnded": false,
+        "actualOutcome": {
+          "initialHp": 56,
+          "finalHp": 56,
+          "hpLost": 0,
+          "hpHealed": 0,
+          "selfDamage": 0,
+          "combatEnded": false,
+          "survived": true,
+          "finalEnemyHp": 332,
+          "potions": [],
+          "unattributedHpLoss": 0
+        }
+      },
+      "stageTimings": [
+        {
+          "stage": "created",
+          "startedMilliseconds": 0,
+          "durationMilliseconds": 1.5615
+        },
+        {
+          "stage": "strategy_load",
+          "startedMilliseconds": 1.5615,
+          "durationMilliseconds": 5.276299999999999
+        },
+        {
+          "stage": "game_startup",
+          "startedMilliseconds": 6.8378,
+          "durationMilliseconds": 12865.3889
+        },
+        {
+          "stage": "start_run",
+          "startedMilliseconds": 12872.2267,
+          "durationMilliseconds": 10908.399300000001
+        },
+        {
+          "stage": "inject_run_relics",
+          "startedMilliseconds": 23780.626,
+          "durationMilliseconds": 282.4991999999984
+        },
+        {
+          "stage": "enter_encounter",
+          "startedMilliseconds": 24063.1252,
+          "durationMilliseconds": 1965.2222000000002
+        },
+        {
+          "stage": "wait_player_turn",
+          "startedMilliseconds": 26028.3474,
+          "durationMilliseconds": 2.5359000000025844
+        },
+        {
+          "stage": "inject_state",
+          "startedMilliseconds": 26030.8833,
+          "durationMilliseconds": 118.65269999999873
+        },
+        {
+          "stage": "cleanup",
+          "startedMilliseconds": 26149.536,
+          "durationMilliseconds": 114.41600000000108
+        },
+        {
+          "stage": "passed",
+          "startedMilliseconds": 26263.952,
+          "durationMilliseconds": 5.6921000000002095
+        }
+      ],
+      "error": null,
+      "finishedAtUtc": "2026-10-07T06:59:59.2109873+00:00",
+      "completedChecks": [
+        "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+        "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+        "GeneratedScenario:NativeOpeningCaptured",
+        "ExhaustCloneBinding:RealInnerDelegateMvidTokenIL:SameNameCountReplacementRejected:RootDeckAllPilesFloatingReturningCanonicalShivFrantic:ZeroLayerRejected:NativeCloneCostIsolation:FullStateHistoryRngParentLive",
+        "NativeOutcome:combatEnded=False:turn=1:hp=56:maxHp=70"
+      ]
+    }
+  },
+  "bindingFacts": {
+    "initialBindings": [
+      {
+        "Path": "<Predicate>k__BackingField",
+        "DeclaringType": "STS2RitsuLib.Models.ModelCloneRegistry+<>c__9`1[[MegaCrit.Sts2.Core.Models.CardModel, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]], STS2-RitsuLib.Runtime, Version=0.6.6.0, Culture=neutral, PublicKeyToken=null",
+        "Signature": "Boolean <Register>b__9_0(STS2RitsuLib.Models.ModelCloneContext)",
+        "Mvid": "f7f18a36-8ebb-4db2-b1ea-7bd340579646",
+        "Token": 100693846,
+        "IlSha256": "FE70B8CF441E11A320E7C894F94F8D396BB7F8A3A290FE898EAF19CB6C922D84",
+        "TargetIdentity": 1,
+        "PatchCount": 0
+      },
+      {
+        "Path": "<Listener>k__BackingField",
+        "DeclaringType": "STS2RitsuLib.Models.ModelCloneRegistry+<>c__DisplayClass9_0`1[[MegaCrit.Sts2.Core.Models.CardModel, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]], STS2-RitsuLib.Runtime, Version=0.6.6.0, Culture=neutral, PublicKeyToken=null",
+        "Signature": "Void <Register>b__1(STS2RitsuLib.Models.ModelCloneContext)",
+        "Mvid": "f7f18a36-8ebb-4db2-b1ea-7bd340579646",
+        "Token": 100693848,
+        "IlSha256": "4E01F2048BBE8FF16044D0471BEF4D0CABE042F3094ABE06B1F067373E7E7B86",
+        "TargetIdentity": 2,
+        "PatchCount": 0
+      },
+      {
+        "Path": "<Listener>k__BackingField/listener",
+        "DeclaringType": "STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCloneBridge, STS2-RitsuLib.Runtime, Version=0.6.6.0, Culture=neutral, PublicKeyToken=null",
+        "Signature": "Void CopySecondaryCosts(MegaCrit.Sts2.Core.Models.CardModel, MegaCrit.Sts2.Core.Models.CardModel)",
+        "Mvid": "f7f18a36-8ebb-4db2-b1ea-7bd340579646",
+        "Token": 100683332,
+        "IlSha256": "519D13BDBD2EE9502ACC017B7D124C53652DFCFBFC8750842BFDA859678D175C",
+        "TargetIdentity": 0,
+        "PatchCount": 0
+      }
+    ],
+    "replacedBindings": [
+      {
+        "Path": "<Predicate>k__BackingField",
+        "DeclaringType": "STS2RitsuLib.Models.ModelCloneRegistry+<>c__9`1[[MegaCrit.Sts2.Core.Models.CardModel, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]], STS2-RitsuLib.Runtime, Version=0.6.6.0, Culture=neutral, PublicKeyToken=null",
+        "Signature": "Boolean <Register>b__9_0(STS2RitsuLib.Models.ModelCloneContext)",
+        "Mvid": "f7f18a36-8ebb-4db2-b1ea-7bd340579646",
+        "Token": 100693846,
+        "IlSha256": "FE70B8CF441E11A320E7C894F94F8D396BB7F8A3A290FE898EAF19CB6C922D84",
+        "TargetIdentity": 1,
+        "PatchCount": 0
+      },
+      {
+        "Path": "<Listener>k__BackingField",
+        "DeclaringType": "STS2RitsuLib.Models.ModelCloneRegistry+<>c__DisplayClass9_0`1[[MegaCrit.Sts2.Core.Models.CardModel, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]], STS2-RitsuLib.Runtime, Version=0.6.6.0, Culture=neutral, PublicKeyToken=null",
+        "Signature": "Void <Register>b__1(STS2RitsuLib.Models.ModelCloneContext)",
+        "Mvid": "f7f18a36-8ebb-4db2-b1ea-7bd340579646",
+        "Token": 100693848,
+        "IlSha256": "4E01F2048BBE8FF16044D0471BEF4D0CABE042F3094ABE06B1F067373E7E7B86",
+        "TargetIdentity": 3,
+        "PatchCount": 0
+      },
+      {
+        "Path": "<Listener>k__BackingField/listener",
+        "DeclaringType": "CombatSolver.UnattendedTestRunner+<>c, CombatSolver, Version=0.50.0.0, Culture=neutral, PublicKeyToken=null",
+        "Signature": "Void <RunTaskExhaustCloneBindingAsync>b__978_5(MegaCrit.Sts2.Core.Models.CardModel, MegaCrit.Sts2.Core.Models.CardModel)",
+        "Mvid": "36fe1e9c-809b-40d0-b560-611fafd1fc1e",
+        "Token": 100689828,
+        "IlSha256": "684888C0EBB17F374298B65EE2807526C066094C701BCC7EBBE1C1095F494FC1",
+        "TargetIdentity": 4,
+        "PatchCount": 0
+      }
+    ],
+    "rootCards": [
+      {
+        "Location": "root/0",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/1",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/2",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/3",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/4",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/5",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/6",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/7",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/8",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/9",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/10",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Neutralize, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/11",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Survivor, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/12",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.AscendersBane, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/13",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Reflex, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/14",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.PreciseCut, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/15",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.TheHunt, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/16",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.NoxiousFumes, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/17",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.FanOfKnives, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/18",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.BubbleBubble, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/19",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/20",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Backstab, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/21",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Flechettes, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/22",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.MasterPlanner, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/23",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/24",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Prepared, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/25",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.RollingBoulder, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/26",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Prowess, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/27",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Backstab, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/28",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.BubbleBubble, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/29",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Prepared, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/30",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/31",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.FanOfKnives, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/32",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Flechettes, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/33",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.TheHunt, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/34",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.PreciseCut, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/35",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/36",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/37",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Prowess, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/38",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Neutralize, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/39",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/40",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Reflex, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/41",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.NoxiousFumes, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/42",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/43",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/44",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/45",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/46",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/47",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Survivor, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/48",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.MasterPlanner, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/49",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/50",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.AscendersBane, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/51",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/52",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "root/53",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.RollingBoulder, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      }
+    ],
+    "canonicalCards": [
+      {
+        "Location": "canonical/0",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/1",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/2",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Neutralize, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/3",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Survivor, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/4",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.AscendersBane, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/5",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Reflex, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/6",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.PreciseCut, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/7",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.TheHunt, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/8",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.NoxiousFumes, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/9",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.FanOfKnives, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/10",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.BubbleBubble, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/11",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/12",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Backstab, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/13",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Flechettes, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/14",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.MasterPlanner, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/15",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Prepared, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/16",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.RollingBoulder, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/17",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Prowess, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/18",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Shiv, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      },
+      {
+        "Location": "canonical/19",
+        "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.FranticEscape, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+        "HasCostContainer": false,
+        "CostResources": 0,
+        "HasUseContainer": false,
+        "UseResources": 0
+      }
+    ],
+    "zeroCostLayer": {
+      "Location": "detached-zero-layer",
+      "RuntimeType": "MegaCrit.Sts2.Core.Models.Cards.Backstab, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null",
+      "HasCostContainer": true,
+      "CostResources": 1,
+      "HasUseContainer": false,
+      "UseResources": 0
+    },
+    "sameNameCountReplacementRejected": true,
+    "nativeCostCloneDistinct": true,
+    "sourceUnaffectedByCloneClear": true,
+    "captureMilliseconds": 1.9822,
+    "actualPrunes": 0,
+    "cloneBindingComponentVerified": true,
+    "isWholeOrderCertificate": false
+  },
+  "oneShotSources": [
+    {
+      "path": ".local/tool-tasks/exhaust-clone-binding-20261007/TaskExhaustCloneBinding.cs",
+      "sha256": "57c046bffe2c9065d38d7d740025e6d174966d4753e0f894b2b5c6b6132a7628",
+      "text": "using System.Collections;\nusing System.Diagnostics;\nusing System.Reflection;\nusing System.Security.Cryptography;\nusing System.Text.Json;\nusing HarmonyLib;\nusing CombatSolver.Engine.Common;\nusing CombatSolver.Engine.InCombat.Simulation;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing MegaCrit.Sts2.Core.Models;\nusing MegaCrit.Sts2.Core.Models.Cards;\nusing STS2RitsuLib.Models;\nusing STS2RitsuLib.Combat.SecondaryResources;\n\nnamespace CombatSolver;\n\ninternal sealed partial class UnattendedTestRunner\n{\n    private sealed record TaskBindingMethod(string Path, string DeclaringType, string Signature,\n        string Mvid, int Token, string IlSha256, int TargetIdentity, int PatchCount);\n    private sealed record TaskResourceCard(string Location, string RuntimeType, bool HasCostContainer,\n        int CostResources, bool HasUseContainer, int UseResources);\n\n    private static FieldInfo TaskBindingField(Type type, string name) => type.GetField(name,\n        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;\n\n    private static object[] TaskCloneEntries()\n    {\n        Type type = typeof(ModelCloneRegistry);\n        var gate = (System.Threading.Lock)type.GetField(\"SyncRoot\", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;\n        using (gate.EnterScope()) return ((IDictionary)type.GetField(\"Listeners\",\n            BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!).Values.Cast<object>().ToArray();\n    }\n\n    private static TaskBindingMethod[] TaskDelegateBindings(object entry,\n        Dictionary<object, int> targetIdentities)\n    {\n        List<TaskBindingMethod> bindings = [];\n        var visited = new HashSet<Delegate>(ReferenceEqualityComparer.Instance);\n        void Visit(Delegate callback, string path, int depth)\n        {\n            if (depth > 8) throw new InvalidOperationException(\"Unresolved delegate depth.\");\n            foreach (Delegate item in callback.GetInvocationList())\n            {\n                if (!visited.Add(item)) throw new InvalidOperationException(\"Repeated/cyclic delegate source.\");\n                MethodInfo method = item.Method;\n                Patches? patches = Harmony.GetPatchInfo(method);\n                int patchCount = patches is null ? 0 : patches.Prefixes.Count + patches.Postfixes.Count\n                    + patches.Transpilers.Count + patches.Finalizers.Count;\n                int targetId = 0;\n                if (item.Target is { } target && !targetIdentities.TryGetValue(target, out targetId))\n                {\n                    targetId = targetIdentities.Count + 1;\n                    targetIdentities.Add(target, targetId);\n                }\n                byte[] il = method.GetMethodBody()?.GetILAsByteArray()\n                    ?? throw new InvalidOperationException(\"Unresolved method body: \" + method);\n                bindings.Add(new(path, method.DeclaringType!.AssemblyQualifiedName!, method.ToString()!,\n                    method.Module.ModuleVersionId.ToString(), method.MetadataToken,\n                    Convert.ToHexString(SHA256.HashData(il)), targetId, patchCount));\n                if (item.Target is null) continue;\n                for (Type? type = item.Target.GetType(); type != null; type = type.BaseType)\n                    foreach (FieldInfo field in type.GetFields(BindingFlags.Instance | BindingFlags.Public\n                        | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))\n                        if (field.GetValue(item.Target) is Delegate nested)\n                            Visit(nested, path + \"/\" + field.Name, depth + 1);\n            }\n        }\n        foreach (string fieldName in new[] { \"<Predicate>k__BackingField\", \"<Listener>k__BackingField\" })\n            Visit((Delegate)TaskBindingField(entry.GetType(), fieldName).GetValue(entry)!, fieldName, 0);\n        return bindings.ToArray();\n    }\n\n    private static TaskResourceCard TaskReadSecondaryResourceState(CardModel card, string location)\n    {\n        bool hasCosts = card.TryGetSecondaryCosts(out SecondaryResourceCostSet costs);\n        bool hasUses = card.TryGetSecondaryResourceUses(out SecondaryResourcePlayUseSet uses);\n        int costCount = hasCosts ? ((IDictionary)typeof(SecondaryResourceCostSet).GetField(\"_costs\",\n            BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(costs)!).Count : 0;\n        int useCount = hasUses ? ((IDictionary)typeof(SecondaryResourcePlayUseSet).GetField(\"_uses\",\n            BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(uses)!).Count : 0;\n        return new(location, card.GetType().AssemblyQualifiedName!, hasCosts, costCount, hasUses, useCount);\n    }\n\n    private static bool TaskHasNoSecondaryLayers(TaskResourceCard card) => card.CostResources == 0 && card.UseResources == 0;\n\n    private Task RunTaskExhaustCloneBindingAsync(CombatState live, Player player)\n    {\n        CombatRootSnapshot root = CombatRootSnapshot.Capture(live);\n        CombatPredictionSimulator parent = root.ForkSimulator();\n        string State() => ContinuationStamp.CapturePredicted(player, parent,\n            ((SimulatedCombatState)parent.State.CombatState).GetPlayerTurnNumber(player), root.Forecast,\n            root.StartTurnNumber).StateText + \"\\nHISTORY=\" + CardContinuationContractHistoryText(parent);\n        string parentBefore = State(), liveBefore = ContinuationStamp.CaptureLive(live).StateText;\n        Stopwatch timer = Stopwatch.StartNew();\n        var identities = new Dictionary<object, int>(ReferenceEqualityComparer.Instance);\n        object[] entries = TaskCloneEntries();\n        if (entries.Length != 1) throw new InvalidOperationException(\"Unexpected initial clone registrations.\");\n        object originalEntry = entries[0];\n        string modId = (string)TaskBindingField(originalEntry.GetType(), \"<ModId>k__BackingField\").GetValue(originalEntry)!;\n        string listenerId = (string)TaskBindingField(originalEntry.GetType(), \"<ListenerId>k__BackingField\").GetValue(originalEntry)!;\n        if (modId != \"com.ritsukage.sts2-RitsuLib\" || listenerId != \"secondary_resource_costs\")\n            throw new InvalidOperationException(\"Unknown initial clone registration.\");\n        var originalPredicate = (Func<ModelCloneContext, bool>)TaskBindingField(originalEntry.GetType(),\n            \"<Predicate>k__BackingField\").GetValue(originalEntry)!;\n        var originalListener = (Action<ModelCloneContext>)TaskBindingField(originalEntry.GetType(),\n            \"<Listener>k__BackingField\").GetValue(originalEntry)!;\n        Type bridge = typeof(SecondaryResourceCardExtensions).Assembly.GetType(\n            \"STS2RitsuLib.Combat.SecondaryResources.SecondaryResourceCloneBridge\", true)!;\n        MethodInfo expectedInner = bridge.GetMethod(\"CopySecondaryCosts\", BindingFlags.Static | BindingFlags.NonPublic)!;\n        TaskBindingMethod[] initialBindings = TaskDelegateBindings(originalEntry, identities);\n        bool ExactInner(TaskBindingMethod[] values) => values.Length == 3 && values.All(value => value.PatchCount == 0)\n            && values.Count(value => value.Token == expectedInner.MetadataToken\n                && value.Mvid == expectedInner.Module.ModuleVersionId.ToString() && value.TargetIdentity == 0) == 1;\n        if (!ExactInner(initialBindings)) throw new InvalidOperationException(\"Initial inner clone delegate is not the reviewed method.\");\n        string frozenBinding = JsonSerializer.Serialize(initialBindings);\n        var cards = new HashSet<CardModel>(ReferenceEqualityComparer.Instance);\n        foreach (Player owner in live.Players)\n            foreach (CardModel card in owner.Deck.Cards.Concat(owner.PlayerCombatState!.AllCards)) cards.Add(card);\n        foreach (CardModel card in ((IEnumerable)typeof(CombatState).GetField(\"_allCards\",\n            BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(live)!).Cast<CardModel>()) cards.Add(card);\n        foreach (var returning in ((SimulatedCombatState)parent.State.CombatState).PendingReturningCards) cards.Add(returning.Preview);\n        TaskResourceCard[] rootCards = cards.Select((card, index) => TaskReadSecondaryResourceState(card, \"root/\" + index)).ToArray();\n        var canonicals = new HashSet<CardModel>(cards.Select(card => ModelDb.GetById<CardModel>(card.Id)), ReferenceEqualityComparer.Instance);\n        // These explicit producers were reviewed in the existing direct-generation closure.\n        canonicals.Add(ModelDb.Card<Shiv>());\n        canonicals.Add(ModelDb.Card<FranticEscape>());\n        TaskResourceCard[] canonicalCards = canonicals.Select((card, index) => TaskReadSecondaryResourceState(card, \"canonical/\" + index)).ToArray();\n        if (!rootCards.All(TaskHasNoSecondaryLayers) || !canonicalCards.All(TaskHasNoSecondaryLayers))\n            throw new InvalidOperationException(\"Unexpected existing secondary resource layers.\");\n        timer.Stop();\n        var registry = ModelCloneRegistry.For(modId);\n        TaskBindingMethod[] replacedBindings;\n        registry.Register<CardModel>(listenerId, (_, _) => { });\n        try\n        {\n            object[] replacedEntries = TaskCloneEntries();\n            replacedBindings = TaskDelegateBindings(replacedEntries.Single(), identities);\n            if (replacedEntries.Length != entries.Length || ExactInner(replacedBindings)\n                || JsonSerializer.Serialize(replacedBindings) == frozenBinding)\n                throw new InvalidOperationException(\"Same-name/count inner replacement was not rejected.\");\n        }\n        finally { registry.Register(listenerId, originalPredicate, originalListener); }\n        if (JsonSerializer.Serialize(TaskDelegateBindings(TaskCloneEntries().Single(), identities)) != frozenBinding)\n            throw new InvalidOperationException(\"Original clone binding did not restore.\");\n        var costSource = (CardModel)player.PlayerCombatState!.Hand.Cards[0].MutableClone();\n        const string fixtureResource = \"combat_solver_exhaust_binding_fixture\";\n        SecondaryResourceCostSet sourceCosts = costSource.SecondaryCosts();\n        sourceCosts.Set(fixtureResource, 0);\n        TaskResourceCard zeroCostLayer = TaskReadSecondaryResourceState(costSource, \"detached-zero-layer\");\n        if (sourceCosts.HasCosts || TaskHasNoSecondaryLayers(zeroCostLayer))\n            throw new InvalidOperationException(\"Zero-cost layer was incorrectly treated as absent.\");\n        sourceCosts.Set(fixtureResource, 1);\n        var costClone = (CardModel)costSource.MutableClone();\n        if (!costClone.TryGetSecondaryCosts(out SecondaryResourceCostSet cloneCosts)\n            || ReferenceEquals(sourceCosts, cloneCosts) || cloneCosts.ResourceIds.Count != 1)\n            throw new InvalidOperationException(\"Native clone did not copy its secondary cost container.\");\n        cloneCosts.Clear(fixtureResource);\n        if (sourceCosts.ResourceIds.Count != 1 || !TaskHasNoSecondaryLayers(TaskReadSecondaryResourceState(costClone, \"detached-cleared-clone\")))\n            throw new InvalidOperationException(\"Cost clone shared the source list/dictionary mutation.\");\n        sourceCosts.Clear(fixtureResource);\n        if (State() != parentBefore || ContinuationStamp.CaptureLive(live).StateText != liveBefore\n            || !cards.All(card => TaskHasNoSecondaryLayers(TaskReadSecondaryResourceState(card, \"after-root\"))))\n            throw new InvalidOperationException(\"Binding audit mutated its parent/live/root layers.\");\n        _completedChecks.Add(\"ExhaustCloneBinding:RealInnerDelegateMvidTokenIL:SameNameCountReplacementRejected:RootDeckAllPilesFloatingReturningCanonicalShivFrantic:ZeroLayerRejected:NativeCloneCostIsolation:FullStateHistoryRngParentLive\");\n        _completedChecks.Add(\"TASK_EXHAUST_CLONE_BINDING \" + JsonSerializer.Serialize(new { initialBindings,\n            replacedBindings, rootCards, canonicalCards, zeroCostLayer, sameNameCountReplacementRejected = true,\n            nativeCostCloneDistinct = true, sourceUnaffectedByCloneClear = true,\n            captureMilliseconds = timer.Elapsed.TotalMilliseconds, actualPrunes = 0,\n            cloneBindingComponentVerified = true, isWholeOrderCertificate = false }));\n        return Task.CompletedTask;\n    }\n}\n"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-clone-binding-20261007/native.props",
+      "sha256": "f98adb614e33d318c73e340231265c83940e366de2e7df069e8198bf492108a2",
+      "text": "<Project><ItemGroup><Compile Include=\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-clone-binding-20261007/TaskExhaustCloneBinding.cs\" /></ItemGroup></Project>\n"
+    }
+  ],
+  "executorTemporaryPatch": "diff --git a/src/Testing/Host/UnattendedTestRunner.Executor.cs b/src/Testing/Host/UnattendedTestRunner.Executor.cs\nindex fe1b2da5..bf105983 100644\n--- a/src/Testing/Host/UnattendedTestRunner.Executor.cs\n+++ b/src/Testing/Host/UnattendedTestRunner.Executor.cs\n@@ -39,6 +39,11 @@ internal sealed partial class UnattendedTestRunner\n             bool expectedCardPlayed = request.ExpectedPlayedCardId == null;\n             bool expectedPotionUsed = request.ExpectedUsedPotionId == null;\n             bool expectedPlayerPowerObserved = request.ExpectedObservedPlayerPowerId == null;\n+            if (request.ScenarioId == \"EXHAUST-CLONE-BINDING\")\n+            {\n+                await runner.RunTaskExhaustCloneBindingAsync(combatState, player);\n+                return Observation(combatEnded: false);\n+            }\n             if (request.ScenarioId is \"ZERO-CREDIT-GROWTH-PROOF\" or \"ZERO-CREDIT-GROWTH-PROOF-REGEN\")\n             {\n                 await runner.AssertZeroCreditGrowthProofAsync(combatState, player,\n",
+  "layerSourceEvidence": [
+    {
+      "path": ".local/tool-tasks/exhaust-clone-binding-20261007/SecondaryResourceCostLayer.cs",
+      "sha256": "ff19217288098e699573d246aeec959962de3f602c8ac942c00245c0b57849f3",
+      "text": "namespace STS2RitsuLib.Combat.SecondaryResources;\n\ninternal sealed record SecondaryResourceCostLayer(SecondaryResourceCost Cost, SecondaryResourceCostDuration Duration, SecondaryResourceInsufficientPayment? InsufficientPayment = null);\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-clone-binding-20261007/SecondaryResourcePlayUseLayer.cs",
+      "sha256": "7dcea505c150cef8aa757a5c0244ac7e7dbdf4bc4329dab1aca338ad42d83c56",
+      "text": "namespace STS2RitsuLib.Combat.SecondaryResources;\n\ninternal sealed record SecondaryResourcePlayUseLayer(SecondaryResourcePlayUse Use, SecondaryResourceCostDuration Duration);\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n"
+    }
+  ],
+  "limitations": [
+    "actual delegate binding and selected resources only; no whole root order certificate",
+    "patch inventory covers three delegate methods, not all downstream callees",
+    "same-name/count replacement, not concurrent registration epoch protection",
+    "no future secondary-resource writer closure; canonical absence does not prove future absence",
+    "zero layer and native clone container/list clearing isolation, not all layer-member ownership",
+    "detached cost source and clone, not unknown floating-card registration in this run",
+    "no new Fork mutation or two-generation contract; prior evidence reused at original scope",
+    "single cold capture timing, not full certificate cost or performance acceptance",
+    "no Solve/Coordinator/full request/RSS/final corpus regression"
+  ],
+  "decision": {
+    "bindingGapResolved": true,
+    "productionChange": false,
+    "wholeOrderCertificate": false,
+    "actualNewPrunes": 0,
+    "newTwofoldAcceptedScenes": 0,
+    "next": "complete remaining reader and writer closure"
+  },
+  "reusedEvidence": [
+    "exhaust-extension-registry-contract-20261007.json",
+    "exhaust-reader-closure-20261007.json",
+    "exhaust-positive-native-contract-20261007.json",
+    "exhaust-equivalence-certification-20261007.json",
+    "retained-victory-strict-hp-pruning-20261007.json"
+  ],
+  "cleanup": {
+    "pending": false,
+    "executorExactRestored": true,
+    "executorSha256": "b663f7a9c9af37ef7e0f376d226a17b42327271d2247d04d0ca0b885a7183ea7",
+    "removed": [
+      ".local/tool-tasks/exhaust-clone-binding-20261007/TaskExhaustCloneBinding.cs",
+      ".local/tool-tasks/exhaust-clone-binding-20261007/native.props",
+      ".local/tool-tasks/exhaust-clone-binding-20261007/executor.original",
+      ".local/tool-tasks/exhaust-clone-binding-20261007/build-native"
+    ],
+    "nativeInstanceRemoved": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/headless-instances/exhaust-clone-binding-20261007",
+    "diagnosticDllDeployed": false,
+    "runtimeUnchanged": true,
+    "rawLogsAndReadOnlySourcesRetained": true,
+    "deploymentReusedFrom": "docs/performance/retained-victory-strict-hp-pruning-20261007.json"
+  },
+  "gates": {
+    "documentation": {
+      "command": "python3 -B tools/inspection/verify-documentation.py",
+      "exitCode": 0,
+      "output": "DOCUMENTATION_OK files=549 links=2309 errors=0"
+    },
+    "trackedWhitespace": {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    "unchangedToolsReusedFrom": "docs/performance/exhaust-reader-closure-20261007.json",
+    "unchangedRuntimeStructureCoverageAndDeploymentReusedFrom": "docs/performance/retained-victory-strict-hp-pruning-20261007.json"
+  }
+}

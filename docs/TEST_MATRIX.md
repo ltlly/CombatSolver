@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-07 [扩展注册合同](performance/exhaust-extension-registry-contract-20261007.md)：原生`3c34de9b673945aab849d1086d8e392a`通过登记变化、克隆回调及16初始Fork隔离。失败/崩溃归档；无完整证书或性能验收，任务清理、部署复用。
+2026-10-07 [克隆绑定合同](performance/exhaust-clone-binding-contract-20261007.md)：原生`da5f78a5cb994392ae425ac15083f60d`通过真实委托、替换拒绝、零层及复制隔离。54根牌/20原型无资源层；无新Fork/整请求验收，任务清理、部署复用。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 
