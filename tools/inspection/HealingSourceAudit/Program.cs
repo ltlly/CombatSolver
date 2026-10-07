@@ -14,9 +14,11 @@ var references = new List<Reference>();
 var fieldWrites = new List<Reference>();
 var fieldAddresses = new List<Reference>();
 var potionSlotFieldReferences = new List<Reference>();
+var cardPileFieldReferences = new List<Reference>();
 var asyncMappings = new List<Reference>();
 var sinks = new HashSet<string>(StringComparer.Ordinal);
 var potionInventoryEntries = new HashSet<string>(StringComparer.Ordinal);
+var cardPileEntries = new HashSet<string>(StringComparer.Ordinal);
 TypeDefinition? playerType = types.FirstOrDefault(type =>
     type.FullName == "MegaCrit.Sts2.Core.Entities.Players.Player");
 EventDefinition[] potionInventoryEvents = playerType?.Events.Where(@event =>
@@ -31,6 +33,7 @@ foreach (MethodDefinition method in methods)
 {
     if (IsHealthEntry(method)) sinks.Add(method.FullName);
     if (IsPotionInventoryEntry(method)) potionInventoryEntries.Add(method.FullName);
+    if (IsCardPileEntry(method)) cardPileEntries.Add(method.FullName);
     foreach (CustomAttribute attribute in method.CustomAttributes)
     {
         if (attribute.AttributeType.FullName == "System.Runtime.CompilerServices.AsyncStateMachineAttribute"
@@ -73,6 +76,11 @@ foreach (MethodDefinition method in methods)
             && potionField.Name == "_potionSlots")
             potionSlotFieldReferences.Add(new(method.FullName, potionField.FullName,
                 instruction.OpCode.Name, instruction.Offset, Owner(method.DeclaringType)));
+        // A read-only Cards/AllPiles view does not prove order independence:
+        // fields can expose mutable collection aliases and indirect pile roots.
+        if (instruction.Operand is FieldReference pileField && IsCardPileField(pileField))
+            cardPileFieldReferences.Add(new(method.FullName, pileField.FullName,
+                instruction.OpCode.Name, instruction.Offset, Owner(method.DeclaringType)));
     }
 }
 Reference[] directHealthReferences = references.Where(reference => sinks.Contains(reference.Target))
@@ -82,7 +90,7 @@ Reference[] directHealthReferences = references.Where(reference => sinks.Contain
 // cannot resolve virtual hook dispatch or prove a target, condition or HP amount.
 var audit = new
 {
-    schemaVersion = 3,
+    schemaVersion = 4,
     assembly = module.Assembly.Name.FullName,
     mvid = module.Mvid,
     dllSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dll))).ToLowerInvariant(),
@@ -100,6 +108,12 @@ var audit = new
     potionSlotFieldDefinitions = playerType?.Fields.Where(field => field.Name == "_potionSlots")
         .Select(field => new { field = field.FullName, field.IsInitOnly, field.IsStatic }).ToArray() ?? [],
     potionSlotFieldReferences,
+    cardPileEntries = cardPileEntries.Order(StringComparer.Ordinal).ToArray(),
+    directCardPileReferences = references.Where(reference =>
+        cardPileEntries.Contains(reference.Target)).ToArray(),
+    cardPileFieldDefinitions = types.SelectMany(type => type.Fields).Where(IsCardPileField)
+        .Select(field => new { field = field.FullName, field.IsInitOnly, field.IsStatic }).ToArray(),
+    cardPileFieldReferences,
     potionInventoryEventDefinitions = potionInventoryEvents.Select(@event => new
         { owner = @event.DeclaringType.FullName, @event.Name, type = @event.EventType.FullName, add = @event.AddMethod?.FullName,
             remove = @event.RemoveMethod?.FullName }).ToArray(),
@@ -147,6 +161,7 @@ var audit = new
         "Static calls/delegate creation cannot resolve virtual hooks, reflection or third-party extensions.",
         "HP amounts, callback dispatch and generation closure require source and native differential review.",
         "Potion slot reads include mutable List aliases; event subscribers and indirect relic acquisition require review.",
+        "Pile fields/aliases and commands are an inventory, not proof of order independence or a complete reachable callback closure.",
     },
 };
 string output = Path.GetFullPath(args[1]);
@@ -160,6 +175,8 @@ Console.WriteLine(JsonSerializer.Serialize(new
     potionEntryCount = potionInventoryEntries.Count,
     potionSlotFieldReferenceCount = potionSlotFieldReferences.Count,
     potionEventReferenceCount = audit.potionInventoryEventReferences.Length,
+    cardPileEntryCount = cardPileEntries.Count,
+    cardPileFieldReferenceCount = cardPileFieldReferences.Count,
 }));
 
 static IEnumerable<TypeDefinition> Flatten(IEnumerable<TypeDefinition> types)
@@ -196,6 +213,28 @@ static bool IsPotionInventoryEntry(MethodDefinition method)
         && method.Name is "GainMaxPotionCount" or "LoseMaxPotionCount"
         || method.DeclaringType.FullName == "MegaCrit.Sts2.Core.Models.PotionModel"
         && method.Name is "Discard" or "RemoveBeforeUse" or "OnUseWrapper" or "EnqueueManualUse";
+
+static bool IsCardPileEntry(MethodDefinition method)
+    => method.DeclaringType.FullName is "MegaCrit.Sts2.Core.Entities.Cards.CardPile"
+        or "MegaCrit.Sts2.Core.Commands.CardPileCmd" or "MegaCrit.Sts2.Core.Commands.CardCmd"
+        || ContainsCardPileType(method.ReturnType)
+        || method.DeclaringType.FullName == "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState"
+        && method.Name is "get_AllPiles" or "get_AllCards" or "get_ExhaustPile"
+        || method.DeclaringType.FullName == "MegaCrit.Sts2.Core.Entities.Players.Player"
+        && method.Name == "get_Piles"
+        || method.DeclaringType.FullName == "MegaCrit.Sts2.Core.Entities.Cards.PileTypeExtensions"
+        && method.Name == "GetPile"
+        || method.DeclaringType.FullName == "MegaCrit.Sts2.Core.Combat.CombatState"
+        && method.Name == "IterateHookListeners";
+
+static bool IsCardPileField(FieldReference field)
+    => field.DeclaringType.FullName == "MegaCrit.Sts2.Core.Entities.Cards.CardPile"
+        || ContainsCardPileType(field.FieldType);
+
+static bool ContainsCardPileType(TypeReference type)
+    => type.FullName == "MegaCrit.Sts2.Core.Entities.Cards.CardPile"
+        || type is GenericInstanceType generic && generic.GenericArguments.Any(ContainsCardPileType)
+        || type is TypeSpecification specification && ContainsCardPileType(specification.ElementType);
 
 sealed record Reference(string Caller, string Target, string Kind, int Offset, string Owner,
     string[]? GenericArguments = null);
