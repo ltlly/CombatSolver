@@ -43,6 +43,8 @@
 
 [消耗堆来源闭包](../../docs/performance/exhaust-reader-closure-20261007.md)记录实际虚槽与基类事件入口、九项Cecil元数据边界和未完成的组件证明；不执行游戏语义，异常元数据拒绝不是新原生/Fork通过。一次性项目和构建归档清理，既有游戏行为证据复用。
 
+[消耗堆保序原生正例](../../docs/performance/exhaust-positive-native-contract-20261007.md)覆盖两种顺序、四次真实出牌、未来Shiv/Inky和下一回合完整状态；32孩子串行Fork后并行修改附着效果，父/兄弟/live/RNG保持。只证明指定轨迹，没有未知来源门禁或完整动作闭包，不计生产认证/剪枝/提速；任务路由逐字恢复，两实例及源码/构建清理。
+
 [相同前缀原型](../../docs/performance/exact-action-prefix-replay-research-20261007.md)真实测试冷/热/不同前缀回退、生成牌/随机目标、当前评分和16缓存Fork；测试持有弱模板，未知风险为注入条目。完整请求变慢撤回，缺根绑定/GC/交互/最终回归，不作通用缓存或新速度结论。
 
 [完整动作重复回放研究](../../docs/performance/action-transition-opportunity-20261007.md)扩展离线宿主可选观察，按冻结根、完整动作、capture模式及实际worker拥有者分组；仅检查选定特征，未执行新原生/Fork合同，不替代完整历史或全部政策的安全证明。生产搜索及部署保持。 后续[历史前缀边界](../../docs/performance/transition-prefix-boundary-research-20261007.md)以临时夹具复现同键/同数量不同历史，并核对16个已Fork子分支并行修改及原生完整状态；不代表完整原合同、并发Fork或缓存安全。首版Power排列失败保留，临时路由恢复。
