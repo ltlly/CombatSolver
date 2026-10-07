@@ -30,3 +30,5 @@
 [精确用药续搜实验](../../docs/performance/exact-retained-victory-pruning-research-20261007.md)的两个扩展合同及首轮截止见配套源码/结果；原型撤回后现行合同范围见上文，不将实验覆盖计为生产覆盖。
 
 [见证来源及库存闭包研究](../../docs/performance/pruning-witness-provenance-20261007.md)仅有两次完整只读诊断、静态间接调用定位和原生缓存源码复核；1818次潜在访问使用同一战损57胜利，相等候选为零。没有新增原生合同、生产认证或纯性能验收，插桩撤回。
+
+[转置标签与存储研究](../../docs/performance/transposition-label-pruning-research-20261007.md)归档两版生产文件链接的托管oracle/存储检查，以及`ZERO-CREDIT-GROWTH-PROOF`两个原生合同和16次完整交错。原型与测试扩展均撤回；本轮不扩大现行合同或生产认证范围。

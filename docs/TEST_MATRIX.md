@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-07 [剪枝见证来源研究](performance/pruning-witness-provenance-20261007.md)：870个元数据根定位，92类新增来源复核；两次只读完整请求14质量/根/政策/预算匹配。共享战损同为57，1818次访问非额外独立剪枝，相等候选0；未新增生产认证或性能验收，插桩撤回，沿用[27c运行时部署](performance/retained-victory-strict-hp-pruning-20261007.md)。
+2026-10-07 [转置标签与存储研究](performance/transposition-label-pruning-research-20261007.md)：两根新增动作数机会0；两版约141万托管/两原生/16次完整交错质量及峰值通过。最大1.013倍且工作变化，无共同明显收益；七处源码恢复，沿用[27c部署](performance/retained-victory-strict-hp-pruning-20261007.md)，未新增认证或两倍达标。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 
