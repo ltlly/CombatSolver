@@ -1,0 +1,936 @@
+{
+  "schemaVersion": 1,
+  "task": "exhaust-root-turn-contract-20261008",
+  "date": "2026-10-08",
+  "sourceBase": "0e458516",
+  "retainedRuntimeSource": "36370e54",
+  "runtimeChanged": false,
+  "game": {
+    "version": "0.111.0 / 41cef1ea",
+    "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+    "dllSha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+    "runtime": "9.0.7, reused actual game runtime identity evidence"
+  },
+  "ritsuRuntime": {
+    "version": "0.6.6",
+    "mvid": "f7f18a36-8ebb-4db2-b1ea-7bd340579646",
+    "dllSha256": "fe387f765a3951690b161c129731e6c10016215c06074aa3356dd96290f13b52"
+  },
+  "scope": {
+    "root": "dev-06-silent-boss, THE_INSATIABLE_BOSS",
+    "modification": "Keep generated root loadout, relics, powers and potions; inject twenty direct-source card types into Exhaust; three stable within-type orders",
+    "rootCardMembershipCount": 74,
+    "injectedExhaustCardCount": 20,
+    "nativeActualEndTurns": 2,
+    "simulatedEndTurnOrders": 3,
+    "postLiveOldRootReplay": 1,
+    "fullComparedFields": "ContinuationStamp StateText (including RNG), original ordered state key, full card history and terminal/in-progress/loss flags; no all-heap/private-callback completeness claim",
+    "projection": "Only exact movable types without Enchantment/Affliction; keep each type internal order; other slots fixed. First fixture has no movable attached/unknown slots",
+    "noSolveOrCoordinator": true,
+    "launcherTimeoutSeconds": 120,
+    "launcherCpuAdmission": 2,
+    "parallelForkTasks": 16
+  },
+  "orderProbe": {
+    "result": {
+      "processReusable": false,
+      "processId": 598391,
+      "reusedProcess": false,
+      "developmentStrategyScriptHash": null,
+      "developmentStrategyParametersHash": null,
+      "mainAssemblyHash": "D60C86FDF709BB53A556DA5682F485CA225BE25BC79C74C6EFB3EB100CB6D306",
+      "schemaVersion": 1,
+      "runId": "4b7f07dec46e4c75b0182fc5532882e6",
+      "scenarioId": "EXHAUST-ROOT-TURN-CONTRACT",
+      "status": "Passed",
+      "stage": "passed",
+      "characterId": "CHARACTER.SILENT",
+      "encounterId": "ENCOUNTER.THE_INSATIABLE_BOSS",
+      "seed": "NOVELTY-DEV-20260915-06",
+      "startedAtUtc": "2026-10-07T19:15:51.0985087+00:00",
+      "elapsedMilliseconds": 27327.2006,
+      "mainThread": true,
+      "combatEnded": false,
+      "startedTurn": 1,
+      "finishedTurn": 2,
+      "managedHeapBytes": 78322720,
+      "managedFragmentedBytes": 5216584,
+      "workingSetBytes": 1542070272,
+      "privateMemoryBytes": 1749397504,
+      "solverMetrics": null,
+      "replayVerification": null,
+      "generatedScenario": {
+        "schemaVersion": 1,
+        "mode": "Search",
+        "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+        "resolvedConfiguration": "generated-scenario.resolved.json",
+        "loadout": "generated-scenario.loadout.json",
+        "opening": "generated-scenario.opening.json",
+        "relicObtainEffects": false,
+        "combatEnded": false,
+        "actualOutcome": {
+          "initialHp": 56,
+          "finalHp": 56,
+          "hpLost": 0,
+          "hpHealed": 0,
+          "selfDamage": 0,
+          "combatEnded": false,
+          "survived": true,
+          "finalEnemyHp": 332,
+          "potions": [],
+          "unattributedHpLoss": 0
+        }
+      },
+      "stageTimings": [
+        {
+          "stage": "created",
+          "startedMilliseconds": 0,
+          "durationMilliseconds": 1.5211
+        },
+        {
+          "stage": "strategy_load",
+          "startedMilliseconds": 1.5211,
+          "durationMilliseconds": 5.173900000000001
+        },
+        {
+          "stage": "game_startup",
+          "startedMilliseconds": 6.695,
+          "durationMilliseconds": 12913.8371
+        },
+        {
+          "stage": "start_run",
+          "startedMilliseconds": 12920.5321,
+          "durationMilliseconds": 11002.6135
+        },
+        {
+          "stage": "inject_run_relics",
+          "startedMilliseconds": 23923.1456,
+          "durationMilliseconds": 274.20980000000054
+        },
+        {
+          "stage": "enter_encounter",
+          "startedMilliseconds": 24197.3554,
+          "durationMilliseconds": 1983.9062000000013
+        },
+        {
+          "stage": "wait_player_turn",
+          "startedMilliseconds": 26181.2616,
+          "durationMilliseconds": 2.716099999997823
+        },
+        {
+          "stage": "inject_state",
+          "startedMilliseconds": 26183.9777,
+          "durationMilliseconds": 33.98359999999957
+        },
+        {
+          "stage": "exhaust_root_turn_contract",
+          "startedMilliseconds": 26217.9613,
+          "durationMilliseconds": 989.4451000000008
+        },
+        {
+          "stage": "cleanup",
+          "startedMilliseconds": 27207.4064,
+          "durationMilliseconds": 114.14579999999842
+        },
+        {
+          "stage": "passed",
+          "startedMilliseconds": 27321.5522,
+          "durationMilliseconds": 5.824000000000524
+        }
+      ],
+      "completedChecks": [
+        "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+        "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+        "GeneratedScenario:NativeOpeningCaptured",
+        "ExhaustRootTurn:TwentyDirectCardTypes:ThreeStableWithinTypeOrders:UniqueMembership:UnknownPatchRejection:ThreeCompleteEndTurns:NativeFullStateRng:ThirtyTwoForks:ParentSiblingLiveIsolation",
+        "TASK_EXHAUST_ROOT_TURN {\"rootCardCount\":74,\"exhaustCount\":20,\"variants\":3,\"firstGenerationForks\":16,\"secondGenerationForks\":16,\"unknownPatchRejected\":true,\"duplicateRejected\":true,\"nativeNextTurnSha256\":\"E92A032CCB1356B7AA1A46C7B247D9939BFD318EB5B4BDE5125D9333717358EC\",\"actualPrunes\":0,\"wholeRootCertificate\":false}",
+        "NativeOutcome:combatEnded=False:turn=2:hp=56:maxHp=70"
+      ],
+      "error": null,
+      "finishedAtUtc": "2026-10-07T19:16:18.4255338+00:00"
+    },
+    "launcher": {
+      "command": [
+        "bash",
+        "tools/testing/run-unattended-test.sh",
+        "--scenario-id",
+        "EXHAUST-ROOT-TURN-CONTRACT",
+        "--generated-scenario-path",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+        "--combat-solver-build-dir",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-root-turn-contract-20261008/build-native",
+        "--headless-instance",
+        "exhaust-root-turn-contract-20261008",
+        "--timeout-seconds",
+        "120",
+        "--evidence-directory",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-root-turn-contract-20261008/evidence",
+        "--cleanup-instance-on-exit",
+        "--exit-on-complete"
+      ],
+      "exitCode": 0,
+      "wallSeconds": 34.87541475299804
+    },
+    "details": {
+      "gameMvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+      "directCardTypes": [
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.AscendersBane",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.Backstab",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.BladeOfInk",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.BubbleBubble",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.DefendSilent",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.FanOfKnives",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.Flechettes",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.FranticEscape",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.MasterPlanner",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.Neutralize",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.NoxiousFumes",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.PreciseCut",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.Prepared",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.Prowess",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.Reflex",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.RollingBoulder",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.Shiv",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.StrikeSilent",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.Survivor",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.Cards.TheHunt",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "MetadataToken": 100669695,
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e"
+        }
+      ],
+      "rootCardCount": 74,
+      "exhaustCount": 20,
+      "observations": [
+        {
+          "variant": 0,
+          "order": [
+            "ASCENDERS_BANE",
+            "BACKSTAB",
+            "BLADE_OF_INK",
+            "BUBBLE_BUBBLE",
+            "DEFEND_SILENT",
+            "FAN_OF_KNIVES",
+            "FLECHETTES",
+            "MASTER_PLANNER",
+            "NEUTRALIZE",
+            "NOXIOUS_FUMES",
+            "PRECISE_CUT",
+            "PREPARED",
+            "PROWESS",
+            "REFLEX",
+            "ROLLING_BOULDER",
+            "STRIKE_SILENT",
+            "SURVIVOR",
+            "THE_HUNT",
+            "SHIV",
+            "FRANTIC_ESCAPE"
+          ],
+          "rootHash": "788FC0597E2CE590A0E7ABC7E1FD10853A221662576F573113D7F8C57C74BF22",
+          "endedHash": "F5CAFD0D98C8DBBDBA0654EB43FBCF8C0271E7B26DFEFF70E496A3D8E1CF58AD",
+          "rawKey": "StateFingerprint { First = 6332568505019676750, Second = 15518422303861252349 }",
+          "CapturedRunModSubscriberCount": 0,
+          "CapturedCombatModSubscriberCount": 0,
+          "CapturedBaseLibCardModifiers": false
+        },
+        {
+          "variant": 1,
+          "order": [
+            "ASCENDERS_BANE",
+            "BACKSTAB",
+            "BLADE_OF_INK",
+            "BUBBLE_BUBBLE",
+            "DEFEND_SILENT",
+            "FAN_OF_KNIVES",
+            "FLECHETTES",
+            "FRANTIC_ESCAPE",
+            "MASTER_PLANNER",
+            "NEUTRALIZE",
+            "NOXIOUS_FUMES",
+            "PRECISE_CUT",
+            "PREPARED",
+            "PROWESS",
+            "REFLEX",
+            "ROLLING_BOULDER",
+            "SHIV",
+            "STRIKE_SILENT",
+            "SURVIVOR",
+            "THE_HUNT"
+          ],
+          "rootHash": "788FC0597E2CE590A0E7ABC7E1FD10853A221662576F573113D7F8C57C74BF22",
+          "endedHash": "F5CAFD0D98C8DBBDBA0654EB43FBCF8C0271E7B26DFEFF70E496A3D8E1CF58AD",
+          "rawKey": "StateFingerprint { First = 9080462723774559772, Second = 9269672184568856059 }",
+          "CapturedRunModSubscriberCount": 0,
+          "CapturedCombatModSubscriberCount": 0,
+          "CapturedBaseLibCardModifiers": false
+        },
+        {
+          "variant": 2,
+          "order": [
+            "THE_HUNT",
+            "SURVIVOR",
+            "STRIKE_SILENT",
+            "SHIV",
+            "ROLLING_BOULDER",
+            "REFLEX",
+            "PROWESS",
+            "PREPARED",
+            "PRECISE_CUT",
+            "NOXIOUS_FUMES",
+            "NEUTRALIZE",
+            "MASTER_PLANNER",
+            "FRANTIC_ESCAPE",
+            "FLECHETTES",
+            "FAN_OF_KNIVES",
+            "DEFEND_SILENT",
+            "BUBBLE_BUBBLE",
+            "BLADE_OF_INK",
+            "BACKSTAB",
+            "ASCENDERS_BANE"
+          ],
+          "rootHash": "788FC0597E2CE590A0E7ABC7E1FD10853A221662576F573113D7F8C57C74BF22",
+          "endedHash": "F5CAFD0D98C8DBBDBA0654EB43FBCF8C0271E7B26DFEFF70E496A3D8E1CF58AD",
+          "rawKey": "StateFingerprint { First = 12495646697338297894, Second = 5781465143949481290 }",
+          "CapturedRunModSubscriberCount": 0,
+          "CapturedCombatModSubscriberCount": 0,
+          "CapturedBaseLibCardModifiers": false
+        }
+      ],
+      "bindings": [
+        {
+          "method": "MegaCrit.Sts2.Core.Entities.Cards.CardPile get_Pile()",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669542,
+          "il": "027BC8080004252D0326142A288850000602FE0607190006734715000A289307002B2A",
+          "ilSha256": "874AE5A24A0D64785008E6332B0E6EE8A83DF5E5597D1ECB0A00D860C7CA35A2",
+          "patches": [
+            {
+              "kind": "Prefix",
+              "method": "STS2RitsuLib.CardPiles.Patches.ModExtraHandCardPileSemanticPatch.Prefix",
+              "mvid": "f7f18a36-8ebb-4db2-b1ea-7bd340579646",
+              "token": 100686509,
+              "owner": "com.ritsukage.sts2-RitsuLib.framework-core",
+              "priority": 400,
+              "before": [],
+              "after": [],
+              "il": "0228FE5900062D02172A03026F960D000A6FAA0D000A252D0426142B0528B130000A51035014FE012A"
+            },
+            {
+              "kind": "Prefix",
+              "method": "CombatSolver.SimulationCardPileLookupPatch.Prefix",
+              "mvid": "f161a8cb-c4dd-4ed0-aebd-bfff3bd62839",
+              "token": 100667767,
+              "owner": "CombatSolver.combat-solver",
+              "priority": 400,
+              "before": [],
+              "after": [],
+              "il": "287A1100062C0728711100062D02172A0302287211000651162A"
+            }
+          ]
+        },
+        {
+          "method": "Boolean get_ShouldReceiveCombatHooks()",
+          "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100669695,
+          "il": "0228661800060A062C07066F4E5200062A162A",
+          "ilSha256": "B48F755524D7657E6F6A0CD5A705B4136BC93AB33D72D1D248BFEC93CAEDCDF6",
+          "patches": []
+        },
+        {
+          "method": "System.Collections.Generic.IReadOnlyList`1[MegaCrit.Sts2.Core.Models.CardModel] get_Cards()",
+          "declaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100684364,
+          "il": "027B761900042A",
+          "ilSha256": "B793646A0E35786660B4AC3747DA39E193F6ED8090209FAFBEA929D1CE259CB5",
+          "patches": []
+        },
+        {
+          "method": "MegaCrit.Sts2.Core.Entities.Cards.PileType get_Type()",
+          "declaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100684363,
+          "il": "027B7C1900042A",
+          "ilSha256": "B41D4E59BA55FF7C3ECAB2C642D1725EBAB3CB0F408B699CD0989EBABBFF7628",
+          "patches": []
+        },
+        {
+          "method": "Boolean get_IsCombatPile()",
+          "declaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100684366,
+          "il": "02284B52000628865200062A",
+          "ilSha256": "6A0E88CC1FF2D79B73AC3EAFEA3A6A148E7E535ABD6CC1BA61B3FDCF97EE05A3",
+          "patches": []
+        },
+        {
+          "method": "System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Entities.Cards.CardPile] get_Piles()",
+          "declaringType": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100683912,
+          "il": "027B1F1800042D1502178D080A00022516022879500006A27D1F180004022865500006252D0426142B0528BF500006252D062628DF16002B027B1F18000428E016002B2A",
+          "ilSha256": "CF57A51D6F9375A3154C3218705E7DD8A2B99F2CF100DC8079FCEDD3431FDF28",
+          "patches": [
+            {
+              "kind": "Postfix",
+              "method": "STS2RitsuLib.CardPiles.Patches.ModCardPilePlayerPilesPatch.Postfix",
+              "mvid": "f7f18a36-8ebb-4db2-b1ea-7bd340579646",
+              "token": 100686396,
+              "owner": "com.ritsukage.sts2-RitsuLib.framework-core",
+              "priority": 400,
+              "before": [],
+              "after": [],
+              "il": "0228785900060A066F7B30000A2D012A03035006281810002B512A"
+            }
+          ]
+        },
+        {
+          "method": "System.Collections.Generic.IReadOnlyList`1[MegaCrit.Sts2.Core.Entities.Cards.CardPile] get_AllPiles()",
+          "declaringType": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+          "token": 100683967,
+          "il": "027B3B1800042D39021B8D080A000225160228BA500006A225170228BB500006A225180228BC500006A225190228BD500006A2251A0228BE500006A27D3B180004027B3B1800042A",
+          "ilSha256": "E4A0ED8EB50F7147A835BD49B68E82A26FBFB8C6EBF8D19E533D00626E6BB5C3",
+          "patches": [
+            {
+              "kind": "Postfix",
+              "method": "STS2RitsuLib.CardPiles.Patches.ModCardPileAllPilesPatch.Postfix",
+              "mvid": "f7f18a36-8ebb-4db2-b1ea-7bd340579646",
+              "token": 100686340,
+              "owner": "com.ritsukage.sts2-RitsuLib.framework-core",
+              "priority": 400,
+              "before": [],
+              "after": [],
+              "il": "28455900060A068E2C0A03500628065A00062C012A0228775900060B076F7B30000A2D012A03500728055A00062C012A03506F7C30000A076F7B30000A588DE70100010C1613042B13081104035011046F7D30000AA2110417581304110403506F7C30000A32E203506F7C30000A0D076FA600000A13052B1211056FA500000A130608092517580D1106A211056F3A00000A2DE5DE0C11052C0711056F3C00000ADC02087D7E30000A0308512A"
+            }
+          ]
+        }
+      ],
+      "membershipHash": "A60C7AFF052E50E00C873E73FBE29A770C065B5B0EBE6F0C6261F5F1B122BDCE",
+      "unknownPatchRejected": true,
+      "duplicateRejected": true,
+      "firstGenerationForks": 16,
+      "secondGenerationForks": 16,
+      "nativeNextTurnSha256": "E92A032CCB1356B7AA1A46C7B247D9939BFD318EB5B4BDE5125D9333717358EC",
+      "actualPrunes": 0,
+      "wholeRootCertificate": false
+    }
+  },
+  "liveAdvancementProbe": {
+    "result": {
+      "processReusable": false,
+      "processId": 601288,
+      "reusedProcess": false,
+      "developmentStrategyScriptHash": null,
+      "developmentStrategyParametersHash": null,
+      "mainAssemblyHash": "92DAB36743D3B40D543FB61C868C8B0FF79F24CA6E7A1A91333CA040BE85DE90",
+      "schemaVersion": 1,
+      "runId": "26a23c8161e54d2891051000384e1144",
+      "scenarioId": "EXHAUST-ROOT-TURN-LIVE-ISOLATION",
+      "status": "Passed",
+      "stage": "passed",
+      "characterId": "CHARACTER.SILENT",
+      "encounterId": "ENCOUNTER.THE_INSATIABLE_BOSS",
+      "seed": "NOVELTY-DEV-20260915-06",
+      "startedAtUtc": "2026-10-07T19:20:53.213035+00:00",
+      "elapsedMilliseconds": 27104.7718,
+      "mainThread": true,
+      "combatEnded": false,
+      "startedTurn": 1,
+      "finishedTurn": 2,
+      "managedHeapBytes": 75085528,
+      "managedFragmentedBytes": 5332208,
+      "workingSetBytes": 1549586432,
+      "privateMemoryBytes": 1726726144,
+      "solverMetrics": null,
+      "replayVerification": null,
+      "generatedScenario": {
+        "schemaVersion": 1,
+        "mode": "Search",
+        "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+        "resolvedConfiguration": "generated-scenario.resolved.json",
+        "loadout": "generated-scenario.loadout.json",
+        "opening": "generated-scenario.opening.json",
+        "relicObtainEffects": false,
+        "combatEnded": false,
+        "actualOutcome": {
+          "initialHp": 56,
+          "finalHp": 56,
+          "hpLost": 0,
+          "hpHealed": 0,
+          "selfDamage": 0,
+          "combatEnded": false,
+          "survived": true,
+          "finalEnemyHp": 332,
+          "potions": [],
+          "unattributedHpLoss": 0
+        }
+      },
+      "stageTimings": [
+        {
+          "stage": "created",
+          "startedMilliseconds": 0,
+          "durationMilliseconds": 1.5566
+        },
+        {
+          "stage": "strategy_load",
+          "startedMilliseconds": 1.5566,
+          "durationMilliseconds": 5.178000000000001
+        },
+        {
+          "stage": "game_startup",
+          "startedMilliseconds": 6.7346,
+          "durationMilliseconds": 12867.9265
+        },
+        {
+          "stage": "start_run",
+          "startedMilliseconds": 12874.6611,
+          "durationMilliseconds": 10954.069100000002
+        },
+        {
+          "stage": "inject_run_relics",
+          "startedMilliseconds": 23828.7302,
+          "durationMilliseconds": 279.73049999999785
+        },
+        {
+          "stage": "enter_encounter",
+          "startedMilliseconds": 24108.4607,
+          "durationMilliseconds": 1966.7826999999997
+        },
+        {
+          "stage": "wait_player_turn",
+          "startedMilliseconds": 26075.2434,
+          "durationMilliseconds": 2.5538000000015018
+        },
+        {
+          "stage": "inject_state",
+          "startedMilliseconds": 26077.7972,
+          "durationMilliseconds": 32.48179999999775
+        },
+        {
+          "stage": "exhaust_root_live_isolation",
+          "startedMilliseconds": 26110.279,
+          "durationMilliseconds": 873.3479000000007
+        },
+        {
+          "stage": "cleanup",
+          "startedMilliseconds": 26983.6269,
+          "durationMilliseconds": 115.20990000000165
+        },
+        {
+          "stage": "passed",
+          "startedMilliseconds": 27098.8368,
+          "durationMilliseconds": 6.1480999999985215
+        }
+      ],
+      "completedChecks": [
+        "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+        "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+        "GeneratedScenario:NativeOpeningCaptured",
+        "ExhaustRootLiveIsolation:NativeActualTurnAdvance:FullStateHistoryRng:OldRootUnchanged:PrecomputedNextTurnUnchanged:OldRootReplayEqual:SixteenCapturedBranches:SixteenPostAdvanceDescendants:ParentSiblingNewLiveIsolation",
+        "TASK_EXHAUST_ROOT_LIVE_ISOLATION {\"rootHash\":\"D33A4F0B7BF9B89C6906BA4A17B123CE91EBAB53DFB765E62C8FFBCF0D22178D\",\"oldRootReplayedNextTurnHash\":\"AA8C0670056AF9EACF2DEF285757931BF5EE5F45D3B0F3BF98481A176927208A\",\"nativeBeforeSha256\":\"20440BF809A9F6F36C91DCFF54A504B2030760A0B97D4988D3602EBD5CF07084\",\"nativeAfterSha256\":\"D9B398D824CF22A14B160A3E3DCA1A1C9B424C45A9B4FBDCFC8D4D88937D1751\",\"capturedBranches\":16,\"postAdvancementDescendants\":16,\"pileRegistryFrozen\":true,\"registeredModPileCount\":0,\"postAdvancePileRegistryFrozen\":true,\"postAdvanceRegisteredModPileCount\":0,\"actualPrunes\":0,\"wholeRootCertificate\":false}",
+        "NativeOutcome:combatEnded=False:turn=2:hp=56:maxHp=70"
+      ],
+      "error": null,
+      "finishedAtUtc": "2026-10-07T19:21:20.3176098+00:00"
+    },
+    "launcher": {
+      "command": [
+        "bash",
+        "tools/testing/run-unattended-test.sh",
+        "--scenario-id",
+        "EXHAUST-ROOT-TURN-LIVE-ISOLATION",
+        "--generated-scenario-path",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+        "--combat-solver-build-dir",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-root-turn-contract-20261008/build-native",
+        "--headless-instance",
+        "exhaust-root-turn-live-isolation-20261008",
+        "--timeout-seconds",
+        "120",
+        "--evidence-directory",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-root-turn-contract-20261008/evidence-live-isolation",
+        "--cleanup-instance-on-exit",
+        "--exit-on-complete"
+      ],
+      "exitCode": 0,
+      "wallSeconds": 34.59891778900055
+    },
+    "details": {
+      "rootHash": "D33A4F0B7BF9B89C6906BA4A17B123CE91EBAB53DFB765E62C8FFBCF0D22178D",
+      "oldRootReplayedNextTurnHash": "AA8C0670056AF9EACF2DEF285757931BF5EE5F45D3B0F3BF98481A176927208A",
+      "nativeBeforeSha256": "20440BF809A9F6F36C91DCFF54A504B2030760A0B97D4988D3602EBD5CF07084",
+      "nativeAfterSha256": "D9B398D824CF22A14B160A3E3DCA1A1C9B424C45A9B4FBDCFC8D4D88937D1751",
+      "capturedBranches": 16,
+      "postAdvancementDescendants": 16,
+      "pileRegistryFrozen": true,
+      "registeredModPileCount": 0,
+      "postAdvancePileRegistryFrozen": true,
+      "postAdvanceRegisteredModPileCount": 0,
+      "actualPrunes": 0,
+      "wholeRootCertificate": false
+    }
+  },
+  "componentCoverage": {
+    "directCardEligibilityBindings": {
+      "passed": 20,
+      "totalInThisDirectSourceFixture": 20,
+      "scope": "inherited CardModel.ShouldReceiveCombatHooks with observed zero patches; exact type/MVID/token retained"
+    },
+    "nativeGetterBindings": 7,
+    "observedKnownGetterPatches": 4,
+    "wholeRootFutureCertificates": 0,
+    "actualPrunes": 0,
+    "negativeCases": [
+      "one additional unknown getter prefix rejected before membership use; unpatch restored observed original set",
+      "same reference placed in two native piles rejected; exact original live state restored"
+    ],
+    "guardLimitations": [
+      "diagnostic getter-patch gate matches full declaring type/method names and counts; it does not reject a foreign same-name replacement by identity",
+      "binding record includes MVID/token/IL/priority/owner/order, but is not a production patch certificate",
+      "negative cases do not prove all unknown source rejection paths"
+    ]
+  },
+  "nativeSourceEvidence": {
+    "ModCardPileAllPilesPatch.cs.txt": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/ModCardPileAllPilesPatch.cs.txt",
+      "sha256": "449937d1d81f74a8c9fad5dacc38e7cde11fa4c641b7aa944b09324669cb07e5",
+      "text": "using System.Collections.Generic;\nusing System.Linq;\nusing HarmonyLib;\nusing MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing STS2RitsuLib.Patching.Models;\n\nnamespace STS2RitsuLib.CardPiles.Patches;\n\n/// <summary>\n///     <para xml:lang=\"en\">\n///         Adds <see cref=\"F:STS2RitsuLib.CardPiles.ModCardPileScope.CombatOnly\" /> mod piles to\n///         <see cref=\"P:MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState.AllPiles\" />.\n///     </para>\n///     <para xml:lang=\"zh-CN\">\n///         将 <see cref=\"F:STS2RitsuLib.CardPiles.ModCardPileScope.CombatOnly\" /> 模组牌堆加入\n///         <see cref=\"P:MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState.AllPiles\" />。\n///     </para>\n/// </summary>\n/// <remarks>\n///     <para xml:lang=\"en\">\n///         The postfix preserves the existing result and appends missing RitsuLib piles.\n///     </para>\n///     <para xml:lang=\"en\">\n///         The combined array is also stored in <c>_piles</c> so later getter calls reuse it.\n///     </para>\n///     <para xml:lang=\"zh-CN\">\n///         后置补丁会保留现有结果，并在其后追加缺失的 RitsuLib 牌堆。\n///     </para>\n///     <para xml:lang=\"zh-CN\">\n///         合并后的数组也会写入 <c>_piles</c>，供后续属性访问复用。\n///     </para>\n/// </remarks>\ninternal sealed class ModCardPileAllPilesPatch : IPatchMethod\n{\n\tpublic static string PatchId => \"ritsulib_player_combat_state_all_piles_append\";\n\n\tpublic static string Description => \"Append ritsulib CombatOnly mod piles to PlayerCombatState.AllPiles without transpiling\";\n\n\tpublic static bool IsCritical => false;\n\n\tpublic static ModPatchTarget[] GetTargets()\n\t{\n\t\treturn new ModPatchTarget[1]\n\t\t{\n\t\t\tnew ModPatchTarget(typeof(PlayerCombatState), \"AllPiles\", (MethodType)1)\n\t\t};\n\t}\n\n\tpublic static void Postfix(PlayerCombatState __instance, ref IReadOnlyList<CardPile> __result)\n\t{\n\t\tModCardPileDefinition[] combatDefinitionsSnapshot = ModCardPileRegistry.GetCombatDefinitionsSnapshot();\n\t\tif (combatDefinitionsSnapshot.Length == 0 || ContainsAllDefinitions(__result, combatDefinitionsSnapshot))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tIReadOnlyCollection<ModCardPile> orCreateCombatPiles = ModCardPileStorage.GetOrCreateCombatPiles(__instance);\n\t\tif (orCreateCombatPiles.Count == 0 || ContainsAll(__result, orCreateCombatPiles))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tCardPile[] array = (CardPile[])(object)new CardPile[__result.Count + orCreateCombatPiles.Count];\n\t\tfor (int i = 0; i < __result.Count; i++)\n\t\t{\n\t\t\tarray[i] = __result[i];\n\t\t}\n\t\tint count = __result.Count;\n\t\tforeach (ModCardPile item in orCreateCombatPiles)\n\t\t{\n\t\t\tarray[count++] = (CardPile)(object)item;\n\t\t}\n\t\t__instance._piles = array;\n\t\t__result = array;\n\t}\n\n\tprivate static bool ContainsAll(IReadOnlyList<CardPile> haystack, IReadOnlyCollection<ModCardPile> needles)\n\t{\n\t\treturn needles.Select((ModCardPile needle) => haystack.Any((CardPile cardPile) => (object)cardPile == needle)).All((bool found) => found);\n\t}\n\n\tprivate static bool ContainsAllDefinitions(IReadOnlyList<CardPile> haystack, IReadOnlyList<ModCardPileDefinition> definitions)\n\t{\n\t\tforeach (ModCardPileDefinition definition in definitions)\n\t\t{\n\t\t\tbool flag = false;\n\t\t\tforeach (CardPile item in haystack)\n\t\t\t{\n\t\t\t\tif (item is ModCardPile modCardPile && (object)modCardPile.Definition == definition)\n\t\t\t\t{\n\t\t\t\t\tflag = true;\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t}\n\t\t\tif (!flag)\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n"
+    },
+    "ModCardPilePlayerPilesPatch.cs.txt": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/ModCardPilePlayerPilesPatch.cs.txt",
+      "sha256": "7677f7a37e6f5c17cb013d7d3aa845156adbc276fbc2d952a73b0bd176651169",
+      "text": "using System.Collections.Generic;\nusing System.Linq;\nusing HarmonyLib;\nusing MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing STS2RitsuLib.Patching.Models;\n\nnamespace STS2RitsuLib.CardPiles.Patches;\n\n/// <summary>\n///     <para xml:lang=\"en\">\n///         Adds existing run-persistent mod piles to <see cref=\"P:MegaCrit.Sts2.Core.Entities.Players.Player.Piles\" />.\n///     </para>\n///     <para xml:lang=\"zh-CN\">将已有的局内持久模组牌堆加入 <see cref=\"P:MegaCrit.Sts2.Core.Entities.Players.Player.Piles\" />。</para>\n/// </summary>\ninternal sealed class ModCardPilePlayerPilesPatch : IPatchMethod\n{\n\tpublic static string PatchId => \"ritsulib_player_piles_run_persistent_mod_piles\";\n\n\tpublic static string Description => \"Append run-persistent mod card piles to Player.Piles\";\n\n\tpublic static bool IsCritical => false;\n\n\tpublic static ModPatchTarget[] GetTargets()\n\t{\n\t\treturn new ModPatchTarget[1]\n\t\t{\n\t\t\tnew ModPatchTarget(typeof(Player), \"Piles\", (MethodType)1)\n\t\t};\n\t}\n\n\tpublic static void Postfix(Player __instance, ref IEnumerable<CardPile> __result)\n\t{\n\t\tIReadOnlyCollection<ModCardPile> runPiles = ModCardPileStorage.GetRunPiles(__instance);\n\t\tif (runPiles.Count != 0)\n\t\t{\n\t\t\t__result = __result.Concat((IEnumerable<CardPile>)runPiles);\n\t\t}\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n"
+    },
+    "ModExtraHandCardPileSemanticPatch.cs.txt": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/ModExtraHandCardPileSemanticPatch.cs.txt",
+      "sha256": "eb3bf281c54820d2501572b9532381af7dbc87636bb5c36ed7efae8beb06817e",
+      "text": "using System;\nusing MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing MegaCrit.Sts2.Core.Models;\nusing STS2RitsuLib.Patching.Models;\n\nnamespace STS2RitsuLib.CardPiles.Patches;\n\ninternal sealed class ModExtraHandCardPileSemanticPatch : IPatchMethod\n{\n\tpublic static string PatchId => \"ritsulib_extra_hand_card_pile_semantics\";\n\n\tpublic static string Description => \"Expose hand identity while evaluating playable extra-hand cards\";\n\n\tpublic static bool IsCritical => false;\n\n\tpublic static ModPatchTarget[] GetTargets()\n\t{\n\t\treturn new ModPatchTarget[1]\n\t\t{\n\t\t\tnew ModPatchTarget(typeof(CardModel), \"get_Pile\", Type.EmptyTypes)\n\t\t};\n\t}\n\n\tpublic static bool Prefix(CardModel __instance, ref CardPile? __result)\n\t{\n\t\tif (!ModExtraHandSemanticContext.IsActive(__instance))\n\t\t{\n\t\t\treturn true;\n\t\t}\n\t\tPlayerCombatState playerCombatState = __instance.Owner.PlayerCombatState;\n\t\t__result = ((playerCombatState != null) ? playerCombatState.Hand : null);\n\t\treturn __result == null;\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n"
+    },
+    "ModExtraHandSemanticContext.cs.txt": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/ModExtraHandSemanticContext.cs.txt",
+      "sha256": "85cb98ab1446593522487d8be239a1b813df48d82998790e762dc8d80cef5166",
+      "text": "using System;\nusing System.Threading;\nusing MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.Models;\n\nnamespace STS2RitsuLib.CardPiles;\n\ninternal static class ModExtraHandSemanticContext\n{\n\tprivate sealed class State(CardModel card, State? previous)\n\t{\n\t\tpublic CardModel Card { get; } = card;\n\n\t\tpublic State? Previous { get; } = previous;\n\t}\n\n\tprivate sealed class Scope(State? previous) : IDisposable\n\t{\n\t\tprivate bool _disposed;\n\n\t\tprivate State? _previous = previous;\n\n\t\tpublic void Dispose()\n\t\t{\n\t\t\tif (!_disposed)\n\t\t\t{\n\t\t\t\t_disposed = true;\n\t\t\t\tCurrent.Value = previous;\n\t\t\t\tprevious = null;\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate static readonly AsyncLocal<State?> Current = new AsyncLocal<State>();\n\n\tinternal static IDisposable? EnterPlayEvaluation(CardModel card)\n\t{\n\t\t//IL_0015: Unknown result type (might be due to invalid IL or missing references)\n\t\tif (IsActive(card))\n\t\t{\n\t\t\treturn null;\n\t\t}\n\t\tCardPile pile = card.Pile;\n\t\tif (pile == null || !ModCardPileRegistry.TryGetByPileType(pile.Type, out ModCardPileDefinition definition) || definition.Style != ModCardPileUiStyle.ExtraHand || !definition.ExtraHand.AllowCardPlay)\n\t\t{\n\t\t\treturn null;\n\t\t}\n\t\tState value = Current.Value;\n\t\tCurrent.Value = new State(card, value);\n\t\treturn new Scope(value);\n\t}\n\n\tinternal static bool IsActive(CardModel card)\n\t{\n\t\tfor (State state = Current.Value; state != null; state = state.Previous)\n\t\t{\n\t\t\tif (state.Card == card)\n\t\t\t{\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n"
+    },
+    "ModCardPileRegistry.cs.txt": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/ModCardPileRegistry.cs.txt",
+      "sha256": "5a369cdbccc51eb7e9f08c601adad403b776c468c67ed0116de9f0c0fe4cbd35",
+      "text": "using System;\nusing System.Collections.Generic;\nusing System.Linq;\nusing System.Threading;\nusing MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.HoverTips;\nusing MegaCrit.Sts2.Core.Logging;\nusing STS2RitsuLib.Content;\nusing STS2RitsuLib.Utils;\n\nnamespace STS2RitsuLib.CardPiles;\n\n/// <summary>\n///     <para xml:lang=\"en\">\n///         Registers custom card piles for one mod and resolves their definitions and dynamic\n///         <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.PileType\" /> values.\n///     </para>\n///     <para xml:lang=\"zh-CN\">\n///         为单个模组注册自定义卡牌牌堆，并解析其定义与动态 <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.PileType\" /> 值。\n///     </para>\n/// </summary>\n/// <remarks>\n///     <para xml:lang=\"en\">\n///         A single global <see cref=\"T:STS2RitsuLib.Utils.DynamicEnumValueMinter`1\" /> reserves the high value band\n///         (<c>[0x4000_0000, 0x7FFF_FFFF]</c>). Registrations are shared process-wide and freeze before\n///         model initialization.\n///     </para>\n///     <para xml:lang=\"en\">\n///         Use <see cref=\"M:STS2RitsuLib.CardPiles.ModCardPileRegistry.For(System.String)\" /> with the owning mod ID. Definitions remain available to global lookup by\n///         pile ID or dynamic value.\n///     </para>\n///     <para xml:lang=\"zh-CN\">\n///         单个全局 <see cref=\"T:STS2RitsuLib.Utils.DynamicEnumValueMinter`1\" /> 会保留高值区间\n///         （<c>[0x4000_0000, 0x7FFF_FFFF]</c>）。注册信息在进程内共享，并会在模型初始化前冻结。\n///     </para>\n///     <para xml:lang=\"zh-CN\">\n///         使用 <see cref=\"M:STS2RitsuLib.CardPiles.ModCardPileRegistry.For(System.String)\" /> 和所属模组 ID 获取注册表。定义仍可通过牌堆 ID 或动态值进行全局查找。\n///     </para>\n/// </remarks>\npublic sealed class ModCardPileRegistry\n{\n\tprivate static readonly Lock SyncRoot = new Lock();\n\n\tprivate static readonly Dictionary<string, ModCardPileRegistry> Registries = new Dictionary<string, ModCardPileRegistry>(StringComparer.OrdinalIgnoreCase);\n\n\tprivate static readonly Dictionary<string, ModCardPileDefinition> Definitions = new Dictionary<string, ModCardPileDefinition>(StringComparer.OrdinalIgnoreCase);\n\n\tprivate static readonly Dictionary<PileType, ModCardPileDefinition> DefinitionsByPileType = new Dictionary<PileType, ModCardPileDefinition>();\n\n\tprivate static ModCardPileDefinition[] _combatDefinitionsSnapshot = Array.Empty<ModCardPileDefinition>();\n\n\tprivate static ModCardPileDefinition[] _definitionsSnapshot = Array.Empty<ModCardPileDefinition>();\n\n\tprivate readonly Logger _logger;\n\n\tprivate readonly string _modId;\n\n\tprivate string? _freezeReason;\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Gets whether card-pile registration has been frozen.</para>\n\t///     <para xml:lang=\"zh-CN\">获取卡牌牌堆注册是否已冻结。</para>\n\t/// </summary>\n\tpublic static bool IsFrozen { get; private set; }\n\n\tprivate ModCardPileRegistry(string modId)\n\t{\n\t\t_modId = modId;\n\t\t_logger = RitsuLibFramework.CreateLogger(modId, (LogType)0);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Gets the registry for <paramref name=\"modId\" />, creating it on first use.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">获取 <paramref name=\"modId\" /> 的注册表，并在首次使用时创建。</para>\n\t/// </summary>\n\t/// <param name=\"modId\">\n\t///     <para xml:lang=\"en\">The owning mod ID.</para>\n\t///     <para xml:lang=\"zh-CN\">所属模组 ID。</para>\n\t/// </param>\n\tpublic static ModCardPileRegistry For(string modId)\n\t{\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(modId, \"modId\");\n\t\tmodId = modId.Trim();\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\tif (Registries.TryGetValue(modId, out ModCardPileRegistry value))\n\t\t\t{\n\t\t\t\treturn value;\n\t\t\t}\n\t\t\tModCardPileRegistry modCardPileRegistry = new ModCardPileRegistry(modId);\n\t\t\tRegistries[modId] = modCardPileRegistry;\n\t\t\treturn modCardPileRegistry;\n\t\t}\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Freezes card-pile registration for the remainder of the process.</para>\n\t///     <para xml:lang=\"zh-CN\">在当前进程的剩余生命周期内冻结卡牌牌堆注册。</para>\n\t/// </summary>\n\t/// <param name=\"reason\">\n\t///     <para xml:lang=\"en\">The reason reported in logs and late-registration errors.</para>\n\t///     <para xml:lang=\"zh-CN\">写入日志和延迟注册错误的原因。</para>\n\t/// </param>\n\tinternal static void FreezeRegistrations(string reason)\n\t{\n\t\tModCardPileRegistry[] array;\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\tif (IsFrozen)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tIsFrozen = true;\n\t\t\tforeach (ModCardPileRegistry value in Registries.Values)\n\t\t\t{\n\t\t\t\tvalue._freezeReason = reason;\n\t\t\t}\n\t\t\tarray = Registries.Values.ToArray();\n\t\t}\n\t\tModCardPileRegistry[] array2 = array;\n\t\tfor (int i = 0; i < array2.Length; i++)\n\t\t{\n\t\t\tarray2[i]._logger.Info(\"[CardPiles] Pile registration is now frozen (\" + reason + \").\", 1);\n\t\t}\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Registers a card pile owned by this registry's mod. Repeating the same local stem for the\n\t///         same mod returns the existing definition.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         注册由此注册表所属模组拥有的卡牌牌堆。同一模组重复注册相同本地名称时返回现有定义。\n\t///     </para>\n\t/// </summary>\n\t/// <param name=\"localStem\">\n\t///     <para xml:lang=\"en\">The identifier local to the owning mod.</para>\n\t///     <para xml:lang=\"zh-CN\">所属模组内的本地标识符。</para>\n\t/// </param>\n\t/// <param name=\"spec\">\n\t///     <para xml:lang=\"en\">The pile configuration.</para>\n\t///     <para xml:lang=\"zh-CN\">牌堆配置。</para>\n\t/// </param>\n\tpublic ModCardPileDefinition RegisterOwned(string localStem, ModCardPileSpec spec)\n\t{\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(localStem, \"localStem\");\n\t\tArgumentNullException.ThrowIfNull(spec, \"spec\");\n\t\tstring qualifiedCardPileId = ModContentRegistry.GetQualifiedCardPileId(_modId, localStem);\n\t\treturn RegisterCore(qualifiedCardPileId, spec);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Registers a card pile with a global ID. Prefer <see cref=\"M:STS2RitsuLib.CardPiles.ModCardPileRegistry.RegisterOwned(System.String,STS2RitsuLib.CardPiles.ModCardPileSpec)\" /> for mod-qualified\n\t///         IDs.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         使用全局 ID 注册卡牌牌堆。需要模组限定 ID 时优先使用 <see cref=\"M:STS2RitsuLib.CardPiles.ModCardPileRegistry.RegisterOwned(System.String,STS2RitsuLib.CardPiles.ModCardPileSpec)\" />。\n\t///     </para>\n\t/// </summary>\n\t/// <param name=\"id\">\n\t///     <para xml:lang=\"en\">The global pile ID. Cross-mod ownership conflicts are rejected.</para>\n\t///     <para xml:lang=\"zh-CN\">全局牌堆 ID。不同模组间的所有权冲突会被拒绝。</para>\n\t/// </param>\n\t/// <param name=\"spec\">\n\t///     <para xml:lang=\"en\">The pile configuration.</para>\n\t///     <para xml:lang=\"zh-CN\">牌堆配置。</para>\n\t/// </param>\n\tpublic ModCardPileDefinition Register(string id, ModCardPileSpec spec)\n\t{\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(id, \"id\");\n\t\tArgumentNullException.ThrowIfNull(spec, \"spec\");\n\t\treturn RegisterCore(id, spec);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Tries to get a registered definition by pile ID.</para>\n\t///     <para xml:lang=\"zh-CN\">尝试按牌堆 ID 获取已注册定义。</para>\n\t/// </summary>\n\tpublic static bool TryGet(string id, out ModCardPileDefinition definition)\n\t{\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(id, \"id\");\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\treturn Definitions.TryGetValue(NormalizeId(id), out definition);\n\t\t}\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Gets the registered definition for <paramref name=\"id\" />.</para>\n\t///     <para xml:lang=\"zh-CN\">获取 <paramref name=\"id\" /> 的已注册定义。</para>\n\t/// </summary>\n\tpublic static ModCardPileDefinition Get(string id)\n\t{\n\t\tif (!TryGet(id, out ModCardPileDefinition definition))\n\t\t{\n\t\t\tthrow new KeyNotFoundException(\"Card pile '\" + NormalizeId(id) + \"' is not registered.\");\n\t\t}\n\t\treturn definition;\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Gets the registered mod card-pile definition represented by a <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.PileType\" />.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         获取 <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.PileType\" /> 所表示的已注册模组卡牌牌堆定义。\n\t///     </para>\n\t/// </summary>\n\t/// <param name=\"value\">\n\t///     <para xml:lang=\"en\">The dynamic card-pile value to resolve.</para>\n\t///     <para xml:lang=\"zh-CN\">要解析的动态卡牌牌堆值。</para>\n\t/// </param>\n\t/// <returns>\n\t///     <para xml:lang=\"en\">The registered mod card-pile definition.</para>\n\t///     <para xml:lang=\"zh-CN\">已注册的模组卡牌牌堆定义。</para>\n\t/// </returns>\n\t/// <exception cref=\"T:System.Collections.Generic.KeyNotFoundException\">\n\t///     <para xml:lang=\"en\"><paramref name=\"value\" /> is not a registered mod card pile.</para>\n\t///     <para xml:lang=\"zh-CN\"><paramref name=\"value\" /> 不是已注册的模组卡牌牌堆。</para>\n\t/// </exception>\n\tpublic static ModCardPileDefinition Get(PileType value)\n\t{\n\t\t//IL_0000: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0022: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_002d: Expected I4, but got Unknown\n\t\tif (!TryGetByPileType(value, out ModCardPileDefinition definition))\n\t\t{\n\t\t\tthrow new KeyNotFoundException($\"PileType '0x{(int)value:X8}' is not a registered mod card pile.\");\n\t\t}\n\t\treturn definition;\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Tries to get the ID of the mod that registered <paramref name=\"pileId\" />.</para>\n\t///     <para xml:lang=\"zh-CN\">尝试获取注册 <paramref name=\"pileId\" /> 的模组 ID。</para>\n\t/// </summary>\n\tpublic static bool TryGetOwnerModId(string pileId, out string modId)\n\t{\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(pileId, \"pileId\");\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\tif (Definitions.TryGetValue(NormalizeId(pileId), out ModCardPileDefinition value))\n\t\t\t{\n\t\t\t\tmodId = value.ModId;\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\tmodId = string.Empty;\n\t\treturn false;\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Tries to get the registered definition represented by <paramref name=\"value\" />.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         尝试获取 <paramref name=\"value\" /> 所表示的已注册定义。\n\t///     </para>\n\t/// </summary>\n\tpublic static bool TryGetByPileType(PileType value, out ModCardPileDefinition definition)\n\t{\n\t\t//IL_0010: Unknown result type (might be due to invalid IL or missing references)\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\treturn DefinitionsByPileType.TryGetValue(value, out definition);\n\t\t}\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Gets whether <paramref name=\"value\" /> represents a registered mod card pile.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         获取 <paramref name=\"value\" /> 是否表示已注册的模组卡牌牌堆。\n\t///     </para>\n\t/// </summary>\n\tpublic static bool IsModPileType(PileType value)\n\t{\n\t\t//IL_0010: Unknown result type (might be due to invalid IL or missing references)\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\treturn DefinitionsByPileType.ContainsKey(value);\n\t\t}\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Returns the deterministic <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.PileType\" /> for <paramref name=\"id\" />. The ID does\n\t///         not need to be registered.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         返回 <paramref name=\"id\" /> 对应的确定性 <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.PileType\" />。该 ID 无需已注册。\n\t///     </para>\n\t/// </summary>\n\tpublic static PileType GetPileType(string id)\n\t{\n\t\t//IL_000c: Unknown result type (might be due to invalid IL or missing references)\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(id, \"id\");\n\t\treturn DynamicEnumValueRegistry<PileType>.GetValue(id);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Tries to return the deterministic <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.PileType\" /> for <paramref name=\"id\" />. The ID\n\t///         does not need to be registered.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         尝试返回 <paramref name=\"id\" /> 对应的确定性 <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.PileType\" />。该 ID 无需已注册。\n\t///     </para>\n\t/// </summary>\n\tpublic static bool TryGetPileType(string id, out PileType value)\n\t{\n\t\t//IL_000d: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0013: Expected I4, but got Unknown\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(id, \"id\");\n\t\ttry\n\t\t{\n\t\t\tvalue = (PileType)(int)DynamicEnumValueRegistry<PileType>.GetValue(id);\n\t\t\treturn true;\n\t\t}\n\t\tcatch (InvalidOperationException)\n\t\t{\n\t\t\tvalue = (PileType)0;\n\t\t\treturn false;\n\t\t}\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Tries to resolve a registered pile ID, vanilla <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.PileType\" /> name, or deterministic\n\t///         dynamic value. Registered pile IDs take precedence.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         尝试解析已注册牌堆 ID、原版 <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.PileType\" /> 名称或确定性动态值。已注册牌堆 ID 优先。\n\t///     </para>\n\t/// </summary>\n\tpublic static bool TryResolvePileType(string idOrEnumName, out PileType value)\n\t{\n\t\t//IL_0030: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0036: Expected I4, but got Unknown\n\t\tArgumentException.ThrowIfNullOrWhiteSpace(idOrEnumName, \"idOrEnumName\");\n\t\tif (!TryGet(idOrEnumName, out ModCardPileDefinition definition))\n\t\t{\n\t\t\tif (!Enum.TryParse<PileType>(idOrEnumName.Trim(), ignoreCase: true, out value))\n\t\t\t{\n\t\t\t\treturn TryGetPileType(idOrEnumName, out value);\n\t\t\t}\n\t\t\treturn true;\n\t\t}\n\t\tvalue = (PileType)(int)definition.PileType;\n\t\treturn true;\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Tries to get the registered pile ID represented by <paramref name=\"value\" />.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         尝试获取 <paramref name=\"value\" /> 所表示的已注册牌堆 ID。\n\t///     </para>\n\t/// </summary>\n\tpublic static bool TryGetId(PileType value, out string id)\n\t{\n\t\t//IL_0010: Unknown result type (might be due to invalid IL or missing references)\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\tif (DefinitionsByPileType.TryGetValue(value, out ModCardPileDefinition value2))\n\t\t\t{\n\t\t\t\tid = value2.Id;\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\tid = string.Empty;\n\t\treturn false;\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">Creates a hover tip for the registered pile with the specified ID.</para>\n\t///     <para xml:lang=\"zh-CN\">为指定 ID 的已注册牌堆创建悬停提示。</para>\n\t/// </summary>\n\t/// <param name=\"id\">\n\t///     <para xml:lang=\"en\">The registered pile ID.</para>\n\t///     <para xml:lang=\"zh-CN\">已注册牌堆 ID。</para>\n\t/// </param>\n\tpublic static HoverTip CreateHoverTip(string id)\n\t{\n\t\t//IL_000b: Unknown result type (might be due to invalid IL or missing references)\n\t\tif (TryGet(id, out ModCardPileDefinition definition))\n\t\t{\n\t\t\treturn ModCardPileHoverTipFactory.Create(definition);\n\t\t}\n\t\tthrow new KeyNotFoundException(\"Card pile '\" + NormalizeId(id) + \"' is not registered.\");\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Creates a <see cref=\"T:MegaCrit.Sts2.Core.HoverTips.HoverTip\" /> for the registered mod card pile represented by\n\t///         <paramref name=\"value\" />.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         为 <paramref name=\"value\" /> 所表示的已注册模组卡牌牌堆创建 <see cref=\"T:MegaCrit.Sts2.Core.HoverTips.HoverTip\" />。\n\t///     </para>\n\t/// </summary>\n\t/// <param name=\"value\">\n\t///     <para xml:lang=\"en\">The dynamic card-pile value to present.</para>\n\t///     <para xml:lang=\"zh-CN\">要显示的动态卡牌牌堆值。</para>\n\t/// </param>\n\t/// <returns>\n\t///     <para xml:lang=\"en\">A hover tip using the registered pile presentation.</para>\n\t///     <para xml:lang=\"zh-CN\">使用已注册牌堆呈现信息的悬停提示。</para>\n\t/// </returns>\n\t/// <exception cref=\"T:System.Collections.Generic.KeyNotFoundException\">\n\t///     <para xml:lang=\"en\"><paramref name=\"value\" /> is not a registered mod card pile.</para>\n\t///     <para xml:lang=\"zh-CN\"><paramref name=\"value\" /> 不是已注册的模组卡牌牌堆。</para>\n\t/// </exception>\n\tpublic static HoverTip CreateHoverTip(PileType value)\n\t{\n\t\t//IL_0000: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0006: Unknown result type (might be due to invalid IL or missing references)\n\t\treturn ModCardPileHoverTipFactory.Create(Get(value));\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Returns a snapshot of all registered definitions ordered by ID using ordinal comparison.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         返回所有已注册定义的快照，并按 ID 使用序号比较排序。\n\t///     </para>\n\t/// </summary>\n\tpublic static ModCardPileDefinition[] GetDefinitionsSnapshot()\n\t{\n\t\treturn Volatile.Read(in _definitionsSnapshot).ToArray();\n\t}\n\n\tinternal static ModCardPileDefinition[] GetCombatDefinitionsSnapshot()\n\t{\n\t\treturn Volatile.Read(in _combatDefinitionsSnapshot);\n\t}\n\n\t/// <summary>\n\t///     <para xml:lang=\"en\">\n\t///         Returns definitions that use <paramref name=\"style\" />, ordered by ID using ordinal\n\t///         comparison.\n\t///     </para>\n\t///     <para xml:lang=\"zh-CN\">\n\t///         返回使用 <paramref name=\"style\" /> 的定义，并按 ID 使用序号比较排序。\n\t///     </para>\n\t/// </summary>\n\tinternal static ModCardPileDefinition[] GetDefinitionsByStyle(ModCardPileUiStyle style)\n\t{\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\treturn Definitions.Values.Where((ModCardPileDefinition def) => def.Style == style).OrderBy<ModCardPileDefinition, string>((ModCardPileDefinition def) => def.Id, StringComparer.Ordinal).ToArray();\n\t\t}\n\t}\n\n\tprivate ModCardPileDefinition RegisterCore(string id, ModCardPileSpec spec)\n\t{\n\t\t//IL_001e: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0023: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_002b: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_007b: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_018e: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_01d6: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_01e1: Expected I4, but got Unknown\n\t\tEnsureMutable(\"register card piles\");\n\t\tstring text = NormalizeId(id);\n\t\tPileType value = DynamicEnumValueRegistry<PileType>.Register(_modId, text).Value;\n\t\tstring modId = _modId;\n\t\tModCardPileScope scope = spec.Scope;\n\t\tModCardPileUiStyle style = spec.Style;\n\t\tModCardPileAnchor anchor = spec.Anchor;\n\t\tstring? iconPath = spec.IconPath;\n\t\tstring[]? hotkeys = spec.Hotkeys;\n\t\tint cardShouldBeVisible;\n\t\tif (!spec.CardShouldBeVisible)\n\t\t{\n\t\t\tif ((object)spec != null && spec.Style == ModCardPileUiStyle.ExtraHand)\n\t\t\t{\n\t\t\t\tModCardPileExtraHandSpec extraHand = spec.ExtraHand;\n\t\t\t\tif ((object)extraHand != null)\n\t\t\t\t{\n\t\t\t\t\tcardShouldBeVisible = (extraHand.AllowCardPlay ? 1 : 0);\n\t\t\t\t\tgoto IL_0074;\n\t\t\t\t}\n\t\t\t}\n\t\t\tcardShouldBeVisible = 0;\n\t\t}\n\t\telse\n\t\t{\n\t\t\tcardShouldBeVisible = 1;\n\t\t}\n\t\tgoto IL_0074;\n\t\tIL_0074:\n\t\tModCardPileDefinition modCardPileDefinition = new ModCardPileDefinition(modId, text, value, scope, style, anchor, iconPath, hotkeys, (byte)cardShouldBeVisible != 0, spec.OnOpen, spec.HoverTipScreenOffset, spec.HoverTipPlacement, spec.VisibleWhen, spec.FlightTargetPositionResolver, spec.FlightStartPositionResolver, spec.View, spec.ExtraHand);\n\t\tusing (SyncRoot.EnterScope())\n\t\t{\n\t\t\tEnsureMutable(\"register card piles\");\n\t\t\tif (Definitions.TryGetValue(text, out ModCardPileDefinition value2))\n\t\t\t{\n\t\t\t\tif ((object)value2.ModId != modCardPileDefinition.ModId && !StringComparer.OrdinalIgnoreCase.Equals(value2.ModId, modCardPileDefinition.ModId))\n\t\t\t\t{\n\t\t\t\t\tthrow new InvalidOperationException($\"Card pile '{text}' is already registered by mod '{value2.ModId}'; mod '{modCardPileDefinition.ModId}' cannot re-register it.\");\n\t\t\t\t}\n\t\t\t\treturn value2;\n\t\t\t}\n\t\t\tDefinitions[text] = modCardPileDefinition;\n\t\t\tDefinitionsByPileType[value] = modCardPileDefinition;\n\t\t\tRebuildDefinitionSnapshotsLocked();\n\t\t}\n\t\t_logger.Info($\"[CardPiles] Registered pile: {text} (PileType=0x{(int)value:X8}, Style={spec.Style}, Scope={spec.Scope})\", 1);\n\t\treturn modCardPileDefinition;\n\t}\n\n\tprivate static void RebuildDefinitionSnapshotsLocked()\n\t{\n\t\tModCardPileDefinition[] array = Definitions.Values.OrderBy<ModCardPileDefinition, string>((ModCardPileDefinition definition) => definition.Id, StringComparer.Ordinal).ToArray();\n\t\tVolatile.Write(ref _definitionsSnapshot, array);\n\t\tVolatile.Write(ref _combatDefinitionsSnapshot, array.Where((ModCardPileDefinition definition) => definition.Scope == ModCardPileScope.CombatOnly).ToArray());\n\t}\n\n\tprivate void EnsureMutable(string operation)\n\t{\n\t\tif (!IsFrozen)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tthrow new InvalidOperationException($\"Cannot {operation} after pile registration has been frozen ({_freezeReason ?? \"unknown\"}). \" + \"Register piles from your mod initializer before model initialization.\");\n\t}\n\n\tprivate static string NormalizeId(string id)\n\t{\n\t\treturn id.Trim();\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n"
+    }
+  },
+  "sourceFindings": [
+    "CardModel.Pile searches player piles using membership; observed twenty direct card types inherit CardModel listener eligibility",
+    "Player.Piles and PlayerCombatState.AllPiles have append-capable Ritsu postfixes; the combat postfix can also update _piles",
+    "Ritsu extra-hand prefix can report Hand while an AsyncLocal play-evaluation scope is active",
+    "Current live-isolation fixture records registry frozen and zero definitions before and after actual turn advancement",
+    "RegisterCore checks EnsureMutable before registering a dynamic enum and again under SyncRoot before dictionary writes; frozen normal registration throws",
+    "EnterPlayEvaluation requires a registered ExtraHand definition before entering context; empty frozen registry narrows this normal source but not arbitrary reflection/unknown patches",
+    "simulation pile lookup fast path already relies on frozen empty registry and preserves combat-piles-then-deck membership order"
+  ],
+  "proofDesign": {
+    "incumbent": "Consume only complete policy-compliant victory; strict optimistic loss comparison and independent objective/source/stage gates remain authoritative",
+    "transposition": "Membership/getter environment, harmless card-listener composition, every reachable order reader and producer must compose before projection can prune",
+    "keepOrderedConsumers": [
+      "ranking",
+      "continuation/live comparison",
+      "diagnostics",
+      "original cycle and ordered-mutation leases"
+    ],
+    "futureFallback": "Unknown sources retain original ordered key; do not infer safety from vanilla assembly or lack of declared hook overrides"
+  },
+  "reuse": [
+    "exhaust-projection-subsets-20261007: 76679/21198 old potential admissions are not actual cuts or speed",
+    "exhaust-equivalence-certification-20261007: Eidolon 8/6 counterexample, not rerun",
+    "exhaust-return-boundary-20261007: return capacity counterexample, not rerun",
+    "exhaust-cleanup-contract-20261007: unknown cross-card cost-event counterexample, not rerun",
+    "task-caller-order-proof-20261008: default completion/context effects, not rerun",
+    "exhaust-positive-native-contract-20261007: four local actions and explicit Shiv/Inky generation remain local evidence, not whole-root coverage"
+  ],
+  "unverified": [
+    "all legal future card actions, recursive producers/transform/recovery/return sources of full root",
+    "all initial powers, private references, attachments, saved state, callbacks and future extension mutation closure",
+    "production identity-bound getter/patch certificate and canonical transposition consumers",
+    "all native private fields and trace/callback effects beyond modeled complete state",
+    "pure full Coordinator speed and process peak RSS",
+    "production certificate overhead, actual replay/snapshot savings and fixed final regression",
+    "historical Silent 54/57 and Necrobinder boss 0/22 loss gaps and original uploaded Soul root recovery provenance"
+  ],
+  "builds": {
+    "failedFirst": {
+      "elapsedSeconds": 11.57,
+      "warnings": 0,
+      "errors": 2,
+      "reason": "CS0272: Energy private setter used by temporary fixture; use GainEnergy",
+      "sourceDelta": [
+        "child Energy += index+1 -> child GainEnergy(index+1)",
+        "descendant Energy +=100 -> descendant GainEnergy(100)"
+      ]
+    },
+    "orderProbe": {
+      "elapsedSeconds": 14.58,
+      "warnings": 0,
+      "errors": 0,
+      "dllSha256FromPassedResult": "D60C86FDF709BB53A556DA5682F485CA225BE25BC79C74C6EFB3EB100CB6D306"
+    },
+    "liveAdvancementProbe": {
+      "elapsedSeconds": 13.61,
+      "warnings": 0,
+      "errors": 0,
+      "dllSha256FromPassedResult": "92DAB36743D3B40D543FB61C868C8B0FF79F24CA6E7A1A91333CA040BE85DE90"
+    }
+  },
+  "sourceArchive": {
+    "prepare.py": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/prepare.py",
+      "sha256": "f29bdca07c3083fbef18e835b0f3483669ca5d4a44644250c691c94d7c9a0966",
+      "text": "from pathlib import Path\nimport json, hashlib\n\nbase = Path(__file__).resolve().parent\nrepo = base.parents[2]\nold = json.loads((repo/'docs/performance/task-caller-order-proof-20261008.json').read_text())\nscript = old['sourceArchive']['run-native.py']\nscript = script.get('text', script.get('body')) if isinstance(script, dict) else script\nscript = script.replace('task-caller-order-proof-20261008','exhaust-root-turn-contract-20261008').replace('TASK-CALLER-ORDER-PROOF','EXHAUST-ROOT-TURN-CONTRACT')\n(base/'run-native.py').write_text(script)\n(base/'native.props').write_text('<Project><PropertyGroup><CopyModOnBuild>false</CopyModOnBuild></PropertyGroup><ItemGroup><Compile Include=\"'+str(base/'TaskExhaustRootTurn.cs')+'\" /></ItemGroup></Project>\\n')\nexecutor = repo/'src/Testing/Host/UnattendedTestRunner.Executor.cs'\noriginal = executor.read_bytes()\n(base/'original-executor.txt').write_bytes(original)\nmarker = b'            if (request.ScenarioId is \"ZERO-CREDIT-GROWTH-PROOF\"'\nif original.count(marker) != 1: raise RuntimeError('Executor marker is ambiguous')\nroute = b'''            if (request.ScenarioId == \"EXHAUST-ROOT-TURN-CONTRACT\")\n            {\n                await runner.AssertExhaustRootTurnAsync(combatState, player);\n                return Observation(combatEnded: false);\n            }\n'''\npatched = original.replace(marker, route+marker)\nexecutor.write_bytes(patched)\n(base/'temporary-executor.txt').write_bytes(patched)\n(base/'preparation.json').write_text(json.dumps({'sourceBase':'0e458516','executorOriginalSha256':hashlib.sha256(original).hexdigest(),'executorPatchedSha256':hashlib.sha256(patched).hexdigest()},indent=2)+'\\n')\n"
+    },
+    "TaskExhaustRootTurn.cs": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/TaskExhaustRootTurn.cs",
+      "sha256": "77a371703b1de0dd45cc8d54208f9bff8457fb441b60fe8b8193543ad76c31ca",
+      "text": "using System.Reflection;\nusing System.Security.Cryptography;\nusing System.Text;\nusing System.Text.Json;\nusing CombatSolver.Engine.Common;\nusing CombatSolver.Engine.InCombat.Simulation;\nusing HarmonyLib;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Commands;\nusing MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing MegaCrit.Sts2.Core.GameActions;\nusing MegaCrit.Sts2.Core.Models;\nusing MegaCrit.Sts2.Core.Runs;\n\nnamespace CombatSolver;\n\ninternal sealed partial class CombatBeamSolver\n{\n    internal StateFingerprint TaskExhaustRootTurnKey(CombatPredictionSimulator simulator)\n    {\n        var combat = (SimulatedCombatState)simulator.State.CombatState;\n        return BuildStateKey(combat.GetPlayerTurnNumber(_player), simulator.State.GetCreature(_player.Creature),\n            simulator.State.GetPlayerCombatState(_player), combat, simulator, simulator.ShuffleEventCount, new HashSet<uint>());\n    }\n}\n\ninternal sealed partial class UnattendedTestRunner\n{\n    private static void TaskUnknownPilePrefix() { }\n\n    private async Task AssertExhaustRootTurnAsync(CombatState live, Player player)\n    {\n        SetStage(\"exhaust_root_turn_contract\");\n        string[] ids = [\"ASCENDERS_BANE\", \"BACKSTAB\", \"BLADE_OF_INK\", \"BUBBLE_BUBBLE\", \"DEFEND_SILENT\",\n            \"FAN_OF_KNIVES\", \"FLECHETTES\", \"MASTER_PLANNER\", \"NEUTRALIZE\", \"NOXIOUS_FUMES\", \"PRECISE_CUT\",\n            \"PREPARED\", \"PROWESS\", \"REFLEX\", \"ROLLING_BOULDER\", \"STRIKE_SILENT\", \"SURVIVOR\", \"THE_HUNT\",\n            \"SHIV\", \"FRANTIC_ESCAPE\"];\n        foreach (string id in ids) await InjectCardAsync(live, player, new() { CardId = id, Pile = \"Exhaust\" });\n        await RunManager.Instance.ActionExecutor.FinishedExecutingActions();\n        PlayerCombatState actual = player.PlayerCombatState!;\n        CardPile nativePile = actual.ExhaustPile;\n        if (nativePile.Cards is not List<CardModel> ordered) throw new InvalidOperationException(\"Unknown native pile container.\");\n        CardModel[] originalOrder = ordered.ToArray();\n        CardModel[] cards = player.Piles.SelectMany(pile => pile.Cards).Distinct(ReferenceEqualityComparer.Instance).Cast<CardModel>().ToArray();\n        var movableTypes = originalOrder.Where(card => ids.Contains(card.Id.Entry, StringComparer.Ordinal)).Select(card => card.GetType()).ToHashSet();\n        if (movableTypes.Count != ids.Length) throw new InvalidOperationException(\"Direct-source fixture is incomplete.\");\n        MethodInfo getPile = typeof(CardModel).GetProperty(nameof(CardModel.Pile))!.GetMethod!;\n        string[] knownPilePatches = [\"STS2RitsuLib.CardPiles.Patches.ModExtraHandCardPileSemanticPatch.Prefix\",\n            \"CombatSolver.SimulationCardPileLookupPatch.Prefix\"];\n        static string MethodName(MethodBase method) => method.DeclaringType!.FullName + \".\" + method.Name;\n        static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));\n        static void Equal(string expected, string actual, string label)\n        {\n            if (expected != actual) throw new InvalidOperationException(label + \" differs\\nEXPECTED\\n\" + expected + \"\\nACTUAL\\n\" + actual);\n        }\n        bool ClosedPilePatches()\n        {\n            Patches? patches = Harmony.GetPatchInfo(getPile);\n            return patches is not null && patches.Prefixes.Count == 2 && patches.Postfixes.Count == 0\n                && patches.Transpilers.Count == 0 && patches.Finalizers.Count == 0\n                && patches.Prefixes.Select(patch => MethodName(patch.PatchMethod)).Order(StringComparer.Ordinal)\n                    .SequenceEqual(knownPilePatches.Order(StringComparer.Ordinal));\n        }\n        if (!ClosedPilePatches()) throw new InvalidOperationException(\"Unknown Pile binding before probe.\");\n        object Bind(MethodInfo method)\n        {\n            Patches? patches = Harmony.GetPatchInfo(method);\n            return new { method = method.ToString(), declaringType = method.DeclaringType!.FullName,\n                mvid = method.Module.ModuleVersionId, token = method.MetadataToken,\n                il = Convert.ToHexString(method.GetMethodBody()?.GetILAsByteArray() ?? []),\n                ilSha256 = Convert.ToHexString(SHA256.HashData(method.GetMethodBody()?.GetILAsByteArray() ?? [])),\n                patches = (patches?.Prefixes.Select(patch => (\"Prefix\", patch)) ?? [])\n                    .Concat(patches?.Postfixes.Select(patch => (\"Postfix\", patch)) ?? [])\n                    .Concat(patches?.Transpilers.Select(patch => (\"Transpiler\", patch)) ?? [])\n                    .Concat(patches?.Finalizers.Select(patch => (\"Finalizer\", patch)) ?? [])\n                    .Select(pair => new { kind = pair.Item1, method = MethodName(pair.patch.PatchMethod),\n                        mvid = pair.patch.PatchMethod.Module.ModuleVersionId, token = pair.patch.PatchMethod.MetadataToken,\n                        pair.patch.owner, pair.patch.priority, pair.patch.before, pair.patch.after,\n                        il = Convert.ToHexString(pair.patch.PatchMethod.GetMethodBody()?.GetILAsByteArray() ?? []) }).ToArray() };\n        }\n        var bindings = new List<object> { Bind(getPile), Bind(typeof(CardModel).GetProperty(nameof(CardModel.ShouldReceiveCombatHooks))!.GetMethod!),\n            Bind(typeof(CardPile).GetProperty(nameof(CardPile.Cards))!.GetMethod!), Bind(typeof(CardPile).GetProperty(nameof(CardPile.Type))!.GetMethod!),\n            Bind(typeof(CardPile).GetProperty(nameof(CardPile.IsCombatPile))!.GetMethod!), Bind(typeof(Player).GetProperty(nameof(Player.Piles))!.GetMethod!),\n            Bind(typeof(PlayerCombatState).GetProperty(nameof(PlayerCombatState.AllPiles))!.GetMethod!) };\n        var inherited = movableTypes.OrderBy(type => type.FullName, StringComparer.Ordinal).Select(type =>\n        {\n            var method = type.GetProperty(nameof(CardModel.ShouldReceiveCombatHooks))!.GetMethod!;\n            if (method.DeclaringType != typeof(CardModel) || (Harmony.GetPatchInfo(method)?.Owners.Count ?? 0) != 0)\n                throw new InvalidOperationException(\"Unknown listener eligibility: \" + type.FullName);\n            return new { type = type.FullName, declaringType = method.DeclaringType.FullName,\n                method.MetadataToken, mvid = method.Module.ModuleVersionId };\n        }).ToArray();\n        string Membership()\n        {\n            var piles = player.Piles.ToArray();\n            return JsonSerializer.Serialize(cards.Select((card, index) =>\n            {\n                CardPile[] owners = piles.Where(pile => pile.Cards.Any(candidate => ReferenceEquals(candidate, card))).ToArray();\n                if (owners.Length != 1 || !ReferenceEquals(card.Pile, owners[0]) || card.ShouldReceiveCombatHooks != owners[0].IsCombatPile)\n                    throw new InvalidOperationException(\"Nonunique or inconsistent pile membership: \" + card.Id.Entry);\n                return new { index, card = card.Id.Entry, pile = owners[0].Type.ToString(), card.ShouldReceiveCombatHooks };\n            }));\n        }\n        string beforeNegative = ContinuationStamp.CaptureLive(live).StateText;\n        var probeHarmony = new Harmony(\"combatsolver.task.exhaust-root-membership-negative.20261008\");\n        bool unknownPatchRejected;\n        try\n        {\n            probeHarmony.Patch(getPile, prefix: new HarmonyMethod(typeof(UnattendedTestRunner).GetMethod(nameof(TaskUnknownPilePrefix), BindingFlags.NonPublic | BindingFlags.Static)!));\n            unknownPatchRejected = !ClosedPilePatches();\n            if (!unknownPatchRejected) throw new InvalidOperationException(\"Unknown patch was accepted.\");\n        }\n        finally { probeHarmony.Unpatch(getPile, HarmonyPatchType.All, probeHarmony.Id); }\n        if (!ClosedPilePatches()) throw new InvalidOperationException(\"Original Pile patch set was not restored.\");\n        Equal(beforeNegative, ContinuationStamp.CaptureLive(live).StateText, \"unknown-patch probe live isolation\");\n        CardModel duplicate = actual.Hand.Cards.First();\n        bool duplicateRejected = false;\n        ordered.Add(duplicate);\n        try\n        {\n            duplicateRejected = player.Piles.Count(pile => pile.Cards.Any(card => ReferenceEquals(card, duplicate))) != 1;\n            if (!duplicateRejected) throw new InvalidOperationException(\"Duplicate pile ownership was accepted.\");\n        }\n        finally { ordered.RemoveAt(ordered.Count - 1); }\n        Equal(beforeNegative, ContinuationStamp.CaptureLive(live).StateText, \"duplicate ownership probe live isolation\");\n        var policy = SolverController.CaptureSearchPolicy(SolverSettings.Capture(), live, false, null);\n        var names = SolverDisplayNames.Capture(live);\n        var damage = BattleDamageTracker.Observe(live);\n        CardModel[][] orders = [originalOrder, originalOrder.OrderBy(card => card.GetType().FullName, StringComparer.Ordinal).ToArray(),\n            originalOrder.OrderByDescending(card => card.GetType().FullName, StringComparer.Ordinal).ToArray()];\n        var observations = new List<object>();\n        var parents = new List<(CombatPredictionSimulator simulator, string full)>();\n        string? membership = null, initialFull = null, endedFull = null;\n        SimulationSnapshot? selected = null;\n        CombatRootSnapshot? selectedRoot = null;\n        string Full(CombatPredictionSimulator sim, CombatRootSnapshot root, CombatBeamSolver solver)\n        {\n            var combat = (SimulatedCombatState)sim.State.CombatState;\n            return ContinuationStamp.CapturePredicted(player, sim, combat.GetPlayerTurnNumber(player), root.Forecast, root.StartTurnNumber).StateText\n                + \"\\nKEY=\" + solver.TaskExhaustRootTurnKey(sim) + \"\\nHISTORY=\" + CardContinuationContractHistoryText(sim)\n                + \"\\nFLAGS=\" + JsonSerializer.Serialize(new { sim.TerminalStamp, sim.IsInProgress, sim.IsAboutToLose });\n        }\n        string CanonicalFull(CombatPredictionSimulator source, CombatRootSnapshot root, CombatBeamSolver solver)\n        {\n            var clone = source.Fork(); var pile = clone.State.GetPlayerCombatState(player).ExhaustPile;\n            var all = pile.Cards.ToArray();\n            var free = all.Select((card, index) => (card, index)).Where(pair => movableTypes.Contains(pair.card.Preview.GetType())\n                    && pair.card.Preview.Enchantment == null && pair.card.Preview.Affliction == null)\n                .OrderBy(pair => pair.card.Preview.GetType().FullName, StringComparer.Ordinal).ThenBy(pair => pair.index).Select(pair => pair.card).ToArray();\n            int cursor = 0;\n            for (int index = 0; index < all.Length; index++)\n                if (movableTypes.Contains(all[index].Preview.GetType()) && all[index].Preview.Enchantment == null && all[index].Preview.Affliction == null)\n                    all[index] = free[cursor++];\n            pile.Clear(); foreach (var card in all) pile.Add(card);\n            return Full(clone, root, solver);\n        }\n        for (int variant = 0; variant < orders.Length; variant++)\n        {\n            ordered.Clear(); ordered.AddRange(orders[variant]);\n            string nativeBefore = ContinuationStamp.CaptureLive(live).StateText;\n            string currentMembership = Membership();\n            if (membership is null) membership = currentMembership; else Equal(membership, currentMembership, \"native membership under order permutation\");\n            var root = CombatRootSnapshot.Capture(live);\n            var solver = new CombatBeamSolver(root, names, damage, policy, potionPolicyOverride: SolverPotionPolicy.Disabled);\n            var parent = root.ForkSimulator();\n            string rawBefore = Full(parent, root, solver);\n            string normalizedBefore = CanonicalFull(parent, root, solver);\n            if (initialFull is null) initialFull = normalizedBefore; else Equal(initialFull, normalizedBefore, \"projected complete root\");\n            SimulationSnapshot ended;\n            using (SimulationNotificationIsolation.Enter()) ended = solver.ReplayEndTurnForTesting();\n            if (ended.Simulator.HasPendingChoice) throw new InvalidOperationException(\"EndTurn probe needs explicit choice coverage.\");\n            string normalizedEnd = CanonicalFull(ended.Simulator, root, solver);\n            if (endedFull is null) endedFull = normalizedEnd; else Equal(endedFull, normalizedEnd, \"projected complete next turn\");\n            Equal(rawBefore, Full(parent, root, solver), \"root parent isolation\");\n            Equal(nativeBefore, ContinuationStamp.CaptureLive(live).StateText, \"shadow/native isolation\");\n            if (variant == 2)\n            {\n                string sourceBefore = Full(ended.Simulator, root, solver);\n                var children = Enumerable.Range(0, 16).Select(_ => ended.Simulator.Fork()).ToArray();\n                foreach (var child in children) Equal(sourceBefore, Full(child, root, solver), \"first-generation complete Fork\");\n                await Task.WhenAll(children.Select((child, index) => Task.Run(() =>\n                {\n                    using IDisposable isolation = SimulationNotificationIsolation.Enter();\n                    child.State.GetPlayerCombatState(player).GainEnergy(index + 1);\n                    var descendant = child.Fork();\n                    string childBefore = Full(child, root, solver);\n                    Equal(childBefore, Full(descendant, root, solver), \"second-generation complete Fork\");\n                    descendant.State.GetPlayerCombatState(player).GainEnergy(100);\n                    Equal(childBefore, Full(child, root, solver), \"second-generation parent isolation\");\n                })));\n                for (int index = 0; index < children.Length; index++)\n                    if (children[index].State.GetPlayerCombatState(player).Energy != ended.Simulator.State.GetPlayerCombatState(player).Energy + index + 1)\n                        throw new InvalidOperationException(\"Parallel sibling state leaked.\");\n                Equal(sourceBefore, Full(ended.Simulator, root, solver), \"parallel parent isolation\");\n                Equal(nativeBefore, ContinuationStamp.CaptureLive(live).StateText, \"parallel/native isolation\");\n                selected = ended; selectedRoot = root;\n            }\n            observations.Add(new { variant, order = orders[variant].Select(card => card.Id.Entry).ToArray(), rootHash = Hash(normalizedBefore),\n                endedHash = Hash(normalizedEnd), rawKey = solver.TaskExhaustRootTurnKey(parent).ToString(),\n                root.CapturedRunModSubscriberCount, root.CapturedCombatModSubscriberCount, root.CapturedBaseLibCardModifiers });\n            parents.Add((parent, rawBefore));\n        }\n        if (selected is null || selectedRoot is null) throw new InvalidOperationException(\"No native reference.\");\n        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(35));\n        int previous = actual.TurnNumber;\n        CombatManager.Instance.OnEndedTurnLocally();\n        var action = new EndPlayerTurnAction(player, previous);\n        RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(action);\n        await action.CompletionTask.WaitAsync(deadline.Token);\n        while (player.PlayerCombatState is not { Phase: PlayerTurnPhase.Play } current || current.TurnNumber <= previous)\n        { deadline.Token.ThrowIfCancellationRequested(); EnsureWithinDeadline(); await NextFrameAsync(); }\n        string predicted = ContinuationStamp.CapturePredicted(player, selected.Simulator, selected.Turn, selectedRoot.Forecast, selectedRoot.StartTurnNumber).StateText;\n        string native = ContinuationStamp.CaptureLive(live).StateText;\n        Equal(predicted, native, \"native complete next-turn state/RNG\");\n        AssertSnapshotEqual(CaptureSimulated(selected.Simulator, (SimulatedCombatState)selected.Simulator.State.CombatState, player, selectedRoot.Enemies[0]),\n            CaptureActual(live, player, selectedRoot.Enemies[0]), \"EXHAUST-ROOT-TURN\", \"native\");\n        var output = new { gameMvid = typeof(CardModel).Module.ModuleVersionId, directCardTypes = inherited,\n            rootCardCount = cards.Length, exhaustCount = originalOrder.Length, observations, bindings, membershipHash = Hash(membership!),\n            unknownPatchRejected, duplicateRejected, firstGenerationForks = 16, secondGenerationForks = 16,\n            nativeNextTurnSha256 = Hash(native), actualPrunes = 0, wholeRootCertificate = false };\n        File.WriteAllText(\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-root-turn-contract-20261008/native-details.json\", JsonSerializer.Serialize(output, new JsonSerializerOptions { WriteIndented = true }));\n        _completedChecks.Add(\"ExhaustRootTurn:TwentyDirectCardTypes:ThreeStableWithinTypeOrders:UniqueMembership:UnknownPatchRejection:ThreeCompleteEndTurns:NativeFullStateRng:ThirtyTwoForks:ParentSiblingLiveIsolation\");\n        _completedChecks.Add(\"TASK_EXHAUST_ROOT_TURN \" + JsonSerializer.Serialize(new { rootCardCount = cards.Length, exhaustCount = originalOrder.Length,\n            variants = observations.Count, firstGenerationForks = 16, secondGenerationForks = 16, unknownPatchRejected, duplicateRejected,\n            nativeNextTurnSha256 = Hash(native), actualPrunes = 0, wholeRootCertificate = false }));\n    }\n}\n"
+    },
+    "TaskExhaustRootLiveIsolation.cs": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/TaskExhaustRootLiveIsolation.cs",
+      "sha256": "307b2076944a0b1a1d2eb2474264acfb501cbd472ab236eedf54682a62f5c466",
+      "text": "using System.Security.Cryptography;\nusing System.Text;\nusing System.Text.Json;\nusing CombatSolver.Engine.Common;\nusing CombatSolver.Engine.InCombat.Simulation;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing MegaCrit.Sts2.Core.GameActions;\nusing MegaCrit.Sts2.Core.Runs;\nusing STS2RitsuLib.CardPiles;\n\nnamespace CombatSolver;\n\ninternal sealed partial class UnattendedTestRunner\n{\n    private async Task AssertExhaustRootLiveIsolationAsync(CombatState live, Player player)\n    {\n        SetStage(\"exhaust_root_live_isolation\");\n        foreach (string id in new[] { \"ASCENDERS_BANE\", \"BACKSTAB\", \"BLADE_OF_INK\", \"BUBBLE_BUBBLE\", \"DEFEND_SILENT\",\n            \"FAN_OF_KNIVES\", \"FLECHETTES\", \"MASTER_PLANNER\", \"NEUTRALIZE\", \"NOXIOUS_FUMES\", \"PRECISE_CUT\",\n            \"PREPARED\", \"PROWESS\", \"REFLEX\", \"ROLLING_BOULDER\", \"STRIKE_SILENT\", \"SURVIVOR\", \"THE_HUNT\", \"SHIV\", \"FRANTIC_ESCAPE\" })\n            await InjectCardAsync(live, player, new() { CardId = id, Pile = \"Exhaust\" });\n        await RunManager.Instance.ActionExecutor.FinishedExecutingActions();\n        bool pileRegistryFrozen = ModCardPileRegistry.IsFrozen;\n        int registeredModPileCount = ModCardPileRegistry.GetDefinitionsSnapshot().Length;\n        if (!pileRegistryFrozen || registeredModPileCount != 0)\n            throw new InvalidOperationException(\"Pile membership component has an open or nonempty mod-pile registry.\");\n        CombatRootSnapshot root = CombatRootSnapshot.Capture(live);\n        var policy = SolverController.CaptureSearchPolicy(SolverSettings.Capture(), live, false, null);\n        var solver = new CombatBeamSolver(root, SolverDisplayNames.Capture(live), BattleDamageTracker.Observe(live), policy,\n            potionPolicyOverride: SolverPotionPolicy.Disabled);\n        var parent = root.ForkSimulator();\n        string Full(CombatPredictionSimulator sim)\n        {\n            var combat = (SimulatedCombatState)sim.State.CombatState;\n            return ContinuationStamp.CapturePredicted(player, sim, combat.GetPlayerTurnNumber(player), root.Forecast, root.StartTurnNumber).StateText\n                + \"\\nKEY=\" + solver.TaskExhaustRootTurnKey(sim) + \"\\nHISTORY=\" + CardContinuationContractHistoryText(sim)\n                + \"\\nFLAGS=\" + JsonSerializer.Serialize(new { sim.TerminalStamp, sim.IsInProgress, sim.IsAboutToLose });\n        }\n        static void Equal(string expected, string actual, string label)\n        {\n            if (expected != actual) throw new InvalidOperationException(label + \" differs\\nEXPECTED\\n\" + expected + \"\\nACTUAL\\n\" + actual);\n        }\n        static string Hash(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));\n        string parentBefore = Full(parent);\n        var children = Enumerable.Range(0, 16).Select(_ => parent.Fork()).ToArray();\n        foreach (var child in children) Equal(parentBefore, Full(child), \"captured branch before live advancement\");\n        SimulationSnapshot expected;\n        using (SimulationNotificationIsolation.Enter()) expected = solver.ReplayEndTurnForTesting();\n        if (expected.Simulator.HasPendingChoice) throw new InvalidOperationException(\"Unexpected pending end-turn choice.\");\n        string expectedBefore = Full(expected.Simulator);\n        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(35));\n        int previous = player.PlayerCombatState!.TurnNumber;\n        string nativeBefore = ContinuationStamp.CaptureLive(live).StateText;\n        CombatManager.Instance.OnEndedTurnLocally();\n        var action = new EndPlayerTurnAction(player, previous);\n        RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(action);\n        await action.CompletionTask.WaitAsync(deadline.Token);\n        while (player.PlayerCombatState is not { Phase: PlayerTurnPhase.Play } current || current.TurnNumber <= previous)\n        { deadline.Token.ThrowIfCancellationRequested(); EnsureWithinDeadline(); await NextFrameAsync(); }\n        string nativeAfter = ContinuationStamp.CaptureLive(live).StateText;\n        if (nativeBefore == nativeAfter) throw new InvalidOperationException(\"Live advancement failed to change the combat state.\");\n        string predicted = ContinuationStamp.CapturePredicted(player, expected.Simulator, expected.Turn, root.Forecast, root.StartTurnNumber).StateText;\n        Equal(predicted, nativeAfter, \"native complete end-turn state/RNG\");\n        Equal(parentBefore, Full(parent), \"root after actual live advancement\");\n        Equal(expectedBefore, Full(expected.Simulator), \"precomputed next turn after actual live advancement\");\n        foreach (var child in children) Equal(parentBefore, Full(child), \"captured branch after actual live advancement\");\n        SimulationSnapshot replayed;\n        using (SimulationNotificationIsolation.Enter()) replayed = solver.ReplayEndTurnForTesting();\n        Equal(expectedBefore, Full(replayed.Simulator), \"complete old-root replay after actual live advancement\");\n        Equal(nativeAfter, ContinuationStamp.CaptureLive(live).StateText, \"old-root replay/new-live isolation\");\n        await Task.WhenAll(children.Select((child, index) => Task.Run(() =>\n        {\n            using IDisposable isolation = SimulationNotificationIsolation.Enter();\n            child.State.GetPlayerCombatState(player).GainEnergy(index + 1);\n            var descendant = child.Fork();\n            string childBefore = Full(child);\n            Equal(childBefore, Full(descendant), \"post-live-advancement second-generation Fork\");\n            descendant.State.GetPlayerCombatState(player).GainEnergy(100);\n            Equal(childBefore, Full(child), \"post-live-advancement descendant/parent isolation\");\n        })));\n        for (int index = 0; index < children.Length; index++)\n            if (children[index].State.GetPlayerCombatState(player).Energy != parent.State.GetPlayerCombatState(player).Energy + index + 1)\n                throw new InvalidOperationException(\"Post-live-advancement sibling state leaked.\");\n        Equal(parentBefore, Full(parent), \"post-live-advancement parallel parent isolation\");\n        Equal(nativeAfter, ContinuationStamp.CaptureLive(live).StateText, \"post-live-advancement parallel/new-live isolation\");\n        var output = new { rootHash = Hash(parentBefore), oldRootReplayedNextTurnHash = Hash(expectedBefore),\n            nativeBeforeSha256 = Hash(nativeBefore), nativeAfterSha256 = Hash(nativeAfter),\n            capturedBranches = 16, postAdvancementDescendants = 16, pileRegistryFrozen, registeredModPileCount,\n            postAdvancePileRegistryFrozen = ModCardPileRegistry.IsFrozen,\n            postAdvanceRegisteredModPileCount = ModCardPileRegistry.GetDefinitionsSnapshot().Length,\n            actualPrunes = 0, wholeRootCertificate = false };\n        File.WriteAllText(\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-root-turn-contract-20261008/live-isolation-details.json\", JsonSerializer.Serialize(output, new JsonSerializerOptions { WriteIndented = true }));\n        _completedChecks.Add(\"ExhaustRootLiveIsolation:NativeActualTurnAdvance:FullStateHistoryRng:OldRootUnchanged:PrecomputedNextTurnUnchanged:OldRootReplayEqual:SixteenCapturedBranches:SixteenPostAdvanceDescendants:ParentSiblingNewLiveIsolation\");\n        _completedChecks.Add(\"TASK_EXHAUST_ROOT_LIVE_ISOLATION \" + JsonSerializer.Serialize(output));\n    }\n}\n"
+    },
+    "native.props": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/native.props",
+      "sha256": "f1a7407c456614fdbc3ea0a554c7b44871820c8d9c0466c45bcea493ea79364b",
+      "text": "<Project><PropertyGroup><CopyModOnBuild>false</CopyModOnBuild></PropertyGroup><ItemGroup><Compile Include=\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-root-turn-contract-20261008/TaskExhaustRootTurn.cs\" /><Compile Include=\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-root-turn-contract-20261008/TaskExhaustRootLiveIsolation.cs\" /></ItemGroup></Project>\n"
+    },
+    "run-native.py": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/run-native.py",
+      "sha256": "8ef05b9250b9b64ccd98c8cc017ae403c93bd2876e344cbe2837ba45dd1344bd",
+      "text": "from pathlib import Path\nimport subprocess,time,json\nbase=Path(__file__).resolve().parent\ncommand=['bash', 'tools/testing/run-unattended-test.sh', '--scenario-id', 'EXHAUST-ROOT-TURN-CONTRACT', '--generated-scenario-path', '/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json', '--combat-solver-build-dir', '/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-root-turn-contract-20261008/build-native', '--headless-instance', 'exhaust-root-turn-contract-20261008', '--timeout-seconds', '120', '--evidence-directory', '/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-root-turn-contract-20261008/evidence', '--cleanup-instance-on-exit', '--exit-on-complete']\nstarted=time.perf_counter()\nwith (base/\"launcher.log\").open(\"w\") as log:\n result=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT)\nsummary={\"command\":command,\"exitCode\":result.returncode,\"wallSeconds\":time.perf_counter()-started}\n(base/\"native-run-summary.json\").write_text(json.dumps(summary,indent=2)+\"\\n\")\nprint(json.dumps(summary))\nprint((base/\"launcher.log\").read_text()[-1800:])\nraise SystemExit(result.returncode)\n"
+    },
+    "run-live-isolation.py": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/run-live-isolation.py",
+      "sha256": "47663ac2f4bac3cb0e910ba4c567e8a8344fb0b2925687277902cbbc33506e8f",
+      "text": "from pathlib import Path\nimport subprocess,time,json\nbase=Path(__file__).resolve().parent\ncommand=['bash', 'tools/testing/run-unattended-test.sh', '--scenario-id', 'EXHAUST-ROOT-TURN-LIVE-ISOLATION', '--generated-scenario-path', '/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json', '--combat-solver-build-dir', '/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-root-turn-contract-20261008/build-native', '--headless-instance', 'exhaust-root-turn-live-isolation-20261008', '--timeout-seconds', '120', '--evidence-directory', '/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-root-turn-contract-20261008/evidence-live-isolation', '--cleanup-instance-on-exit', '--exit-on-complete']\nstarted=time.perf_counter()\nwith (base/\"launcher-live-isolation.log\").open(\"w\") as log:\n result=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT)\nsummary={\"command\":command,\"exitCode\":result.returncode,\"wallSeconds\":time.perf_counter()-started}\n(base/\"live-isolation-run-summary.json\").write_text(json.dumps(summary,indent=2)+\"\\n\")\nprint(json.dumps(summary))\nprint((base/\"launcher-live-isolation.log\").read_text()[-1800:])\nraise SystemExit(result.returncode)\n"
+    },
+    "write-report.py": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/write-report.py",
+      "sha256": "3dd31614bb3af189383e0a902ffad174d83b6dc82389fe2ed86e0e10d3aa86f7",
+      "text": "from pathlib import Path\nimport json, hashlib, difflib, shutil\n\nbase = Path(__file__).resolve().parent\nrepo = base.parents[2]\ndef load(path): return json.loads(path.read_text())\ndef sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()\ndef entry(path): return {'path':str(path.relative_to(repo)), 'sha256':sha(path), 'text':path.read_text()}\ndetails = load(base/'native-details.json')\nisolation = load(base/'live-isolation-details.json')\nresult = load(base/'evidence/result.json')\nisolation_result = load(base/'evidence-live-isolation/result.json')\nassert result['status'] == isolation_result['status'] == 'Passed'\nassert len({x['rawKey'] for x in details['observations']}) == 3\nassert len({x['rootHash'] for x in details['observations']}) == 1\nassert len({x['endedHash'] for x in details['observations']}) == 1\nassert isolation['pileRegistryFrozen'] and isolation['postAdvancePileRegistryFrozen']\nassert isolation['registeredModPileCount'] == isolation['postAdvanceRegisteredModPileCount'] == 0\nexecutor = repo/'src/Testing/Host/UnattendedTestRunner.Executor.cs'\noriginal = (base/'original-executor.txt').read_bytes()\ntemporary = (base/'temporary-executor.txt').read_bytes()\nassert executor.read_bytes() == temporary, 'Executor changed outside this task; do not overwrite'\npatch = ''.join(difflib.unified_diff(original.decode().splitlines(True),temporary.decode().splitlines(True),fromfile='a/src/Testing/Host/UnattendedTestRunner.Executor.cs',tofile='b/src/Testing/Host/UnattendedTestRunner.Executor.cs'))\nsources = ['prepare.py','TaskExhaustRootTurn.cs','TaskExhaustRootLiveIsolation.cs','native.props','run-native.py','run-live-isolation.py','write-report.py']\nnative_sources = ['ModCardPileAllPilesPatch.cs.txt','ModCardPilePlayerPilesPatch.cs.txt','ModExtraHandCardPileSemanticPatch.cs.txt','ModExtraHandSemanticContext.cs.txt','ModCardPileRegistry.cs.txt']\nraw_files = ['native-details.json','live-isolation-details.json','native-run-summary.json','live-isolation-run-summary.json','build-native-v1-failed.log','build-native-pass.log','build-live-isolation.log','launcher.log','launcher-live-isolation.log']\nreuse_deployment = repo/'.local/tool-tasks/model-capability-recovery-proof-20261007/deployment.json'\ndeployment = load(reuse_deployment)\nassert deployment['status'] == 'Passed'\nreport = {\n 'schemaVersion':1,'task':'exhaust-root-turn-contract-20261008','date':'2026-10-08','sourceBase':'0e458516',\n 'retainedRuntimeSource':'36370e54','runtimeChanged':False,\n 'game':{'version':'0.111.0 / 41cef1ea','mvid':'8a76776c-0ce1-4d4f-90bd-8cce653dad8e','dllSha256':'2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f','runtime':'9.0.7, reused actual game runtime identity evidence'},\n 'ritsuRuntime':{'version':'0.6.6','mvid':'f7f18a36-8ebb-4db2-b1ea-7bd340579646','dllSha256':'fe387f765a3951690b161c129731e6c10016215c06074aa3356dd96290f13b52'},\n 'scope':{'root':'dev-06-silent-boss, THE_INSATIABLE_BOSS','modification':'Keep generated root loadout, relics, powers and potions; inject twenty direct-source card types into Exhaust; three stable within-type orders',\n  'rootCardMembershipCount':74,'injectedExhaustCardCount':20,'nativeActualEndTurns':2,'simulatedEndTurnOrders':3,'postLiveOldRootReplay':1,\n  'fullComparedFields':'ContinuationStamp StateText (including RNG), original ordered state key, full card history and terminal/in-progress/loss flags; no all-heap/private-callback completeness claim',\n  'projection':'Only exact movable types without Enchantment/Affliction; keep each type internal order; other slots fixed. First fixture has no movable attached/unknown slots',\n  'noSolveOrCoordinator':True,'launcherTimeoutSeconds':120,'launcherCpuAdmission':2,'parallelForkTasks':16},\n 'orderProbe':{'result':result,'launcher':load(base/'native-run-summary.json'),'details':details},\n 'liveAdvancementProbe':{'result':isolation_result,'launcher':load(base/'live-isolation-run-summary.json'),'details':isolation},\n 'componentCoverage':{'directCardEligibilityBindings':{'passed':20,'totalInThisDirectSourceFixture':20,'scope':'inherited CardModel.ShouldReceiveCombatHooks with observed zero patches; exact type/MVID/token retained'},\n  'nativeGetterBindings':7,'observedKnownGetterPatches':4,'wholeRootFutureCertificates':0,'actualPrunes':0,\n  'negativeCases':['one additional unknown getter prefix rejected before membership use; unpatch restored observed original set','same reference placed in two native piles rejected; exact original live state restored'],\n  'guardLimitations':['diagnostic getter-patch gate matches full declaring type/method names and counts; it does not reject a foreign same-name replacement by identity','binding record includes MVID/token/IL/priority/owner/order, but is not a production patch certificate','negative cases do not prove all unknown source rejection paths']},\n 'nativeSourceEvidence':{name:entry(base/name) for name in native_sources},\n 'sourceFindings':[\n  'CardModel.Pile searches player piles using membership; observed twenty direct card types inherit CardModel listener eligibility',\n  'Player.Piles and PlayerCombatState.AllPiles have append-capable Ritsu postfixes; the combat postfix can also update _piles',\n  'Ritsu extra-hand prefix can report Hand while an AsyncLocal play-evaluation scope is active',\n  'Current live-isolation fixture records registry frozen and zero definitions before and after actual turn advancement',\n  'RegisterCore checks EnsureMutable before registering a dynamic enum and again under SyncRoot before dictionary writes; frozen normal registration throws',\n  'EnterPlayEvaluation requires a registered ExtraHand definition before entering context; empty frozen registry narrows this normal source but not arbitrary reflection/unknown patches',\n  'simulation pile lookup fast path already relies on frozen empty registry and preserves combat-piles-then-deck membership order'],\n 'proofDesign':{'incumbent':'Consume only complete policy-compliant victory; strict optimistic loss comparison and independent objective/source/stage gates remain authoritative',\n  'transposition':'Membership/getter environment, harmless card-listener composition, every reachable order reader and producer must compose before projection can prune',\n  'keepOrderedConsumers':['ranking','continuation/live comparison','diagnostics','original cycle and ordered-mutation leases'],\n  'futureFallback':'Unknown sources retain original ordered key; do not infer safety from vanilla assembly or lack of declared hook overrides'},\n 'reuse':['exhaust-projection-subsets-20261007: 76679/21198 old potential admissions are not actual cuts or speed','exhaust-equivalence-certification-20261007: Eidolon 8/6 counterexample, not rerun','exhaust-return-boundary-20261007: return capacity counterexample, not rerun','exhaust-cleanup-contract-20261007: unknown cross-card cost-event counterexample, not rerun','task-caller-order-proof-20261008: default completion/context effects, not rerun','exhaust-positive-native-contract-20261007: four local actions and explicit Shiv/Inky generation remain local evidence, not whole-root coverage'],\n 'unverified':['all legal future card actions, recursive producers/transform/recovery/return sources of full root','all initial powers, private references, attachments, saved state, callbacks and future extension mutation closure','production identity-bound getter/patch certificate and canonical transposition consumers','all native private fields and trace/callback effects beyond modeled complete state','pure full Coordinator speed and process peak RSS','production certificate overhead, actual replay/snapshot savings and fixed final regression','historical Silent 54/57 and Necrobinder boss 0/22 loss gaps and original uploaded Soul root recovery provenance'],\n 'builds':{'failedFirst':{'elapsedSeconds':11.57,'warnings':0,'errors':2,'reason':'CS0272: Energy private setter used by temporary fixture; use GainEnergy','sourceDelta':['child Energy += index+1 -> child GainEnergy(index+1)','descendant Energy +=100 -> descendant GainEnergy(100)']},\n  'orderProbe':{'elapsedSeconds':14.58,'warnings':0,'errors':0,'dllSha256FromPassedResult':result['mainAssemblyHash']},\n  'liveAdvancementProbe':{'elapsedSeconds':13.61,'warnings':0,'errors':0,'dllSha256FromPassedResult':isolation_result['mainAssemblyHash']}},\n 'sourceArchive':{name:entry(base/name) for name in sources},\n 'temporaryExecutorPatch':patch,'originalExecutorSha256':hashlib.sha256(original).hexdigest(),\n 'rawEvidence':{name:{'path':str((base/name).relative_to(repo)),'sha256':sha(base/name)} for name in raw_files},\n 'deploymentReuse':{'evidencePath':str(reuse_deployment.relative_to(repo)),'evidence':deployment,'reason':'No retained runtime source change; diagnostic builds not deployed'},\n 'decision':{'retained':'native boundary/source evidence only','productionProjectionEnabled':False,'newSpeedupClaim':False,'finalWholeGoalAchieved':False,'publishMergeVersionBump':False},\n 'cleanup':{'executorRestored':True,'oneOffSourcesArchivedBeforeDeletion':True,'diagnosticBuildRemoved':True,'nativeInstancesRemovedByLaunchers':True,'rawEvidenceAndReadOnlySourceCachesRetained':True},\n 'gates':{'documentation':'pending','structureToolsCoverage':'reuse unchanged successful evidence from task-caller-order-proof-20261008 and default-value-out-proof-20261008'}\n}\nout=repo/'docs/performance/exhaust-root-turn-contract-20261008.json'\nout.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\\n')\nexecutor.write_bytes(original)\nfor name in sources: (base/name).unlink()\nfor name in ['original-executor.txt','temporary-executor.txt']: (base/name).unlink()\nshutil.rmtree(base/'build-native')\nprint('REPORT_WRITTEN_EXECUTOR_RESTORED_ONEOFFS_CLEANED')\n"
+    }
+  },
+  "temporaryExecutorPatch": "--- a/src/Testing/Host/UnattendedTestRunner.Executor.cs\n+++ b/src/Testing/Host/UnattendedTestRunner.Executor.cs\n@@ -39,6 +39,16 @@\n             bool expectedCardPlayed = request.ExpectedPlayedCardId == null;\n             bool expectedPotionUsed = request.ExpectedUsedPotionId == null;\n             bool expectedPlayerPowerObserved = request.ExpectedObservedPlayerPowerId == null;\n+            if (request.ScenarioId == \"EXHAUST-ROOT-TURN-LIVE-ISOLATION\")\n+            {\n+                await runner.AssertExhaustRootLiveIsolationAsync(combatState, player);\n+                return Observation(combatEnded: false);\n+            }\n+            if (request.ScenarioId == \"EXHAUST-ROOT-TURN-CONTRACT\")\n+            {\n+                await runner.AssertExhaustRootTurnAsync(combatState, player);\n+                return Observation(combatEnded: false);\n+            }\n             if (request.ScenarioId is \"ZERO-CREDIT-GROWTH-PROOF\" or \"ZERO-CREDIT-GROWTH-PROOF-REGEN\")\n             {\n                 await runner.AssertZeroCreditGrowthProofAsync(combatState, player,\n",
+  "originalExecutorSha256": "933d290348e4603224f8ce7a8f7ae2e7cd9de3a0011f78c211d0045056f6af89",
+  "rawEvidence": {
+    "native-details.json": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/native-details.json",
+      "sha256": "10c72096594b59fa950fc90d6c5ffdd5d691d0e197391c25030c64cd908c71c7"
+    },
+    "live-isolation-details.json": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/live-isolation-details.json",
+      "sha256": "f3393cf628fbcd0aade1fd3e09587c32587dd710a55885de2cb2b61b5eb00e4c"
+    },
+    "native-run-summary.json": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/native-run-summary.json",
+      "sha256": "833f5e803f0890eff1c37f02b7e3c99ec36fb698e5b1358e2f6aa27aa6f85ef3"
+    },
+    "live-isolation-run-summary.json": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/live-isolation-run-summary.json",
+      "sha256": "396fe5373d88c13a2c989dc65c8a4d097adc989abe068953fbbf5a9e2b718009"
+    },
+    "build-native-v1-failed.log": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/build-native-v1-failed.log",
+      "sha256": "f5397f6ae67b6e52ca6554f05619e1bf21588e98387f8ef7c7fc67c8276a6dfa"
+    },
+    "build-native-pass.log": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/build-native-pass.log",
+      "sha256": "f8fe8dd738a00cf075f005698aa4eeec6aaab571bb0c478ececfcc3bb92d7b08"
+    },
+    "build-live-isolation.log": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/build-live-isolation.log",
+      "sha256": "24e146e754fcab215e22f4c5b9488ca49c53c39419e5bbf20297870b7ef611b3"
+    },
+    "launcher.log": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/launcher.log",
+      "sha256": "25b8a64c5b61a4f05aa7a404bff2aa72216310e2aa73b0de147d720a9978cc3e"
+    },
+    "launcher-live-isolation.log": {
+      "path": ".local/tool-tasks/exhaust-root-turn-contract-20261008/launcher-live-isolation.log",
+      "sha256": "e69c9051f63930c33433f2d278ec3c00bf130084dbd7ef3af578d1a81380951a"
+    }
+  },
+  "deploymentReuse": {
+    "evidencePath": ".local/tool-tasks/model-capability-recovery-proof-20261007/deployment.json",
+    "evidence": {
+      "status": "Passed",
+      "files": [
+        {
+          "name": "CombatSolver.json",
+          "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/CombatSolver.json",
+          "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/CombatSolver.json",
+          "beforeSha256": "292d741498072c6678b473d31c98c2ea8288ce742a894cb0e33634dc008ea22b",
+          "sourceSha256": "292d741498072c6678b473d31c98c2ea8288ce742a894cb0e33634dc008ea22b",
+          "deployedSha256": "292d741498072c6678b473d31c98c2ea8288ce742a894cb0e33634dc008ea22b"
+        },
+        {
+          "name": "CombatSolver.dll",
+          "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/model-capability-recovery-proof-20261007/build-candidate-v2/CombatSolver.dll",
+          "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/CombatSolver.dll",
+          "beforeSha256": "901a3882aedb60246eea7657fe27bf444cd5bc11086ab9e8d0fe2251021c30c7",
+          "sourceSha256": "901a3882aedb60246eea7657fe27bf444cd5bc11086ab9e8d0fe2251021c30c7",
+          "deployedSha256": "901a3882aedb60246eea7657fe27bf444cd5bc11086ab9e8d0fe2251021c30c7"
+        },
+        {
+          "name": "CombatSolver.MemoryCleaner.exe",
+          "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/upstream-pr213-sync-20261006/installed-before-sync/CombatSolver.MemoryCleaner.exe",
+          "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/CombatSolver.MemoryCleaner.exe",
+          "beforeSha256": "5474c2d6e59df76430484d2ed4230231b5026a32e0796986520bc2ac41569415",
+          "sourceSha256": "5474c2d6e59df76430484d2ed4230231b5026a32e0796986520bc2ac41569415",
+          "deployedSha256": "5474c2d6e59df76430484d2ed4230231b5026a32e0796986520bc2ac41569415"
+        },
+        {
+          "name": "LICENSE",
+          "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/LICENSE",
+          "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/LICENSE",
+          "beforeSha256": "e6e86edc9dac3448c67240d4b3b588b7354299c5c4488ffa1e920715e53fca96",
+          "sourceSha256": "e6e86edc9dac3448c67240d4b3b588b7354299c5c4488ffa1e920715e53fca96",
+          "deployedSha256": "e6e86edc9dac3448c67240d4b3b588b7354299c5c4488ffa1e920715e53fca96"
+        },
+        {
+          "name": "THIRD_PARTY_NOTICES.md",
+          "source": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/THIRD_PARTY_NOTICES.md",
+          "destination": "/home/ltlly/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/CombatSolver/THIRD_PARTY_NOTICES.md",
+          "beforeSha256": "309dcd321323622bc8bb1f906556aabfc9806b3661f2ac824bad950fc5a6bbc0",
+          "sourceSha256": "309dcd321323622bc8bb1f906556aabfc9806b3661f2ac824bad950fc5a6bbc0",
+          "deployedSha256": "309dcd321323622bc8bb1f906556aabfc9806b3661f2ac824bad950fc5a6bbc0"
+        }
+      ],
+      "sourceSha256": {
+        "src/Prediction/PredictionRitsuCapabilityAudit.cs": "059db4fed6454d4cf99a97d58c199a4da238643f15266b201f5bf906d4991cc6",
+        "src/Prediction/PredictionRitsuHealingAudit.cs": "f2ac50d08e800bb92f68fef0c2ff73e5a446cd54fc43965578b95f5202b75820",
+        "src/Prediction/PredictionModHookSubscriberCapture.cs": "1f42206ce24f89eb9d639955be5533a9faa326cc65ace9bd0e099f5feb28b5e7",
+        "src/Search/SimulatedCombatState.cs": "5ef142570b6dd8743f21988352686571acbdf342dd79730bdecfa6442212fec2",
+        "src/Runtime/ContinuationStamp.cs": "16baeeb60631be7705f5da607e992c7eafb5864e826bd85e41dcf32190bcbeeb",
+        "src/Testing/Host/UnattendedTestRunner.Executor.cs": "933d290348e4603224f8ce7a8f7ae2e7cd9de3a0011f78c211d0045056f6af89",
+        "src/Testing/Host/UnattendedTestIsolationPatch.cs": "6c696231b5ba3e54fdd5efc4023819a6d286526cfa2809afd94cc05fb8e068c9",
+        "src/Testing/Contracts/Runtime/UnattendedTestRunner.NativeHealingCapabilityBoundary.cs": "b6e94b5ffa4805d808d4814ed6fffbf88050c68d61b9abcd2f1c5e9b2421dc19",
+        "src/Testing/Contracts/Runtime/UnattendedTestRunner.NativeHealingCallbackBoundary.cs": "d28382bc5c5145fce28f1aa252f643edd28f28e97be4fc13647b3ba4dd550d5b"
+      },
+      "scope": "Exact five local files; no version bump, publication or visible game launch"
+    },
+    "reason": "No retained runtime source change; diagnostic builds not deployed"
+  },
+  "decision": {
+    "retained": "native boundary/source evidence only",
+    "productionProjectionEnabled": false,
+    "newSpeedupClaim": false,
+    "finalWholeGoalAchieved": false,
+    "publishMergeVersionBump": false
+  },
+  "cleanup": {
+    "executorRestored": true,
+    "oneOffSourcesArchivedBeforeDeletion": true,
+    "diagnosticBuildRemoved": true,
+    "nativeInstancesRemovedByLaunchers": true,
+    "rawEvidenceAndReadOnlySourceCachesRetained": true
+  },
+  "gates": {
+    "documentation": "DOCUMENTATION_OK files=574 links=2443 errors=0",
+    "structureToolsCoverage": "reuse unchanged successful evidence from task-caller-order-proof-20261008 and default-value-out-proof-20261008"
+  }
+}

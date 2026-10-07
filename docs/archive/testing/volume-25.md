@@ -7,3 +7,5 @@
 2026-10-08 [默认Task绑定](../../performance/default-task-binding-proof-20261008.md)：98直接/1568作业调用通过；字段类型首轮失败及详细文件未导出另列，独立元数据采集0次重复调用，live戳保持；非Fork/整根资格或性能，生产部署复用。
 
 2026-10-07 [有限回复剪枝原型](../../performance/initial-generation-finite-recovery-pruning-20261007.md)：未来OnPlay认证接纳反例复现，原型撤回；原生合同及11根44次质量/内存通过，无稳定提速。
+
+2026-10-08 [默认Task调用方](../../performance/task-caller-order-proof-20261008.md)：98引用定位，五个原生入口/八默认回调与隐含/双完成通知通过；Ritsu生命周期补丁只观察，未知受众可写上下文，live戳相等。无新根认证/实际剪枝/性能，生产部署复用。

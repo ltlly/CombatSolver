@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-08 [默认Task调用方](performance/task-caller-order-proof-20261008.md)：98引用定位，五个原生入口/八默认回调与隐含/双完成通知通过；Ritsu生命周期补丁只观察，未知受众可写上下文，live戳相等。无新根认证/实际剪枝/性能，生产部署复用。
+2026-10-08 [消耗堆完整回合与旧根隔离](performance/exhaust-root-turn-contract-20261008.md)：20类牌、三种保同类序排列、原生完整回合、旧根在实机推进后的回放及共64两代Fork隔离通过；7 getter/4实际补丁与冻结空牌堆注册边界记录。完整未来认证与实际剪枝仍0，无新增性能结论，正式源码及部署复用。
 
 [默认方法局部验证归档](archive/testing/volume-25.md)。
 

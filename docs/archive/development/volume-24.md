@@ -7,3 +7,5 @@
 2026-10-08 [默认Task绑定](../../performance/default-task-binding-proof-20261008.md)：游戏9.0.7下98直接/1568作业调用及live戳通过；模块/门面/补丁身份保存，166默认定义仅局部证据，无新剪枝或性能，Mod部署复用。
 
 2026-10-07 [有限回复原型研究](../../performance/initial-generation-finite-recovery-pruning-20261007.md)：生成回调认证反例成立，原型撤回；11根44交错质量/内存通过，储君16→0战损，无稳定提速。
+
+2026-10-08 [默认Task调用方](../../performance/task-caller-order-proof-20261008.md)：98引用定位，五个原生入口/八默认回调与隐含/双完成通知通过；Ritsu生命周期补丁只观察，未知受众可写上下文，live戳相等。无新根认证/实际剪枝/性能，生产部署复用。
