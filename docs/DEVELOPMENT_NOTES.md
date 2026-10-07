@@ -1,6 +1,6 @@
 # CombatSolver 开发笔记
 
-2026-10-08 [手牌通知来源研究](performance/hand-selection-source-closure-20261008.md)：普通模式/null过滤器的高亮回调复现0界/额外2回复，外层名单保持；常量原生叶子、16次拒绝与16分支实际伤害/Fork通过。23来源仅盘点，槽与入口分开，已有Ritsu补丁仍未闭合，完整证书0/1。首次拒绝与修正保留，临时代码清理；无新生产剪枝或性能验收，正式源码/部署复用704dc994。
+2026-10-08 [手牌扩展来源研究](performance/hand-notification-patch-proof-20261008.md)：实际描边规则绕过HasAny=false复现0界/额外2回复；冻结空注册表局部条件、30次拒绝及16分支伤害/Fork通过，未知调用0。四项下层闭包仍未证明，完整证书0，未接生产；正式源码/部署复用704dc994。
 
 [默认方法局部验证归档](archive/development/volume-24.md)。
 
