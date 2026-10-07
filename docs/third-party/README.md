@@ -338,7 +338,7 @@ StrategicEffectMirrors.Register<TYourPower>(requirements, evaluate, host);
 
 ## 6. 已知的封闭开关
 
-当前回复组件表和Ritsu治疗门禁尚未覆盖 `Creature.CurrentHpChanged`、`MaxHpChanged` 及其转发的 `CombatStateTracker.CombatStateChanged` 全部受众。[实际原生研究](../performance/finite-health-capacity-proof-20261008.md)复现未适配直接/延迟监听器仍取得0回复界、随后额外回复2点；这类来源尚无已完成的拒绝修复。模型镜像登记、原版类型身份和非gameplay清单都不能补足这项证明。下表的组件资格仅表示已检查的来源表通过，不能解释为任意生命事件、界面回调或扩展链已经安全。
+当前回复组件表和Ritsu治疗门禁尚未覆盖 `Creature.CurrentHpChanged`、`MaxHpChanged` 及其转发的 `CombatStateTracker.CombatStateChanged` 全部受众。[直接/延迟原生反例](../performance/finite-health-capacity-proof-20261008.md)及[实际Ritsu详情回调](../performance/health-event-source-admission-20261008.md)均复现0回复界后额外回复2点；后者未改变外层监听名单。只识别外层方法、空页面表或空治疗注册表不足以闭合证明，实际子控件回调、卡值重算、界面信号及下层补丁需要独立核对。保守准入原型已拒绝九组未证明/未知来源，但普通通知根仍未认证，尚未接入生产；这类来源没有已完成的正式拒绝修复。模型镜像登记、原版类型身份和非gameplay清单不能补足证明。下表的组件资格仅表示已检查的来源表通过，不能解释为全部生命事件、界面回调或扩展链安全。
 
 组合达标早停额外读取冻结的 `CombatRootSnapshot.HasVisibleHealingSource`：牌、玩家 Power 和可搜索药水的 `Heal` / `HealPercent` / `RegenPower` 变量，以及已有 `RegenPower`，会保守保留追加搜索；已选路线实际回血也保留追加搜索。变量在主线程完成物化后读取，治疗随从同样可能触发保守回退。这不是完整治疗来源登记或可达收益上界；没有这些元数据的自定义治疗、后续生成的治疗来源，仍可能因玩家战损目标已经达标而少做追加审计。关闭战损达标早停可保留原追加搜索；不改变模拟执行和既有第三方适配合同。
 
