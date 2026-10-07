@@ -1,0 +1,439 @@
+{
+  "schemaVersion": 1,
+  "task": "exhaust cleanup observer native component contract",
+  "date": "2026-10-07",
+  "sourceBase": "0d102563",
+  "retainedRuntimeSource": "27c28f66",
+  "game": {
+    "version": "0.111.0",
+    "build": "41cef1ea",
+    "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+    "sha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f"
+  },
+  "runtimeDependencyReusedFrom": "docs/performance/exhaust-clone-binding-contract-20261007.json",
+  "build": {
+    "exitCode": 0,
+    "seconds": 13.7,
+    "warnings": 0,
+    "errors": 0,
+    "output": "  Determining projects to restore...\n  All projects are up-to-date for restore.\n  CombatSolver -> /home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-cleanup-contract-20261007/build-native/CombatSolver.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:13.70\n",
+    "taskDllSha256": "6DF4C5429A7BCB7F4BD85BD46FEDC562A22FD60093727875AA4A47202E9B327E"
+  },
+  "native": {
+    "summary": {
+      "command": [
+        "bash",
+        "tools/testing/run-unattended-test.sh",
+        "--scenario-id",
+        "EXHAUST-CLEANUP-CONTRACT",
+        "--generated-scenario-path",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/dev-06-silent-boss-scenario.json",
+        "--combat-solver-build-dir",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-cleanup-contract-20261007/build-native",
+        "--headless-instance",
+        "exhaust-cleanup-contract-20261007",
+        "--timeout-seconds",
+        "120",
+        "--evidence-directory",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-cleanup-contract-20261007/evidence",
+        "--cleanup-instance-on-exit",
+        "--exit-on-complete"
+      ],
+      "exitCode": 0,
+      "seconds": 33.85024708900164
+    },
+    "result": {
+      "processReusable": false,
+      "processId": 353030,
+      "reusedProcess": false,
+      "developmentStrategyScriptHash": null,
+      "developmentStrategyParametersHash": null,
+      "mainAssemblyHash": "6DF4C5429A7BCB7F4BD85BD46FEDC562A22FD60093727875AA4A47202E9B327E",
+      "schemaVersion": 1,
+      "runId": "ea40795c77cd4a6c8c38c7f8843ae679",
+      "scenarioId": "EXHAUST-CLEANUP-CONTRACT",
+      "status": "Passed",
+      "stage": "passed",
+      "characterId": "CHARACTER.SILENT",
+      "encounterId": "ENCOUNTER.THE_INSATIABLE_BOSS",
+      "seed": "NOVELTY-DEV-20260915-06",
+      "startedAtUtc": "2026-10-07T07:56:03.5022654+00:00",
+      "elapsedMilliseconds": 26300.2296,
+      "mainThread": true,
+      "combatEnded": false,
+      "startedTurn": 1,
+      "finishedTurn": 1,
+      "managedHeapBytes": 73668248,
+      "managedFragmentedBytes": 5196376,
+      "workingSetBytes": 1534517248,
+      "privateMemoryBytes": 1753829376,
+      "solverMetrics": null,
+      "replayVerification": null,
+      "generatedScenario": {
+        "schemaVersion": 1,
+        "mode": "Search",
+        "catalogFingerprint": "2805EE03EC2E416E0E2816141888BA6754DD3B9487FA54E8C84D5D865B6F4D43",
+        "resolvedConfiguration": "generated-scenario.resolved.json",
+        "loadout": "generated-scenario.loadout.json",
+        "opening": "generated-scenario.opening.json",
+        "relicObtainEffects": false,
+        "combatEnded": false,
+        "actualOutcome": {
+          "initialHp": 56,
+          "finalHp": 56,
+          "hpLost": 0,
+          "hpHealed": 0,
+          "selfDamage": 0,
+          "combatEnded": false,
+          "survived": true,
+          "finalEnemyHp": 332,
+          "potions": [],
+          "unattributedHpLoss": 0
+        }
+      },
+      "stageTimings": [
+        {
+          "stage": "created",
+          "startedMilliseconds": 0,
+          "durationMilliseconds": 1.5561
+        },
+        {
+          "stage": "strategy_load",
+          "startedMilliseconds": 1.5561,
+          "durationMilliseconds": 5.4314
+        },
+        {
+          "stage": "game_startup",
+          "startedMilliseconds": 6.9875,
+          "durationMilliseconds": 12819.7746
+        },
+        {
+          "stage": "start_run",
+          "startedMilliseconds": 12826.7621,
+          "durationMilliseconds": 10951.752499999999
+        },
+        {
+          "stage": "inject_run_relics",
+          "startedMilliseconds": 23778.5146,
+          "durationMilliseconds": 276.77059999999983
+        },
+        {
+          "stage": "enter_encounter",
+          "startedMilliseconds": 24055.2852,
+          "durationMilliseconds": 2001.8861000000034
+        },
+        {
+          "stage": "wait_player_turn",
+          "startedMilliseconds": 26057.1713,
+          "durationMilliseconds": 2.7531999999991967
+        },
+        {
+          "stage": "inject_state",
+          "startedMilliseconds": 26059.9245,
+          "durationMilliseconds": 124.5802999999978
+        },
+        {
+          "stage": "cleanup",
+          "startedMilliseconds": 26184.5048,
+          "durationMilliseconds": 110.03250000000116
+        },
+        {
+          "stage": "passed",
+          "startedMilliseconds": 26294.5373,
+          "durationMilliseconds": 5.8686000000016065
+        }
+      ],
+      "completedChecks": [
+        "GeneratedScenario:Resolved:NativePools:IndependentGeneratorRng",
+        "GeneratedScenario:LoadoutCounts:Ascension:SingleBane:PotionOrder",
+        "GeneratedScenario:NativeOpeningCaptured",
+        "CleanupOrder:NativePairVsReverseVsSimulation:PersistentAndUntilPlayedLayersPreserved:CrossCardObserverCounterexample:UnknownObserverComponentRejected:CloneObserverIsolation:16ParallelChildrenSecondGeneration:FullStampRichHistoryNineRngParentLive",
+        "TASK_EXHAUST_CLEANUP {\"nativeForward\":\"DEFEND_SILENT\\u002B0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Block=5,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\\nSTRIKE_SILENT\\u002B0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Damage=6,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\",\"nativeReverse\":\"DEFEND_SILENT\\u002B0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Block=5,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\\nSTRIKE_SILENT\\u002B0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Damage=6,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\",\"simulatedReverse\":\"DEFEND_SILENT\\u002B0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Block=5,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\\nSTRIKE_SILENT\\u002B0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Damage=6,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\",\"unknownForward\":\"DEFEND_SILENT\\u002B0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Block=5,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\\nSTRIKE_SILENT\\u002B0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Damage=6,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\",\"unknownReverse\":\"DEFEND_SILENT\\u002B0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Block=5,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\\nSTRIKE_SILENT\\u002B0/False:0/False:4/0/False/False/False/False/False/-:0:0/-:0[Damage=6,]/private=-|cost-state=1:3[3:1:0:False,2:1:4:False,0:1:2:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\",\"forwardRejected\":true,\"reverseRejected\":true,\"observerCloneCallbacks\":0,\"sourceCallbacks\":1,\"parallelResults\":[{\"index\":0,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":1,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":2,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":3,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":4,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":5,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":6,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":7,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":8,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":9,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":10,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":11,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":12,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":13,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":14,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true},{\"index\":15,\"childMatches\":true,\"grandchildMatches\":true,\"secondGenerationIsolatedBeforeCleanup\":true}],\"methodIdentities\":[{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void EndOfTurnCleanup()\",\"mvid\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669662,\"ilSha256\":\"022FB39DC525981F2C4D58016E6E7B487DC72390D0D7E77B9F8434FF1D773517\",\"prefixes\":[],\"postfixes\":[{\"declaringType\":\"STS2RitsuLib.Cards.FreePlay.Patches.CardModelFreeThisTurnEndCleanupPatch\",\"signature\":\"Void Postfix(MegaCrit.Sts2.Core.Models.CardModel)\",\"owner\":\"com.ritsukage.sts2-RitsuLib.framework-core\",\"priority\":400,\"before\":[],\"after\":[],\"index\":0,\"mvid\":\"f7f18a36-8ebb-4db2-b1ea-7bd340579646\",\"token\":100685727,\"ilSha256\":\"D0ED91EC19AC389DCCDC6B9826AA7A1EADE2015CDF7CCEE3CAB6166D49BB8D02\"},{\"declaringType\":\"STS2RitsuLib.Combat.SecondaryResources.Patches.CardModelEndOfTurnSecondaryResourcesPatch\",\"signature\":\"Void Postfix(MegaCrit.Sts2.Core.Models.CardModel)\",\"owner\":\"com.ritsukage.sts2-RitsuLib.framework-core\",\"priority\":400,\"before\":[],\"after\":[],\"index\":1,\"mvid\":\"f7f18a36-8ebb-4db2-b1ea-7bd340579646\",\"token\":100684527,\"ilSha256\":\"B520811901FE142DC219C9FCA759627E33BF760E8008D6C5AA8A14C0D0401E92\"}],\"transpilers\":[],\"finalizers\":[]},{\"declaringType\":\"MegaCrit.Sts2.Core.Entities.Cards.CardEnergyCost\",\"signature\":\"Boolean EndOfTurnCleanup()\",\"mvid\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100684330,\"ilSha256\":\"8A240B16D01A7716924E13AB902C2690F7BB8E688E65141C787A216A80EB5CB9\",\"prefixes\":[],\"postfixes\":[],\"transpilers\":[],\"finalizers\":[]},{\"declaringType\":\"MegaCrit.Sts2.Core.Models.CardModel\",\"signature\":\"Void SetStarCostThisTurn(Int32)\",\"mvid\":\"8a76776c-0ce1-4d4f-90bd-8cce653dad8e\",\"token\":100669640,\"ilSha256\":\"FF40388FF46ED7145F997EE485407A260A2D1888910843823144B4BA23ABE6CF\",\"prefixes\":[],\"postfixes\":[],\"transpilers\":[],\"finalizers\":[]}],\"originalParentSha256\":\"74A3371B4364512ED130D553F3AF3CFB25FA0FDC10FE50EE6004AB3CB188C5A9\",\"seededParentSha256\":\"B5A27C192156D4906AE7BE482204021D619D3F29513DADFC33353D4E070E9CCB\",\"expectedStateSha256\":\"0C2CD10BAFDBEB76FF4870D361AF2AB86286D7FEC61E1E5E000ACB10EFC1C14E\",\"liveUnchanged\":true,\"actualPrunes\":0,\"isWholeOrderCertificate\":false,\"isActualEndTurnTest\":false,\"nativeDetachedPairOnly\":true}",
+        "NativeOutcome:combatEnded=False:turn=1:hp=56:maxHp=70"
+      ],
+      "error": null,
+      "finishedAtUtc": "2026-10-07T07:56:29.8022838+00:00"
+    }
+  },
+  "facts": {
+    "nativeForward": "DEFEND_SILENT+0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Block=5,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\nSTRIKE_SILENT+0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Damage=6,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,",
+    "nativeReverse": "DEFEND_SILENT+0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Block=5,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\nSTRIKE_SILENT+0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Damage=6,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,",
+    "simulatedReverse": "DEFEND_SILENT+0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Block=5,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\nSTRIKE_SILENT+0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Damage=6,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,",
+    "unknownForward": "DEFEND_SILENT+0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Block=5,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\nSTRIKE_SILENT+0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Damage=6,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,",
+    "unknownReverse": "DEFEND_SILENT+0/False:2/False:4/0/False/False/False/False/False/-:0:0/-:0[Block=5,]/private=-|cost-state=1:2[3:1:0:False,2:1:4:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,\nSTRIKE_SILENT+0/False:0/False:4/0/False/False/False/False/False/-:0:0/-:0[Damage=6,]/private=-|cost-state=1:3[3:1:0:False,2:1:4:False,0:1:2:False,]/stars=-1:2[2:False:False,4:False:True,]/keywords=[]/baselib=-,",
+    "forwardRejected": true,
+    "reverseRejected": true,
+    "observerCloneCallbacks": 0,
+    "sourceCallbacks": 1,
+    "parallelResults": [
+      {
+        "index": 0,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 1,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 2,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 3,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 4,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 5,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 6,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 7,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 8,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 9,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 10,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 11,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 12,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 13,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 14,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      },
+      {
+        "index": 15,
+        "childMatches": true,
+        "grandchildMatches": true,
+        "secondGenerationIsolatedBeforeCleanup": true
+      }
+    ],
+    "methodIdentities": [
+      {
+        "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+        "signature": "Void EndOfTurnCleanup()",
+        "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+        "token": 100669662,
+        "ilSha256": "022FB39DC525981F2C4D58016E6E7B487DC72390D0D7E77B9F8434FF1D773517",
+        "prefixes": [],
+        "postfixes": [
+          {
+            "declaringType": "STS2RitsuLib.Cards.FreePlay.Patches.CardModelFreeThisTurnEndCleanupPatch",
+            "signature": "Void Postfix(MegaCrit.Sts2.Core.Models.CardModel)",
+            "owner": "com.ritsukage.sts2-RitsuLib.framework-core",
+            "priority": 400,
+            "before": [],
+            "after": [],
+            "index": 0,
+            "mvid": "f7f18a36-8ebb-4db2-b1ea-7bd340579646",
+            "token": 100685727,
+            "ilSha256": "D0ED91EC19AC389DCCDC6B9826AA7A1EADE2015CDF7CCEE3CAB6166D49BB8D02"
+          },
+          {
+            "declaringType": "STS2RitsuLib.Combat.SecondaryResources.Patches.CardModelEndOfTurnSecondaryResourcesPatch",
+            "signature": "Void Postfix(MegaCrit.Sts2.Core.Models.CardModel)",
+            "owner": "com.ritsukage.sts2-RitsuLib.framework-core",
+            "priority": 400,
+            "before": [],
+            "after": [],
+            "index": 1,
+            "mvid": "f7f18a36-8ebb-4db2-b1ea-7bd340579646",
+            "token": 100684527,
+            "ilSha256": "B520811901FE142DC219C9FCA759627E33BF760E8008D6C5AA8A14C0D0401E92"
+          }
+        ],
+        "transpilers": [],
+        "finalizers": []
+      },
+      {
+        "declaringType": "MegaCrit.Sts2.Core.Entities.Cards.CardEnergyCost",
+        "signature": "Boolean EndOfTurnCleanup()",
+        "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+        "token": 100684330,
+        "ilSha256": "8A240B16D01A7716924E13AB902C2690F7BB8E688E65141C787A216A80EB5CB9",
+        "prefixes": [],
+        "postfixes": [],
+        "transpilers": [],
+        "finalizers": []
+      },
+      {
+        "declaringType": "MegaCrit.Sts2.Core.Models.CardModel",
+        "signature": "Void SetStarCostThisTurn(Int32)",
+        "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+        "token": 100669640,
+        "ilSha256": "FF40388FF46ED7145F997EE485407A260A2D1888910843823144B4BA23ABE6CF",
+        "prefixes": [],
+        "postfixes": [],
+        "transpilers": [],
+        "finalizers": []
+      }
+    ],
+    "originalParentSha256": "74A3371B4364512ED130D553F3AF3CFB25FA0FDC10FE50EE6004AB3CB188C5A9",
+    "seededParentSha256": "B5A27C192156D4906AE7BE482204021D619D3F29513DADFC33353D4E070E9CCB",
+    "expectedStateSha256": "0C2CD10BAFDBEB76FF4870D361AF2AB86286D7FEC61E1E5E000ACB10EFC1C14E",
+    "liveUnchanged": true,
+    "actualPrunes": 0,
+    "isWholeOrderCertificate": false,
+    "isActualEndTurnTest": false,
+    "nativeDetachedPairOnly": true
+  },
+  "oneShotSources": [
+    {
+      "path": ".local/tool-tasks/exhaust-cleanup-contract-20261007/TaskExhaustCleanup.cs",
+      "text": "using System.Reflection;\nusing System.Security.Cryptography;\nusing System.Text;\nusing System.Text.Json;\nusing HarmonyLib;\nusing CombatSolver.Engine.Common;\nusing CombatSolver.Engine.InCombat.Simulation;\nusing MegaCrit.Sts2.Core.Combat;\nusing MegaCrit.Sts2.Core.Entities.Cards;\nusing MegaCrit.Sts2.Core.Entities.Players;\nusing MegaCrit.Sts2.Core.Models;\nusing MegaCrit.Sts2.Core.Models.Cards;\n\nnamespace CombatSolver;\n\ninternal sealed partial class UnattendedTestRunner\n{\n    private static string TaskCleanupCardText(CardModel card)\n    {\n        var text = new StringBuilder();\n        typeof(ContinuationStamp).GetMethod(\"AppendCard\", BindingFlags.Static | BindingFlags.NonPublic)!\n            .Invoke(null, new object[] { text, card, false });\n        return text.ToString();\n    }\n\n    private static Delegate[] TaskCleanupObservers(CardModel card, string name)\n        => ((Delegate?)typeof(CardModel).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!\n            .GetValue(card))?.GetInvocationList() ?? Array.Empty<Delegate>();\n\n    private static void TaskSeedCleanup(CardModel card)\n    {\n        card.EnergyCost.SetThisCombat(3);\n        card.EnergyCost.SetUntilPlayed(2);\n        card.EnergyCost.SetThisTurn(0);\n        card.SetStarCostThisCombat(2);\n        card.SetStarCostUntilPlayed(4);\n        card.SetStarCostThisTurn(0);\n        card.ExhaustOnNextPlay = true;\n        card.GiveSingleTurnRetain();\n        card.GiveSingleTurnSly();\n    }\n\n    private Task RunTaskExhaustCleanupAsync(CombatState live, Player player)\n    {\n        CombatRootSnapshot root = CombatRootSnapshot.Capture(live);\n        CombatPredictionSimulator parent = root.ForkSimulator();\n        string State(CombatPredictionSimulator simulator) => ContinuationStamp.CapturePredicted(player,\n            simulator, ((SimulatedCombatState)simulator.State.CombatState).GetPlayerTurnNumber(player),\n            root.Forecast, root.StartTurnNumber).StateText + \"\\nHISTORY=\" + CardContinuationContractHistoryText(simulator);\n        string liveBefore = ContinuationStamp.CaptureLive(live).StateText;\n        string originalParent = State(parent);\n        CardModel Make(CardModel canonical)\n        {\n            var card = (CardModel)canonical.MutableClone();\n            card.Owner = player;\n            TaskSeedCleanup(card);\n            return card;\n        }\n        var a = Make(ModelDb.Card<DefendSilent>());\n        var b = Make(ModelDb.Card<StrikeSilent>());\n        var reversedA = Make(ModelDb.Card<DefendSilent>());\n        var reversedB = Make(ModelDb.Card<StrikeSilent>());\n        string Pair(CardModel first, CardModel second) => TaskCleanupCardText(first) + \"\\n\" + TaskCleanupCardText(second);\n        if (Pair(a, b) != Pair(reversedA, reversedB)) throw new InvalidOperationException(\"Native pair inputs differ.\");\n        if (new[] { a, b, reversedA, reversedB }.Any(card =>\n            TaskCleanupObservers(card, \"EnergyCostChanged\").Length != 0\n            || TaskCleanupObservers(card, \"StarCostChanged\").Length != 0))\n            throw new InvalidOperationException(\"Detached native pair has unexpected cleanup observers.\");\n        var simA = PredictionUtils.CloneCardStateForSimulation(a);\n        var simB = PredictionUtils.CloneCardStateForSimulation(b);\n        a.EndOfTurnCleanup();\n        b.EndOfTurnCleanup();\n        reversedB.EndOfTurnCleanup();\n        reversedA.EndOfTurnCleanup();\n        using (SimulationNotificationIsolation.Enter())\n        {\n            simB.EndOfTurnCleanup();\n            simA.EndOfTurnCleanup();\n        }\n        string nativeForward = Pair(a, b), nativeReverse = Pair(reversedA, reversedB);\n        string simulatedReverse = Pair(simA, simB);\n        if (nativeForward != nativeReverse || nativeForward != simulatedReverse)\n            throw new InvalidOperationException(\"No-observer cleanup pair is not equivalent.\");\n        if (new[] { a, b, simA, simB }.Any(card => card.EnergyCost._localModifiers.Count != 2\n            || card._temporaryStarCosts.Count != 2 || PredictionUtils.NeedsEndOfTurnCleanup(card)))\n            throw new InvalidOperationException(\"Cleanup removed persistent/until-played layers or left a turn layer.\");\n\n        var unknownA = Make(ModelDb.Card<DefendSilent>());\n        var unknownB = Make(ModelDb.Card<StrikeSilent>());\n        var unknownReverseA = Make(ModelDb.Card<DefendSilent>());\n        var unknownReverseB = Make(ModelDb.Card<StrikeSilent>());\n        unknownA.EnergyCostChanged += () => unknownB.EnergyCost.SetThisTurn(0);\n        unknownReverseA.EnergyCostChanged += () => unknownReverseB.EnergyCost.SetThisTurn(0);\n        bool forwardRejected = TaskCleanupObservers(unknownA, \"EnergyCostChanged\").Length != 0;\n        bool reverseRejected = TaskCleanupObservers(unknownReverseA, \"EnergyCostChanged\").Length != 0;\n        if (!forwardRejected || !reverseRejected) throw new InvalidOperationException(\"Unknown cross-card observer was missed.\");\n        var observerClone = PredictionUtils.CloneCardStateForSimulation(unknownA);\n        if (TaskCleanupObservers(observerClone, \"EnergyCostChanged\").Length != 0\n            || TaskCleanupObservers(unknownA, \"EnergyCostChanged\").Length != 1)\n            throw new InvalidOperationException(\"Simulation clone retained a callback or mutated its source registration.\");\n        unknownA.EndOfTurnCleanup();\n        unknownB.EndOfTurnCleanup();\n        unknownReverseB.EndOfTurnCleanup();\n        unknownReverseA.EndOfTurnCleanup();\n        string unknownForward = Pair(unknownA, unknownB), unknownReverse = Pair(unknownReverseA, unknownReverseB);\n        if (unknownForward == unknownReverse || unknownB.EnergyCost._localModifiers.Count != 2\n            || unknownReverseB.EnergyCost._localModifiers.Count != 3)\n            throw new InvalidOperationException(\"Unknown cross-card observer did not make cleanup order observable.\");\n\n        PredictedCard[] targets = parent.State.GetPlayerCombatState(player).AllCards.Take(2).ToArray();\n        if (targets.Length != 2) throw new InvalidOperationException(\"Missing actual-root card pair.\");\n        foreach (PredictedCard target in targets) TaskSeedCleanup(target.MutablePreview);\n        string seededParent = State(parent);\n        CombatPredictionSimulator expected = parent.Fork();\n        using (SimulationNotificationIsolation.Enter())\n            foreach (PredictedCard target in targets)\n                expected.State.FindCard(target.Original)!.MutablePreview.EndOfTurnCleanup();\n        string expectedState = State(expected);\n        var children = Enumerable.Range(0, 16).Select(_ => parent.Fork()).ToArray();\n        string[] childInitial = children.Select(State).ToArray();\n        if (childInitial.Any(text => text != seededParent)) throw new InvalidOperationException(\"Initial Fork state differs.\");\n        var parallelResults = Task.WhenAll(children.Select((child, index) => Task.Run(() =>\n        {\n            using (SimulationNotificationIsolation.Enter())\n            {\n                foreach (PredictedCard target in targets)\n                {\n                    CardModel card = child.State.FindCard(target.Original)!.MutablePreview;\n                    card.EnergyCost.SetThisTurn(5 + index);\n                    card.SetStarCostThisTurn(6 + index);\n                }\n                var grandchild = child.Fork();\n                string grandchildSeed = State(grandchild), childSeed = State(child);\n                if (grandchildSeed != childSeed) throw new InvalidOperationException(\"Second generation lost cost state.\");\n                foreach (PredictedCard target in targets.Reverse())\n                    child.State.FindCard(target.Original)!.MutablePreview.EndOfTurnCleanup();\n                if (State(grandchild) != grandchildSeed)\n                    throw new InvalidOperationException(\"Child cleanup mutated its second generation.\");\n                foreach (PredictedCard target in targets)\n                    grandchild.State.FindCard(target.Original)!.MutablePreview.EndOfTurnCleanup();\n                string childState = State(child), grandchildState = State(grandchild);\n                if (childState != expectedState || grandchildState != expectedState)\n                    throw new InvalidOperationException(\"Fork cleanup changed full state/history/RNG.\");\n                return new { index, childMatches = true, grandchildMatches = true,\n                    secondGenerationIsolatedBeforeCleanup = true };\n            }\n        }))).GetAwaiter().GetResult();\n        if (State(parent) != seededParent || ContinuationStamp.CaptureLive(live).StateText != liveBefore)\n            throw new InvalidOperationException(\"Cleanup contract mutated its parent/live.\");\n\n        var cleanupMethods = new[] {\n            typeof(CardModel).GetMethod(nameof(CardModel.EndOfTurnCleanup))!,\n            typeof(CardEnergyCost).GetMethod(nameof(CardEnergyCost.EndOfTurnCleanup))!,\n            typeof(CardModel).GetMethod(nameof(CardModel.SetStarCostThisTurn))! };\n        object[] methodIdentities = cleanupMethods.Select(method =>\n        {\n            Patches? patches = Harmony.GetPatchInfo(method);\n            object Describe(Patch patch) => new { declaringType = patch.PatchMethod.DeclaringType!.FullName,\n                signature = patch.PatchMethod.ToString(), owner = patch.owner, priority = patch.priority,\n                before = patch.before, after = patch.after, index = patch.index,\n                mvid = patch.PatchMethod.Module.ModuleVersionId.ToString(), token = patch.PatchMethod.MetadataToken,\n                ilSha256 = Convert.ToHexString(SHA256.HashData(patch.PatchMethod.GetMethodBody()!.GetILAsByteArray()!)) };\n            return (object)new { declaringType = method.DeclaringType!.FullName, signature = method.ToString(),\n                mvid = method.Module.ModuleVersionId.ToString(), token = method.MetadataToken,\n                ilSha256 = Convert.ToHexString(SHA256.HashData(method.GetMethodBody()!.GetILAsByteArray()!)),\n                prefixes = patches?.Prefixes.Select(Describe).ToArray() ?? Array.Empty<object>(),\n                postfixes = patches?.Postfixes.Select(Describe).ToArray() ?? Array.Empty<object>(),\n                transpilers = patches?.Transpilers.Select(Describe).ToArray() ?? Array.Empty<object>(),\n                finalizers = patches?.Finalizers.Select(Describe).ToArray() ?? Array.Empty<object>() };\n        }).ToArray();\n        _completedChecks.Add(\"CleanupOrder:NativePairVsReverseVsSimulation:PersistentAndUntilPlayedLayersPreserved:CrossCardObserverCounterexample:UnknownObserverComponentRejected:CloneObserverIsolation:16ParallelChildrenSecondGeneration:FullStampRichHistoryNineRngParentLive\");\n        _completedChecks.Add(\"TASK_EXHAUST_CLEANUP \" + JsonSerializer.Serialize(new {\n            nativeForward, nativeReverse, simulatedReverse, unknownForward, unknownReverse,\n            forwardRejected, reverseRejected, observerCloneCallbacks = 0, sourceCallbacks = 1,\n            parallelResults, methodIdentities, originalParentSha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(originalParent))),\n            seededParentSha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(seededParent))),\n            expectedStateSha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(expectedState))),\n            liveUnchanged = true, actualPrunes = 0, isWholeOrderCertificate = false,\n            isActualEndTurnTest = false, nativeDetachedPairOnly = true }));\n        return Task.CompletedTask;\n    }\n}\n",
+      "sha256": "11f82f81dedabbd8dc0c332f89d6560433230ea1ccb0c632ec2ff45d58357cbe"
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-cleanup-contract-20261007/native.props",
+      "text": "<Project><ItemGroup><Compile Include=\"/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/exhaust-cleanup-contract-20261007/TaskExhaustCleanup.cs\" /></ItemGroup></Project>\n",
+      "sha256": "ae3093f6e25b3e6b963ccf641118f298bce33aa9bb0ce4008142f01219bc6405"
+    }
+  ],
+  "executorTemporaryPatch": "diff --git a/src/Testing/Host/UnattendedTestRunner.Executor.cs b/src/Testing/Host/UnattendedTestRunner.Executor.cs\nindex fe1b2da5..2f8fa9f0 100644\n--- a/src/Testing/Host/UnattendedTestRunner.Executor.cs\n+++ b/src/Testing/Host/UnattendedTestRunner.Executor.cs\n@@ -39,6 +39,11 @@ internal sealed partial class UnattendedTestRunner\n             bool expectedCardPlayed = request.ExpectedPlayedCardId == null;\n             bool expectedPotionUsed = request.ExpectedUsedPotionId == null;\n             bool expectedPlayerPowerObserved = request.ExpectedObservedPlayerPowerId == null;\n+            if (request.ScenarioId == \"EXHAUST-CLEANUP-CONTRACT\")\n+            {\n+                await runner.RunTaskExhaustCleanupAsync(combatState, player);\n+                return Observation(combatEnded: false);\n+            }\n             if (request.ScenarioId is \"ZERO-CREDIT-GROWTH-PROOF\" or \"ZERO-CREDIT-GROWTH-PROOF-REGEN\")\n             {\n                 await runner.AssertZeroCreditGrowthProofAsync(combatState, player,\n",
+  "nativeSourceEvidence": [
+    {
+      "path": ".local/tool-tasks/exhaust-cleanup-contract-20261007/native/CardEnergyCost.cs",
+      "sha256": "dcce05f18fba423b4566dd26fb6a8a7c6786240c994839d5d8317b53f0529a42",
+      "text": "using System;\nusing System.Collections.Generic;\nusing System.Linq;\nusing MegaCrit.Sts2.Core.Hooks;\nusing MegaCrit.Sts2.Core.Models;\n\nnamespace MegaCrit.Sts2.Core.Entities.Cards;\n\n/// <summary>\n/// Encapsulates all energy cost related properties and methods for a CardModel.\n/// This class handles base energy costs, local and global modifications, and energy cost calculations.\n/// </summary>\npublic sealed class CardEnergyCost\n{\n\tprivate readonly CardModel _card;\n\n\tprivate int _base;\n\n\tprivate int _capturedXValue;\n\n\t/// <summary>\n\t/// This card's local cost modifiers.\n\t/// See <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.LocalCostModifier\" /> for details on how this works.\n\t/// </summary>\n\tprivate List<LocalCostModifier> _localModifiers = new List<LocalCostModifier>();\n\n\t/// <summary>\n\t/// This card's \"official\" starting energy cost.\n\t/// This is what would appear on the card if it was printed out on paper.\n\t/// </summary>\n\tpublic int Canonical { get; }\n\n\t/// <summary>\n\t/// Whether this card has an energy cost of X.\n\t/// X-cost-cards automatically spend all of the player's remaining energy when played, and their effect is\n\t/// multiplied by the amount spent.\n\t/// </summary>\n\tpublic bool CostsX { get; }\n\n\t/// <summary>\n\t/// Was this card's energy cost just recently upgraded?\n\t/// This is mainly used to show upgrade preview values in green.\n\t/// This should be cleared after the upgrade is complete.\n\t/// </summary>\n\tpublic bool WasJustUpgraded { get; private set; }\n\n\t/// <summary>\n\t/// Does this energy cost have any local modifiers?\n\t/// See <see cref=\"F:MegaCrit.Sts2.Core.Entities.Cards.CostModifiers.Local\" /> for details.\n\t/// </summary>\n\tpublic bool HasLocalModifiers => _localModifiers.Count > 0;\n\n\t/// <summary>\n\t/// The amount of energy most recently spent to play this X-cost card.\n\t/// Used when duplicating X-cost cards, to make sure the duplicates are played with the same value.\n\t///\n\t/// WARNING: Only use this for calculations related to energy spent. If you're using this to calculate a\n\t/// cost-X-energy card's effect, use <see cref=\"M:MegaCrit.Sts2.Core.Models.CardModel.ResolveEnergyXValue\" /> instead, as it will take X-value\n\t/// modifications (like <see cref=\"T:MegaCrit.Sts2.Core.Models.Relics.ChemicalX\" />) into account.\n\t/// </summary>\n\tpublic int CapturedXValue\n\t{\n\t\tget\n\t\t{\n\t\t\tif (!CostsX)\n\t\t\t{\n\t\t\t\tthrow new InvalidOperationException(\"Only X-cost cards have a captured value.\");\n\t\t\t}\n\t\t\treturn _capturedXValue;\n\t\t}\n\t\tset\n\t\t{\n\t\t\t_card.AssertMutable();\n\t\t\tif (!CostsX)\n\t\t\t{\n\t\t\t\tthrow new InvalidOperationException(\"Only X-cost cards have a captured value.\");\n\t\t\t}\n\t\t\t_capturedXValue = value;\n\t\t}\n\t}\n\n\tpublic CardEnergyCost(CardModel card, int canonicalCost, bool costsX)\n\t{\n\t\t_card = card;\n\t\tCostsX = costsX;\n\t\tCanonical = ((!CostsX) ? canonicalCost : 0);\n\t\t_base = Canonical;\n\t}\n\n\t/// <summary>\n\t/// Get this card's energy cost, including the specified modifier types.\n\t/// See <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.CostModifiers\" /> for details on what types are available.\n\t/// </summary>\n\tpublic int GetWithModifiers(CostModifiers modifiers)\n\t{\n\t\tint num = _base;\n\t\tif (_card.IsCanonical)\n\t\t{\n\t\t\treturn num;\n\t\t}\n\t\tif (_base < 0)\n\t\t{\n\t\t\treturn num;\n\t\t}\n\t\tif (CostsX)\n\t\t{\n\t\t\treturn num;\n\t\t}\n\t\tif (modifiers.HasFlag(CostModifiers.Local))\n\t\t{\n\t\t\tforeach (LocalCostModifier localModifier in _localModifiers)\n\t\t\t{\n\t\t\t\tnum = localModifier.Modify(num);\n\t\t\t}\n\t\t}\n\t\tif (modifiers.HasFlag(CostModifiers.Global) && _card.CombatState != null)\n\t\t{\n\t\t\tnum = (int)Hook.ModifyEnergyCostInCombat(_card.CombatState, _card, num);\n\t\t}\n\t\treturn Math.Max(0, num);\n\t}\n\n\t/// <summary>\n\t/// Get the amount of energy that should be spent to play this card.\n\t///\n\t/// * For X-cost cards, this is the amount of energy that its owner has.\n\t/// * For normal cards, this is the current cost including all modifiers\n\t///   (see <see cref=\"M:MegaCrit.Sts2.Core.Entities.Cards.CardEnergyCost.GetWithModifiers(MegaCrit.Sts2.Core.Entities.Cards.CostModifiers)\" /> with <see cref=\"F:MegaCrit.Sts2.Core.Entities.Cards.CostModifiers.All\" />) clamped to 0.\n\t///\n\t/// The game uses this value when actually spending the energy to play the card.\n\t/// Additionally, this is useful for effects that need to know how much WOULD be spent to play the card without\n\t/// actually playing it, such as <see cref=\"T:MegaCrit.Sts2.Core.Models.Cards.Scavenge\" />.\n\t/// </summary>\n\tpublic int GetAmountToSpend()\n\t{\n\t\tif (CostsX)\n\t\t{\n\t\t\treturn _card.Owner.PlayerCombatState?.Energy ?? 0;\n\t\t}\n\t\treturn Math.Max(0, GetWithModifiers(CostModifiers.All));\n\t}\n\n\t/// <summary>\n\t/// Get the \"resolved\" cost of this card. This can mean one of two things:\n\t///\n\t/// * For X-cost cards, this is the captured X-cost value (see <see cref=\"P:MegaCrit.Sts2.Core.Entities.Cards.CardEnergyCost.CapturedXValue\" />).\n\t/// * For normal cards, this is the current cost including all modifiers\n\t///   (see <see cref=\"M:MegaCrit.Sts2.Core.Entities.Cards.CardEnergyCost.GetWithModifiers(MegaCrit.Sts2.Core.Entities.Cards.CostModifiers)\" /> with <see cref=\"F:MegaCrit.Sts2.Core.Entities.Cards.CostModifiers.All\" />) clamped to 0.\n\t///\n\t/// This is useful for effects that need to know the card's cost AFTER it was played, such as\n\t/// <see cref=\"T:MegaCrit.Sts2.Core.Models.Relics.IntimidatingHelmet\" />. For normal cards, these effects just care about the card's current cost\n\t/// (including all modifiers). For X-cost cards, these effects care about the X-value that was set for the card when\n\t/// it was played.\n\t/// </summary>\n\tpublic int GetResolved()\n\t{\n\t\tif (CostsX)\n\t\t{\n\t\t\treturn CapturedXValue;\n\t\t}\n\t\treturn Math.Max(0, GetWithModifiers(CostModifiers.All));\n\t}\n\n\t/// <summary>\n\t/// Set this cost to the specified amount until the card is played.\n\t/// </summary>\n\t/// <example>\n\t/// <see cref=\"T:MegaCrit.Sts2.Core.Models.Cards.Eidolon\" /> says \"Reduce the cost of all cards in your Discard Pile to 0 until played.\"\n\t/// </example>\n\t/// <param name=\"cost\">New cost.</param>\n\t/// <param name=\"reduceOnly\">\n\t/// Whether this modifier should only be included in the cost calculation if it would lower the current cost.\n\t/// See <see cref=\"P:MegaCrit.Sts2.Core.Entities.Cards.LocalCostModifier.IsReduceOnly\" /> for details.\n\t/// </param>\n\tpublic void SetUntilPlayed(int cost, bool reduceOnly = false)\n\t{\n\t\tif (cost != 0 || Canonical >= 0)\n\t\t{\n\t\t\t_localModifiers.Add(new LocalCostModifier(cost, LocalCostType.Absolute, LocalCostModifierExpiration.WhenPlayed, reduceOnly));\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// Set this cost to the specified amount until the end of the current turn OR until the card is played, whichever\n\t/// comes first.\n\t/// Note that the text of these effects will just say \"this turn\"; the \"or until played\" part is left implicit\n\t/// because it's wordy and rarely relevant.\n\t/// </summary>\n\t/// <example>\n\t/// <see cref=\"T:MegaCrit.Sts2.Core.Models.Cards.BulletTime\" /> says \"Reduce the cost of ALL cards in your Hand to 0 this turn.\"\n\t/// </example>\n\t/// <param name=\"cost\">New cost.</param>\n\t/// <param name=\"reduceOnly\">\n\t/// Whether this modifier should only be included in the cost calculation if it would lower the current cost.\n\t/// See <see cref=\"P:MegaCrit.Sts2.Core.Entities.Cards.LocalCostModifier.IsReduceOnly\" /> for details.\n\t/// </param>\n\tpublic void SetThisTurnOrUntilPlayed(int cost, bool reduceOnly = false)\n\t{\n\t\tif (cost != 0 || Canonical >= 0)\n\t\t{\n\t\t\t_localModifiers.Add(new LocalCostModifier(cost, LocalCostType.Absolute, LocalCostModifierExpiration.EndOfTurn | LocalCostModifierExpiration.WhenPlayed, reduceOnly));\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// BE CAREFUL USING THIS! You usually want <see cref=\"M:MegaCrit.Sts2.Core.Entities.Cards.CardEnergyCost.SetThisTurnOrUntilPlayed(System.Int32,System.Boolean)\" /> instead.\n\t/// Set this cost to the specified amount until the end of the current turn.\n\t/// Note that most effects that say \"this turn\" really mean \"this turn or until played\".\n\t/// This method should only be used for the few effects that should last for multiple plays in the same turn.\n\t/// </summary>\n\t/// <example>\n\t/// <see cref=\"T:MegaCrit.Sts2.Core.Models.Cards.Invoke\" /> says \"This card costs 0 if Osty has attacked this turn.\"\n\t/// </example>\n\t/// <param name=\"cost\">New cost.</param>\n\t/// <param name=\"reduceOnly\">\n\t/// Whether this modifier should only be included in the cost calculation if it would lower the current cost.\n\t/// See <see cref=\"P:MegaCrit.Sts2.Core.Entities.Cards.LocalCostModifier.IsReduceOnly\" /> for details.\n\t/// </param>\n\tpublic void SetThisTurn(int cost, bool reduceOnly = false)\n\t{\n\t\tif (cost != 0 || Canonical >= 0)\n\t\t{\n\t\t\t_localModifiers.Add(new LocalCostModifier(cost, LocalCostType.Absolute, LocalCostModifierExpiration.EndOfTurn, reduceOnly));\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// Set this cost to the specified amount for the rest of the combat.\n\t/// </summary>\n\t/// <example>\n\t/// <see cref=\"T:MegaCrit.Sts2.Core.Models.Cards.Enlightenment\" />+ says \"Reduce the cost of ALL cards in your Hand to 1 this combat.\"\n\t/// </example>\n\t/// <param name=\"cost\">New cost.</param>\n\t/// <param name=\"reduceOnly\">\n\t/// Whether this modifier should only be included in the cost calculation if it would lower the current cost.\n\t/// See <see cref=\"P:MegaCrit.Sts2.Core.Entities.Cards.LocalCostModifier.IsReduceOnly\" /> for details.\n\t/// </param>\n\tpublic void SetThisCombat(int cost, bool reduceOnly = false)\n\t{\n\t\tif (cost != 0 || Canonical >= 0)\n\t\t{\n\t\t\t_localModifiers.Add(new LocalCostModifier(cost, LocalCostType.Absolute, LocalCostModifierExpiration.EndOfCombat, reduceOnly));\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// Add the specified amount to this cost until the card is played.\n\t/// </summary>\n\t/// <example>\n\t/// <see cref=\"T:MegaCrit.Sts2.Core.Models.Enchantments.SlumberingEssence\" /> says \"If this card is in your hand at the end of turn, reduce its cost by 1\n\t/// until it is played.\"\n\t/// </example>\n\t/// <param name=\"amount\">Amount to add to the cost.</param>\n\t/// <param name=\"reduceOnly\">\n\t/// Whether this modifier should only be included in the cost calculation if it would lower the current cost.\n\t/// See <see cref=\"P:MegaCrit.Sts2.Core.Entities.Cards.LocalCostModifier.IsReduceOnly\" /> for details.\n\t/// </param>\n\tpublic void AddUntilPlayed(int amount, bool reduceOnly = false)\n\t{\n\t\tif (amount != 0)\n\t\t{\n\t\t\t_localModifiers.Add(new LocalCostModifier(amount, LocalCostType.Relative, LocalCostModifierExpiration.WhenPlayed, reduceOnly));\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// Add the specified amount to this cost until the end of the current turn OR until the card is played, whichever\n\t/// comes first.\n\t/// Note that the text of these effects will just say \"this turn\"; the \"or until played\" part is left implicit\n\t/// because it's wordy and rarely relevant.\n\t/// </summary>\n\t/// <example>None yet. Update this if we add one!</example>\n\t/// <param name=\"amount\">Amount to add to the cost.</param>\n\t/// <param name=\"reduceOnly\">\n\t/// Whether this modifier should only be included in the cost calculation if it would lower the current cost.\n\t/// See <see cref=\"P:MegaCrit.Sts2.Core.Entities.Cards.LocalCostModifier.IsReduceOnly\" /> for details.\n\t/// </param>\n\tpublic void AddThisTurnOrUntilPlayed(int amount, bool reduceOnly = false)\n\t{\n\t\tif (amount != 0)\n\t\t{\n\t\t\t_localModifiers.Add(new LocalCostModifier(amount, LocalCostType.Relative, LocalCostModifierExpiration.EndOfTurn | LocalCostModifierExpiration.WhenPlayed, reduceOnly));\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// BE CAREFUL USING THIS! You usually want <see cref=\"M:MegaCrit.Sts2.Core.Entities.Cards.CardEnergyCost.AddThisTurnOrUntilPlayed(System.Int32,System.Boolean)\" /> instead.\n\t/// Add the specified amount to this cost until the end of the current turn.\n\t/// Note that most effects that say \"this turn\" really mean \"this turn or until played\".\n\t/// This method should only be used for the few effects that should last for multiple plays in the same turn.\n\t/// </summary>\n\t/// <example>\n\t/// <see cref=\"T:MegaCrit.Sts2.Core.Models.Cards.Pinpoint\" /> says \"Costs 1 less for each Skill played this turn.\"\n\t/// </example>\n\t/// <param name=\"amount\">Amount to add to the cost.</param>\n\t/// <param name=\"reduceOnly\">\n\t/// Whether this modifier should only be included in the cost calculation if it would lower the current cost.\n\t/// See <see cref=\"P:MegaCrit.Sts2.Core.Entities.Cards.LocalCostModifier.IsReduceOnly\" /> for details.\n\t/// </param>\n\tpublic void AddThisTurn(int amount, bool reduceOnly = false)\n\t{\n\t\tif (amount != 0)\n\t\t{\n\t\t\t_localModifiers.Add(new LocalCostModifier(amount, LocalCostType.Relative, LocalCostModifierExpiration.EndOfTurn, reduceOnly));\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// Add the specified amount to this cost for the rest of the combat.\n\t/// </summary>\n\t/// <example>\n\t/// <see cref=\"T:MegaCrit.Sts2.Core.Models.Cards.KinglyKick\" /> says \"Whenever you draw this card, lower its cost by 1 this combat.\"\n\t/// </example>\n\t/// <param name=\"amount\">Amount to add to the cost.</param>\n\t/// <param name=\"reduceOnly\">\n\t/// Whether this modifier should only be included in the cost calculation if it would lower the current cost.\n\t/// See <see cref=\"P:MegaCrit.Sts2.Core.Entities.Cards.LocalCostModifier.IsReduceOnly\" /> for details.\n\t/// </param>\n\tpublic void AddThisCombat(int amount, bool reduceOnly = false)\n\t{\n\t\tif (amount != 0)\n\t\t{\n\t\t\t_localModifiers.Add(new LocalCostModifier(amount, LocalCostType.Relative, LocalCostModifierExpiration.EndOfCombat, reduceOnly));\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// Clear local cost modifiers that should last until the end of the turn.\n\t/// </summary>\n\t/// <returns>True if any modifiers were cleared and EnergyCostChanged should be invoked.</returns>\n\tpublic bool EndOfTurnCleanup()\n\t{\n\t\t_card.AssertMutable();\n\t\treturn _localModifiers.RemoveAll((LocalCostModifier m) => m.Expiration.HasFlag(LocalCostModifierExpiration.EndOfTurn)) > 0;\n\t}\n\n\t/// <summary>\n\t/// Clear local cost modifiers that should last until the card is played.\n\t/// </summary>\n\t/// <returns>True if any modifiers were cleared and EnergyCostChanged should be invoked.</returns>\n\tpublic bool AfterCardPlayedCleanup()\n\t{\n\t\t_card.AssertMutable();\n\t\treturn _localModifiers.RemoveAll((LocalCostModifier m) => m.Expiration.HasFlag(LocalCostModifierExpiration.WhenPlayed)) > 0;\n\t}\n\n\t/// <summary>\n\t/// Upgrade the energy cost of this card by the specified amount.\n\t/// </summary>\n\t/// <param name=\"addend\">Amount to add to the current cost (usually negative).</param>\n\tpublic void UpgradeBy(int addend)\n\t{\n\t\t_card.AssertMutable();\n\t\tif (CostsX || addend == 0)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tint num = _base;\n\t\tint num2 = Math.Max(_base + addend, 0);\n\t\tWasJustUpgraded = true;\n\t\tif (num2 < num)\n\t\t{\n\t\t\tforeach (LocalCostModifier localModifier in _localModifiers)\n\t\t\t{\n\t\t\t\tif (localModifier.Type == LocalCostType.Absolute && localModifier.Amount > num2)\n\t\t\t\t{\n\t\t\t\t\tlocalModifier.Amount = num2;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tSetCustomBaseCost(num2);\n\t}\n\n\t/// <summary>\n\t/// Finalize an upgrade after calling UpgradeEnergyCostBy. This clears out state that is used for displaying an upgrade\n\t/// preview.\n\t/// </summary>\n\tpublic void FinalizeUpgrade()\n\t{\n\t\t_card.AssertMutable();\n\t\tWasJustUpgraded = false;\n\t}\n\n\t/// <summary>\n\t/// Reset energy cost to base values during downgrade.\n\t/// </summary>\n\tpublic void ResetForDowngrade()\n\t{\n\t\t_card.AssertMutable();\n\t\t_base = Canonical;\n\t\t_card.InvokeEnergyCostChanged();\n\t}\n\n\t/// <summary>\n\t/// BE VERY CAREFUL USING THIS!\n\t/// This is mainly meant for internal usage. The only external usage of this should be in <see cref=\"T:MegaCrit.Sts2.Core.Models.Cards.MadScience\" />.\n\t/// </summary>\n\t/// <param name=\"newBaseCost\"></param>\n\tpublic void SetCustomBaseCost(int newBaseCost)\n\t{\n\t\t_card.AssertMutable();\n\t\t_base = newBaseCost;\n\t\t_card.InvokeEnergyCostChanged();\n\t}\n\n\t/// <summary>\n\t/// Create a deep clone of this EnergyCostInfo for the specified card.\n\t/// </summary>\n\t/// <param name=\"newCard\">The card that will own the cloned EnergyCostInfo.</param>\n\t/// <returns>A deep clone of this EnergyCostInfo.</returns>\n\tpublic CardEnergyCost Clone(CardModel newCard)\n\t{\n\t\tList<LocalCostModifier> localModifiers = _localModifiers.Select((LocalCostModifier m) => m.Clone()).ToList();\n\t\treturn new CardEnergyCost(newCard, newCard.EnergyCost.Canonical, newCard.EnergyCost.CostsX)\n\t\t{\n\t\t\t_base = _base,\n\t\t\t_capturedXValue = _capturedXValue,\n\t\t\tWasJustUpgraded = WasJustUpgraded,\n\t\t\t_localModifiers = localModifiers\n\t\t};\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n",
+      "stderr": ""
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-cleanup-contract-20261007/native/TemporaryCardCost.cs",
+      "sha256": "06517cdac53809d384e49d28eae23418b56bd19b1cedaf85dda5f3c0f8536677",
+      "text": "using System;\n\nnamespace MegaCrit.Sts2.Core.Entities.Cards;\n\n/// <summary>\n/// Represents a card cost that should only exist temporarily.\n/// Used for effects that set a card's cost to a specific value.\n/// For effects that modify a card's existing cost by a certain amount, see <see cref=\"T:MegaCrit.Sts2.Core.Entities.Cards.TemporaryCardCostOffset\" />.\n/// Used for both temporary energy and star card costs.\n/// </summary>\npublic class TemporaryCardCost\n{\n\t/// <summary>\n\t/// The amount that this card's cost is set to.\n\t/// </summary>\n\tpublic int Cost { get; private set; }\n\n\t/// <summary>\n\t/// Should this temporary cost be cleared when the turn ends?\n\t/// This is true for effects that say something like \"It costs N _this turn_\" (like Attack Potion).\n\t/// </summary>\n\tpublic bool ClearsWhenTurnEnds { get; private set; }\n\n\t/// <summary>\n\t/// Should this temporary cost be cleared when the card is played?\n\t/// This is true for effects that say something like \"It costs N _until played_\" (like King's Gambit),\n\t/// AND for effects that say something like \"It costs N _this turn_\" (like Attack Potion).\n\t/// </summary>\n\tpublic bool ClearsWhenCardIsPlayed { get; private set; }\n\n\t/// <summary>\n\t/// A temporary cost that is cleared only when the card is played.\n\t/// </summary>\n\tpublic static TemporaryCardCost UntilPlayed(int cost)\n\t{\n\t\treturn new TemporaryCardCost\n\t\t{\n\t\t\tCost = Math.Max(cost, 0),\n\t\t\tClearsWhenTurnEnds = false,\n\t\t\tClearsWhenCardIsPlayed = true\n\t\t};\n\t}\n\n\t/// <summary>\n\t/// A temporary cost that is cleared when the card is played OR at the end of the current\n\t/// turn, whichever comes first.\n\t/// </summary>\n\tpublic static TemporaryCardCost ThisTurn(int cost)\n\t{\n\t\treturn new TemporaryCardCost\n\t\t{\n\t\t\tCost = Math.Max(cost, 0),\n\t\t\tClearsWhenTurnEnds = true,\n\t\t\tClearsWhenCardIsPlayed = true\n\t\t};\n\t}\n\n\t/// <summary>\n\t/// A temporary cost that remains for the entire combat.\n\t/// </summary>\n\tpublic static TemporaryCardCost ThisCombat(int cost)\n\t{\n\t\treturn new TemporaryCardCost\n\t\t{\n\t\t\tCost = Math.Max(cost, 0),\n\t\t\tClearsWhenTurnEnds = false,\n\t\t\tClearsWhenCardIsPlayed = false\n\t\t};\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n",
+      "stderr": ""
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-cleanup-contract-20261007/native/CardModelFreeThisTurnEndCleanupPatch.cs",
+      "sha256": "1bb5c4be9551f8b0ec0d8388629899a2f889c8e6a46eb9db12cd1d01342b39e6",
+      "text": "using MegaCrit.Sts2.Core.Models;\nusing STS2RitsuLib.Patching.Models;\n\nnamespace STS2RitsuLib.Cards.FreePlay.Patches;\n\ninternal sealed class CardModelFreeThisTurnEndCleanupPatch : IPatchMethod\n{\n\tpublic static string PatchId => \"card_model_free_this_turn_end_cleanup\";\n\n\tpublic static string Description => \"Clear CardModel.SetToFreeThisTurn bindings during CardModel.EndOfTurnCleanup\";\n\n\tpublic static bool IsCritical => false;\n\n\tpublic static ModPatchTarget[] GetTargets()\n\t{\n\t\treturn new ModPatchTarget[1]\n\t\t{\n\t\t\tnew ModPatchTarget(typeof(CardModel), \"EndOfTurnCleanup\")\n\t\t};\n\t}\n\n\tpublic static void Postfix(CardModel __instance)\n\t{\n\t\tif (FreePlayBindingRegistry.ClearCardFreeThisTurn(__instance))\n\t\t{\n\t\t\tFreePlayCardVisuals.Refresh(__instance);\n\t\t}\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n",
+      "stderr": ""
+    },
+    {
+      "path": ".local/tool-tasks/exhaust-cleanup-contract-20261007/native/CardModelEndOfTurnSecondaryResourcesPatch.cs",
+      "sha256": "c2b511941d89be8c59980020c8486db267887504b86228ab61e0c4ac237792c3",
+      "text": "using MegaCrit.Sts2.Core.Models;\nusing STS2RitsuLib.Patching.Models;\n\nnamespace STS2RitsuLib.Combat.SecondaryResources.Patches;\n\ninternal sealed class CardModelEndOfTurnSecondaryResourcesPatch : IPatchMethod\n{\n\tpublic static string PatchId => \"ritsulib_secondary_resource_card_end_turn_cleanup\";\n\n\tpublic static string Description => \"Clear this-turn secondary-resource card costs\";\n\n\tpublic static bool IsCritical => false;\n\n\tpublic static ModPatchTarget[] GetTargets()\n\t{\n\t\treturn new ModPatchTarget[1]\n\t\t{\n\t\t\tnew ModPatchTarget(typeof(CardModel), \"EndOfTurnCleanup\")\n\t\t};\n\t}\n\n\tpublic static void Postfix(CardModel __instance)\n\t{\n\t\tif (ModSecondaryResourceRegistry.HasAny)\n\t\t{\n\t\t\t__instance.ClearSecondaryCostsThisTurn();\n\t\t}\n\t}\n}\nYou are not using the latest version of the tool, please update.\nLatest version is '11.1.0.9782' (yours is '9.1.0.7988')\n",
+      "stderr": ""
+    }
+  ],
+  "reusedProductionSources": [
+    "src/Runtime/SimulationNotificationIsolation.cs",
+    "src/Runtime/CombatStateTrackerIsolationPatch.cs",
+    "src/Runtime/RitsuFreePlayIsolationPatches.cs",
+    "src/Engine/Common/PredictionUtils.cs",
+    "src/Prediction/CardCostStateSupport.cs",
+    "src/Prediction/CorePowerSupport.cs"
+  ],
+  "limitations": [
+    "positive native cards are detached clones and not an exhausted pile or complete battle",
+    "cross-card callback is explicitly injected, not claimed naturally reachable in the original root",
+    "no measured pre-action unordered full state key collision in the injected callback fixture",
+    "callback qualification check is one-shot no-subscriber component test, not a production guard",
+    "card source retains unknown observer; simulation stripping does not certify ignored semantics",
+    "only three target method patch tables captured; downstream dynamic and patch closure incomplete",
+    "two-generation final comparison is full current ContinuationStamp plus rich history, not all unknown extension hidden state",
+    "16 first children forked serially; second generation forked on distinct worker-owned children",
+    "no actual EndTurn, Solve, Coordinator, delayed notification delivery or future source closure tested",
+    "runtime source unchanged; no new performance or peak RSS acceptance"
+  ],
+  "decision": {
+    "newActualPrunes": 0,
+    "isWholeOrderCertificate": false,
+    "newProductionCertification": false,
+    "newTwofoldScenarios": 0,
+    "fullEndTurnTest": false,
+    "wholeRequestPerformanceAcceptance": false,
+    "certificationCostMeasured": false
+  },
+  "reusedEvidence": [
+    "docs/performance/exhaust-reader-footprint-20261007.json",
+    "docs/performance/exhaust-equivalence-certification-20261007.json",
+    "docs/performance/exhaust-positive-native-contract-20261007.json",
+    "docs/performance/exhaust-extension-registry-contract-20261007.json",
+    "docs/performance/exhaust-clone-binding-contract-20261007.json",
+    "docs/performance/retained-victory-strict-hp-pruning-20261007.json"
+  ],
+  "cleanup": {
+    "pending": false,
+    "nativeInstanceRemoved": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/headless-instances/exhaust-cleanup-contract-20261007",
+    "diagnosticDllDeployed": false,
+    "runtimeUnchanged": true,
+    "rawLogsAndReadOnlySourcesRetained": true,
+    "deploymentReusedFrom": "docs/performance/retained-victory-strict-hp-pruning-20261007.json",
+    "removed": [
+      ".local/tool-tasks/exhaust-cleanup-contract-20261007/TaskExhaustCleanup.cs",
+      ".local/tool-tasks/exhaust-cleanup-contract-20261007/native.props",
+      ".local/tool-tasks/exhaust-cleanup-contract-20261007/executor.original",
+      ".local/tool-tasks/exhaust-cleanup-contract-20261007/build-native"
+    ],
+    "executorExactRestored": true,
+    "executorSha256": "b663f7a9c9af37ef7e0f376d226a17b42327271d2247d04d0ca0b885a7183ea7"
+  },
+  "gates": {
+    "documentation": {
+      "command": "python3 -B tools/inspection/verify-documentation.py",
+      "exitCode": 0,
+      "output": "DOCUMENTATION_OK files=551 links=2324 errors=0"
+    },
+    "trackedWhitespace": {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    "unchangedRuntimeStructureCoverageAndDeploymentReusedFrom": "docs/performance/retained-victory-strict-hp-pruning-20261007.json"
+  }
+}

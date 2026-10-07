@@ -58,3 +58,5 @@
 [克隆真实绑定合同](../../docs/performance/exhaust-clone-binding-contract-20261007.md)核对实际内部方法、同名同数量替换、零费用层拒绝及原生资源复制隔离；初始54根牌/20原型无资源层。临时入口撤回，无新Fork或整请求验收。
 
 [读牌调用边界](../../docs/performance/exhaust-reader-footprint-20261007.md)仅从既有IL清单形成候选方法与核对正文；不是原生/Fork或整根证书。保守图包含非搜索阶段及潜在委托，未知回调和未来写入继续保留有序语义；临时脚本归档清理，运行时未变。
+
+[清理回调合同](../../docs/performance/exhaust-cleanup-contract-20261007.md)用脱离牌堆的原生两牌验证局部清理、跨牌订阅反例与16路两代Fork费用隔离；未执行完整EndTurn或整根证书。临时入口逐字恢复，实例/源码/构建清理；生产及部署复用。

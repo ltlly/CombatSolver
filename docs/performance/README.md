@@ -1,6 +1,6 @@
 # 性能工作入口
 
-- [剪枝读牌调用边界](exhaust-reader-footprint-20261007.md)：24候选方法/37引用，补齐抽象基类并核对成员查询、指定堆读取及全牌生命周期；结合[真实克隆绑定](exhaust-clone-binding-contract-20261007.md)推进回调与写入闭包，尚未认证整根或启用新剪枝。
+- [剪枝清理回调合同](exhaust-cleanup-contract-20261007.md)：指定原生两牌正例与跨牌回调费用2/0反例，16路两代Fork隔离通过；结合[读牌边界](exhaust-reader-footprint-20261007.md)推进实际订阅与后置补丁闭包，未启用新剪枝。
 
 - [历史计数门槛与状态等价研究](saturated-history-key-research-20261007.md)：三根含并行worker约145万次构键，三项门槛投影没有合并不同完整键；原生读取链说明局部门槛不能作为完整根认证，未接入剪枝。
 
