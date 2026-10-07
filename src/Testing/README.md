@@ -39,6 +39,8 @@
 
 [消耗堆原生认证研究](../../docs/performance/exhaust-equivalence-certification-20261007.md)执行两种Eidolon消耗顺序：同完整无序键和九RNG但实际伤害8/6，原生/模拟完整续用及快照相等。32孩子串行Fork后并发修改，富历史/父/兄弟/live/RNG隔离保持；不是并发Fork或完整可达认证。临时合同路由和源码已撤回，源码/输入/失败保存在报告，两实例删除。
 
+[消耗堆保序投影](../../docs/performance/exhaust-projection-subsets-20261007.md)保存三版六次完整只读请求，14项质量/根/政策/预算保持。回调名称元数据仅作测量先验，潜在准入/展开访问不可相加或计为实际剪枝；无新原生合同、安全证书或性能验收，任务插桩和构建已清理。
+
 [相同前缀原型](../../docs/performance/exact-action-prefix-replay-research-20261007.md)真实测试冷/热/不同前缀回退、生成牌/随机目标、当前评分和16缓存Fork；测试持有弱模板，未知风险为注入条目。完整请求变慢撤回，缺根绑定/GC/交互/最终回归，不作通用缓存或新速度结论。
 
 [完整动作重复回放研究](../../docs/performance/action-transition-opportunity-20261007.md)扩展离线宿主可选观察，按冻结根、完整动作、capture模式及实际worker拥有者分组；仅检查选定特征，未执行新原生/Fork合同，不替代完整历史或全部政策的安全证明。生产搜索及部署保持。 后续[历史前缀边界](../../docs/performance/transition-prefix-boundary-research-20261007.md)以临时夹具复现同键/同数量不同历史，并核对16个已Fork子分支并行修改及原生完整状态；不代表完整原合同、并发Fork或缓存安全。首版Power排列失败保留，临时路由恢复。
