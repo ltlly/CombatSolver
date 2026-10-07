@@ -1,6 +1,6 @@
 # 性能工作入口
 
-- [剪枝根与扩展安全边界](exhaust-root-extension-audit-20261007.md)：真实猎手根的来源盘点、未知事件/浮动来源及16初始Fork检查通过；Ritsu生命周期、能力、保存槽和克隆回调需要独立认证。结合既有[保序正例](exhaust-positive-native-contract-20261007.md)、[来源闭包](exhaust-reader-closure-20261007.md)、[机会统计](exhaust-projection-subsets-20261007.md)、[顺序反例](exhaust-equivalence-certification-20261007.md)及[生命支配](hp-state-dominance-research-20261007.md)，未启用新剪枝。
+- [剪枝扩展注册合同](exhaust-extension-registry-contract-20261007.md)：真实猎手根24生命周期/1克隆/58bag，未知登记变化及16初始Fork隔离通过；内部委托与完整闭包未证明，未启用剪枝。[根审计](exhaust-root-extension-audit-20261007.md)连接已有保序正反例、来源闭包、机会统计和生命支配边界。
 
 - [历史计数门槛与状态等价研究](saturated-history-key-research-20261007.md)：三根含并行worker约145万次构键，三项门槛投影没有合并不同完整键；原生读取链说明局部门槛不能作为完整根认证，未接入剪枝。
 

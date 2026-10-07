@@ -52,3 +52,5 @@
 [生命支配诊断](../../docs/performance/hp-state-dominance-research-20261007.md)只投影CurrentHp并观察真实转置表，覆盖全部并行worker；两个完整请求质量/根/政策/预算保持但工作量变化。计数含终局、准入和展开重叠，不能计作实际剪枝；条件战后回复反例仅为源码算术结论，未跑新原生/Fork。三处插桩恢复，源码/构建清理、正式部署复用。
 
 2026-10-07 [剪枝根与扩展审计](../../docs/performance/exhaust-root-extension-audit-20261007.md)保存真实生成器根的一次性盘点与16初始Fork读取证据；临时入口/源码已撤回，未形成生产认证或性能验收。
+
+[扩展注册原生合同](../../docs/performance/exhaust-extension-registry-contract-20261007.md)补齐真实根的生命周期、克隆、默认能力与保存槽盘点；最终登记变化/原生克隆/16初始Fork通过，临时入口撤回。完整证书和性能未验证，失败/崩溃保留。
