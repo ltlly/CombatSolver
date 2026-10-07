@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-07 [禁药条件回复研究](performance/policy-blocked-recovery-research-20261007.md)：两个原生根/32路两代Fork与16次纯整请求质量和峰值通过；首版机器人0.899倍，分离消费者后0.981倍、工作恢复但无提速。合法果汁未知、已有再生保留；两版与入口/构建撤回，生产复用。
+2026-10-07 [联合回复/用药成本研究](performance/joint-recovery-cost-research-20261007.md)：4,626库存域及166,536次有限政策比较通过，DP/Pareto与完整枚举一致，相等资格保留。复用九份库存及2/11独立证书，已有认证根无组合增益；无新原生、实际剪枝、性能或部署。前轮[禁药候选](performance/policy-blocked-recovery-research-20261007.md)已撤回。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：新增原生GC生命周期`6d4f53a232ff4481b1800c680940b9c4` Passed，实例清理；复用相同剪枝源码的旧原生见证合同。新增详细信息不可用但No-GC可用夹具捕获原型读取异常，修正原型及最终恢复基线分别通过六项portable-runtime合同。48次纯请求完整保存，最终11根44次内存通过但猎手首领54/57战损差异未通过质量门槛；运行时撤回，主Mod部署复用。没有新全29根或上传包验收。
 

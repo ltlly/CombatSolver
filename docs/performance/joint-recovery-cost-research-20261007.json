@@ -1,0 +1,396 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-07",
+  "sourceCommit": "9438441344279b60ee08e5f8d9b7e36445d79113",
+  "decision": "Research only; no runtime prototype, native test, new certification or performance acceptance",
+  "gameEvidenceReuse": {
+    "version": "0.111.0 / 41cef1ea",
+    "sha256": "2b40d2df538db1ceb5fa48d958c80ab730ada1e07db88a870aff01a661768b9f",
+    "mvid": "8a76776c-0ce1-4d4f-90bd-8cce653dad8e",
+    "newScan": false
+  },
+  "policyScope": {
+    "consumer": "Existing exact-use SmartPotionGradient only",
+    "required": "Complete legal no-death-save potion-free victory; independently closed inventory; finite healing and safe other objectives",
+    "prune": "min over all conservative future subsets of (strategic HP lower bound + original Smart required saving - baseline deficit) > 0",
+    "equality": "Retain",
+    "ordinaryFinalOrdering": "Strict-primary-improvement escape forbids global Smart-threshold pruning",
+    "unknown": "Keep original conservative search",
+    "integrationBoundary": "Retain original ranking/route preservation and actual victory; proof correctness alone does not guarantee bounded-search schedule equivalence"
+  },
+  "proofResult": {
+    "status": "Passed",
+    "scope": "Finite abstract proof and archived-inventory inspection only",
+    "counts": {
+      "inventoryDomains": 4626,
+      "dpEqualsBrute": 4626,
+      "policyEnvelopes": 166536,
+      "paretoEqualsFull": 166536,
+      "separatedNoStronger": 166536,
+      "tighterJointEnvelope": 9501,
+      "additionalAbstractRejections": 1485,
+      "equalityPreserved": 362,
+      "constantHealingEquality": 136728
+    },
+    "illustrativeTightening": [
+      {
+        "stock": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            9
+          ]
+        ],
+        "available": 3,
+        "needed": 1,
+        "args": {
+          "active": 0,
+          "damage": 23,
+          "recovered": 2,
+          "headroom": 31,
+          "post": 6,
+          "spent": 0,
+          "exact": 1,
+          "reward": 0,
+          "relief": "None",
+          "baseline": 19
+        },
+        "separated": -5,
+        "joint": -4
+      },
+      {
+        "stock": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            9
+          ]
+        ],
+        "available": 3,
+        "needed": 1,
+        "args": {
+          "active": 0,
+          "damage": 23,
+          "recovered": 2,
+          "headroom": 31,
+          "post": 6,
+          "spent": 0,
+          "exact": 1,
+          "reward": 5,
+          "relief": "None",
+          "baseline": 19
+        },
+        "separated": -5,
+        "joint": -4
+      },
+      {
+        "stock": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            9
+          ]
+        ],
+        "available": 3,
+        "needed": 1,
+        "args": {
+          "active": 0,
+          "damage": 23,
+          "recovered": 2,
+          "headroom": 31,
+          "post": 6,
+          "spent": 0,
+          "exact": 1,
+          "reward": 40,
+          "relief": "None",
+          "baseline": 19
+        },
+        "separated": -5,
+        "joint": -4
+      },
+      {
+        "stock": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            9
+          ]
+        ],
+        "available": 3,
+        "needed": 1,
+        "args": {
+          "active": 0,
+          "damage": 23,
+          "recovered": 2,
+          "headroom": 31,
+          "post": 6,
+          "spent": 18,
+          "exact": 1,
+          "reward": 0,
+          "relief": "None",
+          "baseline": 19
+        },
+        "separated": 13,
+        "joint": 14
+      }
+    ],
+    "concreteExample": {
+      "args": {
+        "active": 0,
+        "damage": 17,
+        "recovered": 0,
+        "headroom": 17,
+        "post": 0,
+        "spent": 0,
+        "exact": 1,
+        "reward": 0,
+        "relief": "None",
+        "baseline": 19
+      },
+      "options": [
+        [
+          0,
+          9
+        ],
+        [
+          5,
+          18
+        ]
+      ],
+      "jointSlack": 1,
+      "separatedSlack": -8,
+      "equalityDamage16Retained": true
+    },
+    "sourceSha256": {
+      "src/Search/PotionUsePolicy.cs": "3e5a5a461c24ea0ec43ad9fd9de8f73a456f92870a066c4623d6280107ca6ebc",
+      "src/Search/ActEndingBossPolicy.cs": "060f32c94d6c7b0a44d9e393c4c24dc70ef233cb2bd3685045441219b02dd459",
+      "src/Search/CombatBeamSolver.SmartPotionBound.cs": "dd46fe896fcfe77bd956cf30e3afb867175b4291c36580ed3dbfd8b8a80a366f",
+      "src/Search/ClosedInitialPotionInventory.cs": "9d788484335eedd711d52f4e94057043365eb42c4c61ff3a9161d9f184387099",
+      "src/Search/StrategicHpRecoveryBound.Components.cs": "ccedc63a8f65997acba30efc0bb48eb4f31cb9a9fa4d0dd2a28fbc07d079ebfb",
+      "src/Search/CombatBeamSolver.FinalPlanOrdering.cs": "5fe32341a7cca831655d14ed23b2842e0336f7c9fb907a28021cd3978e101bae",
+      "src/Search/CombatSearchCoordinator.Audits.cs": "f6a1398cf62b439d4b977ab186a89873eb1a32a4e191e4e4d569370aeec0ce52"
+    },
+    "inventoryCaptureSourceUnchanged": true,
+    "reusedInventoryCertification": {
+      "evidence": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/docs/performance/closed-potion-stock-pruning-20261006.json",
+      "evidenceSha256": "1b94d8950450825cdbdc69b0db348641ad754b412811bc1b72f0caedbc6ab911",
+      "roots": 11,
+      "certified": 2,
+      "assessments": [
+        {
+          "scene": "dev-00-ironclad-elite",
+          "certified": true,
+          "firstRejection": null
+        },
+        {
+          "scene": "dev-01-silent-elite",
+          "certified": true,
+          "firstRejection": null
+        },
+        {
+          "scene": "dev-04-necrobinder-elite",
+          "certified": false,
+          "firstRejection": "initial-card:DefendNecrobinder"
+        },
+        {
+          "scene": "dev-09-necrobinder-boss",
+          "certified": false,
+          "firstRejection": "initial-card:DefendNecrobinder"
+        },
+        {
+          "scene": "dev-06-silent-boss",
+          "certified": false,
+          "firstRejection": "initial-card:TheHunt"
+        },
+        {
+          "scene": "dev-03-regent-elite",
+          "certified": false,
+          "firstRejection": "initial-card:BundleOfJoy"
+        },
+        {
+          "scene": "dev-02-defect-elite",
+          "certified": false,
+          "firstRejection": "initial-card:DefendDefect"
+        },
+        {
+          "scene": "dev-08-regent-boss",
+          "certified": false,
+          "firstRejection": "initial-card:PrepTime"
+        },
+        {
+          "scene": "holdout-03-regent",
+          "certified": false,
+          "firstRejection": "initial-card:Arsenal"
+        },
+        {
+          "scene": "native-infested",
+          "certified": false,
+          "firstRejection": "root-listener:MegaCrit.Sts2.Core.Models.Enchantments.Slither"
+        },
+        {
+          "scene": "native-soul-nexus",
+          "certified": false,
+          "firstRejection": "root-listener:MegaCrit.Sts2.Core.Models.Enchantments.Slither"
+        }
+      ],
+      "meaning": "Prior successful capture; no new certification measurement"
+    },
+    "fixedRootInventories": [
+      {
+        "scene": "dev-04-necrobinder-elite",
+        "potionSlots": [
+          "POTION_OF_DOOM",
+          "WEAK_POTION"
+        ],
+        "regenPotionCount": 0,
+        "loadoutPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/open-potion-primary-proof-20261007/pure-targets/dev-04-necrobinder-elite/C1/evidence/generated-scenario.loadout.json",
+        "loadoutSha256": "d5452d4e129923aca6774b10e7451287ac4f7346ddc7323d1939df527a556112"
+      },
+      {
+        "scene": "dev-00-ironclad-elite",
+        "potionSlots": [
+          "BEETLE_JUICE",
+          "GAMBLERS_BREW"
+        ],
+        "regenPotionCount": 0,
+        "loadoutPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/open-potion-primary-proof-20261007/pure-targets/dev-00-ironclad-elite/C1/evidence/generated-scenario.loadout.json",
+        "loadoutSha256": "e38e406a2cb6336bb428e150e78a8a428b8437a01b59ea112f266b516eb6cc76"
+      },
+      {
+        "scene": "dev-06-silent-boss",
+        "potionSlots": [
+          "FORTIFIER",
+          "LUCKY_TONIC"
+        ],
+        "regenPotionCount": 0,
+        "loadoutPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/open-potion-primary-proof-20261007/pure-final/dev-06-silent-boss/C1/evidence/generated-scenario.loadout.json",
+        "loadoutSha256": "76362080d087918b753491b5b8d0e930130ecb73b9ab80365fcffcab624859a2"
+      },
+      {
+        "scene": "dev-08-regent-boss",
+        "potionSlots": [
+          "SPEED_POTION",
+          "SWIFT_POTION"
+        ],
+        "regenPotionCount": 0,
+        "loadoutPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/open-potion-primary-proof-20261007/pure-final/dev-08-regent-boss/C1/evidence/generated-scenario.loadout.json",
+        "loadoutSha256": "968dfde2253bd16310895b913ade008109cca3e5a99df11ef6a0d077ce959097"
+      },
+      {
+        "scene": "dev-09-necrobinder-boss",
+        "potionSlots": [
+          "SHACKLING_POTION",
+          "CURE_ALL"
+        ],
+        "regenPotionCount": 0,
+        "loadoutPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/open-potion-primary-proof-20261007/pure-final/dev-09-necrobinder-boss/C1/evidence/generated-scenario.loadout.json",
+        "loadoutSha256": "7fa478a86a416ba399b4ba7f16b65e2c2d872b383b32ac71a00e86f88b25a558"
+      },
+      {
+        "scene": "dev-01-silent-elite",
+        "potionSlots": [
+          "STABLE_SERUM",
+          "BLESSING_OF_THE_FORGE"
+        ],
+        "regenPotionCount": 0,
+        "loadoutPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/open-potion-primary-proof-20261007/pure-final/dev-01-silent-elite/C1/evidence/generated-scenario.loadout.json",
+        "loadoutSha256": "16ee6caced73cee43f3e14beb776a027b2307f77e5e48e076b83ef67fab70852"
+      },
+      {
+        "scene": "dev-03-regent-elite",
+        "potionSlots": [
+          "HEART_OF_IRON",
+          "REGEN_POTION"
+        ],
+        "regenPotionCount": 1,
+        "loadoutPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/open-potion-primary-proof-20261007/pure-final/dev-03-regent-elite/C1/evidence/generated-scenario.loadout.json",
+        "loadoutSha256": "b82c9e69d0e5329ecea804ff8c9847a335eb50798d24411d89c7965d9a39559d"
+      },
+      {
+        "scene": "dev-02-defect-elite",
+        "potionSlots": [
+          "SKILL_POTION",
+          "FRUIT_JUICE"
+        ],
+        "regenPotionCount": 0,
+        "loadoutPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/open-potion-primary-proof-20261007/pure-final/dev-02-defect-elite/C1/evidence/generated-scenario.loadout.json",
+        "loadoutSha256": "5df370aef9ed41399fc3bd05a387de910a03efd35cd09950089e8d78b5f969f9"
+      },
+      {
+        "scene": "holdout-03-regent",
+        "potionSlots": [
+          "POWDERED_DEMISE",
+          "MAZALETHS_GIFT"
+        ],
+        "regenPotionCount": 0,
+        "loadoutPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/open-potion-primary-proof-20261007/pure-final/holdout-03-regent/C1/evidence/generated-scenario.loadout.json",
+        "loadoutSha256": "ed709f40455935a03f74cf2be891d88b0f06fd535ee24f9f97629a6a5d63489d"
+      },
+      {
+        "scene": "native-infested",
+        "capturedLoadout": null,
+        "reason": "No generated loadout in this run; not inferred from defaults"
+      },
+      {
+        "scene": "native-soul-nexus",
+        "capturedLoadout": null,
+        "reason": "No generated loadout in this run; not inferred from defaults"
+      }
+    ],
+    "actualNewPrunes": 0,
+    "newNativeTests": 0,
+    "newPerformanceRequests": 0,
+    "unknownAndAcquisitionClosure": "Not tested; remain conservative in production",
+    "elapsedSeconds": 0.5506405220003217
+  },
+  "oneShotSources": {
+    "proof.py": {
+      "sha256": "f9c447430ac7fc5035c116f40e5287f40ff0694fd7dab1881107efd3c97451a0",
+      "source": "from itertools import combinations, product\nfrom pathlib import Path\nfrom hashlib import sha256\nimport json\nimport time\n\n# New research: exact-count DP/Pareto envelope, replacement-credit policy and\n# rejection equality. This is not native semantics or a production certificate.\nstarted = time.perf_counter()\ntask = Path(__file__).resolve().parent\nroot = task.parents[2]\ncounts = dict(inventoryDomains=0, dpEqualsBrute=0, policyEnvelopes=0,\n              paretoEqualsFull=0, separatedNoStronger=0,\n              tighterJointEnvelope=0, additionalAbstractRejections=0,\n              equalityPreserved=0, constantHealingEquality=0)\n\ndef triangle(value):\n    return value * (value + 1) // 2\n\ndef replacement(cost, count, credit):\n    return max(1, cost-credit) if cost > 0 and count > 0 and credit > 0 else cost\n\ndef requirement(cost, count, credit, relief):\n    effective = replacement(cost, count, credit)\n    if effective <= 0:\n        return 0\n    return {'None': effective, 'ActClearHeal': effective * 5,\n            'RunEnding': 2147483647 // 4}[relief]\n\ndef dp_options(stock, available, needed):\n    # Each pair remains tied to one reachable exact-count subset. No union of\n    # one subset's healing with a different subset's cost.\n    layers = [set() for _ in range(needed+1)]\n    layers[0].add((0, 0))\n    for slot, (dose, cost) in enumerate(stock):\n        if not available & (1 << slot):\n            continue\n        for count in range(needed, 0, -1):\n            layers[count].update((r+dose, c+cost) for r, c in layers[count-1])\n    return layers[needed]\n\ndef pareto(options):\n    # For the same final explicit count, more dose and lower nonnegative cost\n    # never worsen this restricted envelope. This is not branch HP dominance.\n    return {(r,c) for r,c in options if not any(\n        other_r >= r and other_c <= c and (other_r != r or other_c != c)\n        for other_r,other_c in options)}\n\ndef slack(pair, active, damage, recovered, headroom, post, spent,\n          exact, reward, relief, baseline):\n    dose,cost = pair\n    healing = triangle(active+dose) + post\n    divisor = {'None': 1, 'ActClearHeal': 5, 'RunEnding': 2147483647 // 4}[relief]\n    hp_lower = damage - (recovered + min(headroom, healing)) // divisor\n    return hp_lower + requirement(spent+cost, exact, reward, relief) - baseline\n\ndomains = [(0,0), (0,9), (0,18), (1,9), (2,14), (5,18)]\nobserved_tightening = []\nfor size in range(1,4):\n    for stock in product(domains, repeat=size):\n        for available in range(1 << size):\n            indices = [slot for slot in range(size) if available & (1 << slot)]\n            for needed in range(len(indices)+1):\n                brute = {(sum(stock[s][0] for s in chosen),\n                          sum(stock[s][1] for s in chosen))\n                         for chosen in combinations(indices, needed)}\n                options = dp_options(stock, available, needed)\n                assert options == brute\n                counts['inventoryDomains'] += 1\n                counts['dpEqualsBrute'] += 1\n                front = pareto(options)\n                for active,spent,reward,relief in product(\n                        (0,3), (0,18), (0,5,40), ('None','ActClearHeal','RunEnding')):\n                    # Needed=0 can still be a completed nonzero explicit tier.\n                    exact = max(1,needed)\n                    args = dict(active=active,damage=23,recovered=2,headroom=31,\n                                post=6,spent=spent,exact=exact,reward=reward,\n                                relief=relief,baseline=19)\n                    joint = min(slack(p,**args) for p in options)\n                    compressed = min(slack(p,**args) for p in front)\n                    separate = slack((max(p[0] for p in options),\n                                      min(p[1] for p in options)), **args)\n                    assert compressed == joint\n                    assert separate <= joint\n                    counts['policyEnvelopes'] += 1\n                    counts['paretoEqualsFull'] += 1\n                    counts['separatedNoStronger'] += 1\n                    if len({p[0] for p in options}) == 1:\n                        assert separate == joint\n                        counts['constantHealingEquality'] += 1\n                    if separate < joint:\n                        counts['tighterJointEnvelope'] += 1\n                        if len(observed_tightening) < 4:\n                            observed_tightening.append(dict(stock=stock,available=available,\n                                needed=needed,args=args,separated=separate,joint=joint))\n                    if separate <= 0 < joint:\n                        counts['additionalAbstractRejections'] += 1\n                    if joint == 0:\n                        # Strict inequality is essential: the policy accepts equality.\n                        assert not joint > 0\n                        counts['equalityPreserved'] += 1\n\nexample_args = dict(active=0,damage=17,recovered=0,headroom=17,post=0,\n                    spent=0,exact=1,reward=0,relief='None',baseline=19)\nexample_options = {(0,9),(5,18)}\nexample_joint = min(slack(p,**example_args) for p in example_options)\nexample_separate = slack((5,9),**example_args)\nassert example_joint == 1 and example_separate == -8\nexample_equality = dict(example_args,damage=16)\nassert min(slack(p,**example_equality) for p in example_options) == 0\n\n# The source comparison pins policy interpretation; it does not certify models.\nsource_paths = [\n    'src/Search/PotionUsePolicy.cs', 'src/Search/ActEndingBossPolicy.cs',\n    'src/Search/CombatBeamSolver.SmartPotionBound.cs',\n    'src/Search/ClosedInitialPotionInventory.cs',\n    'src/Search/StrategicHpRecoveryBound.Components.cs',\n    'src/Search/CombatBeamSolver.FinalPlanOrdering.cs',\n    'src/Search/CombatSearchCoordinator.Audits.cs',\n]\nsource_hashes = {p:sha256((root/p).read_bytes()).hexdigest() for p in source_paths}\n\n# Reuse existing successful source/evidence instead of starting new searches.\nprior_path = root/'docs/performance/closed-potion-stock-pruning-20261006.json'\nprior = json.loads(prior_path.read_text())\ninventory_unchanged = source_hashes['src/Search/ClosedInitialPotionInventory.cs'] == \\\n    prior['candidateSources']['src/Search/ClosedInitialPotionInventory.cs']['sha256']\nassert inventory_unchanged\nacceptance_path = root/'.local/tool-tasks/open-potion-primary-proof-20261007/pure-final-summary.json'\nacceptance = json.loads(acceptance_path.read_text())\nfixed_inventory = []\nfor run in acceptance['runs']:\n    if run['label'] != 'C1':\n        continue\n    p = Path(run['path'])\n    p = p if p.is_dir() else p.parent\n    file = p/'evidence/generated-scenario.loadout.json'\n    if not file.exists():\n        fixed_inventory.append(dict(scene=run['scene'],capturedLoadout=None,\n            reason='No generated loadout in this run; not inferred from defaults'))\n        continue\n    loadout = json.loads(file.read_text())\n    fixed_inventory.append(dict(scene=run['scene'],potionSlots=loadout['potionSlots'],\n        regenPotionCount=loadout['potionSlots'].count('REGEN_POTION'),\n        loadoutPath=str(file),loadoutSha256=sha256(file.read_bytes()).hexdigest()))\n\nout = dict(status='Passed', scope='Finite abstract proof and archived-inventory inspection only',\n    counts=counts, illustrativeTightening=observed_tightening,\n    concreteExample=dict(args=example_args,options=sorted(example_options),\n        jointSlack=example_joint,separatedSlack=example_separate,\n        equalityDamage16Retained=True),\n    sourceSha256=source_hashes,inventoryCaptureSourceUnchanged=inventory_unchanged,\n    reusedInventoryCertification=dict(evidence=str(prior_path),\n        evidenceSha256=sha256(prior_path.read_bytes()).hexdigest(),\n        roots=prior['certification']['roots'],\n        certified=prior['certification']['certified'],\n        assessments=[{k:r[k] for k in ('scene','certified','firstRejection')}\n                     for r in prior['certification']['assessments']],\n        meaning='Prior successful capture; no new certification measurement'),\n    fixedRootInventories=fixed_inventory,\n    actualNewPrunes=0, newNativeTests=0, newPerformanceRequests=0,\n    unknownAndAcquisitionClosure='Not tested; remain conservative in production',\n    elapsedSeconds=time.perf_counter()-started)\n(task/'proof-result.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\\n')\nprint(json.dumps({k:out[k] for k in ('status','counts','inventoryCaptureSourceUnchanged',\n                                 'actualNewPrunes','elapsedSeconds')},ensure_ascii=False))\n"
+    }
+  },
+  "validation": {
+    "finiteResearch": "Passed",
+    "documentation": {
+      "status": "Passed",
+      "files": 559,
+      "links": 2375,
+      "errors": 0
+    },
+    "gitDiffCheck": "Passed"
+  },
+  "unverified": [
+    "native full-state/Fork/RNG/parent/live contract",
+    "new independent source closure",
+    "actual production pruning and rejection reasons",
+    "root certification overhead and production query cost",
+    "serial interleaved full-request speed and process RSS",
+    "final fixed regression and original uploaded Soul package"
+  ],
+  "delivery": {
+    "productionCommit": "27c28f66",
+    "productionDllSha256": "fb2f15c5f0684f88a0645c841b5b5850a34fa36e8ba5ccc0e4757a62dafac4b8",
+    "buildOrDeploymentRepeated": false,
+    "version": "0.50.0",
+    "newPr": false,
+    "merge": false,
+    "release": false
+  },
+  "cleanup": {
+    "archivedScriptRemoved": true,
+    "rawProofResultRetained": true,
+    "runningProcesses": 0
+  }
+}

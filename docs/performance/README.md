@@ -1,6 +1,6 @@
 # 性能工作入口
 
-- [禁药成员的条件回复证明](policy-blocked-recovery-research-20261007.md)：两原生/32路两代Fork及16次纯请求通过；合法果汁未知，禁药保留已有再生。两版0.899/0.981倍撤回，旧政策已有相同界；条件资格与原目标比较分别处理，[同牌历史证据](duplicate-action-order-contract-20261007.md)复用。
+- [联合回复与用药成本证明](joint-recovery-cost-research-20261007.md)：同组合DP/Pareto及166,536次有限政策比较通过，严格资格与相等保留边界明确。复用库存证书2/11、九份库存，无当前认证根组合增益；未启用剪枝或宣称新速度。[前轮禁药候选](policy-blocked-recovery-research-20261007.md)无收益撤回。
 
 - [历史计数门槛与状态等价研究](saturated-history-key-research-20261007.md)：三根含并行worker约145万次构键，三项门槛投影没有合并不同完整键；原生读取链说明局部门槛不能作为完整根认证，未接入剪枝。
 
