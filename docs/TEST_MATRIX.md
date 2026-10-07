@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-07 [原生回复回调边界](performance/native-generation-callback-proof-20261007.md)：再生回复上界15/原生实际30反例复现；最终未知治疗、Heal及生成OnPlay来源、晚注册拒绝，16Fork完整状态/历史/RNG/隔离通过。固定交错质量与峰值另列，未完成全部来源认证。
+2026-10-07 [原生回调](performance/native-generation-callback-proof-20261007.md)与[模型能力](performance/model-capability-recovery-proof-20261007.md)：两类15界/30回复反例；未知治疗、生成OnPlay、当前/未来能力及默认注入拒绝。原生、清理后16Fork状态/历史/RNG、质量与峰值范围见各报告；非全来源认证。
 2026-10-07 [有限回复剪枝原型](performance/initial-generation-finite-recovery-pruning-20261007.md)：未来OnPlay认证接纳反例复现，原型撤回；原生合同及11根44次质量/内存通过，无稳定提速。
 
 2026-10-06 [胜利证明与堆空间研究](performance/late-plan-gc-retention-research-20261006.md)：原生GC生命周期通过；No-GC信息能力夹具修复前后结果留存。48次纯请求保存，最终11根44次内存通过，但猎手首领战损54→57，原型撤回；未做全29根或上传包验收。

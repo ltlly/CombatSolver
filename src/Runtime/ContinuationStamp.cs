@@ -66,6 +66,7 @@ internal sealed record ContinuationStamp(string StateText)
 
     public static ContinuationStamp CaptureLive(CombatState state)
     {
+        PredictionRitsuCapabilityAudit.Validate();
         PredictionRitsuHealingAudit.Validate();
         PredictionModHookSubscriberCapture.ValidateCardOnPlaySources(state.RunState, state);
         Player player = LocalContext.GetMe(state)

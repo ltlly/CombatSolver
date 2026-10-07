@@ -17,6 +17,8 @@
 
 `Contracts/Runtime/UnattendedTestRunner.NativeHealingCallbackBoundary.cs` 使用 `NATIVE-HEALING-CALLBACK-BOUNDARY` / REGENT / NIBBITS_WEAK / 120秒：原生再生界15、合法生成过滤、未知OnPlay/Heal补丁、全局治疗监听器及晚注册live拒绝；16并行Fork检查完整状态/历史/RNG、父/live隔离、未知回调不执行和新根恢复。
 
+`NATIVE-HEALING-CAPABILITY-BOUNDARY`在测试宿主初始化阶段为该明确请求注册原生持久化槽，验证空宿主正例、当前/未来能力与默认注入和未知保存来源拒绝、不执行未知回调，以及清理后16Fork完整状态/历史/RNG。普通请求不激活该夹具；命令与实际范围见[模型能力报告](../../docs/performance/model-capability-recovery-proof-20261007.md)。
+
 测试选择与平台命令见 [无人测试](../../docs/HEADLESS_TESTING.md)，当前最小哨兵见 [测试矩阵](../../docs/TEST_MATRIX.md)。长期测试有明确断言、最小入口或 fixture；同一机制优先扩展已有合同。
 
 `Contracts/Combat/UnattendedTestRunner.HandDrawRelicQuery.cs` 通过检查点 `RestoreOnly` 与场景名 `HAND-DRAW-RELICS-PROBE` 复用原生回放建局，逐一核对8种抽牌遗物在回合1～4及已有计数下的原生命令、冻结查询、Fork/RNG/父分支和live隔离；它只验证查询，完整生命周期沿用对应遗物合同。

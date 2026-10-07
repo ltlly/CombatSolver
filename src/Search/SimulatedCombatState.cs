@@ -254,6 +254,7 @@ internal sealed partial class SimulatedCombatState
     {
         if (!NGame.IsMainThread())
             throw new InvalidOperationException("Live combat state can only be captured on the main thread.");
+        PredictionRitsuCapabilityAudit.Validate();
         PredictionRitsuHealingAudit.Validate();
         _runState = inner.RunState;
         _runRngSnapshot = inner.RunState.Rng.ToSerializable();
