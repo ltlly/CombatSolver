@@ -76,6 +76,8 @@ dotnet .local/tool-build/OfflineSearchHarness/bin/Release/net9.0/OfflineSearchHa
 
 `OFFLINE_HARNESS_EQUIVALENCE_PROBE=1` 可在小预算 `Evaluate` 请求中观察已有转置拒绝、候选分类次数和自然出现的两步反向动作，输出 `equivalence-probe.json`。每个求解器最多保存20,000个分离出的两步索引，不持有节点/模型，也不改变剪枝结果；指纹相同只是研究线索，不是交换性证明。该模式有额外锁和序列化开销，不能用于时间或分配评测。适用范围和复现命令见[准入优化与采样](archive/performance/equivalence-admission-20260929.md)。
 
+`OFFLINE_HARNESS_TRANSITION_PROBE=1` 在现有EquivalenceProbe中独立观察ReplayAction，输出 `action-transition-probe.json`。按精确冻结根、父状态键/动作数/边界、完整序列化PlanAction及round/card capture存在标志索引，真实CreateExpansionWorker归属用于同/跨成员计数。请求表最多250000个纯值/字符串输入，不保留模拟器、Snapshot或Model图；容量旁路后的比例只作下限。比较16项前/后特征、六项路径标签、历史数量及profile；它们不是完整状态、历史前缀、全部政策或隐藏checkpoint的相等证明。默认关闭，关闭时不解析私有字段或安装此入口；开启时ABI不匹配显式失败。用于重复转移研究，不能用于性能验收，命令、实测及下一步证明门槛见[完整动作研究](performance/action-transition-opportunity-20261007.md)。
+
 `tools/search/OfflineSearchHarness/run_plan.py` 吃一份 plan JSON（数组），起 N 个宿主进程并行消费：
 
 ```

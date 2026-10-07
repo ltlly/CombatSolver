@@ -37,6 +37,7 @@ internal static class EquivalenceProbe
 
     internal static void Install(string output)
     {
+        ReplayRequests.Install(output);
         if (Environment.GetEnvironmentVariable("OFFLINE_HARNESS_EQUIVALENCE_PROBE") != "1")
             return;
         GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(CombatBeamSolver), "BuildCandidate"),
@@ -111,6 +112,169 @@ internal static class EquivalenceProbe
             if (s.Examples.Count < 24)
                 s.Examples.Add(new { first = a.Card, second = b.Card, a.Target, otherTarget = b.Target,
                     sameState, sameLabel });
+        }
+    }
+
+    // Repeated input/output observations remain separate from swap observations.
+    // Selected feature equality never licenses transition or snapshot reuse.
+    private static class ReplayRequests
+    {
+        private const int MaximumInputs = 250_000;
+        private static readonly object ReplayGate = new();
+        private static readonly ConditionalWeakTable<CombatBeamSolver, Member> Members = new();
+        private static readonly ConditionalWeakTable<CombatRootSnapshot, RootIdentity> Roots = new();
+        private static readonly List<Member> MemberResults = [];
+        private static readonly Dictionary<Input, Entry> Inputs = [];
+        private static readonly List<object> Examples = [];
+        private static readonly Dictionary<int, long> Modes = [];
+        private static int NextMember, NextRoot;
+        private static long Started, Completed, Repeats, SameMember, CrossMember, LimitBypasses,
+            BeforeMismatches, AfterStateMismatches, AfterFeatureMismatches, HistoryOnlyMismatches,
+            SelectedMatches, SameProfileSelectedMatches, DifferentProfileSelectedMatches;
+        private sealed record RootIdentity(int Id);
+        private sealed class Member
+        {
+            internal int Id, Root, Workers;
+            internal string Profile = "";
+        }
+        private static class Metadata
+        {
+            internal static readonly System.Reflection.FieldInfo Root = typeof(CombatBeamSolver)
+                .GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .Single(field => field.FieldType == typeof(CombatRootSnapshot));
+            internal static readonly System.Reflection.FieldInfo Profile =
+                AccessTools.Field(typeof(CombatBeamSolver), "_profile");
+        }
+
+        private readonly record struct Input(int Root, StateFingerprint State, int Actions,
+            SearchBoundaryReason Boundary, string Action, int CaptureMode);
+        private readonly record struct Features(long ScoreBits, int HpLost, int RecoveredHp,
+            int ProjectedHp, int PotionUses, int AutomaticPotions, int PotionCost,
+            int GrowthCredit, int RelicCredit, int FutureHeal, int LongTermValue,
+            int Shuffles, bool Risk, bool Dead, bool Won, SearchBoundaryReason Boundary)
+        {
+            internal static Features Capture(SimulationSnapshot s) => new(
+                BitConverter.DoubleToInt64Bits(s.Score), s.CumulativePlayerHpLost,
+                s.RecoveredPlayerHp, s.ProjectedPlayerHp, s.PotionUseCount,
+                s.AutomaticPotionUseCount, s.PotionStrategicCost, s.GrowthHpCredit,
+                s.RelicCounters.HpCredit, s.FutureHealPotential,
+                s.LongTermResourceValue, s.ShufflesCrossed, s.HasRisk, s.PlayerDead,
+                s.AllEnemiesDead, s.BoundaryReason);
+        }
+        private readonly record struct PathLabel(int Potions, int Cost, int SoldHp, long ScoreBits,
+            SearchRouteTraits Traits, bool HasNonPotionAction);
+        private sealed record Observation(Input Input, int Member, string Profile,
+            Features Before, PathLabel Label, int BeforeHistory);
+        private sealed record Entry(Observation First, StateFingerprint AfterState,
+            Features After, int AfterHistory);
+
+        internal static void Install(string output)
+        {
+            if (Environment.GetEnvironmentVariable("OFFLINE_HARNESS_TRANSITION_PROBE") != "1") return;
+            GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(CombatBeamSolver), "CreateExpansionWorker"),
+                postfix: new HarmonyMethod(typeof(ReplayRequests), nameof(ObserveWorker)));
+            GameBootstrap.Harmony.Patch(AccessTools.Method(typeof(CombatBeamSolver), "ReplayAction"),
+                prefix: new HarmonyMethod(typeof(ReplayRequests), nameof(BeforeReplay)),
+                postfix: new HarmonyMethod(typeof(ReplayRequests), nameof(AfterReplay)));
+            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+            {
+                lock (ReplayGate)
+                    File.WriteAllText(Path.Combine(output, "action-transition-probe.json"),
+                        JsonSerializer.Serialize(new {
+                            schemaVersion = 1, observationOnly = true, maximumInputs = MaximumInputs,
+                            scope = "Exact frozen root identity, existing state key, action count, boundary, full serialized PlanAction and capture mode. Selected path/snapshot features and profile equality are diagnostic checks, not full state/history/callback/policy proof. No simulator or snapshot graph retained.",
+                            Started, Completed, Repeats, SameMember, CrossMember, LimitBypasses,
+                            BeforeMismatches, AfterStateMismatches, AfterFeatureMismatches,
+                            HistoryOnlyMismatches, SelectedMatches, SameProfileSelectedMatches,
+                            DifferentProfileSelectedMatches, retainedInputs = Inputs.Count,
+                            modes = Modes, members = MemberResults.Select(m => new {
+                                m.Id, m.Root, m.Workers, m.Profile
+                            }).ToArray(), Examples
+                        }, new JsonSerializerOptions { WriteIndented = true }));
+            };
+        }
+
+        private static Member For(CombatBeamSolver solver) => Members.GetValue(solver, _ =>
+        {
+            CombatRootSnapshot root = (CombatRootSnapshot)(Metadata.Root.GetValue(solver)
+                ?? throw new InvalidOperationException("Transition probe requires captured root."));
+            Member member = new() {
+                Id = ++NextMember,
+                Root = Roots.GetValue(root, _ => new(++NextRoot)).Id,
+                Profile = JsonSerializer.Serialize(Metadata.Profile.GetValue(solver))
+            };
+            MemberResults.Add(member);
+            return member;
+        });
+
+        private static void ObserveWorker(CombatBeamSolver __instance, CombatBeamSolver __result)
+        {
+            lock (ReplayGate)
+            {
+                Member member = For(__instance);
+                Members.Add(__result, member);
+                member.Workers++;
+            }
+        }
+
+        private static void BeforeReplay(CombatBeamSolver __instance, SearchNode parent,
+            PlanAction action, object? roundCheckpointCapture, object? cardChoiceCapture,
+            out Observation __state)
+        {
+            string actionText = JsonSerializer.Serialize(action);
+            int mode = (roundCheckpointCapture == null ? 0 : 1) | (cardChoiceCapture == null ? 0 : 2);
+            Features features = Features.Capture(parent.Snapshot);
+            PathLabel label = new(parent.PotionCount, parent.PotionStrategicCost, parent.FutureSoldHp,
+                BitConverter.DoubleToInt64Bits(parent.Score), parent.Traits, parent.HasNonPotionAction);
+            lock (ReplayGate)
+            {
+                Member member = For(__instance);
+                Started++;
+                __state = new(new(member.Root, parent.StateKey, parent.ActionCount,
+                    parent.BoundaryReason, actionText, mode), member.Id, member.Profile,
+                    features, label, parent.Snapshot.HistoryEntryCount);
+            }
+        }
+
+        private static void AfterReplay(SimulationSnapshot __result, Observation __state)
+        {
+            Features after = Features.Capture(__result);
+            lock (ReplayGate)
+            {
+                Completed++;
+                Modes.TryGetValue(__state.Input.CaptureMode, out long modeCount);
+                Modes[__state.Input.CaptureMode] = modeCount + 1;
+                if (!Inputs.TryGetValue(__state.Input, out Entry? prior))
+                {
+                    if (Inputs.Count >= MaximumInputs) { LimitBypasses++; return; }
+                    Inputs.Add(__state.Input, new(__state, __result.StateKey, after, __result.HistoryEntryCount));
+                    return;
+                }
+                Repeats++;
+                if (prior.First.Member == __state.Member) SameMember++; else CrossMember++;
+                bool beforeMatches = prior.First.Before == __state.Before && prior.First.Label == __state.Label;
+                bool stateMatches = prior.AfterState == __result.StateKey;
+                bool afterMatches = prior.After == after;
+                bool historyMatches = prior.First.BeforeHistory == __state.BeforeHistory
+                    && prior.AfterHistory == __result.HistoryEntryCount;
+                if (!beforeMatches) BeforeMismatches++;
+                if (!stateMatches) AfterStateMismatches++;
+                if (!afterMatches) AfterFeatureMismatches++;
+                if (beforeMatches && stateMatches && afterMatches)
+                {
+                    SelectedMatches++;
+                    if (prior.First.Profile == __state.Profile) SameProfileSelectedMatches++;
+                    else DifferentProfileSelectedMatches++;
+                    if (!historyMatches) HistoryOnlyMismatches++;
+                }
+                else if (Examples.Count < 12)
+                    Examples.Add(new {
+                        action = __state.Input.Action, priorMember = prior.First.Member,
+                        member = __state.Member, beforeMatches, stateMatches, afterMatches,
+                        historyMatches, priorBefore = prior.First.Before, before = __state.Before,
+                        priorAfter = prior.After, currentAfter = after
+                    });
+            }
         }
     }
 

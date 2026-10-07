@@ -34,3 +34,5 @@
 [转置标签与存储研究](../../docs/performance/transposition-label-pruning-research-20261007.md)归档两版生产文件链接的托管oracle/存储检查，以及`ZERO-CREDIT-GROWTH-PROOF`两个原生合同和16次完整交错。原型与测试扩展均撤回；本轮不扩大现行合同或生产认证范围。
 
 [历史计数门槛研究](../../docs/performance/saturated-history-key-research-20261007.md)只读统计必须包含未调用Solve的并行展开worker；leader日志或leader导出不能代表完整请求。三根最终诊断保持14项质量/根/政策/预算，未观察到新增状态合并，未做新增原生语义合同或纯性能验收；三处探针源码及一次性入口已撤回。此前不完整导出只保留调查记录。
+
+[完整动作重复回放研究](../../docs/performance/action-transition-opportunity-20261007.md)扩展离线宿主可选观察，按冻结根、完整动作、capture模式及实际worker拥有者分组；仅检查选定特征，未执行新原生/Fork合同，不替代完整历史或全部政策的安全证明。生产搜索及部署保持。
