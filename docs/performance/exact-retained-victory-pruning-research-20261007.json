@@ -8295,5 +8295,13 @@
     "No new complete 29-root acceptance or twofold target pass",
     "Historical Silentboss54/57 and Necroboss0/22 quality gaps remain; Queen lost-route work stays paused"
   ],
-  "nextDirection": "Complete a separate positive closed-inventory proof for reviewed source components and recursive native generation/callback rules before consuming stronger same-quota shared scalar witnesses. Do not widen ordinary Smart eligibility or recover paused lost routes."
+  "nextDirection": "Read pruning-witness-provenance-20261007.json. Complete provenance disproves stronger same-quota HP witness and observed exact-quota HP ties are zero. Broader stock proof alone does not establish speed; do not implement based on 1818 accesses.",
+  "observerInterpretationCorrection": {
+    "report": "pruning-witness-provenance-20261007.json",
+    "strongerSharedHpWitness": false,
+    "witnessHp": 57,
+    "retainedHp": 57,
+    "potentialVisits": 1818,
+    "interpretation": "Provenance observer disproved the stronger-HP interpretation. Actual 83 cuts eliminate many descendants; potential visits are not additional unique cuts. Original samples remain unchanged."
+  }
 }
