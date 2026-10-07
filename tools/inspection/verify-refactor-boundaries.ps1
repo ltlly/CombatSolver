@@ -1102,6 +1102,7 @@ $expectedBeamFiles = @(
     "CombatBeamSolver.PrimaryChoiceReplay.cs",
     "CombatBeamSolver.Retention.cs",
     "CombatBeamSolver.RetentionJobs.cs",
+    "CombatBeamSolver.RetainedPrimaryBound.cs",
     "CombatBeamSolver.SmartPotionBound.cs",
     "CombatBeamSolver.StateEvaluation.cs",
     "CombatBeamSolver.StandPatJobs.cs",

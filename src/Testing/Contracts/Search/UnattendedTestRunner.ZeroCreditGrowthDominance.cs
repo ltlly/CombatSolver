@@ -75,10 +75,13 @@ internal sealed partial class UnattendedTestRunner
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(35));
         var checks = await Task.Run(() => CombatBeamSolver.AssertZeroCreditGrowthEdgesForTesting(
             root, names, damage, policy, deadline.Token), deadline.Token);
+        var retainedChecks = await Task.Run(() => CombatBeamSolver.AssertRetainedPrimaryEdgesForTesting(
+            root, names, damage, policy, deadline.Token), deadline.Token);
         if (DescribeContinuationContractState(parent, root, player) != before
             || ContinuationStamp.CaptureLive(live).StateText != liveBefore)
             throw new InvalidOperationException("Goal/cost proof changed frozen parent/live/RNG.");
         _completedChecks.Add(checks);
+        _completedChecks.Add(retainedChecks);
     }
 }
 

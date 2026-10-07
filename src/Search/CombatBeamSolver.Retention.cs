@@ -411,6 +411,8 @@ internal sealed partial class CombatBeamSolver
                     node.Snapshot.GrowthRewards, lootBucket, uses, hpLowerBound,
                     _primaryIncumbents, out _, out _);
             }
+            if (!prune)
+                prune = ShouldPruneByRetainedPrimaryIncumbent(node);
             if (prune)
             {
                 if (sharedBounded == null)

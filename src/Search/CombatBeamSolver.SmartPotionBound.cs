@@ -121,6 +121,7 @@ internal sealed partial class CombatBeamSolver
 
     private void EmitSmartPotionEligibilityBoundDiagnostics()
     {
+        EmitRetainedPrimaryBoundDiagnostics();
         if (_smartPotionEligibilityHpCeiling is { } ceiling)
             policy.Diagnostics.Info($"[CombatSolver/Test] SMART_POTION_ELIGIBILITY_BOUND "
                 + $"ceiling={ceiling} pruned={_smartPotionEligibilityBranchesPruned} "

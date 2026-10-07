@@ -11,7 +11,8 @@ internal static partial class CombatSearchCoordinator
         bool AggressivePowerCommitment,
         SolverPotionPolicy? PotionPolicyOverride,
         int? MaximumPotionUses,
-        bool AllowUnsatisfiedPotion);
+        bool AllowUnsatisfiedPotion,
+        PrimarySearchIncumbent? RetainedPrimaryIncumbent = null);
 
     private static SolverResult RunPlanSearchPass(SearchPassContext context, SolverResult baseline)
     {
@@ -255,7 +256,9 @@ internal static partial class CombatSearchCoordinator
                     AggressivePowerCommitment: true,
                     PotionPolicyOverride: null,
                     MaximumPotionUses: null,
-                    AllowUnsatisfiedPotion: false),
+                    AllowUnsatisfiedPotion: false,
+                    RetainedPrimaryIncumbent: BuildRetainedPrimarySearchIncumbent(
+                        context.Root, context.Policy, baseline)),
                 out SolverResult? memberResult, baseline))
             return baseline;
         SolverResult candidate = memberResult!;
@@ -298,6 +301,7 @@ internal static partial class CombatSearchCoordinator
             execution.PotionPolicyOverride, execution.MaximumPotionUses, null)
         {
             Commitment = plan,
+            RetainedPrimaryIncumbent = execution.RetainedPrimaryIncumbent,
             PrimaryIncumbent = incumbent is null ? null : BuildPlanMemberPrimaryIncumbent(
                 context.Root, context.Policy, execution.PotionPolicyOverride, incumbent),
         };
@@ -313,6 +317,21 @@ internal static partial class CombatSearchCoordinator
         => (root.UsesComponentHealingCertificate || CombatBeamSolver.CanUseReviewedGrowthHpProof(root, policy))
             && policy.TheftPolicy != SolverTheftPolicy.PreserveResources
                 ? BuildRefinementPrimarySearchIncumbent(root, policy, potionPolicyOverride, incumbent)
+                : null;
+
+    internal static PrimarySearchIncumbent? BuildRetainedPrimarySearchIncumbent(
+        CombatRootSnapshot root, SearchPolicySnapshot policy, SolverResult retained)
+        => !policy.DisableRefinementIncumbentForTesting
+            && !policy.DisableSharedPrimaryIncumbentsForTesting
+            && CombatBeamSolver.CanUseRetainedPrimaryHpBound(root, policy)
+            && retained.ResultScope == SolverResultScope.SearchCompletion
+            && retained.BoundaryReason == SearchBoundaryReason.None
+            && !retained.Snapshot.HasRisk
+            && retained.Snapshot.ProjectedDeathSaveUseCount == 0
+            && retained.CombatEndedTurn.HasValue
+            && IsCompleteVictory(retained)
+                ? new(StrategicHpDeficit(root, policy, retained), retained.CombatEndedTurn.Value,
+                    retained.PotionStrategicCostByTurn.Values.Sum())
                 : null;
 
     private static IReadOnlyList<PlanCommitment> DiscoverOpeningPlanCommitments(

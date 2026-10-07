@@ -21,7 +21,7 @@
 
 `Contracts/Search/UnattendedTestRunner.PotionCostIncumbent.cs` 使用 `POTION-COST-INCUMBENT` / IRONCLAD / NIBBITS_WEAK / 120秒，验证实际完整14/9成本胜利下同回合和更晚回合的等HP保路及原生EndTurn/用药完整状态。`ZeroAllowanceRelicIncumbent.cs` 使用 `ZERO-ALLOWANCE-RELIC-INCUMBENT` / 同角色遭遇及上限，验证真实完整胜利在零战损让步遗物目标下的本地及协调器后续HP界，保留同HP、正额度、成长和追回，原生HP消耗前缀严格差分。
 
-`Contracts/Search/UnattendedTestRunner.ZeroCreditGrowthDominance.cs` 使用 `ZERO-CREDIT-GROWTH-PROOF` 或 `ZERO-CREDIT-GROWTH-PROOF-REGEN` / NECROBINDER / NIBBITS_WEAK / 120秒，从原生根生成完整成长胜利和真实不同成本用药分支，严格增量回放验证跨成长桶的较差战损剪枝、同战损及更便宜/未知成本保留、16并发见证读、已有再生、正额度/遗物/追回/强制用药拒绝及父/live/RNG隔离。无成长根保留旧消费者；该合同不替代卡牌实际原生执行差分或DOP1/16整协调器验收。
+`Contracts/Search/UnattendedTestRunner.ZeroCreditGrowthDominance.cs` 使用 `ZERO-CREDIT-GROWTH-PROOF` 或 `ZERO-CREDIT-GROWTH-PROOF-REGEN` / NECROBINDER / NIBBITS_WEAK / 120秒，从原生根生成完整成长胜利和真实不同成本用药分支，严格增量回放验证跨成长桶的较差战损剪枝、同战损及更便宜/未知成本保留、16并发见证读、已有再生、正额度/遗物/追回/强制用药拒绝及父/live/RNG隔离。同一入口调用 `Contracts/Search/UnattendedTestRunner.RetainedPrimaryDominance.cs`，用实际完整胜利验证开放用药的P0/P1/P2严格剪枝、相等保留、精确额度及禁药/强制/成长/遗物/追回拒绝、未知消耗堆Feed保留和16个独立消费者。无成长根保留旧消费者；该合同不替代卡牌实际原生执行差分或DOP1/16整协调器验收。
 
 一次性调查放 .local/tool-tasks/<任务>/，验证时显式接入，结束清理代码、路由、参数、输入和产物。普通构建排除 .local 源码。新增正式文件按上表收纳；根目录只保留本入口。
 
