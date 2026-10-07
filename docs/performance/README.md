@@ -1,6 +1,6 @@
 # 性能工作入口
 
-- [同牌动作的顺序与历史合同](duplicate-action-order-contract-20261007.md)：两原生及32路两代Fork验证同局部指纹牌留下不同手序，洗牌状态收敛但富模拟历史不同；已有去重未扩大，继续[消耗堆回手](exhaust-return-boundary-20261007.md)对应的来源证明，未新增剪枝。
+- [禁药成员的条件回复证明](policy-blocked-recovery-research-20261007.md)：两原生/32路两代Fork及16次纯请求通过；合法果汁未知，禁药保留已有再生。两版0.899/0.981倍撤回，旧政策已有相同界；条件资格与原目标比较分别处理，[同牌历史证据](duplicate-action-order-contract-20261007.md)复用。
 
 - [历史计数门槛与状态等价研究](saturated-history-key-research-20261007.md)：三根含并行worker约145万次构键，三项门槛投影没有合并不同完整键；原生读取链说明局部门槛不能作为完整根认证，未接入剪枝。
 

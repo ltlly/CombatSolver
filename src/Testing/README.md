@@ -63,4 +63,4 @@
 
 [扩展写入审计](../../docs/performance/exhaust-extension-writer-audit-20261007.md)的14项检查只验证Cecil元数据边界及调用token，不执行CLR/游戏语义；已有游戏合同按原范围复用。一次性项目、夹具、生成脚本和构建已归档清理，未扩生产认证。
 
-[同牌动作顺序合同](../../docs/performance/duplicate-action-order-contract-20261007.md)运行两个真实打击选择和显式原生洗牌，每组16路两代Fork隔离通过；同牌局部指纹不覆盖周围手序，当前状态收敛不代表历史或所有未来等价。未证现有规则有bug、未做整搜；[回手容量证据](../../docs/performance/exhaust-return-boundary-20261007.md)复用，临时入口/构建清理、部署保持。
+[禁药条件回复研究](../../docs/performance/policy-blocked-recovery-research-20261007.md)在原生机器人根验证合法果汁未知、禁药/额度0排除未用果汁但保留已有再生、未知Feed/玩家复活拒绝和32路两代Fork隔离；16纯整请求质量/峰值通过但无速度收益，两版撤回。没有新实际用药/完整动作合同，原生语义按原范围复用；[同牌顺序证据](../../docs/performance/duplicate-action-order-contract-20261007.md)保留，生产与部署复用。
