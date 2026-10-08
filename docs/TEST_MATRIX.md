@@ -22,7 +22,7 @@
 
 0.50.0 定稿沿用 PR #207、PR #211 与开局药水准入的既有行为证据，来源和范围见 [历史卷 20](archive/testing/volume-20.md)。
 
-按改动选择最小验证层，方法见 [无人测试](HEADLESS_TESTING.md) 与 [社区验收](community/testing-guide.md)。[大牌组监听构造](performance/projected-listener-producer-20261008.md)记录 `MIRRORED-HOOK-FILTER` 的新增投影/完整源差分及最终性能范围；[关键词研究](performance/native-pile-lookup-opportunities-20261006.md#2026-10-09监听优化后的定位与关键词原型)的原生合同通过，但无稳定收益的专属原型/fixture已撤回。以下命令提供当前复跑入口，不表示本轮已执行。单人共享损血剪枝的新基线验证见[策略证据](strategy/hp-loss-pruning/README.md#单人共享损血剪枝2026-10-05)。
+按改动选择最小验证层，方法见 [无人测试](HEADLESS_TESTING.md) 与 [社区验收](community/testing-guide.md)。[大牌组监听构造](performance/projected-listener-producer-20261008.md)记录 `MIRRORED-HOOK-FILTER` 的最终验收；[关键词研究](performance/native-pile-lookup-opportunities-20261006.md#2026-10-09监听优化后的定位与关键词原型)和[根牌堆索引](performance/root-native-pile-index-research-20261009.md)原生合同通过后原型均撤回。后者保留44次纯运行及猎手首领54/69战损波动，DOP1/2等价未验证，不能称质量验收通过。以下命令提供当前复跑入口，不表示本轮已执行。单人共享损血剪枝的新基线验证见[策略证据](strategy/hp-loss-pruning/README.md#单人共享损血剪枝2026-10-05)。
 
 2026-10-05 [排序比较键研究](performance/native-sort-key-research-20261005.md)原生603类型/363609对比较、40案例与16并行Fork通过（`5c68036ad29c47a4a3b43bc40085429a`）；两个原型共16次固定Evaluate ACCA没有稳定收益，已撤回，未扩展为整请求验收或新的部署。
 
