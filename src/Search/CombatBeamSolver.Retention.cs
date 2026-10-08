@@ -362,9 +362,6 @@ internal sealed partial class CombatBeamSolver
             pruneEqualHp: !UsesExpandedHealingProof && policy.RelicTargets.Count == 0,
             preservePotionCostOpportunities: UsesComponentHealingProof,
             requireCertifiedHealingProof: UsesComponentHealingProof,
-            minimumExplicitPotionUses: UsesComponentHealingProof && policy.RelicTargets.Count == 0
-                ? _minimumPotionUses : 0,
-            minimumPotionStrategicCost: root.MinimumSearchablePotionStrategicCost ?? 0,
             requireStrictPotionCostDominance: UsesExpandedHealingProof);
         // A node may still move to a higher potion tier. Only use its current
         // tier's witness when explicit use is closed by the member's policy.
@@ -465,8 +462,6 @@ internal sealed partial class CombatBeamSolver
         bool pruneEqualHp = false,
         bool preservePotionCostOpportunities = true,
         bool requireCertifiedHealingProof = true,
-        int minimumExplicitPotionUses = 0,
-        int minimumPotionStrategicCost = 0,
         bool requireStrictPotionCostDominance = false)
     {
         pruned = 0;
@@ -484,14 +479,8 @@ internal sealed partial class CombatBeamSolver
             }
             int futureHealPotential = requireCertifiedHealingProof ? baselineFutureHealPotential
                 : Math.Min(baselineFutureHealPotential, node.Snapshot.FutureHealPotential);
-            // Component closure excludes new potion acquisition. A legal exact
-            // layer must still pay for its remaining mandatory explicit uses;
-            // the minimum over all initial slots also includes unavailable or
-            // disabled cheaper slots, so it can only loosen this cost floor.
-            long futurePotionCost = (long)Math.Max(0,
-                minimumExplicitPotionUses - ExplicitPotionUseCount(node)) * minimumPotionStrategicCost;
             bool costClosed = CanPruneEqualHpWithPotionCost(node.Snapshot, incumbent,
-                preservePotionCostOpportunities, futurePotionCost);
+                preservePotionCostOpportunities);
             if ((!requireStrictPotionCostDominance || costClosed) && ShouldPruneByPrimaryIncumbent(
                     StrategicHpLowerBound(node.Snapshot, bossHpRelief, futureHealPotential),
                     node.Turn,
@@ -598,10 +587,9 @@ internal sealed partial class CombatBeamSolver
     // decrease within a branch; a missing witness cost leaves equality open.
     private static bool CanPruneEqualHpWithPotionCost(
         SimulationSnapshot snapshot, PrimarySearchIncumbent incumbent,
-        bool preservePotionCostOpportunities = true,
-        long minimumFuturePotionCost = 0)
+        bool preservePotionCostOpportunities = true)
         => !preservePotionCostOpportunities || incumbent.ExplicitPotionStrategicCost is { } cost
-            && snapshot.ExplicitPotionStrategicCost + minimumFuturePotionCost >= cost;
+            && snapshot.ExplicitPotionStrategicCost >= cost;
 
     internal static bool ShouldPruneByPrimaryIncumbent(
         int strategicHpLowerBound,

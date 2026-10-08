@@ -28,8 +28,10 @@ internal sealed partial class CombatBeamSolver
                 && root.SearchablePotions.All(potion => potion.PotionId
                     == MegaCrit.Sts2.Core.Models.ModelDb.Potion<MegaCrit.Sts2.Core.Models.Potions.FoulPotion>().Id.Entry)))
         && minimumPotionUses is > 0 && maximumPotionUses == minimumPotionUses
-            ? SmartPotionEligibilityHpCeiling(potionFreePolicyBaseline,
-                minimumPotionUses.Value, root.MinimumSearchablePotionStrategicCost!.Value,
+            // Initial bottle prices are not a lower bound on future acquisitions.
+            // Until a use is recorded, its unavoidable strategic cost is zero.
+            ? SmartPotionEligibilityHpCeilingForCost(potionFreePolicyBaseline,
+                minimumPotionUses.Value, minimumCost: 0,
                 root.PotionRewardOutlook.ReplacementHpCredit,
                 ActEndingBossPolicy.ResolveStrategicHpRelief(root.BossHpRelief,
                     policy.ActTransitionBossHpStrategy, policy.FinalBossHpStrategy))
@@ -93,17 +95,17 @@ internal sealed partial class CombatBeamSolver
                 continue;
             }
             int lowerBound = StrategicHpLowerBound(node.Snapshot, _strategicBossHpRelief, healing);
-            bool oldBoundPrunes = lowerBound > ceiling;
+            bool hpBoundPrunes = lowerBound > ceiling;
             // Only costs already recorded by this branch are unavoidable. Future
             // potions may be free or replenished; frozen slots do not prove otherwise.
-            bool paidCostBoundPrunes = !oldBoundPrunes
+            bool paidCostBoundPrunes = !hpBoundPrunes
                 && root.UsesComponentHealingCertificate
                 && node.Snapshot.ExplicitPotionStrategicCost > 0
                 && SmartPotionEligibilityHpCeilingForCost(_potionFreePolicyBaseline, _minimumPotionUses,
                     node.Snapshot.ExplicitPotionStrategicCost,
                     root.PotionRewardOutlook.ReplacementHpCredit, _strategicBossHpRelief) is { } tighter
                 && lowerBound > tighter;
-            if (oldBoundPrunes || paidCostBoundPrunes)
+            if (hpBoundPrunes || paidCostBoundPrunes)
             {
                 if (bounded is null)
                 {
