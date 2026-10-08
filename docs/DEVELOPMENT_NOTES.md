@@ -1,6 +1,6 @@
 # CombatSolver 开发笔记
 
-2026-10-08 [手牌扩展来源研究](performance/hand-notification-patch-proof-20261008.md)：实际描边规则绕过HasAny=false复现0界/额外2回复；冻结空注册表局部条件、30次拒绝及16分支伤害/Fork通过，未知调用0。四项下层闭包仍未证明，完整证书0，未接生产；正式源码/部署复用704dc994。
+2026-10-08 [原生牌堆定位研究](performance/native-pile-membership-proof-20261008.md)：六堆/附加存储/18类实际相等绑定形成当前条件子证明；54次原生查询、34次拒绝及16所属移堆/Fork与原生续用对账通过，未知调用0。初版隔离失败保留，完整生命证书仍0；未接生产，正式源码/部署复用704dc994。
 
 [默认方法局部验证归档](archive/development/volume-24.md)。
 
