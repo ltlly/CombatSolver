@@ -27,7 +27,7 @@ internal static partial class StrategicHpRecoveryBound
         CombatPredictionSimulator simulator, Player player)
     {
         SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
-        if (combat.RootPotionUseCallbackRejection is { } callbackRejection)
+        if (combat.RootHealingCallbackRejection is { } callbackRejection)
             return new(false, "player-potion-callback", callbackRejection);
         if (player.Character is not (Ironclad or Necrobinder or Silent))
             return new(false, "unsupported_character", player.Character.Id.Entry);

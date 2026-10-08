@@ -1121,6 +1121,13 @@ internal sealed partial class UnattendedTestRunner
                 return Observation(combatEnded: false);
             }
 
+            if (request.ScenarioId == "HEALTH-CALLBACK-BOUND")
+            {
+                runner.SetStage("health_callback_bound");
+                await runner.AssertHealthCallbackBoundAsync(combatState, player);
+                return Observation(combatEnded: false);
+            }
+
             if (request.ScenarioId == "PLAYER-POTION-CALLBACK-BOUND")
             {
                 runner.SetStage("player_potion_callback_bound");

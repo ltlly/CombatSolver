@@ -23,6 +23,8 @@
 
 `Contracts/Search/UnattendedTestRunner.PlayerPotionCallbackBound.cs` 使用 `PLAYER-POTION-CALLBACK-BOUND` / IRONCLAD / NIBBITS_WEAK / HP40、MaxHP80 / 120秒：通过原生 `UsePotionAction` 执行公开移除事件的直接生命重设，验证未知来源退回无限界、正常原版界面回调可认证、16个所属Fork完整状态/历史/RNG和父/live隔离；未知悬停事件、同步测试委托及Harmony修改拒绝，不调用未知来源，清理后新根恢复。它不适配未知回调语义，也不证明所有界面通知闭包。
 
+`Contracts/Search/UnattendedTestRunner.HealthCallbackBound.cs` 使用 `HEALTH-CALLBACK-BOUND` / IRONCLAD / NIBBITS_WEAK / HP40、MaxHP80 / 120秒：正常受伤完整续用状态/RNG严格对账；未知玩家/敌人的当前和最大生命事件、独立于生命连接的Tracker通知、Ritsu详情刷新及指定补丁均撤销有限回复资格，每组16所属Fork保留无限界、完整状态/历史/RNG及父隔离。原生受伤事件和移除生命连接后的能量通知各额外回复2点，均被拒绝认证，移除后新根恢复。它只补已确认来源缺口，不认证完整UI或未来注册闭包。
+
 测试选择与平台命令见 [无人测试](../../docs/HEADLESS_TESTING.md)，当前最小哨兵见 [测试矩阵](../../docs/TEST_MATRIX.md)。长期测试有明确断言、最小入口或 fixture；同一机制优先扩展已有合同。
 
 `Contracts/Combat/UnattendedTestRunner.HandDrawRelicQuery.cs` 通过检查点 `RestoreOnly` 与场景名 `HAND-DRAW-RELICS-PROBE` 复用原生回放建局，逐一核对8种抽牌遗物在回合1～4及已有计数下的原生命令、冻结查询、Fork/RNG/父分支和live隔离；它只验证查询，完整生命周期沿用对应遗物合同。

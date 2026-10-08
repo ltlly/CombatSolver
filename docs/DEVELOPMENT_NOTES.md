@@ -1,6 +1,6 @@
 # CombatSolver 开发笔记
 
-2026-10-08 [剪枝见证与用药回复回调](performance/pruning-callback-proof-research-20261008.md)：原生公开用药回调复现0界/40回复反例；新根拒绝未知直接及悬停来源，16所属Fork与正常原版回调通过。两种提前先导无稳定收益，已撤回；最终固定回归与认证范围见报告，不计新增提速。
+2026-10-08 [生命通知剪枝门槛](performance/health-callback-pruning-guard-20261008.md)：未知生命事件、Tracker通知、Ritsu详情及指定补丁撤销有限回复资格；原生正常受伤对账及每组16所属Fork通过，额外2回复反例被拒绝认证。固定回归及完整闭包限制见报告，不计新增提速。
 
 [默认方法局部验证归档](archive/development/volume-24.md)。
 

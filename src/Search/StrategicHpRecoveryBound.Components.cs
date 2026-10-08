@@ -135,7 +135,7 @@ internal static partial class StrategicHpRecoveryBound
         CombatPredictionSimulator simulator, Player player, bool useReviewedSources = false)
     {
         SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
-        if (combat.RootPotionUseCallbackRejection is { } callbackRejection)
+        if (combat.RootHealingCallbackRejection is { } callbackRejection)
             return callbackRejection;
         if (typeof(CardModel).Module.ModuleVersionId != ComponentAuditMvid)
             return "native-version";
@@ -196,7 +196,7 @@ internal static partial class StrategicHpRecoveryBound
         if (simulator.HasPendingChoice)
             return int.MaxValue;
         SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
-        if (combat.RootPotionUseCallbackRejection is not null)
+        if (combat.RootHealingCallbackRejection is not null)
             return int.MaxValue;
         var state = simulator.State.GetPlayerCombatState(player);
         if (combat.KnownEnemies.Count == 0

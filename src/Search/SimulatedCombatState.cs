@@ -73,7 +73,7 @@ internal sealed partial class SimulatedCombatState
     internal bool RootHasOnlyNonHealingLoadoutSubscribers
         => _modHookSubscribers.HasOnlyNonHealingLoadoutSubscribers;
     internal bool RootHasCertifiedNonHealingSubscribers => _modHookSubscribers.HasCertifiedNonHealingSubscribers;
-    internal string? RootPotionUseCallbackRejection => _modHookSubscribers.PotionUseCallbackRejection;
+    internal string? RootHealingCallbackRejection => _modHookSubscribers.HealingCallbackRejection;
     internal bool IsCertifiedNonHealingSubscriberSource(AbstractModel source)
         => _modHookSubscribers.IsCertifiedNonHealingSubscriberSource(source);
     private readonly IReadOnlyDictionary<Player, int> _rootMaxHandSizes;
