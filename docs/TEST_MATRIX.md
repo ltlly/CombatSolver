@@ -1,9 +1,5 @@
 # CombatSolver 测试入口
 
-2026-10-08 [上游同步验证](performance/pmu-jit-direction-20261008.md#同步上游0501后继续实验)：0.50.1控制构建零警告/错误，SMART-POTION-AUDIT-BUDGET原生4433095783b14513ae052e8295a643c9通过21→0战损/单药单成员/政策/完整回放/live，实例已清理；旧原型及旧性能结果不作为同步后验收。
-
-2026-10-08 [硬件/JIT方向证据](performance/pmu-jit-direction-20261008.md)：排序合同1150c989f11a45d7a6722b6e6a604053覆盖603类型/363609比较/43案例/16Fork；12次Evaluate无收益。后续Monitor/CPU两次独立诊断14质量/根/预算/工作匹配；2578对完整、无丢失，CPU窗口18761样本，限定祖先缺失。两类型mask原生c8b84baf38694531982d0c7ebbf12a5a通过1675模型/64回调等既有合同，A/C首两条质量同但C一次时间截断/工作改变，后续交错及哨兵停止，原型撤回；无整请求或新固定回归，生产/部署保持。
-
 2026-10-08 [原始慢根的剪枝范围与见证时机](performance/pruning-scope-and-incumbent-latency-20261008.md)：六次完整请求四次完成、两次120秒超时不重试；六次独立诊断组件门槛1/6、四个完整根戳匹配。亡灵首次发布胜利约45.85/69.86秒、猎手396张未获胜，2,305张铁甲根独立留档。无新剪枝或性能验收，生产源码/五文件部署复用499ec165。
 
 [已完成的搜索与回复实验归档](archive/testing/volume-26.md)。
@@ -21,6 +17,8 @@
 贡献者 2026-10-06 的 Linux [计划续搜完整胜利证明](performance/plan-witness-propagation-20261006.md)：原生计划循环与最终 GC 合同 Passed；政策门禁、16 Fork、DOP1/16 实际成员派发与一次压缩完整回收通过，实例清理。11 根 44 次纯交错质量及峰值通过；2 次完整诊断、9 次根审计单列。未做全29根、上传包或可见性能，历史战损差异保留。
 
 0.50.0 定稿沿用 PR #207、PR #211 与开局药水准入的既有行为证据，来源和范围见 [历史卷 20](archive/testing/volume-20.md)。
+
+2026-10-09 [机制规模筛选](performance/mechanism-scale-roi-20261009.md)保留BDN原始样本、实场索引成本和实际JIT；这些是诊断。[牌堆监听索引复用](performance/pile-hook-projection-20261009.md)分别记录原型、结构完成通知的复入失效检查及最终版本验证范围，不能以早期原型数字代替最终版本。
 
 按改动选择最小验证层，方法见 [无人测试](HEADLESS_TESTING.md) 与 [社区验收](community/testing-guide.md)。[大牌组监听构造](performance/projected-listener-producer-20261008.md)记录 `MIRRORED-HOOK-FILTER` 的最终验收；[关键词研究](performance/native-pile-lookup-opportunities-20261006.md#2026-10-09监听优化后的定位与关键词原型)和[根牌堆索引](performance/root-native-pile-index-research-20261009.md)原生合同通过后原型均撤回。后者保留44次纯运行及猎手首领54/69战损波动，DOP1/2等价未验证，不能称质量验收通过。[公共复用筛选](performance/common-reuse-roi-research-20261009.md)另保存四次原生合同、32次纯交错及五次完整诊断；均无新运行时交付，诊断不作性能验收。以下命令提供当前复跑入口，不表示本轮已执行。单人共享损血剪枝的新基线验证见[策略证据](strategy/hp-loss-pruning/README.md#单人共享损血剪枝2026-10-05)。
 

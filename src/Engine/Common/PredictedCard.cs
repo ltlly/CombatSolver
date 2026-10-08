@@ -242,6 +242,8 @@ internal sealed class PredictedCard : IComparable<PredictedCard>
 
     internal void SetOwnerPile(SimCardPile? pile)
     {
+        if (!ReferenceEquals(_ownerPile, pile))
+            _ownerPile?.InvalidateFingerprint();
         _ownerPile = pile;
         if (_isolateAttachedModelsOnFork)
             pile?.DisableFingerprintCache();
@@ -269,6 +271,9 @@ internal sealed class PredictedCard : IComparable<PredictedCard>
     // conservative per-access invalidation policy while such modifiers are present.
     internal void NotifyHookListenerStructureChanged()
     {
+        // A nested query can refill the projection after MutablePreview invalidates
+        // it. Clear it again when the attachment/COW write has completed.
+        _ownerPile?.InvalidateHookCardProjection();
         _mutationObserver?.Invoke();
     }
 

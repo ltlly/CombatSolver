@@ -16,6 +16,11 @@ internal sealed class SimCardPile
     private ulong _cachedCycleShapeFingerprintFirst;
     private ulong _cachedCycleShapeFingerprintSecond;
     private bool _fingerprintCacheDisabled;
+    private HookCardProjection? _hookCardProjection;
+
+    // Indices refer only to this ordered pile. Forks share the immutable indices,
+    // then resolve receivers through their own card wrappers and previews.
+    private sealed record HookCardProjection(MirroredHookListenerFilter Filter, int[] Indices);
 
     public PileType Type { get; }
 
@@ -101,6 +106,8 @@ internal sealed class SimCardPile
         fork._hasCachedCycleShapeFingerprint = _hasCachedCycleShapeFingerprint;
         fork._cachedCycleShapeFingerprintFirst = _cachedCycleShapeFingerprintFirst;
         fork._cachedCycleShapeFingerprintSecond = _cachedCycleShapeFingerprintSecond;
+        if (!_fingerprintCacheDisabled && !fork._fingerprintCacheDisabled)
+            fork._hookCardProjection = _hookCardProjection;
         context.Register(this, fork);
         return fork;
     }
@@ -155,17 +162,61 @@ internal sealed class SimCardPile
 
     internal void InvalidateFingerprint()
     {
+        _hookCardProjection = null;
         _hasCachedFingerprint = false;
         _hasCachedUnorderedFingerprint = false;
         _hasCachedCycleShapeFingerprint = false;
     }
 
+    internal void InvalidateHookCardProjection()
+        => _hookCardProjection = null;
+
     internal void DisableFingerprintCache()
     {
+        _hookCardProjection = null;
         _fingerprintCacheDisabled = true;
         _hasCachedFingerprint = false;
         _hasCachedUnorderedFingerprint = false;
         _hasCachedCycleShapeFingerprint = false;
+    }
+
+    internal bool TryGetHookCardProjection(
+        MirroredHookListenerFilter filter, out ReadOnlySpan<int> indices)
+    {
+        if (_fingerprintCacheDisabled || !filter.CanProjectReceivers)
+        {
+            indices = default;
+            return false;
+        }
+        if (_hookCardProjection is { } cached && ReferenceEquals(cached.Filter, filter))
+        {
+            indices = cached.Indices;
+            return true;
+        }
+
+        List<int>? selected = null;
+        for (int index = 0; index < _cards.Count; index++)
+        {
+            PredictedCard card = _cards[index];
+            // A wrapper shared by different piles cannot notify both owners about
+            // future writes. Keep the original scan for that representation.
+            if (!ReferenceEquals(card.OwnerPile, this))
+            {
+                _hookCardProjection = null;
+                indices = default;
+                return false;
+            }
+            CardModel preview = card.Preview;
+            // Keep potential receivers even while removed. The producer checks the
+            // current removal flag; participation depends on immutable runtime types.
+            if (filter.HasMirroredCallbacks(preview)
+                || preview.Affliction is { } affliction && filter.HasMirroredCallbacks(affliction)
+                || preview.Enchantment is { } enchantment && filter.HasMirroredCallbacks(enchantment))
+                (selected ??= []).Add(index);
+        }
+        _hookCardProjection = new HookCardProjection(filter, selected?.ToArray() ?? []);
+        indices = _hookCardProjection.Indices;
+        return true;
     }
 
     private void AttachCards()

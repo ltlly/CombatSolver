@@ -1708,17 +1708,24 @@ internal sealed partial class SimulatedCombatState
                     suffix.Add(orb);
         }
         for (int playerIndex = 0; playerIndex < players.Count; playerIndex++)
-        foreach (PredictedCard card in predictionState.GetPlayerCombatState(players[playerIndex]).AllCards)
         {
-            CardModel preview = card.Preview;
-            if (preview.HasBeenRemovedFromState)
-                continue;
-            if (filter.HasMirroredCallbacks(preview))
-                suffix.Add(preview);
-            if (preview.Affliction is { } affliction && filter.HasMirroredCallbacks(affliction))
-                suffix.Add(affliction);
-            if (preview.Enchantment is { } enchantment && filter.HasMirroredCallbacks(enchantment))
-                suffix.Add(enchantment);
+            SimPlayerCombatState playerState = predictionState.GetPlayerCombatState(players[playerIndex]);
+            for (int pileIndex = 0; pileIndex < 5; pileIndex++)
+            {
+                // Preserve AllCards' lazy pile order. Unchanged piles can reuse pure
+                // indices; opaque attached state retains the complete card scan.
+                SimCardPile pile = playerState.GetPileByEnumerationIndex(pileIndex);
+                if (pile.TryGetHookCardProjection(filter, out ReadOnlySpan<int> indices))
+                {
+                    foreach (int cardIndex in indices)
+                        Append(pile.Cards[cardIndex]);
+                }
+                else
+                {
+                    foreach (PredictedCard card in pile)
+                        Append(card);
+                }
+            }
         }
         // Match the original producer order: materialise branch card/orb piles before
         // resolving the effective Power prefix. Lazy forks can remap model receivers.
@@ -1735,6 +1742,19 @@ internal sealed partial class SimulatedCombatState
         IReadOnlyList<AbstractModel> listeners = new ConcatenatedListenerView(_activeHookListenerPrefix, suffix);
         return run && _rootRunHookListeners.Length != 0
             ? new ConcatenatedListenerView(_rootRunHookListeners, listeners) : listeners;
+
+        void Append(PredictedCard card)
+        {
+            CardModel preview = card.Preview;
+            if (preview.HasBeenRemovedFromState)
+                return;
+            if (filter.HasMirroredCallbacks(preview))
+                suffix.Add(preview);
+            if (preview.Affliction is { } affliction && filter.HasMirroredCallbacks(affliction))
+                suffix.Add(affliction);
+            if (preview.Enchantment is { } enchantment && filter.HasMirroredCallbacks(enchantment))
+                suffix.Add(enchantment);
+        }
     }
 
     private IReadOnlyList<AbstractModel> GetEffectiveRunHookListeners()

@@ -24,6 +24,7 @@ internal sealed partial class UnattendedTestRunner
         for (int index = 0; index < 300; index++)
             parent.AddToPile(PredictedCard.Create(ModelDb.Card<StrikeIronclad>(), player), PileType.Draw);
         parent.AddToPile(PredictedCard.Create(ModelDb.Card<Reflex>(), player), PileType.Draw);
+        int pileCacheChecks = AssertPileHookProjectionCache(parent, root, player);
         string parentBefore = DescribeContinuationContractState(parent, root, player);
         CombatPredictionSimulator candidate = parent.Fork();
         CombatPredictionSimulator whole = parent.Fork();
@@ -119,7 +120,129 @@ internal sealed partial class UnattendedTestRunner
             || ContinuationStamp.CaptureLive(live).StateText != liveBefore)
             throw new InvalidOperationException("Projected listeners escaped sibling, parent or live isolation.");
         AssertProjectedGetterPatchFallback(live, player);
-        _completedChecks.Add($"ProjectedHookReceivers:Comparisons={comparisons}:ProjectedBuilds={projectedBuilds}:Masks=64:FullStateFingerprintHistoryRng:MovesRemovedAttachmentsPowerOrder:Fork16ParentLive:GetterPatchFallback");
+        _completedChecks.Add($"ProjectedHookReceivers:Comparisons={comparisons}:ProjectedBuilds={projectedBuilds}:PileCacheChecks={pileCacheChecks}:Masks=64:FullStateFingerprintHistoryRng:MovesRemovedAttachmentsPowerOrder:Fork16ParentLive:GetterPatchFallback");
+    }
+
+    private static int AssertPileHookProjectionCache(
+        CombatPredictionSimulator parent, CombatRootSnapshot root, Player player)
+    {
+        int checks = 0;
+        var filter = new MirroredHookListenerFilter(enabled: true);
+        FieldInfo cache = typeof(SimCardPile).GetField("_hookCardProjection",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+        string parentBefore = DescribeContinuationContractState(parent, root, player);
+
+        void Check(SimCardPile pile)
+        {
+            if (!pile.TryGetHookCardProjection(filter, out ReadOnlySpan<int> selected))
+                throw new InvalidOperationException("Native pile unexpectedly refused receiver projection.");
+            int[] expected = Enumerable.Range(0, pile.Cards.Count).Where(index =>
+            {
+                CardModel card = pile.Cards[index].Preview;
+                return filter.HasMirroredCallbacks(card)
+                    || card.Affliction is { } affliction && filter.HasMirroredCallbacks(affliction)
+                    || card.Enchantment is { } enchantment && filter.HasMirroredCallbacks(enchantment);
+            }).ToArray();
+            if (!selected.SequenceEqual(expected))
+                throw new InvalidOperationException("Pile projection changed exact potential receiver indices.");
+            checks++;
+        }
+
+        SimCardPile parentDraw = parent.State.GetPlayerCombatState(player).DrawPile;
+        Check(parentDraw);
+        object shared = cache.GetValue(parentDraw)!;
+        Check(parentDraw);
+        if (!ReferenceEquals(shared, cache.GetValue(parentDraw)))
+            throw new InvalidOperationException("Unchanged pile did not reuse its immutable projection.");
+        var child = parent.Fork();
+        SimCardPile draw = child.State.GetPlayerCombatState(player).DrawPile;
+        if (!ReferenceEquals(shared, cache.GetValue(draw)))
+            throw new InvalidOperationException("Fork did not share immutable projection indices.");
+        Check(draw);
+        if (draw.Cards.Zip(parentDraw.Cards).Any(pair => ReferenceEquals(pair.First, pair.Second)))
+            throw new InvalidOperationException("Projection Fork shared mutable card wrappers.");
+        PredictedCard changed = draw.TopCard!;
+        changed.MutablePreview.BaseReplayCount++;
+        if (cache.GetValue(draw) is not null)
+            throw new InvalidOperationException("MutablePreview did not invalidate the pile projection.");
+        Check(draw);
+        changed.Afflict(ModelDb.Affliction<Hexed>().ToMutable(), 1);
+        Check(draw);
+        changed.Enchant(ModelDb.Enchantment<Swift>().ToMutable(), 1);
+        Check(draw);
+        changed.ClearAffliction();
+        Check(draw);
+        // Model a nested listener query between writable access and the completed
+        // structural write. The completion notification must invalidate that refill.
+        CardModel writable = changed.MutablePreview;
+        Check(draw);
+        writable.Affliction = ModelDb.Affliction<Hexed>().ToMutable();
+        writable.Affliction.Card = writable;
+        writable.Affliction._amount = 1;
+        changed.NotifyHookListenerStructureChanged();
+        if (cache.GetValue(draw) is not null)
+            throw new InvalidOperationException("Completed structural write retained a reentrant projection.");
+        Check(draw);
+        PredictedCard inserted = PredictedCard.Create(ModelDb.Card<Reflex>(), player);
+        child.AddToPile(inserted, PileType.Draw, CardPilePosition.Top);
+        Check(draw);
+        child.AddToPile(inserted, PileType.Discard);
+        Check(draw);
+        Check(child.State.GetPlayerCombatState(player).DiscardPile);
+        PredictedCard callbackCard = draw.Cards.First(card => card.Preview is Reflex);
+        callbackCard.MutablePreview.HasBeenRemovedFromState = true;
+        Check(draw);
+        callbackCard.MutablePreview.HasBeenRemovedFromState = false;
+        Check(draw);
+        draw.Remove(callbackCard);
+        Check(draw);
+        draw.Add(callbackCard);
+        Check(draw);
+        draw.Insert(0, PredictedCard.Create(ModelDb.Card<Reflex>(), player));
+        Check(draw);
+        CombatPredictionSimulator grandchild = child.Fork();
+        SimCardPile grandchildDraw = grandchild.State.GetPlayerCombatState(player).DrawPile;
+        grandchildDraw.Clear();
+        Check(grandchildDraw);
+        Check(draw);
+        SimCardPile opaque = child.Fork().State.GetPlayerCombatState(player).DrawPile;
+        opaque.DisableFingerprintCache();
+        if (opaque.TryGetHookCardProjection(filter, out _)
+            || draw.TryGetHookCardProjection(new MirroredHookListenerFilter(enabled: false), out _))
+            throw new InvalidOperationException("Opaque or disabled projection did not preserve full scan.");
+        var alternative = new MirroredHookListenerFilter(enabled: true);
+        object beforeAlternative = cache.GetValue(draw)!;
+        if (!draw.TryGetHookCardProjection(alternative, out _)
+            || ReferenceEquals(beforeAlternative, cache.GetValue(draw)))
+            throw new InvalidOperationException("A different filter reused another capture's cache.");
+        PredictedCard alias = PredictedCard.Create(ModelDb.Card<Reflex>(), player);
+        SimCardPile oldOwner = new(PileType.Draw, new[] { alias });
+        Check(oldOwner);
+        SimCardPile newOwner = new(PileType.Hand, new[] { alias });
+        if (cache.GetValue(oldOwner) is not null
+            || oldOwner.TryGetHookCardProjection(filter, out _))
+            throw new InvalidOperationException("Cross-pile wrapper alias retained a reusable projection.");
+        Check(newOwner);
+        alias.MutablePreview.BaseReplayCount++;
+        if (cache.GetValue(newOwner) is not null)
+            throw new InvalidOperationException("Aliased wrapper write did not invalidate its current owner.");
+        CombatPredictionSimulator[] siblings = Enumerable.Range(0, 16).Select(_ => parent.Fork()).ToArray();
+        Parallel.ForEach(siblings, simulator =>
+        {
+            using IDisposable workerIsolation = SimulationNotificationIsolation.Enter();
+            SimCardPile pile = simulator.State.GetPlayerCombatState(player).DrawPile;
+            if (!pile.TryGetHookCardProjection(filter, out _)
+                || !ReferenceEquals(shared, cache.GetValue(pile)))
+                throw new InvalidOperationException("Parallel Fork lost shared immutable projection.");
+            pile.TopCard!.MutablePreview.BaseReplayCount++;
+            if (!pile.TryGetHookCardProjection(filter, out _)
+                || ReferenceEquals(shared, cache.GetValue(pile)))
+                throw new InvalidOperationException("Parallel mutation reused stale parent indices.");
+        });
+        if (!ReferenceEquals(shared, cache.GetValue(parentDraw))
+            || DescribeContinuationContractState(parent, root, player) != parentBefore)
+            throw new InvalidOperationException("Projection cache escaped parent/Fork state isolation.");
+        return checks;
     }
 
     private static void DisableMirroredFilterForOracle(CombatPredictionSimulator simulator)
@@ -138,29 +261,37 @@ internal sealed partial class UnattendedTestRunner
 
     private static void AssertProjectedGetterPatchFallback(CombatState live, Player player)
     {
-        MethodInfo getter = typeof(CardModel).GetProperty(nameof(CardModel.HasBeenRemovedFromState))!.GetMethod!;
+        MethodInfo[] getters =
+        [
+            typeof(CardModel).GetProperty(nameof(CardModel.HasBeenRemovedFromState))!.GetMethod!,
+            typeof(PredictedCard).GetProperty(nameof(PredictedCard.OwnerPile),
+                BindingFlags.Instance | BindingFlags.NonPublic)!.GetMethod!,
+        ];
         MethodInfo prefix = typeof(UnattendedTestRunner).GetMethod(nameof(ProjectedGetterPrefix),
             BindingFlags.Static | BindingFlags.NonPublic)!;
         Harmony harmony = new("CombatSolver.Tests.ProjectedGetterGuard");
-        try
+        foreach (MethodInfo getter in getters)
         {
-            harmony.Patch(getter, prefix: new HarmonyMethod(prefix));
-            if (MirroredHookListenerFilter.Capture().CanProjectReceivers)
-                throw new InvalidOperationException("A patched card getter retained projected construction.");
-            using IDisposable isolation = SimulationNotificationIsolation.Enter();
-            CombatPredictionSimulator simulator = CombatRootSnapshot.Capture(live).ForkSimulator();
-            for (int index = 0; index < 300; index++)
-                simulator.AddToPile(PredictedCard.Create(ModelDb.Card<StrikeIronclad>(), player), PileType.Draw);
-            var combat = (SimulatedCombatState)simulator.State.CombatState;
-            combat.SetAmount<StrengthPower>(player.Creature, 3);
-            var source = (ICombatPredictionHookListenerSource)combat;
-            IReadOnlyList<AbstractModel> mirrored = source.MirroredHookListeners;
-            if (mirrored.Count != source.HookListeners.Count)
-                throw new InvalidOperationException("Getter-patched root did not use the complete producer.");
+            try
+            {
+                harmony.Patch(getter, prefix: new HarmonyMethod(prefix));
+                if (MirroredHookListenerFilter.Capture().CanProjectReceivers)
+                    throw new InvalidOperationException("A patched card getter retained projected construction.");
+                using IDisposable isolation = SimulationNotificationIsolation.Enter();
+                CombatPredictionSimulator simulator = CombatRootSnapshot.Capture(live).ForkSimulator();
+                for (int index = 0; index < 300; index++)
+                    simulator.AddToPile(PredictedCard.Create(ModelDb.Card<StrikeIronclad>(), player), PileType.Draw);
+                var combat = (SimulatedCombatState)simulator.State.CombatState;
+                combat.SetAmount<StrengthPower>(player.Creature, 3);
+                var source = (ICombatPredictionHookListenerSource)combat;
+                IReadOnlyList<AbstractModel> mirrored = source.MirroredHookListeners;
+                if (mirrored.Count != source.HookListeners.Count)
+                    throw new InvalidOperationException("Getter-patched root did not use the complete producer.");
+            }
+            finally { harmony.Unpatch(getter, prefix); }
+            if (!MirroredHookListenerFilter.Capture().CanProjectReceivers)
+                throw new InvalidOperationException("Getter patch removal did not restore root projection eligibility.");
         }
-        finally { harmony.Unpatch(getter, prefix); }
-        if (!MirroredHookListenerFilter.Capture().CanProjectReceivers)
-            throw new InvalidOperationException("Getter patch removal did not restore root projection eligibility.");
     }
 
     private static void ProjectedGetterPrefix() { }
