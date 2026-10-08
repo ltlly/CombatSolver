@@ -1,0 +1,3703 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-08",
+  "baseCommit": "1d920dc7",
+  "runtimeCommit": "499ec165",
+  "branch": "perf/common-state-cost-20261005",
+  "decision": "Stop minor comparison variants; use PMU/JIT evidence and controlled mechanism/scale data to prioritize parallel utilization, repeated scans and representation. No newly established speedup.",
+  "userScope": "Reflect on optimization direction, more complex scenarios, generated assembly/registers and alternative hotspot languages. Existing full-request goals and authorizations persist.",
+  "failedSortFollowup": {
+    "evidence": "native-sort-key-research-20261005.json",
+    "native": {
+      "runId": "1150c989f11a45d7a6722b6e6a604053",
+      "status": "Passed",
+      "elapsedMilliseconds": 26449.9047,
+      "completedChecks": [
+        "NativeCardSort:Types=603:Pairs=363609:Rejected=0:Cases=43:EqualNativeOrder:FullStateRng:ParentForkLive:SixteenSiblingForks:SevenPatchGates:UnknownVersionAndSource:CowMetadata:CloneMaterializeUpgrade:ChangedCachedId",
+        "CombatRootSnapshot",
+        "NativeOutcome:combatEnded=False:turn=1:hp=80:maxHp=80"
+      ],
+      "error": null
+    },
+    "summary": [
+      {
+        "scene": "screen-huge-deck",
+        "baselineSeconds": [
+          39.4514478,
+          34.4027044
+        ],
+        "candidateSeconds": [
+          35.8498321,
+          38.0238936
+        ],
+        "baselineMedianSeconds": 36.927076099999994,
+        "candidateMedianSeconds": 36.93686285,
+        "speedup": 0.9997350411148952,
+        "maxRssRatio": 0.9949167205222107,
+        "fullFourteenQualityFieldsEqual": true,
+        "qualityFieldCount": 14,
+        "logicalWorkEqual": true,
+        "rootStampEqual": true,
+        "timeBoundaryObserved": false,
+        "pruneCounterDifferences": {
+          "roundReplayPrefixCaptures": [
+            708,
+            708,
+            709,
+            708
+          ],
+          "forkCount": [
+            6148,
+            6148,
+            6149,
+            6148
+          ],
+          "roundReplayPrefixReuses": [
+            1237,
+            1238,
+            1238,
+            1237
+          ],
+          "maxParallelActionReplayConcurrency": [
+            16,
+            15,
+            15,
+            15
+          ]
+        }
+      },
+      {
+        "scene": "silent-large-deck",
+        "baselineSeconds": [
+          5.9499011,
+          5.8656809
+        ],
+        "candidateSeconds": [
+          5.9836269,
+          5.9441108
+        ],
+        "baselineMedianSeconds": 5.907791,
+        "candidateMedianSeconds": 5.96386885,
+        "speedup": 0.9905970685455298,
+        "maxRssRatio": 1.0016463313707409,
+        "fullFourteenQualityFieldsEqual": true,
+        "qualityFieldCount": 14,
+        "logicalWorkEqual": true,
+        "rootStampEqual": true,
+        "timeBoundaryObserved": false,
+        "pruneCounterDifferences": {}
+      },
+      {
+        "scene": "dev-08-regent-boss",
+        "baselineSeconds": [
+          4.3773293,
+          4.3886206
+        ],
+        "candidateSeconds": [
+          4.4082409,
+          4.3861353
+        ],
+        "baselineMedianSeconds": 4.38297495,
+        "candidateMedianSeconds": 4.3971881,
+        "speedup": 0.9967676729589986,
+        "maxRssRatio": 1.000894917999595,
+        "fullFourteenQualityFieldsEqual": true,
+        "qualityFieldCount": 14,
+        "logicalWorkEqual": true,
+        "rootStampEqual": true,
+        "timeBoundaryObserved": false,
+        "pruneCounterDifferences": {}
+      }
+    ]
+  },
+  "pmuJit": {
+    "command": {
+      "scope": "Single baseline hardware/JIT diagnosis, fixed-node Evaluate, not full Coordinator or speed/memory acceptance",
+      "command": [
+        "perf",
+        "stat",
+        "-I",
+        "1000",
+        "-x",
+        ";",
+        "-e",
+        "{cycles:u,instructions:u,branches:u,branch-misses:u}",
+        "-e",
+        "cache-references:u,cache-misses:u",
+        "-e",
+        "task-clock,context-switches,cpu-migrations",
+        "-o",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/pmu-jit-direction-20261008/pmu-stat.csv",
+        "--",
+        "dotnet",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/native-sort-storage-20261008/harness/OfflineSearchHarness.dll",
+        "--request",
+        "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/screen-huge-deck.json",
+        "--label",
+        "pmu-jit-huge-evaluate",
+        "--out",
+        "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/pmu-jit-direction-20261008/huge-evaluate",
+        "--profile",
+        "VeryHigh",
+        "--dop",
+        "16",
+        "--budget-ms",
+        "60000",
+        "--search-mode",
+        "Evaluate",
+        "--nodes",
+        "10000",
+        "--beam",
+        "135",
+        "--card-branches",
+        "72",
+        "--pile-branches",
+        "42",
+        "--hand-branches",
+        "54",
+        "--enable-no-gc-region",
+        "--no-gc-region-budget-gigabytes",
+        "16"
+      ],
+      "outerTimeoutSeconds": 120,
+      "dllSha256": "349470cde0c9f2a0120496b9221aa50fbf8fd8580a2429ef434622f5bb9c4628",
+      "sourceRuntime": "499ec165",
+      "sourceBase": "1d920dc7",
+      "hostSha256": "65d7d5c136bf9ca527be565a9cc7288430f8398994056c1ac72f31dca097c2e4",
+      "requestSha256": "9868d91456908a09cfcfd459f4a45cfbcd1a76d52ea209b0bf64727fc2a68388",
+      "env": {
+        "OFFLINE_HARNESS_COMBATSOLVER_DLL": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/health-callback-guard-20261008/build-final/CombatSolver.dll",
+        "DOTNET_JitDisasm": "BuildProjectedShuffleOrder",
+        "DOTNET_JitDisasmOnlyOptimized": "1",
+        "DOTNET_JitStdOutFile": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/pmu-jit-direction-20261008/BuildProjectedShuffleOrder.asm"
+      },
+      "runtimeVersions": "Microsoft.AspNetCore.App 9.0.20 [/usr/share/dotnet/shared/Microsoft.AspNetCore.App]\nMicrosoft.NETCore.App 8.0.31 [/usr/share/dotnet/shared/Microsoft.NETCore.App]\nMicrosoft.NETCore.App 9.0.20 [/usr/share/dotnet/shared/Microsoft.NETCore.App]\n",
+      "cpu": {
+        "lscpu": [
+          {
+            "field": "Architecture:",
+            "data": "x86_64"
+          },
+          {
+            "field": "CPU op-mode(s):",
+            "data": "32-bit, 64-bit"
+          },
+          {
+            "field": "Address sizes:",
+            "data": "48 bits physical, 48 bits virtual"
+          },
+          {
+            "field": "Byte Order:",
+            "data": "Little Endian"
+          },
+          {
+            "field": "CPU(s):",
+            "data": "16"
+          },
+          {
+            "field": "On-line CPU(s) list:",
+            "data": "0-15"
+          },
+          {
+            "field": "Vendor ID:",
+            "data": "AuthenticAMD"
+          },
+          {
+            "field": "Model name:",
+            "data": "AMD Ryzen 7 7840H w/ Radeon 780M Graphics"
+          },
+          {
+            "field": "CPU family:",
+            "data": "25"
+          },
+          {
+            "field": "Model:",
+            "data": "116"
+          },
+          {
+            "field": "Thread(s) per core:",
+            "data": "2"
+          },
+          {
+            "field": "Core(s) per socket:",
+            "data": "8"
+          },
+          {
+            "field": "Socket(s):",
+            "data": "1"
+          },
+          {
+            "field": "Stepping:",
+            "data": "1"
+          },
+          {
+            "field": "Microcode version:",
+            "data": "0xa704108"
+          },
+          {
+            "field": "Frequency boost:",
+            "data": "enabled"
+          },
+          {
+            "field": "CPU(s) scaling MHz:",
+            "data": "46%"
+          },
+          {
+            "field": "CPU max MHz:",
+            "data": "5137.9038"
+          },
+          {
+            "field": "CPU min MHz:",
+            "data": "419.4210"
+          },
+          {
+            "field": "BogoMIPS:",
+            "data": "7584.98"
+          },
+          {
+            "field": "Flags:",
+            "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid overflow_recov succor smca flush_l1d amd_lbr_pmc_freeze"
+          },
+          {
+            "field": "Virtualization:",
+            "data": "AMD-V"
+          },
+          {
+            "field": "L1d cache:",
+            "data": "256 KiB (8 instances)"
+          },
+          {
+            "field": "L1i cache:",
+            "data": "256 KiB (8 instances)"
+          },
+          {
+            "field": "L2 cache:",
+            "data": "8 MiB (8 instances)"
+          },
+          {
+            "field": "L3 cache:",
+            "data": "16 MiB (1 instance)"
+          },
+          {
+            "field": "NUMA node(s):",
+            "data": "1"
+          },
+          {
+            "field": "NUMA node0 CPU(s):",
+            "data": "0-15"
+          },
+          {
+            "field": "Vulnerability Gather data sampling:",
+            "data": "Not affected"
+          },
+          {
+            "field": "Vulnerability Ghostwrite:",
+            "data": "Not affected"
+          },
+          {
+            "field": "Vulnerability Indirect target selection:",
+            "data": "Not affected"
+          },
+          {
+            "field": "Vulnerability Itlb multihit:",
+            "data": "Not affected"
+          },
+          {
+            "field": "Vulnerability L1tf:",
+            "data": "Not affected"
+          },
+          {
+            "field": "Vulnerability Mds:",
+            "data": "Not affected"
+          },
+          {
+            "field": "Vulnerability Meltdown:",
+            "data": "Not affected"
+          },
+          {
+            "field": "Vulnerability Mmio stale data:",
+            "data": "Not affected"
+          },
+          {
+            "field": "Vulnerability Old microcode:",
+            "data": "Not affected"
+          },
+          {
+            "field": "Vulnerability Reg file data sampling:",
+            "data": "Not affected"
+          },
+          {
+            "field": "Vulnerability Retbleed:",
+            "data": "Not affected"
+          },
+          {
+            "field": "Vulnerability Spec rstack overflow:",
+            "data": "Mitigation; Safe RET"
+          },
+          {
+            "field": "Vulnerability Spec store bypass:",
+            "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+          },
+          {
+            "field": "Vulnerability Spectre v1:",
+            "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+          },
+          {
+            "field": "Vulnerability Spectre v2:",
+            "data": "Mitigation; Enhanced / Automatic IBRS; IBPB conditional; STIBP always-on; PBRSB-eIBRS Not affected; BHI Not affected"
+          },
+          {
+            "field": "Vulnerability Srbds:",
+            "data": "Not affected"
+          },
+          {
+            "field": "Vulnerability Tsa:",
+            "data": "Mitigation; Clear CPU buffers"
+          },
+          {
+            "field": "Vulnerability Tsx async abort:",
+            "data": "Not affected"
+          },
+          {
+            "field": "Vulnerability Vmscape:",
+            "data": "Mitigation; IBPB before exit to userspace"
+          }
+        ]
+      },
+      "noProductionRuntimeChange": true,
+      "includesStartupAndCleanup": true
+    },
+    "process": {
+      "exitCode": 0,
+      "elapsedSeconds": 39.495266203004576,
+      "ownedPid": 345440,
+      "reaped": true
+    },
+    "analysis": {
+      "scope": "Whole-process scaled PMU counters include startup/cleanup, single diagnostic; not full Coordinator acceptance, not per-method cost attribution",
+      "intervalRows": [
+        {
+          "intervalEndSeconds": 1.001045942,
+          "count": 4428408953.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 668192944,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 1.001045942,
+          "count": 9717480692.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 668192944,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 1.001045942,
+          "count": 2021205102.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 668192944,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 1.001045942,
+          "count": 30014983.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 668192944,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 1.001045942,
+          "count": 412893640.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 667216043,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 1.001045942,
+          "count": 66128770.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 667777002,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 1.001045942,
+          "count": 1001.61,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1001606780,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 1.001045942,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1001610107,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 1.001045942,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1001613373,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 2.002205839,
+          "count": 5516127375.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 825713162,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 2.002205839,
+          "count": 12154490811.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 825713162,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 2.002205839,
+          "count": 2479070484.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 825713162,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 2.002205839,
+          "count": 40307109.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 825713162,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 2.002205839,
+          "count": 322716346.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 825596972,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 2.002205839,
+          "count": 58515419.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 825718787,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 2.002205839,
+          "count": 1238.53,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1238527981,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 2.002205839,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1238533812,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 2.002205839,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1238539322,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 3.003342584,
+          "count": 6244144363.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 926642614,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 3.003342584,
+          "count": 14935211911.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 926642614,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 3.003342584,
+          "count": 3086860186.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 926642614,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 3.003342584,
+          "count": 51815859.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 926642614,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 3.003342584,
+          "count": 303006243.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 926241688,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 3.003342584,
+          "count": 58086363.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 926535987,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 3.003342584,
+          "count": 1389.71,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1389709764,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 3.003342584,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1389709824,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 3.003342584,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1389709594,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 4.003581545,
+          "count": 4971798590.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 719301237,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 4.003581545,
+          "count": 16738322013.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 719301237,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 4.003581545,
+          "count": 3940051196.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 719301237,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 4.003581545,
+          "count": 11456468.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 719301237,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 4.003581545,
+          "count": 589305960.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 717645492,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 4.003581545,
+          "count": 81041732.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 717773931,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 4.003581545,
+          "count": 1077.36,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1077359283,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 4.003581545,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1077354904,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 4.003581545,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1077350426,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 5.004746884,
+          "count": 5422576790.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 798656163,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 5.004746884,
+          "count": 15495026348.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 798656163,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 5.004746884,
+          "count": 3671179761.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 798656163,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 5.004746884,
+          "count": 25154442.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 798656163,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 5.004746884,
+          "count": 550420234.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 801461845,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 5.004746884,
+          "count": 105339335.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 800509244,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 5.004746884,
+          "count": 1200.29,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1200294285,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 5.004746884,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1200293664,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 5.004746884,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1200293613,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 6.005614021,
+          "count": 5712884798.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 892026178,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 6.005614021,
+          "count": 15465066184.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 892026178,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 6.005614021,
+          "count": 3578364896.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 892026178,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 6.005614021,
+          "count": 29213610.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 892026178,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 6.005614021,
+          "count": 637446031.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 889197289,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 6.005614021,
+          "count": 118091424.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 887203471,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 6.005614021,
+          "count": 1334.24,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1334241245,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 6.005614021,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1334251555,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 6.005614021,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1334261995,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 7.00678414,
+          "count": 5727217240.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 823977489,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 7.00678414,
+          "count": 7194799332.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 823977489,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 7.00678414,
+          "count": 1550567376.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 823977489,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 7.00678414,
+          "count": 14876043.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 823977489,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 7.00678414,
+          "count": 423101441.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 821661738,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 7.00678414,
+          "count": 101836099.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 823529779,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 7.00678414,
+          "count": 1234.56,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1234559922,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 7.00678414,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1234551656,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 7.00678414,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1234543281,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 8.007929492,
+          "count": 5507010219.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 788537189,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 8.007929492,
+          "count": 8361744536.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 788537189,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 8.007929492,
+          "count": 1836150769.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 788537189,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 8.007929492,
+          "count": 10005170.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 788537189,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 8.007929492,
+          "count": 507315912.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 791949892,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 8.007929492,
+          "count": 112722783.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 787609887,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 8.007929492,
+          "count": 1184.06,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1184058167,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 8.007929492,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1184059109,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 8.007929492,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1184058958,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 9.009083721,
+          "count": 4979320304.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 680051387,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 9.009083721,
+          "count": 3616457247.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 680051387,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 9.009083721,
+          "count": 867374213.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 680051387,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 9.009083721,
+          "count": 325281.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 680051387,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 9.009083721,
+          "count": 277990242.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 681940024,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 9.009083721,
+          "count": 82910445.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 682206696,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 9.009083721,
+          "count": 1022.1,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1022095262,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 9.009083721,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1022093899,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 9.009083721,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1022093919,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 10.010212071,
+          "count": 5379113313.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 773401951,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 10.010212071,
+          "count": 8129731652.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 773401951,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 10.010212071,
+          "count": 1793506631.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 773401951,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 10.010212071,
+          "count": 6372715.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 773401951,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 10.010212071,
+          "count": 506269532.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 770544593,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 10.010212071,
+          "count": 108841858.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 774536562,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 10.010212071,
+          "count": 1159.24,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1159244744,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 10.010212071,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1159245185,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 10.010212071,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1159245255,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 11.011330643,
+          "count": 5372125388.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 768562586,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 11.011330643,
+          "count": 7511954141.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 768562586,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 11.011330643,
+          "count": 1686081598.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 768562586,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 11.011330643,
+          "count": 5589509.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 768562586,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 11.011330643,
+          "count": 495999720.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 765970397,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 11.011330643,
+          "count": 111987999.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 763612615,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 11.011330643,
+          "count": 1149.07,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1149070490,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 11.011330643,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1149070329,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 11.011330643,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1149070460,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 12.012485714,
+          "count": 4947610850.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 679985036,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 12.012485714,
+          "count": 3478763110.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 679985036,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 12.012485714,
+          "count": 811845095.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 679985036,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 12.012485714,
+          "count": 256630.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 679985036,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 12.012485714,
+          "count": 253890492.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 681554594,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 12.012485714,
+          "count": 76824554.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 678436257,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 12.012485714,
+          "count": 1019.99,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1019990674,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 12.012485714,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1019990854,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 12.012485714,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1019991125,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 13.013613213,
+          "count": 8534163935.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 1308721231,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 13.013613213,
+          "count": 11332701269.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 1308721231,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 13.013613213,
+          "count": 2465803096.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 1308721231,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 13.013613213,
+          "count": 23061835.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 1308721231,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 13.013613213,
+          "count": 673458205.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 1309307459,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 13.013613213,
+          "count": 153287197.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 1308265370,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 13.013613213,
+          "count": 1963.14,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1963142702,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 13.013613213,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1963142863,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 13.013613213,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1963142631,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 14.014620896,
+          "count": 7256107716.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 1151607514,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 14.014620896,
+          "count": 9307995608.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 1151607514,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 14.014620896,
+          "count": 2123487793.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 1151607514,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 14.014620896,
+          "count": 6132886.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 1151607514,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 14.014620896,
+          "count": 568056302.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 1146221539,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 14.014620896,
+          "count": 153202258.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 1145945188,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 14.014620896,
+          "count": 1722.0,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1722002873,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 14.014620896,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1722068656,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 14.014620896,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1722128449,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 15.015792497,
+          "count": 24188423836.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 4123906362,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 15.015792497,
+          "count": 44464296383.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 4123906362,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 15.015792497,
+          "count": 9879728617.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 4123906362,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 15.015792497,
+          "count": 8047640.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 4123906362,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 15.015792497,
+          "count": 2389033806.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 4118739327,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 15.015792497,
+          "count": 649689496.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 4122651378,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 15.015792497,
+          "count": 6182.66,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 6182656908,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 15.015792497,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 6182647971,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 15.015792497,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 6182643031,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 16.016943048,
+          "count": 25776280530.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 4518894356,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 16.016943048,
+          "count": 43095110877.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 4518894356,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 16.016943048,
+          "count": 9586864558.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 4518894356,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 16.016943048,
+          "count": 35095500.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 4518894356,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 16.016943048,
+          "count": 2409012513.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 4516327711,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 16.016943048,
+          "count": 552933793.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 4519421460,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 16.016943048,
+          "count": 6777.29,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 6777286724,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 16.016943048,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 6777273990,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 16.016943048,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 6777263159,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 17.017573047,
+          "count": 20189631600.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 3226573040,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 17.017573047,
+          "count": 35482135358.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 3226573040,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 17.017573047,
+          "count": 8244737602.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 3226573040,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 17.017573047,
+          "count": 2739554.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 3226573040,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 17.017573047,
+          "count": 2211778953.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 3225314923,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 17.017573047,
+          "count": 548024169.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 3229908067,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 17.017573047,
+          "count": 4840.88,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 4840876890,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 17.017573047,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 4840863195,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 17.017573047,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 4840846514,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 18.018730469,
+          "count": 13752648034.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 2200250778,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 18.018730469,
+          "count": 30035940645.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 2200250778,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 18.018730469,
+          "count": 6929290426.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 2200250778,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 18.018730469,
+          "count": 1880826.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 2200250778,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 18.018730469,
+          "count": 1875308167.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 2198312756,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 18.018730469,
+          "count": 467871520.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 2199431608,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 18.018730469,
+          "count": 3298.95,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 3298949350,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 18.018730469,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 3298927499,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 18.018730469,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 3298908304,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 19.019885968,
+          "count": 6737899946.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 1031331687,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 19.019885968,
+          "count": 15220111712.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 1031331687,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 19.019885968,
+          "count": 3510369248.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 1031331687,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 19.019885968,
+          "count": 1189795.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 1031331687,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 19.019885968,
+          "count": 1025069846.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 1031202797,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 19.019885968,
+          "count": 254324705.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 1030506970,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 19.019885968,
+          "count": 1546.5,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1546504497,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 19.019885968,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1546495811,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 19.019885968,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1546487655,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 20.021007352,
+          "count": 4948657982.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 680710151,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 20.021007352,
+          "count": 3126365449.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 680710151,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 20.021007352,
+          "count": 751239811.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 680710151,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 20.021007352,
+          "count": 273199.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 680710151,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 20.021007352,
+          "count": 248444151.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 681121204,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 20.021007352,
+          "count": 76384375.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 678189625,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 20.021007352,
+          "count": 1020.01,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1020006998,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 20.021007352,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1020006878,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 20.021007352,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1020006928,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 21.022154874,
+          "count": 7271978379.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 1168271274,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 21.022154874,
+          "count": 7569329433.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 1168271274,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 21.022154874,
+          "count": 1767020801.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 1168271274,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 21.022154874,
+          "count": 16670736.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 1168271274,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 21.022154874,
+          "count": 474628404.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 1170292536,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 21.022154874,
+          "count": 105276602.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 1171932096,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 21.022154874,
+          "count": 1755.24,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1755242498,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 21.022154874,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1755242548,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 21.022154874,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1755242077,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 22.023291715,
+          "count": 5184846255.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 735726603,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 22.023291715,
+          "count": 5199486298.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 735726603,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 22.023291715,
+          "count": 1201947738.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 735726603,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 22.023291715,
+          "count": 5372964.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 735726603,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 22.023291715,
+          "count": 248432901.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 735387148,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 22.023291715,
+          "count": 55582023.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 735915381,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 22.023291715,
+          "count": 1103.52,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1103514952,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 22.023291715,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1103515022,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 22.023291715,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1103515724,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 23.024450907,
+          "count": 13689506093.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 2166482991,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 23.024450907,
+          "count": 30962930424.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 2166482991,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 23.024450907,
+          "count": 6787081491.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 2166482991,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 23.024450907,
+          "count": 11394747.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 2166482991,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 23.024450907,
+          "count": 1600722835.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 2155101285,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 23.024450907,
+          "count": 316525492.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 2168150009,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 23.024450907,
+          "count": 3244.94,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 3244940855,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 23.024450907,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 3244971543,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 23.024450907,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 3245000928,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 24.025588398,
+          "count": 26960911424.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 4413886057,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 24.025588398,
+          "count": 53947663418.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 4413886057,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 24.025588398,
+          "count": 12057201125.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 4413886057,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 24.025588398,
+          "count": 4280589.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 4413886057,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 24.025588398,
+          "count": 3289636962.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 4409824071,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 24.025588398,
+          "count": 707944199.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 4414005901,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 24.025588398,
+          "count": 6619.11,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 6619111146,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 24.025588398,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 6619224707,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 24.025588398,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 6619336667,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 25.026587436,
+          "count": 42535506729.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 6619841550,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 25.026587436,
+          "count": 43195710642.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 6619841550,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 25.026587436,
+          "count": 9948232611.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 6619841550,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 25.026587436,
+          "count": 2438113.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 6619841550,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 25.026587436,
+          "count": 2685145516.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 6618317206,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 25.026587436,
+          "count": 804661217.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 6618906076,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 25.026587436,
+          "count": 9928.41,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 9928413667,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 25.026587436,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 9928379665,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 25.026587436,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 9928343737,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 26.027748409,
+          "count": 10009675024.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 1576397667,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 26.027748409,
+          "count": 21304896029.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 1576397667,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 26.027748409,
+          "count": 5138592009.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 1576397667,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 26.027748409,
+          "count": 10715773.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 1576397667,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 26.027748409,
+          "count": 1547031028.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 1568780026,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 26.027748409,
+          "count": 309063602.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 1571718606,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 26.027748409,
+          "count": 2358.24,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 2358238581,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 26.027748409,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 2358127182,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 26.027748409,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 2358020743,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 27.028571423,
+          "count": 7430261185.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 1116616435,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 27.028571423,
+          "count": 9130576570.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 1116616435,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 27.028571423,
+          "count": 2218765667.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 1116616435,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 27.028571423,
+          "count": 6111114.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 1116616435,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 27.028571423,
+          "count": 612755632.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 1116108629,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 27.028571423,
+          "count": 129449097.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 1120868387,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 27.028571423,
+          "count": 1677.08,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1677083489,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 27.028571423,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1677243008,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 27.028571423,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1677398410,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 28.029743934,
+          "count": 16454686521.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 2880692572,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 28.029743934,
+          "count": 37580553977.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 2880692572,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 28.029743934,
+          "count": 8859387899.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 2880692572,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 28.029743934,
+          "count": 36718873.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 2880692572,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 28.029743934,
+          "count": 2046956747.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 2892024844,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 28.029743934,
+          "count": 318048168.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 2886420486,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 28.029743934,
+          "count": 4329.31,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 4329309885,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 28.029743934,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 4329158982,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 28.029743934,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 4329010894,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 29.030883522,
+          "count": 5269625670.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 742686946,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 29.030883522,
+          "count": 5112375362.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 742686946,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 29.030883522,
+          "count": 1125438936.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 742686946,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 29.030883522,
+          "count": 5990144.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 742686946,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 29.030883522,
+          "count": 336773531.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 741288374,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 29.030883522,
+          "count": 87168754.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 743691063,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 29.030883522,
+          "count": 1113.81,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1113811661,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 29.030883522,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1113803105,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 29.030883522,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1113795480,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 30.032024101,
+          "count": 6531066950.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 1050409086,
+          "runningPercent": 67.0
+        },
+        {
+          "intervalEndSeconds": 30.032024101,
+          "count": 11117692221.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 1050409086,
+          "runningPercent": 67.0
+        },
+        {
+          "intervalEndSeconds": 30.032024101,
+          "count": 2534644517.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 1050409086,
+          "runningPercent": 67.0
+        },
+        {
+          "intervalEndSeconds": 30.032024101,
+          "count": 8240727.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 1050409086,
+          "runningPercent": 67.0
+        },
+        {
+          "intervalEndSeconds": 30.032024101,
+          "count": 617931731.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 1049298352,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 30.032024101,
+          "count": 131938136.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 1035788556,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 30.032024101,
+          "count": 1567.74,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1567742717,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 30.032024101,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1567743118,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 30.032024101,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1567743710,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 31.033169387,
+          "count": 4940826238.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 680225916,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 31.033169387,
+          "count": 3281126672.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 680225916,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 31.033169387,
+          "count": 752492555.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 680225916,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 31.033169387,
+          "count": 243855.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 680225916,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 31.033169387,
+          "count": 216758955.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 680475274,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 31.033169387,
+          "count": 65184212.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 681367758,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 31.033169387,
+          "count": 1021.04,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1021043170,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 31.033169387,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1021043190,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 31.033169387,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1021043009,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 32.034667267,
+          "count": 6208464979.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 1034666864,
+          "runningPercent": 67.0
+        },
+        {
+          "intervalEndSeconds": 32.034667267,
+          "count": 11413552137.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 1034666864,
+          "runningPercent": 67.0
+        },
+        {
+          "intervalEndSeconds": 32.034667267,
+          "count": 2641173737.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 1034666864,
+          "runningPercent": 67.0
+        },
+        {
+          "intervalEndSeconds": 32.034667267,
+          "count": 8008546.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 1034666864,
+          "runningPercent": 67.0
+        },
+        {
+          "intervalEndSeconds": 32.034667267,
+          "count": 633525842.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 1025746210,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 32.034667267,
+          "count": 126076223.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 1027904657,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 32.034667267,
+          "count": 1544.15,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1544151342,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 32.034667267,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1544152012,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 32.034667267,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1544152053,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 33.035582365,
+          "count": 4898567009.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 678109241,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 33.035582365,
+          "count": 4823495585.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 678109241,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 33.035582365,
+          "count": 1077509530.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 678109241,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 33.035582365,
+          "count": 287139.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 678109241,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 33.035582365,
+          "count": 317324994.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 679690059,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 33.035582365,
+          "count": 82662992.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 681431753,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 33.035582365,
+          "count": 1019.62,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1019621707,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 33.035582365,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1019620636,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 33.035582365,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1019620335,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 34.036654799,
+          "count": 4953351641.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 779895785,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 34.036654799,
+          "count": 8467005408.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 779895785,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 34.036654799,
+          "count": 1962892962.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 779895785,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 34.036654799,
+          "count": 4935174.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 779895785,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 34.036654799,
+          "count": 501957845.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 775809945,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 34.036654799,
+          "count": 103408257.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 776427011,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 34.036654799,
+          "count": 1166.06,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1166058953,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 34.036654799,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1166059714,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 34.036654799,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1166060114,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 35.037776102,
+          "count": 4885166155.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 680139431,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 35.037776102,
+          "count": 4388334940.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 680139431,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 35.037776102,
+          "count": 970234697.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 680139431,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 35.037776102,
+          "count": 288263.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 680139431,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 35.037776102,
+          "count": 286707081.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 680914708,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 35.037776102,
+          "count": 70464518.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 681497095,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 35.037776102,
+          "count": 1021.28,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1021283897,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 35.037776102,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1021283446,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 35.037776102,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1021283016,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 36.03880519,
+          "count": 4922092947.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 678060977,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 36.03880519,
+          "count": 4068860976.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 678060977,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 36.03880519,
+          "count": 1008377445.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 678060977,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 36.03880519,
+          "count": 1747591.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 678060977,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 36.03880519,
+          "count": 298494726.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 677293558,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 36.03880519,
+          "count": 60877286.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 678130698,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 36.03880519,
+          "count": 1016.74,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1016735097,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 36.03880519,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1016735849,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 36.03880519,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1016736410,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 37.039929085,
+          "count": 18991664181.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 2962097421,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 37.039929085,
+          "count": 43239385956.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 2962097421,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 37.039929085,
+          "count": 9610514675.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 2962097421,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 37.039929085,
+          "count": 5069655.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 2962097421,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 37.039929085,
+          "count": 2417848331.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 2958261638,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 37.039929085,
+          "count": 591155309.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 2962467615,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 37.039929085,
+          "count": 4441.51,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 4441505420,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 37.039929085,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 4441550093,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 37.039929085,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 4441593694,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 38.0410541,
+          "count": 7576794569.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 1131189098,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 38.0410541,
+          "count": 13406991064.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 1131189098,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 38.0410541,
+          "count": 3136442729.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 1131189098,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 38.0410541,
+          "count": 8587280.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 1131189098,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 38.0410541,
+          "count": 891990264.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 1127291291,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 38.0410541,
+          "count": 162181682.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 1131751403,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 38.0410541,
+          "count": 1695.02,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1695022721,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 38.0410541,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1694977447,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 38.0410541,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1694933566,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 39.042200554,
+          "count": 4981756912.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 677710502,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 39.042200554,
+          "count": 2963271333.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 677710502,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 39.042200554,
+          "count": 726445805.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 677710502,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 39.042200554,
+          "count": 228119.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 677710502,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 39.042200554,
+          "count": 264383094.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 682335126,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 39.042200554,
+          "count": 71136785.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 680084121,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 39.042200554,
+          "count": 1020.07,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 1020071778,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 39.042200554,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 1020071597,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 39.042200554,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 1020071386,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 39.445312495,
+          "count": 1545907778.0,
+          "unit": "",
+          "event": "cycles:u",
+          "eventRunTimeNs": 236514833,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 39.445312495,
+          "count": 2246974065.0,
+          "unit": "",
+          "event": "instructions:u",
+          "eventRunTimeNs": 236514833,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 39.445312495,
+          "count": 565480544.0,
+          "unit": "",
+          "event": "branches:u",
+          "eventRunTimeNs": 236514833,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 39.445312495,
+          "count": 8171080.0,
+          "unit": "",
+          "event": "branch-misses:u",
+          "eventRunTimeNs": 236514833,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 39.445312495,
+          "count": 215578114.0,
+          "unit": "",
+          "event": "cache-references:u",
+          "eventRunTimeNs": 237013672,
+          "runningPercent": 66.0
+        },
+        {
+          "intervalEndSeconds": 39.445312495,
+          "count": 30524987.0,
+          "unit": "",
+          "event": "cache-misses:u",
+          "eventRunTimeNs": 239626591,
+          "runningPercent": 67.0
+        },
+        {
+          "intervalEndSeconds": 39.445312495,
+          "count": 356.56,
+          "unit": "msec",
+          "event": "task-clock:u",
+          "eventRunTimeNs": 356561768,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 39.445312495,
+          "count": 0.0,
+          "unit": "",
+          "event": "context-switches:u",
+          "eventRunTimeNs": 356556218,
+          "runningPercent": 100.0
+        },
+        {
+          "intervalEndSeconds": 39.445312495,
+          "count": 0.0,
+          "unit": "",
+          "event": "cpu-migrations:u",
+          "eventRunTimeNs": 356550898,
+          "runningPercent": 100.0
+        }
+      ],
+      "totals": {
+        "branch-misses:u": {
+          "count": 449309536.0,
+          "unit": "",
+          "runningPercentMin": 66.0,
+          "runningPercentMax": 67.0,
+          "intervals": 40
+        },
+        "branches:u": {
+          "count": 144903655931.0,
+          "unit": "",
+          "runningPercentMin": 66.0,
+          "runningPercentMax": 67.0,
+          "intervals": 40
+        },
+        "cache-misses:u": {
+          "count": 8267373835.0,
+          "unit": "",
+          "runningPercentMin": 66.0,
+          "runningPercentMax": 67.0,
+          "intervals": 40
+        },
+        "cache-references:u": {
+          "count": 36185102269.0,
+          "unit": "",
+          "runningPercentMin": 66.0,
+          "runningPercentMax": 66.0,
+          "intervals": 40
+        },
+        "context-switches:u": {
+          "count": 0.0,
+          "unit": "",
+          "runningPercentMin": 100.0,
+          "runningPercentMax": 100.0,
+          "intervals": 40
+        },
+        "cpu-migrations:u": {
+          "count": 0.0,
+          "unit": "",
+          "runningPercentMin": 100.0,
+          "runningPercentMax": 100.0,
+          "intervals": 40
+        },
+        "cycles:u": {
+          "count": 380834808401.0,
+          "unit": "",
+          "runningPercentMin": 66.0,
+          "runningPercentMax": 67.0,
+          "intervals": 40
+        },
+        "instructions:u": {
+          "count": 638283917788.0,
+          "unit": "",
+          "runningPercentMin": 66.0,
+          "runningPercentMax": 67.0,
+          "intervals": 40
+        },
+        "task-clock:u": {
+          "count": 89361.64,
+          "unit": "msec",
+          "runningPercentMin": 100.0,
+          "runningPercentMax": 100.0,
+          "intervals": 40
+        }
+      },
+      "metrics": {
+        "ipc": 1.6760125485061201,
+        "branchMissFraction": 0.0031007467210761855,
+        "genericCacheMissFraction": 0.22847451897580265,
+        "averageTaskClockCpus": 2.2654565104872035
+      },
+      "unparsedRows": [],
+      "assemblyBlocks": [
+        {
+          "method": "CombatSolver.CombatBeamSolver:BuildProjectedShuffleOrder(CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator,System.Collections.Generic.List`1[CombatSolver.Engine.Common.PredictedCard]):System.ValueTuple`2[CombatSolver.StateFingerprint,int]:this (Tier1-OSR)",
+          "codeBytes": 2439,
+          "instructionLines": 483,
+          "callSites": [
+            "call     [CombatSolver.CombatBeamSolver:CaptureCardStateFingerprintForTesting(CombatSolver.Engine.Common.PredictedCard):CombatSolver.StateFingerprint]",
+            "call     [CombatSolver.SearchPerformanceMetrics:End(int,CombatSolver.SearchMeasurement):this]",
+            "call     [CombatSolver.Engine.Common.PredictedCard:get_Preview():MegaCrit.Sts2.Core.Models.CardModel:this]",
+            "call     [System.Collections.Generic.Dictionary`2[System.__Canon,System.__Canon]:FindValue(System.__Canon):byref:this]",
+            "call     [System.Collections.Generic.Dictionary`2[System.__Canon,System.__Canon]:FindValue(System.__Canon):byref:this]",
+            "call     [System.Collections.Generic.Dictionary`2[System.__Canon,System.__Canon]:FindValue(System.__Canon):byref:this]",
+            "call     [rax+0x20]MegaCrit.Sts2.Core.Models.CardModel:get_Type():int:this",
+            "call     rdi ; Interop+Sys:GetTimestamp():ulong",
+            "call     System.GC:GetAllocatedBytesForCurrentThread():long",
+            "call     CORINFO_HELP_ASSIGN_REF",
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     [System.Diagnostics.StackTrace:.ctor(int,ubyte):this]",
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     CORINFO_HELP_NEWARR_1_VC",
+            "call     CORINFO_HELP_ASSIGN_REF",
+            "call     [System.Diagnostics.StackTrace:ToString(int,System.Text.StringBuilder):this]",
+            "call     [System.Text.StringBuilder:ToString():System.String:this]",
+            "call     [System.Collections.Generic.List`1[CombatSolver.SearchPerformanceMetrics+ActiveFrame]:AddWithResize(CombatSolver.SearchPerformanceMetrics+ActiveFrame):this]",
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:.ctor(System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]):this]",
+            "call     CORINFO_HELP_ASSIGN_REF",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:InitializeWithOwner(MegaCrit.Sts2.Core.Models.AbstractModel):this]",
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:.ctor(System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]):this]",
+            "call     CORINFO_HELP_ASSIGN_REF",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:InitializeWithOwner(MegaCrit.Sts2.Core.Models.AbstractModel):this]",
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:.ctor(System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]):this]",
+            "call     CORINFO_HELP_ASSIGN_REF",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:InitializeWithOwner(MegaCrit.Sts2.Core.Models.AbstractModel):this]",
+            "call     CORINFO_HELP_POLL_GC",
+            "call     CORINFO_HELP_GET_NONGCSTATIC_BASE",
+            "call     [rcx+0x10]MegaCrit.Sts2.Core.Models.CardModel:get_CanonicalVars():System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]:this",
+            "call     [rax+0x10]MegaCrit.Sts2.Core.Models.CardModel:get_CanonicalVars():System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]:this",
+            "call     [rax+0x10]MegaCrit.Sts2.Core.Models.CardModel:get_CanonicalVars():System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]:this",
+            "call     [System.ThrowHelper:ThrowArgumentOutOfRange_IndexMustBeLessException()]",
+            "call     CORINFO_HELP_RNGCHKFAIL"
+          ],
+          "stackMemoryOperandLines": 107,
+          "typeGuardLines": [],
+          "scalarFloatingInstructions": [
+            "vmulsd   xmm1, xmm1, qword ptr [reloc @RWD00]",
+            "vmulsd   xmm2, xmm2, qword ptr [reloc @RWD08]",
+            "vcvtsi2sd xmm1, xmm1, edx",
+            "vmulsd   xmm0, xmm0, xmm1",
+            "vroundsd xmm0, xmm0, xmm0, 4",
+            "vcvttsd2si edx, xmm0",
+            "vcvtsi2sd xmm1, xmm1, rdi",
+            "vmulsd   xmm1, xmm1, qword ptr [reloc @RWD64]",
+            "vcvtsi2sd xmm1, xmm1, rdi",
+            "vmulsd   xmm1, xmm1, qword ptr [reloc @RWD64]",
+            "vcvtsi2sd xmm1, xmm1, rax",
+            "vmulsd   xmm1, xmm1, qword ptr [reloc @RWD64]"
+          ],
+          "optimizedWithDynamicPgo": true,
+          "integerMultiplyLines": 5,
+          "rotateLines": [
+            "rol      rax, 27",
+            "rol      rax, 27"
+          ]
+        },
+        {
+          "method": "CombatSolver.CombatBeamSolver:BuildProjectedShuffleOrder(CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator,System.Collections.Generic.List`1[CombatSolver.Engine.Common.PredictedCard]):System.ValueTuple`2[CombatSolver.StateFingerprint,int]:this (Tier1-OSR)",
+          "codeBytes": 2324,
+          "instructionLines": 455,
+          "callSites": [
+            "call     [CombatSolver.CombatBeamSolver:CaptureCardStateFingerprintForTesting(CombatSolver.Engine.Common.PredictedCard):CombatSolver.StateFingerprint]",
+            "call     [CombatSolver.SearchPerformanceMetrics:End(int,CombatSolver.SearchMeasurement):this]",
+            "call     [CombatSolver.Engine.Common.PredictedCard:get_Preview():MegaCrit.Sts2.Core.Models.CardModel:this]",
+            "call     [System.Collections.Generic.Dictionary`2[System.__Canon,System.__Canon]:FindValue(System.__Canon):byref:this]",
+            "call     [System.Collections.Generic.Dictionary`2[System.__Canon,System.__Canon]:FindValue(System.__Canon):byref:this]",
+            "call     [System.Collections.Generic.Dictionary`2[System.__Canon,System.__Canon]:FindValue(System.__Canon):byref:this]",
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:.ctor(System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]):this]",
+            "call     CORINFO_HELP_ASSIGN_REF",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:InitializeWithOwner(MegaCrit.Sts2.Core.Models.AbstractModel):this]",
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:.ctor(System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]):this]",
+            "call     CORINFO_HELP_ASSIGN_REF",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:InitializeWithOwner(MegaCrit.Sts2.Core.Models.AbstractModel):this]",
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:.ctor(System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]):this]",
+            "call     CORINFO_HELP_ASSIGN_REF",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:InitializeWithOwner(MegaCrit.Sts2.Core.Models.AbstractModel):this]",
+            "call     [rax+0x20]MegaCrit.Sts2.Core.Models.CardModel:get_Type():int:this",
+            "call     Interop+Sys:GetTimestamp():ulong",
+            "call     System.GC:GetAllocatedBytesForCurrentThread():long",
+            "call     [CombatSolver.SearchPerformanceMetrics+ActiveFrame:.ctor(int,long,long,System.Nullable`1[int]):this]",
+            "call     CORINFO_HELP_ASSIGN_BYREF",
+            "call     [System.Collections.Generic.List`1[CombatSolver.SearchPerformanceMetrics+ActiveFrame]:AddWithResize(CombatSolver.SearchPerformanceMetrics+ActiveFrame):this]",
+            "call     [rdx+0x10]MegaCrit.Sts2.Core.Models.CardModel:get_CanonicalVars():System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]:this",
+            "call     [rax+0x10]MegaCrit.Sts2.Core.Models.CardModel:get_CanonicalVars():System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]:this",
+            "call     [rax+0x10]MegaCrit.Sts2.Core.Models.CardModel:get_CanonicalVars():System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]:this",
+            "call     [System.ThrowHelper:ThrowArgumentOutOfRange_IndexMustBeLessException()]",
+            "call     CORINFO_HELP_RNGCHKFAIL"
+          ],
+          "stackMemoryOperandLines": 107,
+          "typeGuardLines": [],
+          "scalarFloatingInstructions": [
+            "vmulsd   xmm2, xmm2, qword ptr [reloc @RWD00]",
+            "vmulsd   xmm0, xmm0, qword ptr [reloc @RWD08]",
+            "vcvtsi2sd xmm1, xmm1, edi",
+            "vmulsd   xmm0, xmm0, xmm1",
+            "vroundsd xmm0, xmm0, xmm0, 4",
+            "vcvttsd2si edi, xmm0",
+            "vcvtsi2sd xmm1, xmm1, rdi",
+            "vmulsd   xmm1, xmm1, qword ptr [reloc @RWD64]",
+            "vcvtsi2sd xmm1, xmm1, rdi",
+            "vmulsd   xmm1, xmm1, qword ptr [reloc @RWD64]",
+            "vcvtsi2sd xmm1, xmm1, rdi",
+            "vmulsd   xmm1, xmm1, qword ptr [reloc @RWD64]"
+          ],
+          "optimizedWithDynamicPgo": true,
+          "integerMultiplyLines": 5,
+          "rotateLines": [
+            "rol      rax, 27",
+            "rol      rax, 27"
+          ]
+        },
+        {
+          "method": "CombatSolver.CombatBeamSolver:BuildProjectedShuffleOrder(CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator,System.Collections.Generic.List`1[CombatSolver.Engine.Common.PredictedCard]):System.ValueTuple`2[CombatSolver.StateFingerprint,int]:this (Tier1)",
+          "codeBytes": 3276,
+          "instructionLines": 662,
+          "callSites": [
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     [System.Collections.Generic.List`1[System.__Canon]:Sort(int,int,System.Collections.Generic.IComparer`1[System.__Canon]):this]",
+            "call     CORINFO_HELP_ARRADDR_ST",
+            "call     CORINFO_HELP_ARRADDR_ST",
+            "call     [CombatSolver.CombatBeamSolver:CaptureCardStateFingerprintForTesting(CombatSolver.Engine.Common.PredictedCard):CombatSolver.StateFingerprint]",
+            "call     [CombatSolver.SearchPerformanceMetrics:End(int,CombatSolver.SearchMeasurement):this]",
+            "call     [CombatSolver.Engine.Common.PredictedCard:get_Preview():MegaCrit.Sts2.Core.Models.CardModel:this]",
+            "call     [System.Collections.Generic.Dictionary`2[System.__Canon,System.__Canon]:FindValue(System.__Canon):byref:this]",
+            "call     [System.Collections.Generic.Dictionary`2[System.__Canon,System.__Canon]:FindValue(System.__Canon):byref:this]",
+            "call     [System.Collections.Generic.Dictionary`2[System.__Canon,System.__Canon]:FindValue(System.__Canon):byref:this]",
+            "call     [CombatSolver.Engine.Common.PredictionExtensions:CaptureState(MegaCrit.Sts2.Core.Random.Rng):CombatSolver.Engine.Common.PredictionRngState]",
+            "call     [CombatSolver.Engine.Common.PredictionExtensions:CaptureState(MegaCrit.Sts2.Core.Random.Rng):CombatSolver.Engine.Common.PredictionRngState]",
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:.ctor(System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]):this]",
+            "call     CORINFO_HELP_ASSIGN_REF",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:InitializeWithOwner(MegaCrit.Sts2.Core.Models.AbstractModel):this]",
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:.ctor(System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]):this]",
+            "call     CORINFO_HELP_ASSIGN_REF",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:InitializeWithOwner(MegaCrit.Sts2.Core.Models.AbstractModel):this]",
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:.ctor(System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]):this]",
+            "call     CORINFO_HELP_ASSIGN_REF",
+            "call     [MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet:InitializeWithOwner(MegaCrit.Sts2.Core.Models.AbstractModel):this]",
+            "call     [rax+0x20]MegaCrit.Sts2.Core.Models.CardModel:get_Type():int:this",
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     CORINFO_HELP_NEWSFAST",
+            "call     CORINFO_HELP_STRCNS",
+            "call     CORINFO_HELP_STRCNS",
+            "call     [System.ArgumentOutOfRangeException:.ctor(System.String,System.Object,System.String):this]",
+            "call     CORINFO_HELP_THROW",
+            "call     Interop+Sys:GetTimestamp():ulong",
+            "call     System.GC:GetAllocatedBytesForCurrentThread():long",
+            "call     [CombatSolver.SearchPerformanceMetrics+ActiveFrame:.ctor(int,long,long,System.Nullable`1[int]):this]",
+            "call     CORINFO_HELP_ASSIGN_BYREF",
+            "call     [System.Collections.Generic.List`1[CombatSolver.SearchPerformanceMetrics+ActiveFrame]:AddWithResize(CombatSolver.SearchPerformanceMetrics+ActiveFrame):this]",
+            "call     [rdx+0x10]MegaCrit.Sts2.Core.Models.CardModel:get_CanonicalVars():System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]:this",
+            "call     [rax+0x10]MegaCrit.Sts2.Core.Models.CardModel:get_CanonicalVars():System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]:this",
+            "call     [rax+0x10]MegaCrit.Sts2.Core.Models.CardModel:get_CanonicalVars():System.Collections.Generic.IEnumerable`1[MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVar]:this",
+            "call     [System.ThrowHelper:ThrowArgumentOutOfRange_IndexMustBeLessException()]",
+            "call     CORINFO_HELP_RNGCHKFAIL"
+          ],
+          "stackMemoryOperandLines": 129,
+          "typeGuardLines": [],
+          "scalarFloatingInstructions": [
+            "vmulsd   xmm0, xmm0, qword ptr [reloc @RWD00]",
+            "vcvtsi2sd xmm1, xmm1, eax",
+            "vmulsd   xmm0, xmm0, xmm1",
+            "vcvttsd2si edi, xmm0",
+            "vmulsd   xmm2, xmm2, qword ptr [reloc @RWD64]",
+            "vmulsd   xmm0, xmm0, qword ptr [reloc @RWD72]",
+            "vcvtsi2sd xmm1, xmm1, edi",
+            "vmulsd   xmm0, xmm0, xmm1",
+            "vroundsd xmm0, xmm0, xmm0, 4",
+            "vcvttsd2si edi, xmm0",
+            "vcvtsi2sd xmm1, xmm1, rdi",
+            "vmulsd   xmm1, xmm1, qword ptr [reloc @RWD80]",
+            "vcvtsi2sd xmm1, xmm1, rdi",
+            "vmulsd   xmm1, xmm1, qword ptr [reloc @RWD80]",
+            "vcvtsi2sd xmm1, xmm1, rdi",
+            "vmulsd   xmm1, xmm1, qword ptr [reloc @RWD80]"
+          ],
+          "optimizedWithDynamicPgo": true,
+          "integerMultiplyLines": 9,
+          "rotateLines": [
+            "rol      r9, 7",
+            "rol      r8, 45",
+            "rol      r13, 27",
+            "rol      r13, 27",
+            "rol      r13, 27",
+            "rol      r13, 27"
+          ]
+        }
+      ],
+      "result": {
+        "status": "Passed",
+        "wallSeconds": 35.1089037,
+        "quality": {
+          "won": true,
+          "outstandingStolenResource": 0,
+          "projectedBattleHpLost": 15,
+          "strategicHpDeficit": 9,
+          "potionStrategicCost": 0,
+          "projectedBattlePotionCount": 0,
+          "enemyHp": 0,
+          "score": 10001355990,
+          "combatEndedTurn": 3,
+          "theftPolicy": null,
+          "survives": true,
+          "deathSaveUseCount": 0,
+          "growthHpCredit": 0,
+          "growthRewardCount": 0
+        },
+        "solverMetrics": {
+          "totalExpanded": 742,
+          "totalTransitions": 5440,
+          "totalChoiceBranches": 3350,
+          "searchedTurns": 3,
+          "maxParallelConcurrency": 16
+        },
+        "timeBoundaryObserved": false
+      },
+      "limitations": [
+        "Counts scaled when events multiplex; event group keeps cycles/instructions/branches/misses simultaneous.",
+        "Generic cache events do not identify L1/L2/L3/DRAM or prove bandwidth/latency limits.",
+        "No instruction-address CPU sampling, load-latency/IBS or lock/cache-to-cache attribution.",
+        "User-only software context/migration zero values do not prove absence of scheduling.",
+        "Stack-memory operand counts are not measured spill cost or proof every stack access is a register spill.",
+        "DOP16 task-clock occupancy is not proof 16 workers sustain 16-core CPU use; machine has 8 physical cores and SMT.",
+        "Assembly shows all generated optimized variants; no evidence for each variant executed share."
+      ]
+    },
+    "baselineQualityAndRootAndLogicalWorkEqual": true,
+    "rootStampSha256": "90de1af9c94019b2be083643cb5f99bb45a5af40534c7d78de692ed34e1d414e",
+    "artifacts": {
+      "pmu-capability.txt": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/pmu-jit-direction-20261008/pmu-capability.txt",
+        "sha256": "b9472451fac0bd48fde3ee29b6d431e6a3045d4b37dbf032a2964a13c92e5f73"
+      },
+      "pmu-stat.csv": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/pmu-jit-direction-20261008/pmu-stat.csv",
+        "sha256": "4aef6d77ed59075ca7f00b1d00b836dc2d2fb2e43be3c27ebb6eba2038605ced"
+      },
+      "BuildProjectedShuffleOrder.asm": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/pmu-jit-direction-20261008/BuildProjectedShuffleOrder.asm",
+        "sha256": "7f6134f76f2c4929c15515f3f7faf60e3df157f00843bad7f53a49877bfa10eb"
+      },
+      "diagnostic-launcher.log": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/pmu-jit-direction-20261008/diagnostic-launcher.log",
+        "sha256": "ae50e9ab838afdc3d0ed839ebd4390f6c4ef69d10e6dcb2fce2f537573582717"
+      },
+      "diagnostic-command.json": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/pmu-jit-direction-20261008/diagnostic-command.json",
+        "sha256": "2b1d2bcf92a254d3fb4339340d5d4591c6bd2d99460f7869c452130f41770745"
+      },
+      "diagnostic-process.json": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/pmu-jit-direction-20261008/diagnostic-process.json",
+        "sha256": "95db8bec1eb0ca0e42a32b535bb31f3f6d1da38f91c56ad80a5db3aa263e8f95"
+      },
+      "analysis.json": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/pmu-jit-direction-20261008/analysis.json",
+        "sha256": "1c93c9d05b4780a8b0cead820160fefdaf5d62172fafe50b79f3a76e55304000"
+      },
+      "huge-evaluate/result.json": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/pmu-jit-direction-20261008/huge-evaluate/result.json",
+        "sha256": "cb0624db3621b0fa889c063b9f1591548615a63260db5a69cd9c9f626a2c267a"
+      },
+      "huge-evaluate/quality.json": {
+        "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/pmu-jit-direction-20261008/huge-evaluate/quality.json",
+        "sha256": "36d2257aa1b8ef6bc3646860856f5c33d5d189522e586518b08f2dc461d760bf"
+      }
+    }
+  },
+  "sources": [
+    {
+      "title": ".NET 9.0.20 JIT disassembly",
+      "url": "https://github.com/dotnet/runtime/blob/v9.0.20/docs/design/coreclr/jit/viewing-jit-dumps.md"
+    },
+    {
+      "title": "AMD IBS analysis",
+      "url": "https://docs.amd.com/r/en-US/68658-uProf-getting-started-guide/Analyzing-Performance-Using-IBS-Data"
+    }
+  ],
+  "nextHypotheses": [
+    {
+      "path": "src/Engine/Common/NativeModelCloneConcurrency.cs",
+      "finding": "Attached card models do not qualify for independent clone stage. Global BaseLib Gate fallback exists when BaseLib clone patch is loaded.",
+      "status": "Source hypothesis only, lock wait and causal cost not measured."
+    },
+    {
+      "path": "src/Engine/Common/MirroredHookListenerFilter.cs",
+      "finding": "Root-shared statistics use atomic increments and layouts compare ordered sources.",
+      "status": "False sharing/contention cost not established."
+    },
+    {
+      "path": "src/Search/CombatBeamSolver.StateEvaluation.cs",
+      "finding": "Projected shuffle evaluation repeats per-card fingerprint/value reads; generated optimized body has dictionary/model paths.",
+      "status": "No instruction-address weights, variant share or load-latency attribution."
+    }
+  ],
+  "scenarioMatrixStatus": "Existing 29-root corpus and original 17 slow roots retained; no newly generated controlled scale matrix yet.",
+  "nativeKernelStatus": "No new C++/Rust/SIMD/handwritten assembly implementation or speed proof.",
+  "scripts": {
+    ".local/tool-tasks/native-sort-storage-20261008/prototype.py": "from pathlib import Path\nimport re\nroot=Path.cwd();task=root/'.local/tool-tasks/native-sort-storage-20261008'\narchived=(root/'.local/tool-tasks/common-native-sort-20261005/in-place-sort-prototype.patch').read_text()\ndef edit(path,old,new):\n p=root/path;s=p.read_text();assert s.count(old)==1,(path,old,s.count(old));p.write_text(s.replace(old,new))\n# Reuse only the previously audited native metadata and contract source; the\n# mutable per-sort key preparation is replaced by immutable COW-storage metadata.\nfor name in ['src/Engine/Common/NativeCardSortProfile.cs','src/Search/ProjectedShuffleSort.cs','src/Testing/Contracts/Runtime/UnattendedTestRunner.NativeCardSort.cs']:\n header='diff --git a/'+name+' b/'+name+'\\n';block=archived.split(header,1)[1].split('\\ndiff --git ',1)[0]\n lines=block.splitlines();content='\\n'.join(line[1:] for line in lines if line.startswith('+') and not line.startswith('+++'))+'\\n'\n p=root/name;assert not p.exists(),name;p.write_text(content)\np=root/'src/Engine/Common/NativeCardSortProfile.cs';s=p.read_text().replace('private readonly record struct Entry(ModelId Id, int Rank);','internal sealed record Entry(ModelId Id, int Rank);')\na=s.index('    internal bool TryGetKey(');b=s.index('    private static FrozenDictionary',a)\ns=s[:a]+'''    internal bool TryGetKey(PredictedCard card, out int rank, out int upgrade)\n    {\n        if (enabled && card.TryPrepareNativeSortIdentity(this, out rank))\n        {\n            upgrade = card.Preview.CurrentUpgradeLevel;\n            return true;\n        }\n        rank = upgrade = 0;\n        return false;\n    }\n\n    internal bool TryResolveIdentity(CardModel card, out Entry? entry)\n    {\n        if (enabled && Entries.Value.TryGetValue(card.GetType(), out Entry? found)\n            && ReferenceEquals(card.Id, found.Id))\n        {\n            entry = found;\n            return true;\n        }\n        entry = null;\n        return false;\n    }\n\n'''+s[b:];p.write_text(s)\nedit('src/Engine/Common/PredictedCard.cs','        public volatile bool Shared;','''        public volatile bool Shared;\n        // Only immutable native Type/ModelId ordering is shared. The current\n        // upgrade remains on each branch's Preview and is never cached here.\n        public NativeCardSortProfile.Entry? NativeSortIdentity;''')\nedit('src/Engine/Common/PredictedCard.cs','    public CardModel Preview => _previewStorage.Preview ?? _previewStorage.Original;','''    public CardModel Preview => _previewStorage.Preview ?? _previewStorage.Original;\n\n    internal bool TryPrepareNativeSortIdentity(NativeCardSortProfile profile, out int rank)\n    {\n        PreviewStorage storage = _previewStorage;\n        CardModel preview = storage.Preview ?? storage.Original;\n        NativeCardSortProfile.Entry? identity = Volatile.Read(ref storage.NativeSortIdentity);\n        if (identity is null)\n        {\n            if (!profile.TryResolveIdentity(preview, out identity))\n            {\n                rank = 0;\n                return false;\n            }\n            Volatile.Write(ref storage.NativeSortIdentity, identity);\n        }\n        // Keep the per-instance ID check: even a changed ID must fall back before\n        // the list is reordered. New COW storage starts without this metadata.\n        rank = identity!.Rank;\n        return ReferenceEquals(preview.Id, identity.Id);\n    }\n\n    internal int CompareNativeSortIdentity(PredictedCard other)\n    {\n        if (ReferenceEquals(this, other)) return 0;\n        int comparison = _previewStorage.NativeSortIdentity!.Rank.CompareTo(\n            other._previewStorage.NativeSortIdentity!.Rank);\n        return comparison != 0 ? comparison\n            : Preview.CurrentUpgradeLevel.CompareTo(other.Preview.CurrentUpgradeLevel);\n    }''')\np=root/'src/Search/ProjectedShuffleSort.cs';s=p.read_text().replace('PreparedComparison','NativeComparison').replace('left.ComparePreparedSortKey(right)','left.CompareNativeSortIdentity(right)').replace('!profile.TryGetKey(card, out int rank, out int upgrade)','!card.TryPrepareNativeSortIdentity(profile, out _)').replace('            card.PrepareNativeSortKey(rank, upgrade);\\n','').replace('// Wrappers are branch-owned. The pure comparator cannot re-enter gameplay,\\n        // and all scalar keys are refreshed on this lane before the original sort.','// Immutable IDs may be shared by COW previews. Upgrade reads remain\\n        // branch-owned, and the native getter is checked at root capture.');p.write_text(s)\nedit('src/Runtime/CombatRootSnapshot.cs','    public int CapturedCardCount { get; }','    public int CapturedCardCount { get; }\\n    internal NativeCardSortProfile CardSortProfile { get; }')\nedit('src/Runtime/CombatRootSnapshot.cs','        int capturedCardCount,','        int capturedCardCount,\\n        NativeCardSortProfile cardSortProfile,')\nedit('src/Runtime/CombatRootSnapshot.cs','        CapturedCardCount = capturedCardCount;','        CapturedCardCount = capturedCardCount;\\n        CardSortProfile = cardSortProfile;')\nedit('src/Runtime/CombatRootSnapshot.cs','        ContinuationStamp continuationAfter = ContinuationStamp.CaptureLive(state);','''        NativeCardSortProfile cardSortProfile = NativeCardSortProfile.Capture();\n        _ = cardSortProfile.RegisteredTypeCount;\n        ContinuationStamp continuationAfter = ContinuationStamp.CaptureLive(state);''')\nedit('src/Runtime/CombatRootSnapshot.cs','            cardCount,\\n            playerCardIds,','            cardCount,\\n            cardSortProfile,\\n            playerCardIds,')\nedit('src/Search/CombatBeamSolver.cs','    private readonly Player _player = root.PlayerIdentity;','    private readonly Player _player = root.PlayerIdentity;\\n    private readonly NativeCardSortProfile _cardSortProfile = root.CardSortProfile;')\nedit('src/Search/CombatBeamSolver.StateEvaluation.cs','        StableShuffleProjection(cards, shuffleRng);','''        if (ProjectedShuffleSort.TrySort(cards, _cardSortProfile))\n            cards.UnstableShuffle(shuffleRng);\n        else\n            StableShuffleProjection(cards, shuffleRng);''')\nedit('src/Testing/Host/UnattendedTestRunner.Assertions.cs','                runner.SetStage(\"combat_root_snapshot\");','''                runner.SetStage(\"combat_root_snapshot\");\n                if (request.ScenarioId == \"NATIVE-CARD-SORT-PROJECTION\")\n                    runner.AssertNativeCardSortProjection(scenario.CombatState, scenario.Player);''')\np=root/'src/Testing/Contracts/Runtime/UnattendedTestRunner.NativeCardSort.cs';s=p.read_text();s=s.replace('                left.PrepareNativeSortKey(leftRank, leftUpgrade);\\n                right.PrepareNativeSortKey(rightRank, rightUpgrade);\\n','').replace('left.ComparePreparedSortKey(right)','left.CompareNativeSortIdentity(right)');p.write_text(s)\n(task/'prototype-description.txt').write_text('COW PreviewStorage caches only native immutable ordering identity. No per-sort rank/upgrade scratch; retain per-sort instance ID check. Upgrade reads active branch. New storage cache empty. Native methods/root permission same seven gates as old withdrawn variants.\\n')\nprint('PROTOTYPE_CREATED')\n",
+    ".local/tool-tasks/native-sort-storage-20261008/extend-contract.py": "from pathlib import Path\np=Path('src/Testing/Contracts/Runtime/UnattendedTestRunner.NativeCardSort.cs');s=p.read_text()\nold='        CombatPredictionSimulator child = parent.Fork();'\nassert s.count(old)==1\ns=s.replace(old,'''        if (!profile.TryGetKey(first, out _, out _) || !profile.TryGetKey(second, out _, out _))\n            throw new InvalidOperationException(\"Parent immutable metadata was not prepared before Fork.\");\n        CombatPredictionSimulator child = parent.Fork();''')\nold='        Random order = new(20261005);'\nassert s.count(old)==1\ns=s.replace(old,'''        PredictedCard materialized = new(ModelDb.Card<StrikeIronclad>());\n        if (!profile.TryGetKey(materialized, out _, out _))\n            throw new InvalidOperationException(\"Unmaterialized root metadata was not prepared.\");\n        materialized.MaterializePreview();\n        materialized.MutablePreview.UpgradeInternal();\n        PredictedCard cloned = first.Clone();\n        cloned.MutablePreview.UpgradeInternal();\n        Check([first, materialized, cloned, second], profile, parent, true);\n        if (first.Preview.CurrentUpgradeLevel != 0 || cloned.Preview.CurrentUpgradeLevel != 1)\n            throw new InvalidOperationException(\"Clone metadata captured a mutable upgrade.\");\n        CardModel altered = PredictionUtils.CloneCardStateForSimulation(first.Preview);\n        PredictedCard changedId = new(altered, altered);\n        if (!profile.TryGetKey(changedId, out _, out _))\n            throw new InvalidOperationException(\"Changed-ID probe did not start from admitted metadata.\");\n        FieldInfo idField = typeof(AbstractModel).GetFields(\n            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)\n            .Single(field => field.FieldType == typeof(ModelId));\n        ModelId originalId = altered.Id;\n        try\n        {\n            idField.SetValue(altered, new ModelId(originalId.Category, originalId.Entry + \"_SORT_PROBE\"));\n            List<PredictedCard> changedInput = [second, changedId, first], changedBefore = [.. changedInput];\n            if (ProjectedShuffleSort.TrySort(changedInput, profile)\n                || !changedInput.SequenceEqual(changedBefore, ReferenceEqualityComparer.Instance))\n                throw new InvalidOperationException(\"Cached metadata admitted a changed instance ID.\");\n            Check([second, changedId, first], profile, parent, false);\n        }\n        finally { idField.SetValue(altered, originalId); }\n        Check([second, changedId, first], profile, parent, true);\n        Random order = new(20261005);''')\ns=s.replace('SixteenSiblingForks:SevenPatchGates:UnknownVersionAndSource','SixteenSiblingForks:SevenPatchGates:UnknownVersionAndSource:CowMetadata:CloneMaterializeUpgrade:ChangedCachedId')\np.write_text(s)\nprint('COW_CONTRACT_EXTENDED')\n",
+    ".local/tool-tasks/native-sort-storage-20261008/run-screen.py": "import hashlib,json,os,signal,statistics,subprocess,time\nfrom pathlib import Path\nroot=Path.cwd();p=root/'.local/tool-tasks/native-sort-storage-20261008';outroot=p/'screen';outroot.mkdir(exist_ok=True)\nplan={'scope':'Fixed-node Evaluate screen, not whole Coordinator performance acceptance','baselineSource':'499ec165','baselineDll':str(root/'.local/tool-tasks/health-callback-guard-20261008/build-final/CombatSolver.dll'),'candidateDll':str(p/'build-candidate/CombatSolver.dll'),'host':str(p/'harness/OfflineSearchHarness.dll'),'requestDirectory':'/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests','roots':['screen-huge-deck','silent-large-deck','dev-08-regent-boss'],'sequence':['A1','C1','C2','A2'],'profile':'VeryHigh','dop':16,'nodes':10000,'beam':135,'cardBranches':72,'pileBranches':42,'handBranches':54,'budgetMs':60000,'searchMode':'Evaluate','noGcRegionGb':16,'outerTimeoutSeconds':120,'diagnosticInstrumentation':False,'dotnetRuntime':'9.0.20'}\nfor k in ['baselineDll','candidateDll']:plan[k+'Sha256']=hashlib.sha256(Path(plan[k]).read_bytes()).hexdigest()\n(p/'screen-plan.json').write_text(json.dumps(plan,indent=2)+'\\n')\nnative=json.loads((p/'native/result.json').read_text());assert native['status']=='Passed','native contract must pass first'\nrows=[]\nfor scene in plan['roots']:\n request=Path(plan['requestDirectory'])/(scene+'.json');rsha=hashlib.sha256(request.read_bytes()).hexdigest()\n for label in plan['sequence']:\n  out=outroot/scene/label;out.mkdir(parents=True,exist_ok=False)\n  env=os.environ.copy();env['OFFLINE_HARNESS_COMBATSOLVER_DLL']=plan['baselineDll'] if label.startswith('A') else plan['candidateDll']\n  for k in ['OFFLINE_HARNESS_SNAPSHOT_PROBE','DOTNET_PerfMapEnabled','COMBATSOLVER_MEASUREMENT_TRACE','OFFLINE_HARNESS_SHUFFLE_PROBE','OFFLINE_HARNESS_ROOT_PROOF_INSPECTION']:env.pop(k,None)\n  args=['dotnet',plan['host'],'--request',str(request),'--label','native-sort-storage-'+scene+'-'+label,'--out',str(out),'--profile','VeryHigh','--dop','16','--budget-ms','60000','--search-mode','Evaluate','--nodes','10000','--beam','135','--card-branches','72','--pile-branches','42','--hand-branches','54','--enable-no-gc-region','--no-gc-region-budget-gigabytes','16']\n  (out/'command.json').write_text(json.dumps({'command':args,'outerTimeoutSeconds':120,'requestSha256':rsha,'dllSha256':plan[('baselineDll' if label.startswith('A') else 'candidateDll')+'Sha256'],'noProfilerOrCorrectnessInstrumentation':True},indent=2)+'\\n')\n  begin=time.monotonic()\n  with (out/'launcher.log').open('w') as log:\n   child=subprocess.Popen(args,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)\n   try:code=child.wait(timeout=120)\n   except subprocess.TimeoutExpired:\n    os.killpg(child.pid,signal.SIGTERM)\n    try:child.wait(timeout=10)\n    except subprocess.TimeoutExpired:os.killpg(child.pid,signal.SIGKILL);child.wait(timeout=10)\n    (out/'timeout.json').write_text(json.dumps({'status':'TimeoutNoRetry','ownedPid':child.pid,'elapsedSeconds':time.monotonic()-begin,'reaped':True},indent=2)+'\\n');raise\n  assert code==0,(scene,label,code)\n  result=json.loads((out/'result.json').read_text());assert result['status']=='Passed',(scene,label,result.get('error'))\n  m=result['solverMetrics'];stamp=result['rootContinuationStamp']\n  row={'scene':scene,'label':label,'wallSeconds':result['wallSeconds'],'coordinatorMilliseconds':m['totalElapsedMilliseconds'],'peakProcessWorkingSetBytes':result['peakProcessWorkingSetBytes'],'workerAllocatedBytes':m['totalWorkerAllocatedBytes'],'quality':result['comparisonQuality'],'work':{k:m.get(k) for k in ['boundary','selectedExpanded','selectedTransitions','selectedChoiceBranches','totalExpanded','totalTransitions','totalChoiceBranches','searchedTurns','shufflesCrossed','maxParallelConcurrency']},'rootStampSha256':hashlib.sha256(stamp.encode()).hexdigest(),'processWallSeconds':time.monotonic()-begin,'pruneCounters':result['pruneCounters'],'timeBoundaryObserved':result['timeBoundaryObserved']}\n  rows.append(row);(p/'screen-runs.json').write_text(json.dumps(rows,indent=2)+'\\n');print(scene,label,round(row['wallSeconds'],3),row['quality'],row['peakProcessWorkingSetBytes'],flush=True)\n summary=[]\n for scene in plan['roots']:\n  values=[x for x in rows if x['scene']==scene]\n  if len(values)!=4:continue\n  a=[x for x in values if x['label'].startswith('A')];c=[x for x in values if x['label'].startswith('C')]\n  am=statistics.median(x['wallSeconds'] for x in a);cm=statistics.median(x['wallSeconds'] for x in c)\n  summary.append({'scene':scene,'baselineSeconds':[x['wallSeconds'] for x in a],'candidateSeconds':[x['wallSeconds'] for x in c],'baselineMedianSeconds':am,'candidateMedianSeconds':cm,'speedup':am/cm,'maxRssRatio':max(x['peakProcessWorkingSetBytes'] for x in c)/max(x['peakProcessWorkingSetBytes'] for x in a),'qualityEqual':all(x['quality']==values[0]['quality'] for x in values),'workEqual':all(x['work']==values[0]['work'] for x in values),'rootStampEqual':len({x['rootStampSha256'] for x in values})==1,'timeBoundaryObserved':any(x['timeBoundaryObserved'] for x in values)})\n (p/'screen-summary.json').write_text(json.dumps(summary,indent=2)+'\\n')\nprint('FIXED_WORK_SCREEN_COMPLETE',flush=True)\n",
+    ".local/tool-tasks/native-sort-storage-20261008/finalize-screen.py": "from pathlib import Path\nimport hashlib,json,statistics,subprocess\nroot=Path.cwd();p=root/'.local/tool-tasks/native-sort-storage-20261008'\nrows=json.loads((p/'screen-runs.json').read_text());original=json.loads((p/'screen-plan.json').read_text())\nfor row in rows:\n out=p/'screen'/row['scene']/row['label'];quality=json.loads((out/'quality.json').read_text());row['quality']=quality['quality'];row['qualitySource']='quality.json exported SearchCompletion snapshot';row['qualityResultScope']=quality['resultScope']\nsummary=[]\nfor scene in original['roots']:\n values=[x for x in rows if x['scene']==scene];assert len(values)==4\n a=[x for x in values if x['label'].startswith('A')];c=[x for x in values if x['label'].startswith('C')]\n am=statistics.median(x['wallSeconds'] for x in a);cm=statistics.median(x['wallSeconds'] for x in c)\n summary.append({'scene':scene,'baselineSeconds':[x['wallSeconds'] for x in a],'candidateSeconds':[x['wallSeconds'] for x in c],'baselineMedianSeconds':am,'candidateMedianSeconds':cm,'speedup':am/cm,'maxRssRatio':max(x['peakProcessWorkingSetBytes'] for x in c)/max(x['peakProcessWorkingSetBytes'] for x in a),'fullFourteenQualityFieldsEqual':all(x['quality']==values[0]['quality'] for x in values),'qualityFieldCount':len(values[0]['quality']),'logicalWorkEqual':all(x['work']==values[0]['work'] for x in values),'rootStampEqual':len({x['rootStampSha256'] for x in values})==1,'timeBoundaryObserved':any(x['timeBoundaryObserved'] for x in values),'pruneCounterDifferences':{k:[x['pruneCounters'].get(k) for x in values] for k in values[0]['pruneCounters'] if any(x['pruneCounters'].get(k)!=values[0]['pruneCounters'].get(k) for x in values)}})\n(p/'screen-runs.json').write_text(json.dumps(rows,indent=2)+'\\n');(p/'screen-summary.json').write_text(json.dumps(summary,indent=2)+'\\n')\npaths=['src/Engine/Common/PredictedCard.cs','src/Runtime/CombatRootSnapshot.cs','src/Search/CombatBeamSolver.StateEvaluation.cs','src/Search/CombatBeamSolver.cs','src/Testing/Host/UnattendedTestRunner.Assertions.cs','src/Engine/Common/NativeCardSortProfile.cs','src/Search/ProjectedShuffleSort.cs','src/Testing/Contracts/Runtime/UnattendedTestRunner.NativeCardSort.cs']\n(p/'prototype-sources.json').write_text(json.dumps({f:(root/f).read_text() for f in paths},indent=2)+'\\n')\npatch=subprocess.check_output(['git','diff','--',*paths],text=True)\nfor f in paths[5:]:\n d=subprocess.run(['git','diff','--no-index','--','/dev/null',f],capture_output=True,text=True);assert d.returncode==1;patch+=d.stdout\n(p/'prototype.patch').write_text(patch)\nsubprocess.run(['git','restore','--',*paths[:5]],check=True)\nfor f in paths[5:]:(root/f).unlink()\nsubprocess.run(['git','diff','--exit-code','--','src','tools'],check=True)\nprint('SCREEN_FINALIZED_AND_FAILED_PROTOTYPE_RESTORED')\nfor x in summary:print(x['scene'],x['speedup'],x['fullFourteenQualityFieldsEqual'],x['maxRssRatio'])\n",
+    ".local/tool-tasks/pmu-jit-direction-20261008/run-diagnostic.py": "import hashlib,json,os,signal,subprocess,time\nfrom pathlib import Path\nroot=Path.cwd();p=root/'.local/tool-tasks/pmu-jit-direction-20261008';out=p/'huge-evaluate';out.mkdir(exist_ok=False)\nsort=root/'.local/tool-tasks/native-sort-storage-20261008';plan=json.loads((sort/'screen-plan.json').read_text())\na=['dotnet',plan['host'],'--request',plan['requestDirectory']+'/screen-huge-deck.json','--label','pmu-jit-huge-evaluate','--out',str(out),'--profile','VeryHigh','--dop','16','--budget-ms','60000','--search-mode','Evaluate','--nodes','10000','--beam','135','--card-branches','72','--pile-branches','42','--hand-branches','54','--enable-no-gc-region','--no-gc-region-budget-gigabytes','16']\ncmd=['perf','stat','-I','1000','-x',';','-e','{cycles:u,instructions:u,branches:u,branch-misses:u}','-e','cache-references:u,cache-misses:u','-e','task-clock,context-switches,cpu-migrations','-o',str(p/'pmu-stat.csv'),'--',*a]\nenv=os.environ.copy()\nfor k in ['OFFLINE_HARNESS_SNAPSHOT_PROBE','OFFLINE_HARNESS_ROOT_PROOF_INSPECTION','DOTNET_PerfMapEnabled','COMBATSOLVER_MEASUREMENT_TRACE','OFFLINE_HARNESS_SHUFFLE_PROBE']:env.pop(k,None)\nenv['OFFLINE_HARNESS_COMBATSOLVER_DLL']=plan['baselineDll'];env['DOTNET_JitDisasm']='BuildProjectedShuffleOrder';env['DOTNET_JitDisasmOnlyOptimized']='1';env['DOTNET_JitStdOutFile']=str(p/'BuildProjectedShuffleOrder.asm')\nrecord={'scope':'Single baseline hardware/JIT diagnosis, fixed-node Evaluate, not full Coordinator or speed/memory acceptance','command':cmd,'outerTimeoutSeconds':120,'dllSha256':plan['baselineDllSha256'],'sourceRuntime':'499ec165','sourceBase':'1d920dc7','hostSha256':hashlib.sha256(Path(plan['host']).read_bytes()).hexdigest(),'requestSha256':hashlib.sha256(Path(a[3]).read_bytes()).hexdigest(),'env':{k:env[k] for k in ['OFFLINE_HARNESS_COMBATSOLVER_DLL','DOTNET_JitDisasm','DOTNET_JitDisasmOnlyOptimized','DOTNET_JitStdOutFile']},'runtimeVersions':subprocess.check_output(['dotnet','--list-runtimes'],text=True),'cpu':json.loads(subprocess.check_output(['lscpu','-J'],text=True)),'noProductionRuntimeChange':True,'includesStartupAndCleanup':True}\n(p/'diagnostic-command.json').write_text(json.dumps(record,indent=2)+'\\n')\nbegin=time.monotonic()\nwith (p/'diagnostic-launcher.log').open('w') as log:\n proc=subprocess.Popen(cmd,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)\n try:code=proc.wait(timeout=120)\n except subprocess.TimeoutExpired:\n  os.killpg(proc.pid,signal.SIGTERM)\n  try:proc.wait(timeout=10)\n  except subprocess.TimeoutExpired:os.killpg(proc.pid,signal.SIGKILL);proc.wait(timeout=10)\n  (p/'timeout.json').write_text(json.dumps({'status':'TimeoutNoRetry','ownedPid':proc.pid,'reaped':True,'elapsedSeconds':time.monotonic()-begin},indent=2)+'\\n');raise\n(p/'diagnostic-process.json').write_text(json.dumps({'exitCode':code,'elapsedSeconds':time.monotonic()-begin,'ownedPid':proc.pid,'reaped':True},indent=2)+'\\n')\nprint('PMU_JIT_EXIT',code,'seconds',round(time.monotonic()-begin,3),flush=True)\nraise SystemExit(code)\n",
+    ".local/tool-tasks/pmu-jit-direction-20261008/analyze.py": "from pathlib import Path\nimport json,re\np=Path('.local/tool-tasks/pmu-jit-direction-20261008');rows=[];bad=[]\nfor line in (p/'pmu-stat.csv').read_text().splitlines():\n if not line or line.startswith('#'):continue\n fields=line.split(';')\n if len(fields)<6:bad.append(line);continue\n try:row={'intervalEndSeconds':float(fields[0]),'count':float(fields[1]),'unit':fields[2],'event':fields[3],'eventRunTimeNs':int(fields[4]),'runningPercent':float(fields[5])}\n except ValueError:bad.append(line);continue\n rows.append(row)\ntotals={}\nfor name in sorted({r['event'] for r in rows}):\n items=[r for r in rows if r['event']==name];totals[name]={'count':sum(r['count'] for r in items),'unit':items[0]['unit'],'runningPercentMin':min(r['runningPercent'] for r in items),'runningPercentMax':max(r['runningPercent'] for r in items),'intervals':len(items)}\ncount=lambda key:totals[key]['count']\nmetrics={'ipc':count('instructions:u')/count('cycles:u'),'branchMissFraction':count('branch-misses:u')/count('branches:u'),'genericCacheMissFraction':count('cache-misses:u')/count('cache-references:u'),'averageTaskClockCpus':count('task-clock:u')/1000/rows[-1]['intervalEndSeconds']}\nassembly=(p/'BuildProjectedShuffleOrder.asm').read_text();blocks=[]\nfor part in assembly.split('; Assembly listing for method ')[1:]:\n lines=part.splitlines();body='\\n'.join(lines);instructions=[line.strip() for line in lines if re.match(r'^\\s+[a-z][a-z0-9]+\\s',line)]\n calls=[line for line in instructions if line.startswith('call ')];stat={'method':lines[0],'codeBytes':int(re.search(r'; Total bytes of code (\\d+)',body).group(1)),'instructionLines':len(instructions),'callSites':calls,'stackMemoryOperandLines':sum(bool(re.search(r'\\[(?:rbp|rsp)[+-]',line)) for line in instructions),'typeGuardLines':[line for line in instructions if 'type handle' in line.lower()],'scalarFloatingInstructions':[line for line in instructions if any(op in line for op in ['vmulsd','vroundsd','vcvtsi2sd','vcvttsd2si'])],'optimizedWithDynamicPgo':'optimized using Dynamic PGO' in body,'integerMultiplyLines':sum(line.startswith('imul ') for line in instructions),'rotateLines':[line for line in instructions if line.startswith(('rol ','ror ','rorx '))]}\n blocks.append(stat)\nresult=json.loads((p/'huge-evaluate/result.json').read_text());quality=json.loads((p/'huge-evaluate/quality.json').read_text())\nx={'scope':'Whole-process scaled PMU counters include startup/cleanup, single diagnostic; not full Coordinator acceptance, not per-method cost attribution','intervalRows':rows,'totals':totals,'metrics':metrics,'unparsedRows':bad,'assemblyBlocks':blocks,'result':{'status':result['status'],'wallSeconds':result['wallSeconds'],'quality':quality['quality'],'solverMetrics':{k:result['solverMetrics'][k] for k in ['totalExpanded','totalTransitions','totalChoiceBranches','searchedTurns','maxParallelConcurrency']},'timeBoundaryObserved':result['timeBoundaryObserved']},'limitations':['Counts scaled when events multiplex; event group keeps cycles/instructions/branches/misses simultaneous.','Generic cache events do not identify L1/L2/L3/DRAM or prove bandwidth/latency limits.','No instruction-address CPU sampling, load-latency/IBS or lock/cache-to-cache attribution.','User-only software context/migration zero values do not prove absence of scheduling.','Stack-memory operand counts are not measured spill cost or proof every stack access is a register spill.','DOP16 task-clock occupancy is not proof 16 workers sustain 16-core CPU use; machine has 8 physical cores and SMT.','Assembly shows all generated optimized variants; no evidence for each variant executed share.']}\n(p/'analysis.json').write_text(json.dumps(x,indent=2)+'\\n')\nprint('metrics',metrics);print('totals',totals);print('quality',x['result'])\nfor b in blocks:print('jit',b['method'].split(':this ')[-1],b['codeBytes'],b['instructionLines'],'stackMemoryLines',b['stackMemoryOperandLines'],'calls',len(b['callSites']),'PGO',b['optimizedWithDynamicPgo'])\nlast=assembly.split('; Assembly listing for method ')[-1]\nfor lines in [last.splitlines()[:40]]:print('\\n'.join(lines))\nlines=last.splitlines()\nfor i,line in enumerate(lines):\n if 'vroundsd' in line:print('ROUND_CONTEXT\\n'+'\\n'.join(lines[max(0,i-14):i+14]));break\nprint('CALL_SITES\\n'+'\\n'.join(blocks[-1]['callSites']))\n",
+    ".local/tool-tasks/pmu-jit-direction-20261008/finish-report.py": "from pathlib import Path\nimport hashlib,json,shutil,subprocess\nroot=Path.cwd();sort=root/'.local/tool-tasks/native-sort-storage-20261008';pmu=root/'.local/tool-tasks/pmu-jit-direction-20261008'\nload=lambda p:json.loads(p.read_text())\ndef artifact(path):return {'path':str(path),'sha256':hashlib.sha256(path.read_bytes()).hexdigest()}\nscripts={}\nfor task,names in [(sort,['prototype.py','extend-contract.py','run-screen.py','finalize-screen.py']),(pmu,['run-diagnostic.py','analyze.py','finish-report.py'])]:\n for name in names:scripts[str((task/name).relative_to(root))]=(task/name).read_text()\nsummary=load(sort/'screen-summary.json');runs=load(sort/'screen-runs.json');native=load(sort/'native/result.json');analysis=load(pmu/'analysis.json');diagnostic=load(pmu/'huge-evaluate/result.json');control=load(sort/'screen/screen-huge-deck/A1/result.json')\nquality=load(pmu/'huge-evaluate/quality.json')['quality'];aquality=load(sort/'screen/screen-huge-deck/A1/quality.json')['quality']\nassert quality==aquality\nassert diagnostic['rootContinuationStamp']==control['rootContinuationStamp']\nassert all(diagnostic['solverMetrics'][k]==control['solverMetrics'][k] for k in ['totalExpanded','totalTransitions','totalChoiceBranches'])\nassert all(x['fullFourteenQualityFieldsEqual'] and x['qualityFieldCount']==14 and x['logicalWorkEqual'] and x['rootStampEqual'] and not x['timeBoundaryObserved'] for x in summary)\noldsortpath=root/'docs/performance/native-sort-key-research-20261005.json';oldsort=load(oldsortpath)\nfollowup={'date':'2026-10-08','sourceBase':'1d920dc7','runtimeBaseline':'499ec165','decision':'Withdrawn: immutable sort identity in shared PreviewStorage passed native COW/ID/upgrade/Fork/order/RNG tests; no stable gain in all three ACCA fixed-work screens.','plan':load(sort/'screen-plan.json'),'summary':summary,'runs':runs,'native':{k:native.get(k) for k in ['runId','status','elapsedMilliseconds','completedChecks','error']},'artifacts':{n:artifact(sort/n) for n in ['build-candidate.log','build-contract.log','build-harness.log','native-launcher.log','native/result.json','native/timings.json','screen-plan.json','screen-runs.json','screen-summary.json','prototype.patch']},'prototypeSources':load(sort/'prototype-sources.json'),'prototypePatch':(sort/'prototype.patch').read_text(),'description':(sort/'prototype-description.txt').read_text(),'scripts':{k:v for k,v in scripts.items() if 'native-sort-storage' in k},'failures':[{'stage':'native setup','error':'Missing build-output manifest, no native contract ran','artifact':artifact(sort/'native-launcher-missing-manifest.log'),'resolution':'Copied unchanged CombatSolver.json into isolated candidate build output before native launch.'},{'stage':'first Evaluate baseline setup','error':'Old offline host constructor ABI did not include current retained-primary-incumbent parameter; no solver completed','artifact':artifact(sort/'screen-incompatible-host/screen-huge-deck/A1/launcher.log'),'failedPlan':load(sort/'screen-plan-incompatible-host.json'),'resolution':'Built unchanged current offline host source against baseline DLL, archived failed output, used new identical host for every A/C run.'},{'stage':'screen aggregation','error':'Evaluate comparisonQuality is null; initial display/temporary summary compared null values.','resolution':'Read already emitted quality.json SearchCompletion export, asserted all 14 actual fields for all 12 rows without rerunning requests.'}],'limitations':['Fixed-work Evaluate, not complete Coordinator acceptance.','No final fixed regression, complete auto-deployment, new DOP1/2 check or prototype production deployment.','All raw per-run counters retained; prefix-reuse and actual concurrency counter variations are not represented as all-counter equality.','First source build preceded test-only contract extension; final build-contract is source for every successful native/benchmark run.'],'cleanup':{'restoredTrackedSource':True,'removedNewRuntimeAndContractFiles':True,'nativeInstanceRemoved':True,'instanceCleanupLine':'UNATTENDED_INSTANCE_REMOVED path='+str(root/'.local/headless-instances/native-sort-storage-20261008')},'productionDeploymentReused':str(root/'.local/tool-tasks/health-callback-guard-20261008/deployment.json')}\noldsort['cowStorageFollowup20261008']=followup;oldsort['decision']='2026-10-05 scalar-key variants and 2026-10-08 immutable COW identity followup withdrawn; native semantics passed in scope, no stable fixed-work gain; production source restored.';oldsortpath.write_text(json.dumps(oldsort,ensure_ascii=False,indent=2)+'\\n')\nnote='''\\n## 2026-10-08共用预览身份缓存\\n\\n继续1d920dc7/运行时499ec165，尝试在COW PreviewStorage共享不可变原生ModelId/排名，消除每次投影的类型表查找及可变键写入；每次仍检查实例ID，升级直接读取分支Preview。新COW存储不继承缓存，未知/七入口补丁整份回退，原比较入口保持。该方案与前两版每次装饰键不同，但同样未建立收益，已撤回。\\n\\n原生1150c989f11a45d7a6722b6e6a604053通过，26.450秒：603类型/363609对、43排列/RNG案例、16兄弟Fork/父/live全状态，加上父缓存后Fork、Clone、Materialize、升级及缓存后改变ID回退。独立实例退出并清理。缺manifest的首次启动在执行前失败，补输入后才运行合同；全部失败保留。\\n\\n当前CLR9.0.20，新版同一宿主/根/政策，Evaluate、10000节点、VeryHigh/DOP16、Beam135、72/42/54、60000ms、NoGC16GB，每根串行A/C/C/A，外层120秒：\\n\\n| 根 | A秒（两次） | C秒（两次） | 中位倍率 | 峰值变化 |\\n| --- | --- | --- | ---: | ---: |\\n| 铁甲2305张 | 39.451 / 34.403 | 35.850 / 38.024 | 0.9997 | −0.5083% |\\n| 猎手396张 | 5.950 / 5.866 | 5.984 / 5.944 | 0.9906 | +0.1646% |\\n| 储君首领 | 4.377 / 4.389 | 4.408 / 4.386 | 0.9968 | +0.0895% |\\n\\n12次SearchCompletion导出的全部14质量、完整根戳及逻辑工作相同；前缀复用/实际并发计数差异另存，不能称全部非时序计数一致。Evaluate comparisonQuality为空，初次屏幕输出null，最终直接从已有quality.json正确聚合，未重跑。旧宿主首次Evaluate构造签名不兼容在搜索前失败，改为构建未修改的当前宿主源码；失败不计入对照。\\n\\n原型与一次性源码/脚本归档后清理；最终生产及五文件部署仍为499ec165。没有最终Coordinator候选、固定全回归、PR或发布。后续转向[硬件/JIT诊断与方向复盘](pmu-jit-direction-20261008.md)，不继续未建立收益的比较键变体。\\n'''\np=root/'docs/performance/native-sort-key-research-20261005.md';p.write_text(p.read_text()+note)\nrecord={'schemaVersion':1,'date':'2026-10-08','baseCommit':'1d920dc7','runtimeCommit':'499ec165','branch':'perf/common-state-cost-20261005','decision':'Stop minor comparison variants; use PMU/JIT evidence and controlled mechanism/scale data to prioritize parallel utilization, repeated scans and representation. No newly established speedup.','userScope':'Reflect on optimization direction, more complex scenarios, generated assembly/registers and alternative hotspot languages. Existing full-request goals and authorizations persist.','failedSortFollowup':{'evidence':'native-sort-key-research-20261005.json','native':followup['native'],'summary':summary},'pmuJit':{'command':load(pmu/'diagnostic-command.json'),'process':load(pmu/'diagnostic-process.json'),'analysis':analysis,'baselineQualityAndRootAndLogicalWorkEqual':True,'rootStampSha256':hashlib.sha256(diagnostic['rootContinuationStamp'].encode()).hexdigest(),'artifacts':{n:artifact(pmu/n) for n in ['pmu-capability.txt','pmu-stat.csv','BuildProjectedShuffleOrder.asm','diagnostic-launcher.log','diagnostic-command.json','diagnostic-process.json','analysis.json','huge-evaluate/result.json','huge-evaluate/quality.json']}},'sources':[{'title':'.NET 9.0.20 JIT disassembly','url':'https://github.com/dotnet/runtime/blob/v9.0.20/docs/design/coreclr/jit/viewing-jit-dumps.md'},{'title':'AMD IBS analysis','url':'https://docs.amd.com/r/en-US/68658-uProf-getting-started-guide/Analyzing-Performance-Using-IBS-Data'}],'nextHypotheses':[{'path':'src/Engine/Common/NativeModelCloneConcurrency.cs','finding':'Attached card models do not qualify for independent clone stage. Global BaseLib Gate fallback exists when BaseLib clone patch is loaded.','status':'Source hypothesis only, lock wait and causal cost not measured.'},{'path':'src/Engine/Common/MirroredHookListenerFilter.cs','finding':'Root-shared statistics use atomic increments and layouts compare ordered sources.','status':'False sharing/contention cost not established.'},{'path':'src/Search/CombatBeamSolver.StateEvaluation.cs','finding':'Projected shuffle evaluation repeats per-card fingerprint/value reads; generated optimized body has dictionary/model paths.','status':'No instruction-address weights, variant share or load-latency attribution.'}],'scenarioMatrixStatus':'Existing 29-root corpus and original 17 slow roots retained; no newly generated controlled scale matrix yet.','nativeKernelStatus':'No new C++/Rust/SIMD/handwritten assembly implementation or speed proof.','scripts':scripts,'validation':{},'cleanup':{'productionSourceRestored':True,'nativeInstanceRemoved':True,'allSpawnedProcessesReaped':True,'temporarySourcesAndScriptsArchivedBeforeRemoval':True,'deploymentReused':artifact(root/'.local/tool-tasks/health-callback-guard-20261008/deployment.json'),'finalRuntimeDllSha256':'349470cde0c9f2a0120496b9221aa50fbf8fd8580a2429ef434622f5bb9c4628'},'unverified':['Full Coordinator candidate and all original 2x acceptance','Game CLR9.0.7 generated assembly','IBS/load latency/cache-line/lock/wait attribution','New controlled scenario scale matrix','Per-optimized-code-variant executed share','Language boundary and copying cost','Final fixed regression for any new runtime optimization'],'goalStatus':'active'}\n(root/'docs/performance/pmu-jit-direction-20261008.json').write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\\n')\nentries=[('docs/DEVELOPMENT_NOTES.md','# CombatSolver 开发笔记\\n','\\n2026-10-08 [优化方向与硬件/JIT复盘](performance/pmu-jit-direction-20261008.md)：第三排序原型原生及12次交错通过质量，0.9997/0.9906/0.9968倍未建立收益并撤回。一次基线PMU/优化汇编显示全进程平均2.265 CPU、IPC1.676；并行等待/加载延迟尚未归因，转向机制规模及数据访问验证。无新性能交付，生产/部署复用499ec165。\\n'),('docs/TEST_MATRIX.md','# CombatSolver 测试矩阵\\n','\\n2026-10-08 [硬件/JIT方向证据](performance/pmu-jit-direction-20261008.md)：排序合同1150c989f11a45d7a6722b6e6a604053覆盖603类型/363609比较/43案例/16Fork及缓存后ID变化；12次Evaluate交错14质量/根/逻辑工作一致而无收益。一次PMU/JIT基线诊断与控制质量/根/工作一致，计数含启动/清理且multiplex66%～67%，不作整请求验收。失败/原型归档后清理，生产及既有部署保持。\\n'),('docs/performance/README.md','# 性能工作入口\\n','\\n- [优化方向与首轮硬件/JIT诊断](pmu-jit-direction-20261008.md)：收尾第三排序原型，三个交错组无收益；首轮PMU和实际优化汇编，限定并行/访问假设、规模基准与原生内核准入，未新增提速。\\n')]\nfor name,header,entry in entries:\n p=root/name;s=p.read_text();assert s.startswith(header),(name,s[:40]);p.write_text(s.replace(header,header+entry,1))\nfor key in scripts:(root/key).unlink()\nfor task in [sort,pmu]:\n cache=task/'__pycache__'\n if cache.exists():shutil.rmtree(cache)\n(sort/'prototype-description.txt').unlink()\nsubprocess.run(['git','diff','--exit-code','--','src','tools'],check=True)\nprint('REPORTS_WRITTEN_TEMPORARY_SOURCES_REMOVED')\n",
+    ".local/tool-tasks/pmu-jit-direction-20261008/resume-report.py": "from pathlib import Path\nimport json,shutil,subprocess\nroot=Path.cwd();p=root/'.local/tool-tasks/pmu-jit-direction-20261008';sort=root/'.local/tool-tasks/native-sort-storage-20261008';meta=root/'docs/performance/pmu-jit-direction-20261008.json';x=json.loads(meta.read_text())\nfor name,header,entry in [('docs/TEST_MATRIX.md','# CombatSolver 测试入口\\n','\\n2026-10-08 [硬件/JIT方向证据](performance/pmu-jit-direction-20261008.md)：排序合同1150c989f11a45d7a6722b6e6a604053覆盖603类型/363609比较/43案例/16Fork及缓存后ID变化；12次Evaluate交错14质量/根/逻辑工作一致而无收益。一次PMU/JIT基线诊断与控制质量/根/工作一致，计数含启动/清理且multiplex66%～67%，不作整请求验收。失败/原型归档后清理，生产及既有部署保持。\\n'),('docs/performance/README.md','# 性能工作入口\\n','\\n- [优化方向与首轮硬件/JIT诊断](pmu-jit-direction-20261008.md)：收尾第三排序原型，三个交错组无收益；首轮PMU和实际优化汇编，限定并行/访问假设、规模基准与原生内核准入，未新增提速。\\n')]:\n f=root/name;s=f.read_text();assert s.startswith(header);assert entry not in s;f.write_text(s.replace(header,header+entry,1))\nx['reportAssemblyFailure']={'error':'Header guard expected 测试矩阵 but actual maintained heading is 测试入口.','completedBeforeFailure':['Structured sort followup','Sort Markdown append','PMU/JIT structured report','Development entry'],'resolution':'Resumed only TEST_MATRIX/README entries and cleanup, without rebuilding/retesting/reappending completed evidence.'}\nx['scripts'][str((p/'resume-report.py').relative_to(root))]=(p/'resume-report.py').read_text()\nfor key in x['scripts']:(root/key).unlink()\nfor task in [sort,p]:\n cache=task/'__pycache__'\n if cache.exists():shutil.rmtree(cache)\n(sort/'prototype-description.txt').unlink()\nsubprocess.run(['git','diff','--exit-code','--','src','tools'],check=True)\nx['cleanup']['sourceDiffExitCode']=0;x['cleanup']['temporarySourceFileCountAfterCleanup']=0\nmeta.write_text(json.dumps(x,ensure_ascii=False,indent=2)+'\\n')\nprint('REMAINING_REPORT_STEPS_AND_CLEANUP_COMPLETE')\n"
+  },
+  "validation": {
+    "nativeContract": "Passed; 1150c989f11a45d7a6722b6e6a604053",
+    "fixedWorkAcca": "All 12 quality/root/logical-work matches; no stable speedup",
+    "diagnosticControl": "Actual 14 quality/root/logical work equal",
+    "cachedWhitespace": "Passed",
+    "fullWorkspaceDocumentation": {
+      "status": "FailedUnrelatedIncomingFile",
+      "log": ".agents/skills/microbenchmarking/references/writing-benchmarks.md: missing link references/bdn-internals-and-tuning.md\nDOCUMENTATION_FAILED files=632 links=2650 errors=1\n",
+      "cause": "Seven untracked skill packages appeared during work; incoming microbenchmarking reference has one incorrect relative link. Packages and their links preserved unchanged."
+    },
+    "maintainedTrackedDocumentation": {
+      "status": "Passed",
+      "scope": "All tracked maintained Markdown including this task staged docs; excludes incoming untracked skill packages",
+      "log": "SCOPE: All maintained tracked Markdown including all newly staged task documents; preserve seven incoming untracked skill packages. Full workspace check separately reports one broken link in incoming microbenchmarking reference.\nDOCUMENTATION_OK files=601 links=2632 errors=0\n"
+    }
+  },
+  "cleanup": {
+    "productionSourceRestored": true,
+    "nativeInstanceRemoved": true,
+    "allSpawnedProcessesReaped": true,
+    "temporarySourcesAndScriptsArchivedBeforeRemoval": true,
+    "deploymentReused": {
+      "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/health-callback-guard-20261008/deployment.json",
+      "sha256": "41008efe3aac1f0c48a925e64c370eaa2a786159aa6bcc9a100f5c11e5ccedbb"
+    },
+    "finalRuntimeDllSha256": "349470cde0c9f2a0120496b9221aa50fbf8fd8580a2429ef434622f5bb9c4628",
+    "sourceDiffExitCode": 0,
+    "temporarySourceFileCountAfterCleanup": 0
+  },
+  "unverified": [
+    "Full Coordinator candidate and all original 2x acceptance",
+    "Game CLR9.0.7 generated assembly",
+    "IBS/load latency/cache-line/lock/wait attribution",
+    "New controlled scenario scale matrix",
+    "Per-optimized-code-variant executed share",
+    "Language boundary and copying cost",
+    "Final fixed regression for any new runtime optimization"
+  ],
+  "goalStatus": "active",
+  "reportAssemblyFailure": {
+    "error": "Header guard expected 测试矩阵 but actual maintained heading is 测试入口.",
+    "completedBeforeFailure": [
+      "Structured sort followup",
+      "Sort Markdown append",
+      "PMU/JIT structured report",
+      "Development entry"
+    ],
+    "resolution": "Resumed only TEST_MATRIX/README entries and cleanup, without rebuilding/retesting/reappending completed evidence."
+  }
+}
