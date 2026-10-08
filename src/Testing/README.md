@@ -21,6 +21,8 @@
 
 `Contracts/Combat/UnattendedTestRunner.FailureBoundaries.cs` 的 `VerifyPredictionFailureBoundaries` 继续覆盖订阅器的十种类型形状，并增加四种实例的完成事件添加/移除、只读检查和派生同名字段拒绝。沿用 `--verify-prediction-failure-boundaries`（PowerShell：`-VerifyPredictionFailureBoundaries`）入口，不注册测试模型到真实战斗。原生默认回调和根准入的最小证据见[实例通知边界](../../docs/performance/inert-subscriber-call-boundary-20261008.md)。
 
+`Contracts/Search/UnattendedTestRunner.PlayerPotionCallbackBound.cs` 使用 `PLAYER-POTION-CALLBACK-BOUND` / IRONCLAD / NIBBITS_WEAK / HP40、MaxHP80 / 120秒：通过原生 `UsePotionAction` 执行公开移除事件的直接生命重设，验证未知来源退回无限界、正常原版界面回调可认证、16个所属Fork完整状态/历史/RNG和父/live隔离；未知悬停事件、同步测试委托及Harmony修改拒绝，不调用未知来源，清理后新根恢复。它不适配未知回调语义，也不证明所有界面通知闭包。
+
 测试选择与平台命令见 [无人测试](../../docs/HEADLESS_TESTING.md)，当前最小哨兵见 [测试矩阵](../../docs/TEST_MATRIX.md)。长期测试有明确断言、最小入口或 fixture；同一机制优先扩展已有合同。
 
 `Contracts/Combat/UnattendedTestRunner.HandDrawRelicQuery.cs` 通过检查点 `RestoreOnly` 与场景名 `HAND-DRAW-RELICS-PROBE` 复用原生回放建局，逐一核对8种抽牌遗物在回合1～4及已有计数下的原生命令、冻结查询、Fork/RNG/父分支和live隔离；它只验证查询，完整生命周期沿用对应遗物合同。

@@ -344,6 +344,8 @@ StrategicEffectMirrors.Register<TYourPower>(requirements, evaluate, host);
 
 [库存事件原生反例](../performance/potion-inventory-event-proof-20261008.md)表明 `Player.UsedPotionRemoved` 的未知监听器能在清空槽后补药，使两次用药成本18低于冻结下界27。[现行已付成本界](../performance/paid-potion-cost-bound-20261008.md)撤回冻结库存证书，仅用所属分支已记录的非自动用药成本收紧既有精确Smart层；未来免费或补充药水不抵消已付成本。原回复/政策/目标门禁保持，未知回复保留；不授予未知库存事件资格。药水使用前事件、实际界面受众与后续委托仍须独立证明，不能从有限回复推导固定库存。“所有事件为空”的原型会拒绝正常原生界面受众，已撤回。
 
+[用药回复回调证明](../performance/pruning-callback-proof-research-20261008.md)新增 `Player.UsedPotionRemoved` 的根资格检查：未知监听器可以通过原生动作直接重设HP，不能继续使用0回复界。仅接纳审计MVID下精确原版界面方法和目标，核对指定同步依赖、原生单人服务及相关事件；未知直接/悬停回调、同步测试委托或指定方法补丁使现有回复消费者退回无限上界。只冻结拒绝原因，不执行或适配扩展；其他生命、UI信号、子控件、后续注册及完整未来闭包仍需独立证明。
+
 模型镜像登记、原版类型身份和非gameplay清单不能补足证明。下表的组件资格仅表示已检查的来源表通过，不能解释为全部生命事件、界面回调或扩展链安全。
 
 组合达标早停额外读取冻结的 `CombatRootSnapshot.HasVisibleHealingSource`：牌、玩家 Power 和可搜索药水的 `Heal` / `HealPercent` / `RegenPower` 变量，以及已有 `RegenPower`，会保守保留追加搜索；已选路线实际回血也保留追加搜索。变量在主线程完成物化后读取，治疗随从同样可能触发保守回退。这不是完整治疗来源登记或可达收益上界；没有这些元数据的自定义治疗、后续生成的治疗来源，仍可能因玩家战损目标已经达标而少做追加审计。关闭战损达标早停可保留原追加搜索；不改变模拟执行和既有第三方适配合同。
@@ -353,6 +355,7 @@ StrategicEffectMirrors.Register<TYourPower>(requirements, evaluate, host);
 
 | 位置 | 症状 | 状态 |
 |---|---|---|
+| `PredictionPlayerPotionCallbackAudit.Capture` | 用药完成及指定悬停同步来源在稳定根检查，未知受众、版本/布局、测试委托或依赖补丁拒绝回复剪枝；原版精确回调按已审计身份接纳，Fork只共享不可变原因。不是所有生命/UI事件认证，未知语义不自动获得模拟支持 | 封闭回复证明准入，无外部放行入口 |
 | `PredictionRitsuCapabilityAudit.Validate` | 原版模型类型不替代附着行为审计；当前/未来规范宿主能力、未知保存条目及默认构造注入在根/live拒绝，空宿主/仅注册工厂保留 | 无外部认证入口；精确Runtime/Shared契约，仅缓存元数据，不执行未知工厂；其他回调仍需独立审计 |
 | `PredictionRitsuHealingAudit.Validate` | 当前审计运行库的原生Heal入口只接受已核对的空补丁或精确Ritsu治疗前缀；进程级治疗监听器不属于ModHelper列表，也未被镜像，非空时根捕获和live采用边界明确拒绝。只缓存不可变方法/字段元数据，不执行监听器；运行库更新需重新审计，无外部放行入口。这不是其他Ritsu能力、回调或全部扩展的认证 | 封闭语义边界 |
 | `StrategicHpRecoveryBound.CanCertifyRemainingHealingEnvironment` / `RemainingHealingUpperBound` | 只在已审计的原版角色、敌人、卡牌、持续效果、遗物和药水闭包内收紧剩余治疗上界；包括固定Shiv来源、Slither费用随机化及Inky虚弱；敌人集合包含逐项审计的精确SoulNexus，其三个行动与生命周期不授予玩家治疗；另含精确Regent／LouseProgenitor闭包，BurningSticks复制消耗技能的例外仍保守处理。未知来源、附魔／苦难、消耗牌被动与取回来源保守回退无限余量；再生及战后治疗继续计入。第三方语义登记不等于治疗上界证明，没有外部证书注册入口；原战斗模拟支持范围不因此扩大 | 封闭性能证明 |

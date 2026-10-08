@@ -37,7 +37,7 @@ internal sealed class PredictionModHookSubscriberCapture
     // Loadout hooks only configure pre-root state, hand limits or free costs;
     // an empty summon-power configuration cannot add powers later in combat.
     internal bool HasOnlyNonHealingLoadoutSubscribers
-        => RunSubscribers.All(IsNonHealingLoadoutSubscriber)
+        => PotionUseCallbackRejection is null && RunSubscribers.All(IsNonHealingLoadoutSubscriber)
             && CombatSubscribers.All(IsNonHealingLoadoutSubscriber);
 
     private bool IsNonHealingLoadoutSubscriber(AbstractModel subscriber)
@@ -55,6 +55,7 @@ internal sealed class PredictionModHookSubscriberCapture
 
     private static readonly Guid AuditedLoadoutMvid = new("3f51fce1-7ec3-4116-b440-2c31eb754731");
     internal bool HasCertifiedNonHealingSubscribers { get; }
+    internal string? PotionUseCallbackRejection { get; private init; }
     internal bool IsCertifiedNonHealingSubscriberSource(AbstractModel source)
         => HasCertifiedNonHealingSubscribers && IsAuditedNonHealingSubscriberType(source.GetType());
     private bool IsAuditedNonHealingSubscriberType(Type type)
@@ -122,7 +123,8 @@ internal sealed class PredictionModHookSubscriberCapture
             hasBaseLibCardModifiers,
             combatSubscribers.Any(subscriber =>
                 subscriber.GetType().FullName == LoadoutPowerGiverSummonHookTypeName))
-            { AdaptedOnPlay = onPlay };
+            { AdaptedOnPlay = onPlay,
+                PotionUseCallbackRejection = PredictionPlayerPotionCallbackAudit.Capture(combat.Players) };
     }
 
     public static string? CaptureLiveLoadoutSummonPowerState(CombatState combat)

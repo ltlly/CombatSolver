@@ -76,6 +76,8 @@ Smart精确用药层及局部同战损成本比较只消费快照中已支付的
 
 ## 4. 模拟与 Prediction
 
+`PredictionPlayerPotionCallbackAudit` 仅在根捕获检查公开用药完成事件及已声明的原生悬停同步依赖，把拒绝原因冻结进已有subscriber捕获；Fork只读共享字符串，后台不读Player委托、界面对象或同步注册表。未知来源使原整体、组件、剩余回复和已知来源策略失去剪枝资格；它不实现未知回调，也不认证其余生命或界面事件。
+
 `PredictionRitsuHealingAudit` 在主线程根捕获与live采用边界核对原生Heal补丁和进程级治疗监听器；未知回调显式拒绝，Fork不读取运行时注册表。OnPlay来源审计另纳入原生战斗生成超集和固定状态/诅咒来源，初始/永久牌组仍单独覆盖；仅模型身份元数据共享，不扩大任意扩展的语义支持。 `PredictionRitsuCapabilityAudit`同样仅在根/live读取已存在能力宿主、未识别保存条目与默认注入注册表；不调用工厂，不把可变资格带入后台或Fork。
 
 | 位置 | 职责 |
