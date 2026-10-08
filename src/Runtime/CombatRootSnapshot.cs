@@ -41,7 +41,6 @@ internal sealed class CombatRootSnapshot
     public int SearchablePotionCount { get; }
     public int? MinimumSearchablePotionStrategicCost { get; }
     public int ZeroCostSearchablePotionCount { get; }
-    internal ClosedInitialPotionInventory? ClosedPotionInventory { get; }
     public ulong InitialAliveEnemyMask { get; }
     public CombatSide CurrentSide { get; }
     public PlayerTurnPhase PlayerPhase { get; }
@@ -180,8 +179,6 @@ internal sealed class CombatRootSnapshot
         CapturedBaseLibCardModifiers = capturedBaseLibCardModifiers;
         HasUnusedCardReplayAllocator = hasUnusedCardReplayAllocator;
         HasRenewablePotionShapedRock = hasRenewablePotionShapedRock;
-        ClosedPotionInventory = ClosedInitialPotionInventory.Capture(
-            rootSimulator, playerIdentity, hasRenewablePotionShapedRock);
         PostCombatRelicHeal = postCombatRelicHeal;
         PotionRewardOutlook = potionRewardOutlook;
     }

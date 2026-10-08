@@ -129,11 +129,10 @@ internal static partial class StrategicHpRecoveryBound
             ? "branch-component" : null;
     }
 
-    // This explicit source closure is shared by independently audited HP and
-    // potion-inventory proofs. Neither proof is inferred from the other's value.
+    // This source review certifies recovery only; it is not a proof that native
+    // inventory events or UI completion callbacks cannot replenish potion slots.
     internal static string? ComponentRootSourceRejection(
-        CombatPredictionSimulator simulator, Player player, bool requireClosedPotionInventory = false,
-        bool useReviewedSources = false)
+        CombatPredictionSimulator simulator, Player player, bool useReviewedSources = false)
     {
         SimulatedCombatState combat = (SimulatedCombatState)simulator.State.CombatState;
         if (typeof(CardModel).Module.ModuleVersionId != ComponentAuditMvid)
@@ -149,9 +148,6 @@ internal static partial class StrategicHpRecoveryBound
             || combat.RootHasBaseLibCardModifiers
             || combat.AdaptedOnPlay is not null)
             return "extension";
-        if (requireClosedPotionInventory
-            && (combat.RootRunModSubscriberCount != 0 || combat.RootCombatModSubscriberCount != 0))
-            return "inventory-extension";
         var state = simulator.State.GetPlayerCombatState(player);
         foreach (PredictedCard card in state.AllCards.Concat(combat.PendingReturningCards))
             if (!ComponentInitialCard(card.Preview, useReviewedSources))
@@ -167,7 +163,7 @@ internal static partial class StrategicHpRecoveryBound
                         && combat.Allies.Any(ally => ReferenceEquals(ally, monster.Creature)
                             && ReferenceEquals(ally.PetOwner, player)),
                 PotionModel potion => ComponentPotion(potion.GetType()),
-                _ => !requireClosedPotionInventory && combat.IsCertifiedNonHealingSubscriberSource(source)
+                _ => combat.IsCertifiedNonHealingSubscriberSource(source)
                     || ComponentAttachment(source, useReviewedSources)
                     || source.GetType() == typeof(CccComboModel)
                     || source.GetType() == typeof(DebufferModel)

@@ -7,8 +7,8 @@ internal sealed partial class CombatBeamSolver
 {
     // An exact optional-potion layer can affect the Smart selection only if it
     // meets the existing HP-saving threshold after a complete potion-free victory.
-    // Component certification excludes new potion/relic acquisition and HP-growth
-    // sources; branch-unknown sources retain the full counterfactual search.
+    // Component certification supplies the recovery proof. It does not certify
+    // inventory event callbacks; unknown recovery retains the counterfactual search.
     private readonly int? _smartPotionEligibilityHpCeiling =
         (directSearchPurpose == DirectSearchPurpose.SmartPotionGradient
             || CanUseComponentSmartPotionEligibility(root, policy)
@@ -48,7 +48,7 @@ internal sealed partial class CombatBeamSolver
                     potionStrategy: policy.PotionStrategy, effectivePotionPolicy: policy.PotionPolicy) == 0);
 
     private int _smartPotionEligibilityBranchesPruned;
-    private int _closedStockEligibilityBranchesPruned;
+    private int _paidCostEligibilityBranchesPruned;
     internal bool ComponentSmartBoundEnabledForTesting => _smartPotionEligibilityHpCeiling is not null;
     internal int ComponentSmartBoundPrunedForTesting => _smartPotionEligibilityBranchesPruned;
 
@@ -94,14 +94,16 @@ internal sealed partial class CombatBeamSolver
             }
             int lowerBound = StrategicHpLowerBound(node.Snapshot, _strategicBossHpRelief, healing);
             bool oldBoundPrunes = lowerBound > ceiling;
-            bool stockBoundPrunes = !oldBoundPrunes
-                && root.ClosedPotionInventory is { } stock && node.Snapshot.HasSimulator
-                && stock.MinimumExplicitCost((CombatPredictionSimulator)node.Snapshot.Simulator,
-                    _player, _minimumPotionUses, healing) is { } cost
+            // Only costs already recorded by this branch are unavoidable. Future
+            // potions may be free or replenished; frozen slots do not prove otherwise.
+            bool paidCostBoundPrunes = !oldBoundPrunes
+                && root.UsesComponentHealingCertificate
+                && node.Snapshot.ExplicitPotionStrategicCost > 0
                 && SmartPotionEligibilityHpCeilingForCost(_potionFreePolicyBaseline, _minimumPotionUses,
-                    cost, root.PotionRewardOutlook.ReplacementHpCredit, _strategicBossHpRelief) is { } tighter
+                    node.Snapshot.ExplicitPotionStrategicCost,
+                    root.PotionRewardOutlook.ReplacementHpCredit, _strategicBossHpRelief) is { } tighter
                 && lowerBound > tighter;
-            if (oldBoundPrunes || stockBoundPrunes)
+            if (oldBoundPrunes || paidCostBoundPrunes)
             {
                 if (bounded is null)
                 {
@@ -110,8 +112,8 @@ internal sealed partial class CombatBeamSolver
                         bounded.AddRange(retained.GetRange(0, index));
                 }
                 _smartPotionEligibilityBranchesPruned++;
-                if (stockBoundPrunes)
-                    _closedStockEligibilityBranchesPruned++;
+                if (paidCostBoundPrunes)
+                    _paidCostEligibilityBranchesPruned++;
                 continue;
             }
             bounded?.Add(node);
@@ -125,6 +127,6 @@ internal sealed partial class CombatBeamSolver
         if (_smartPotionEligibilityHpCeiling is { } ceiling)
             policy.Diagnostics.Info($"[CombatSolver/Test] SMART_POTION_ELIGIBILITY_BOUND "
                 + $"ceiling={ceiling} pruned={_smartPotionEligibilityBranchesPruned} "
-                + $"closed_stock_extra={_closedStockEligibilityBranchesPruned}");
+                + $"paid_cost_extra={_paidCostEligibilityBranchesPruned}");
     }
 }
