@@ -60,10 +60,13 @@ internal static partial class CombatSearchCoordinator
     {
         // Broad known-source eligibility permits pruning after a victory is found;
         // it does not establish that a speculative plan search is cheap enough to
-        // run before the primary member. Keep the existing certified-root schedule.
+        // run before the primary member. A normal phase after novelty exploration
+        // may reuse the certified-root pilot; active novelty and fixed schedules keep
+        // their ordering. The pilot must still produce a complete qualified victory.
         if (!root.CanCertifyRemainingHealing
             || !policy.UseBeamWidthPortfolio
-            || policy.UseNoveltyPortfolio || policy.IncludeTurnSetup
+            || policy.UseNoveltyPortfolio && (policy.FixedBudget || policy.NoveltySearch != null)
+            || policy.IncludeTurnSetup
             || policy.PortfolioExperiment != null || policy.DevelopmentStrategy != null
             || policy.DisableRefinementIncumbentForTesting || policy.DisableOpeningPlanIncumbentForTesting
             || policy.EffectiveHasGrowthTargets
