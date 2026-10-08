@@ -342,6 +342,8 @@ StrategicEffectMirrors.Register<TYourPower>(requirements, evaluate, host);
 
 [手牌高亮反例](../performance/hand-selection-source-closure-20261008.md)表明普通出牌模式/null过滤器仍会执行独立高亮谓词；[描边来源反例](../performance/hand-notification-patch-proof-20261008.md)进一步复现HasAny=false、选牌/高亮槽为空时实际规则仍额外回血。冻结空规则表、实际扩展牌堆表及空上下文只构成本层条件。[牌堆定位子证明](../performance/native-pile-membership-proof-20261008.md)已核对六堆、当前附加存储和实际相等绑定；定义表为空不能排除已有存储，该子证明也不涵盖原生移堆通知或未来来源。[UI模型getter子证明](../performance/ui-model-getter-proof-20261008.md)只覆盖两个精确单字段读取，返回模型来源和后续效果分别处理。[虚槽常量调用证明](../performance/visual-slot-binding-proof-20261008.md)仅接纳精确实际槽的75次调用，25次IsPlayable因真实Ritsu能力补丁拒绝；10未知拒绝及16分支伤害/Fork通过。callvirt不等于虚方法，24模型目标实际10虚/14非虚。[可打出查询来源证明](../performance/can-play-source-proof-20261008.md)检查实际补丁、宿主及类型缓存，25次查询与78拒绝通过；null能力贡献仍可原生回血2，该局部证明不认证未来能力或完整生命通知。[费用算术子证明](../performance/energy-cost-source-proof-20261008.md)覆盖100原生局部案例及16所属费用/Fork；规范牌原方法提前返回也不能绕过后置能力，显示费用相同仍可回血。局部算术不认证整个费用入口。[能力缓存研究](../performance/cost-hook-audience-proof-20261008.md)验证正常移除清空快照；人工留下候选时false筛选仍能回复生命而不改变受众。缓存一致性须有原生API与无未知修改的前提，不能用Count=0或最终受众为空单独代替。未证明普通API漏洞，未增加生产准入。节点查询、费用/预览/高亮Hook、信号和完整未来闭包仍待核对。来源条件与调用入口资格分别证明，完整生命证书仍0，原型未接入正式根/live拒绝；这类来源没有已完成的正式修复。
 
+[库存事件原生反例](../performance/potion-inventory-event-proof-20261008.md)表明 `Player.UsedPotionRemoved` 的未知监听器能在清空槽后补药，使两次用药成本18低于现有冻结下界27；当前库存资格尚未排除它。药水使用前事件、实际界面受众与后续委托必须单独证明，不能从有限回复推导固定库存。“所有事件为空”的原型会拒绝正常原生界面受众，已经撤回，不是现行门禁。
+
 模型镜像登记、原版类型身份和非gameplay清单不能补足证明。下表的组件资格仅表示已检查的来源表通过，不能解释为全部生命事件、界面回调或扩展链安全。
 
 组合达标早停额外读取冻结的 `CombatRootSnapshot.HasVisibleHealingSource`：牌、玩家 Power 和可搜索药水的 `Heal` / `HealPercent` / `RegenPower` 变量，以及已有 `RegenPower`，会保守保留追加搜索；已选路线实际回血也保留追加搜索。变量在主线程完成物化后读取，治疗随从同样可能触发保守回退。这不是完整治疗来源登记或可达收益上界；没有这些元数据的自定义治疗、后续生成的治疗来源，仍可能因玩家战损目标已经达标而少做追加审计。关闭战损达标早停可保留原追加搜索；不改变模拟执行和既有第三方适配合同。
