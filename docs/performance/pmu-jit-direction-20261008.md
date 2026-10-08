@@ -1,6 +1,6 @@
 # 优化方向复盘与首轮硬件/JIT诊断（2026-10-08）
 
-用户要求先反思长期优化方向，考虑复杂场景、汇编、寄存器和更换热点语言。本轮收尾一个失败排序原型，恢复生产源码，再对现有2,305张铁甲根取得实际PMU和优化JIT汇编。**新的证据支持优先调查并行利用、重复对象访问与数据布局；尚未证明具体锁、缓存层或原生内核是瓶颈。** 没有新增正式提速、PR或发布。
+用户要求先反思长期优化方向，考虑复杂场景、汇编、寄存器和更换热点语言，随后要求按成本与收益推进。首次PMU/JIT调查之后，本页新增同一2,305张铁甲根的Monitor等待与CPU归因，优先级转向完整监听列表的重复构造；一个低成本掩码原型在首轮筛选被拒绝并撤回。**没有新增正式提速、PR或发布；生产仍为499ec165。**
 
 [逐次证据](pmu-jit-direction-20261008.json)保存原始计数、每秒事件运行比例、全部三个优化代码版本、原型/脚本、输入来源和限制。排序跟进的完整结果进入[原排序研究](native-sort-key-research-20261005.md#2026-10-08共用预览身份缓存)，未重复已有成功回归。目标仍为原始慢根完整Coordinator至少两倍、峰值至多+10%、战损不增加；两个用户接受例外及暂停的丢路工作保持原范围。
 
@@ -40,7 +40,7 @@ perf 7.2.9每秒记录用户态计数。cycles/instructions/branches/branch-miss
 | task-clock | 89.362 CPU秒 | 全进程用户态任务时间 |
 | 平均task-clock CPU占用 | 2.265 | 配置DOP16且实际最大并发16，不代表持续16路饱和 |
 
-用户态软件context-switches/migrations报告0，不能据此宣称没有调度或等待。尚未采集加载延迟/IBS、缓存线转移、锁等待或各线程运行/阻塞时间。IPC、cache比例和平均CPU占用构成下一轮调查依据，不能直接证明“内存瓶颈”或“全局锁导致串行”。
+用户态软件context-switches/migrations报告0，不能据此宣称没有调度或等待。首次诊断尚未采集加载延迟/IBS、缓存线转移、锁等待或各线程运行/阻塞时间；下文随后补充Monitor事件及各线程CPU采样，仍没有调度/加载延迟证据。IPC、cache比例和平均CPU占用不能直接证明“内存瓶颈”或“全局锁导致串行”。
 
 按[对应9.0.20官方JIT输出说明](https://github.com/dotnet/runtime/blob/v9.0.20/docs/design/coreclr/jit/viewing-jit-dumps.md)仅输出BuildProjectedShuffleOrder，保留默认tiering/PGO。实际生成两个Tier1-OSR（2439/2324字节）及一个Tier1（3276字节），均标记optimized using Dynamic PGO。Tier1含27个有PGO内联、84个单块内联及两个无PGO内联；已使用整数寄存器、XMM/ZMM、整数乘/旋转和`vmulsd`/`vroundsd`，不是逐条解释C#算术。
 
@@ -48,7 +48,7 @@ perf 7.2.9每秒记录用户态计数。cycles/instructions/branches/branch-miss
 
 ## 后续实施顺序
 
-1. **先定位并行与访问成本。** 在同根独立诊断中取得线程运行/等待、锁、加载延迟及热点指令地址。源码存在带附着牌克隆回退全局Gate、共享监听统计原子写入和逐项布局匹配；它们只是具体假设，必须先量化。AMD加载延迟与缓存归因可用[官方IBS方法](https://docs.amd.com/r/en-US/68658-uProf-getting-started-guide/Analyzing-Performance-Using-IBS-Data)，不能用通用cache-misses替代。
+1. **先定位并行与访问成本。** 下文已经量化同根Monitor等待与最近已解析模组调用归因，优先处理完整列表的构造/扫描。共享监听统计原子写入、实际线程阻塞与加载延迟仍是未验证项；Monitor事件不覆盖这些成本。AMD加载延迟与缓存归因可用[官方IBS方法](https://docs.amd.com/r/en-US/68658-uProf-getting-started-guide/Analyzing-Performance-Using-IBS-Data)，不能用通用cache-misses替代。
 2. **按机制构造规模对照。** 对已确认昂贵路径建立相同语义、不同牌量/重复度/选择宽度的冻结输入，区分近线性重复扫描、组合增长和复制/GC边界。诊断不混入最终性能；优先一次最小机制验证，再做纯交错筛选。
 3. **优化表示和执行次数。** 候选包括分支所有权明确的紧凑数值数据、批量访问、减少大列表全扫描和串行区域。新缓存必须记录命中/旁路/写入；避免再次以大容器阶段占比推断某个字段缓存收益。保持完整状态、RNG、合法配额、排名、资源目标和未知拒绝。
 4. **最后决定SIMD或更换语言。** 已取得连续数值输入、热点足够大且调用可成批时，比较C# intrinsics与C++/Rust内核，计入准备/复制/跨边界调用和峰值。保留精确整数溢出、浮点舍入、相等排序、RNG与未知模型回退。直接把对象遍历翻译成另一语言不会消除依赖链；手写汇编需要额外平台/调用约定证据。还没有任何新原生内核实现或收益证明。
@@ -58,3 +58,79 @@ perf 7.2.9每秒记录用户态计数。cycles/instructions/branches/branch-miss
 ## 收尾范围
 
 排序原型、专属合同及脚本全部归档后清理，恢复src/tools；仅提交研究文档与索引。相同生产源码的成功Release及精确五文件部署复用，未重复部署、提升版本、推送PR、合并或发布。尚未进行游戏9.0.7汇编、IBS/阻塞归因、新规模矩阵、SIMD/原生内核、最终Coordinator候选或全部原始慢根验收。
+
+## 按成本与收益推进的跟进
+
+沿用521f6f2f的源码/报告与349470cd生产DLL，复用现成trace工具、旧的严格事件解析器和当前签名的离线宿主，没有安装新工具或重新构建宿主。两次新诊断回答不同问题，均使用上文相同冻结根、VeryHigh/DOP16、Evaluate10000、60000ms及120秒进程上限；关闭此前JIT输出及宿主探针，保持原政策。两次与既有A1逐项核对14项质量、完整根戳、固定预算和742/5440/3350工作，均无时间边界。
+
+### 执行的源码扫描清单
+
+采用新增.NET分析skill，仅检查26行BaseLibCloneConcurrency与344行MirroredHookListenerFilter，先完整阅读，再执行匹配。清单在结论之前；次数指匹配行，不是已证明的性能问题。完整命令模式、匹配行和手动检查进入JSON的`sourceScan`。
+
+| 检查配方 | 匹配行数 |
+| --- | ---: |
+| IndexOf字面量／Substring／StartsWith或EndsWith字面量／Contains字面量 | 各0 |
+| static readonly Dictionary／FrozenDictionary | 1／0 |
+| 方法内new List／new Dictionary／CurrentCulture比较器 | 各0 |
+| Select、Where、Cast、Take或Aggregate | 1 |
+| ToLower或ToUpper／三连Replace／params／LINQ字符判断 | 各0 |
+| 非sealed实例类（简式及完整配方）／sealed class | 0／3 |
+| IEquatable／async或Task／Regex／IO或JSON信号 | 各0 |
+| Interlocked.Increment／显式新数组 | 11／2 |
+
+手动核对三种具体实例类全部sealed，另有一个sealed record及不可继承的static类；没有双查字典、重复字符串链或需封闭的基类。唯一Where在静态初始化，Any在根捕获/首次程序集探测；HookNames的只读字典只参与首次类型元数据分析。把它改成FrozenDictionary不消除热循环，本轮不实施。11处共享统计原子写入是后续待测假设，不能用Monitor结果认定它们没有成本。没有发现需要立即修复的模式问题；两项低优先级观察是冷路径只读字典和未量化的共享统计。
+
+| 已证明必须修复的严重模式 | 已证明2～10倍的API模式 | 待测观察 |
+| ---: | ---: | ---: |
+| 0 | 0 | 2 |
+
+### Monitor等待
+
+`dotnet-trace 10.0.731102`以启动子进程方式采集9.0.20运行时，明确只开`Microsoft-Windows-DotNETRuntime:0x40004000:5`。复用10月5日解析器配对[运行时ContentionStart/Stop与DurationNs](https://learn.microsoft.com/en-us/dotnet/fundamentals/diagnostics/runtime-contention-events)，严格转换没有重建解析项目。
+
+2578次start与stop全部配对，EventsLost=0、无未配对事件、无缺失已解析模组栈。线程报告等待累计1698.134ms；按start/stop时间戳合并的区间为565.834ms，以报告DurationNs对齐stop估计的并集为685.954ms。两种区间并不等价，不能把累计线程等待或任一并集当作可省的请求墙钟。宿主solver总计32092.705ms，采集进程38.249秒，均只属诊断。
+
+主要线程等待来自PrepareReplayForkSeed 868.089ms、ExecutionChoiceReplayCheckpoint.Fork 632.381ms、预览身份弱表153.585ms；最大单线程累计162.473ms。没有等待栈匹配BaseLibCloneConcurrency。由此降低改写克隆全局锁的优先级；**没有证明该锁无成本，也没有测量持锁、所有自旋、Monitor.Wait空闲、原子写入或操作系统阻塞。**
+
+### 新的CPU归因
+
+另一次独立进程使用perf 7.2.9的199Hz用户态cycles/帧指针采样及生成perf-map。启动到退出20277样本，原日志窗口内18761样本、估计398311118542 cycles；检查没有报告LOST记录。其solver输入/输出对账通过，但40.56秒宿主搜索时间受采样与符号输出影响，不用于验收。
+
+| 最近已解析模组调用（互斥归因） | 用户cycles占比 |
+| --- | ---: |
+| SimulatedCombatState.GetBaseHookListeners | 48.1391% |
+| MirroredHookListenerFilter.Filter | 15.8099% |
+| NormalizeCardAfflictions | 4.3327% |
+| RecordRelicDamageEntry | 3.7509% |
+| NormalizePowerAfflictions | 3.0777% |
+| NormalizeSwordSageReplays | 3.0746% |
+
+前两项互斥合计63.9491%；监听路径采样并集64.5623%。包含路径的GetEffectiveHookListeners 48.5067%与GetBaseHookListeners 48.1630%相互重叠，不能再相加。当前样本的BuildProjectedShuffleOrder包含路径仅0.2113%，支持降低继续研究其标量指令的优先级，不能证明内联部分或其他根为0成本。
+
+有26个线程落在该窗口，多数高权重线程名为CombatSolver expansion worker；最重三线程分别14.509%/13.055%/11.753%。**83.903%的样本没有解析到Solve/ExpansionLane等祖先锚点**，其中多数仍有明确模组叶侧调用；因此不能把它们归到协调线程，不能把3.373%/12.724%的可锚定子集当作完整协调/worker分工，也不声称平均2.265核由协调线程串行造成。帧指针、内联与动态补丁限制调用链覆盖。
+
+首次分析把几条源码方法归在错误的类名下；根据同份生成map修正，样本数及cycle总权重完全保持，没有重采样。初版报告、修正说明均保留；零匹配不构成无成本证据。一次仅解析旧perf数据的命令用了不支持的`--no-callchain`，改为本机帮助列出的`--hide-call-graph`完成丢失事件检查，没有重跑战斗。
+
+### 一个低成本候选的止损
+
+只在单次布局构造内保存最近两种CLR类型及不可变mask，用准确类型比较省去重复弱表读取；没有模型缓存、跨调用/Fork结果或新堆对象。普通候选Release14.405秒、零警告/错误；没有改测试源码或加入性能插桩。
+
+既有MIRRORED-HOOK-FILTER原生合同`c8b84baf38694531982d0c7ebbf12a5a`通过：1675模型、64回调类、原序/重复/外部接收者、64并行布局操作、Fork当前接收者、移除重获/生成失效、碰撞、补丁刷新和原生关键字门禁。live完整根戳保持，实例已删除。这是已有最小合同，未新增16兄弟完整状态/RNG差分或完整战斗质量证明；候选没有新增分支状态。
+
+计划对巨型根及猎手396张根各做A1/C1/C2/A2独立串行Evaluate，先完成目标根首两条：
+
+| 样本 | 宿主wall秒 | 进程峰值bytes | 展开／转移／选择 | 回合内时间截断 |
+| --- | ---: | ---: | --- | ---: |
+| 巨型A1 | 35.5239 | 11950419968 | 742／5440／3350 | 0 |
+| 巨型C1 | 40.8420 | 11987304448 | 552／5198／3195 | 1 |
+
+C1的14项质量、根、政策和预算仍与A1一致（胜利、战损15、战略差9、零药、T3），但工作量与时间边界不一致。**两条不能产生同工作量速度倍率，也不是完整Coordinator或内存验收。** 原保护门槛停止后续C2/A2及哨兵，记录未完成交错组；不修改预算、不重复赌有利样本。候选及其构建产物撤回，源码/补丁/全部失败样本归档，生产源恢复，未扩大最终回归。
+
+### 当前投入顺序与范围
+
+1. 优先量化并减少完整基础监听列表的重复构造、复制和扫描。当前近48%的明确归因比局部比较链更大；保留模型身份、原序、附着来源、不透明追加器和Fork重映射。既有缓存失效规则继续作为正确性边界，不能直接扩大缓存。
+2. 只为此热点构造受控牌量、重复度和移动规模对照。当前巨型根与此前396张完整请求的归因不同，尚不能泛化；本轮没有新增规模矩阵。
+3. 逐项元数据、泛用缓存和小算术降为次要方向。这里的两类型原型已止损；只有新的可测成本证据才重新立项。
+4. 克隆锁改写、手写汇编和原生后端目前证明成本较高。先找到真实可批处理热点及加载/指令权重，不能从配置DOP16或源码有锁推断收益；原子写入与空闲等待仍未排除。
+
+本轮两次独立诊断、一次原生合同、两条被门槛中止的筛选样本，无完整Coordinator候选或最终固定回归。已有成功部署和未变行为的回归复用，未重新构建/部署生产。原始慢根两倍、峰值+10%与战损不增加的目标继续保留，已有两个特定例外及暂停的丢路工作范围不变。

@@ -3699,5 +3699,2081 @@
       "Development entry"
     ],
     "resolution": "Resumed only TEST_MATRIX/README entries and cleanup, without rebuilding/retesting/reappending completed evidence."
+  },
+  "roiFollowup20261008": {
+    "date": "2026-10-08",
+    "instruction": "按照成本和收益的比值来做",
+    "sourceHead": "521f6f2f",
+    "productionRuntimeSource": "499ec165",
+    "productionDllSha256": "349470cde0c9f2a0120496b9221aa50fbf8fd8580a2429ef434622f5bb9c4628",
+    "status": "Diagnosis complete; one small candidate withdrawn after screen rejection. Original whole-request optimization objective remains incomplete.",
+    "sourceScan": {
+      "scope": [
+        "src/Engine/Common/BaseLibCloneConcurrency.cs",
+        "src/Engine/Common/MirroredHookListenerFilter.cs"
+      ],
+      "depth": "standard, narrow measured-path source review",
+      "checklist": [
+        {
+          "recipe": "critical.indexof-literal",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "critical.substring",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "critical.starts-ends-literal",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "critical.contains-literal",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "collection.static-dictionary",
+          "matchedLines": 1,
+          "hits": [
+            "src/Engine/Common/MirroredHookListenerFilter.cs:59:    private static readonly Dictionary<string, MirroredHookMask> HookNames = new()"
+          ]
+        },
+        {
+          "recipe": "collection.static-frozen-dictionary",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "collection.new-list",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "collection.new-dictionary",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "collection.current-culture",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "collection.linq-chain",
+          "matchedLines": 1,
+          "hits": [
+            "src/Engine/Common/MirroredHookListenerFilter.cs:134:        .Where(method => HookNames.ContainsKey(method.Name))"
+          ]
+        },
+        {
+          "recipe": "memory.case-conversion",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "memory.chained-replace",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "memory.params",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "memory.linq-char",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "structural.unsealed",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "structural.sealed",
+          "matchedLines": 3,
+          "hits": [
+            "src/Engine/Common/MirroredHookListenerFilter.cs:12:internal sealed class MirroredHookListenerFilter(bool enabled)",
+            "src/Engine/Common/MirroredHookListenerFilter.cs:314:internal sealed class MirroredHookListenerLayout(",
+            "src/Engine/Common/MirroredHookListenerFilter.cs:334:internal sealed class MirroredHookListenerSnapshot("
+          ]
+        },
+        {
+          "recipe": "structural.equatable",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "signal.async",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "signal.regex",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "signal.io-json",
+          "matchedLines": 0,
+          "hits": []
+        },
+        {
+          "recipe": "source.interlocked",
+          "matchedLines": 11,
+          "hits": [
+            "src/Engine/Common/MirroredHookListenerFilter.cs:39:        if (reused) Interlocked.Increment(ref _effectivePrefixReuses);",
+            "src/Engine/Common/MirroredHookListenerFilter.cs:40:        else Interlocked.Increment(ref _effectivePrefixBuilds);",
+            "src/Engine/Common/MirroredHookListenerFilter.cs:45:        if (reused) Interlocked.Increment(ref _listenerPrefixReuses);",
+            "src/Engine/Common/MirroredHookListenerFilter.cs:46:        else Interlocked.Increment(ref _listenerPrefixBuilds);",
+            "src/Engine/Common/MirroredHookListenerFilter.cs:51:        if (split) Interlocked.Increment(ref _listenerSplitBuilds);",
+            "src/Engine/Common/MirroredHookListenerFilter.cs:52:        else Interlocked.Increment(ref _listenerWholeBuilds);",
+            "src/Engine/Common/MirroredHookListenerFilter.cs:152:            Interlocked.Increment(ref _sharedBypasses);",
+            "src/Engine/Common/MirroredHookListenerFilter.cs:172:                    Interlocked.Increment(ref _sharedHits);",
+            "src/Engine/Common/MirroredHookListenerFilter.cs:177:                    Interlocked.Increment(ref _sharedMisses);",
+            "src/Engine/Common/MirroredHookListenerFilter.cs:179:                        Interlocked.Increment(ref _sharedCollisions);",
+            "src/Engine/Common/MirroredHookListenerFilter.cs:185:                Interlocked.Increment(ref _sharedBypasses);"
+          ]
+        },
+        {
+          "recipe": "source.array-new",
+          "matchedLines": 2,
+          "hits": [
+            "src/Engine/Common/MirroredHookListenerFilter.cs:20:        enabled ? new MirroredHookListenerLayout?[SharedLayoutSlots] : [];",
+            "src/Engine/Common/MirroredHookListenerFilter.cs:190:                var entries = new MirroredHookListenerLayout.Entry[source.Count];"
+          ]
+        },
+        {
+          "recipe": "structural.reference-unsealed",
+          "matchedLines": 0,
+          "hits": []
+        }
+      ],
+      "referenceCoverage": "critical, collections, structural; memory detection included after loading reference",
+      "manualReview": {
+        "sealedRatio": "3 of 3 declared concrete instance classes sealed, plus 1 sealed record; static BaseLibCloneConcurrency cannot be inherited",
+        "unsealedSubclasses": 0,
+        "containsKeyThenIndexer": 0,
+        "compoundStringChains": 0,
+        "staticDictionary": "HookNames used by one-time type participation, not per-listener mask hits",
+        "linqChain": "single Where during static BaseHooks initialization; Any in root patch capture and Lazy assembly detection",
+        "interlocked": "root-owned exact diagnostics shared across workers, require measured caller cost before changing"
+      }
+    },
+    "contention": {
+      "command": {
+        "purpose": "Current baseline monitor-contention diagnostic; fixed-node Evaluate, not performance acceptance",
+        "command": [
+          "/home/ltlly/.dotnet/tools/dotnet-trace",
+          "collect",
+          "--providers",
+          "Microsoft-Windows-DotNETRuntime:0x40004000:5",
+          "--format",
+          "NetTrace",
+          "--output",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/contention.nettrace",
+          "--show-child-io",
+          "--",
+          "dotnet",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/native-sort-storage-20261008/harness/OfflineSearchHarness.dll",
+          "--request",
+          "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/screen-huge-deck.json",
+          "--label",
+          "roi-contention-huge-evaluate",
+          "--out",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/huge-evaluate",
+          "--profile",
+          "VeryHigh",
+          "--dop",
+          "16",
+          "--budget-ms",
+          "60000",
+          "--search-mode",
+          "Evaluate",
+          "--nodes",
+          "10000",
+          "--beam",
+          "135",
+          "--card-branches",
+          "72",
+          "--pile-branches",
+          "42",
+          "--hand-branches",
+          "54",
+          "--enable-no-gc-region",
+          "--no-gc-region-budget-gigabytes",
+          "16"
+        ],
+        "outerTimeoutSeconds": 120,
+        "sourceHead": "521f6f2f0a3bd016809d3946ca8f17c2fd38fa77",
+        "sourceRuntime": "499ec165",
+        "dllSha256": "349470cde0c9f2a0120496b9221aa50fbf8fd8580a2429ef434622f5bb9c4628",
+        "hostSha256": "65d7d5c136bf9ca527be565a9cc7288430f8398994056c1ac72f31dca097c2e4",
+        "requestSha256": "9868d91456908a09cfcfd459f4a45cfbcd1a76d52ea209b0bf64727fc2a68388",
+        "environmentOverrides": {
+          "OFFLINE_HARNESS_COMBATSOLVER_DLL": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/health-callback-guard-20261008/build-final/CombatSolver.dll"
+        },
+        "removedEnvironmentKeys": [],
+        "collectorVersion": "10.0.731102+f09edf7ea9a17a86b236b91eb4c458d0469546b6",
+        "nativeGameRuntime": "9.0.7",
+        "offlineRuntime": "9.0.20",
+        "noProductionRuntimeChange": true,
+        "exitCode": 0,
+        "collectorElapsedSeconds": 38.24869573400065,
+        "traceBytes": 18126834
+      },
+      "summary": {
+        "diagnosticOnly": true,
+        "eventsLost": 0,
+        "starts": 2578,
+        "stops": 2578,
+        "matchedWaits": 2578,
+        "unmatched": [],
+        "sumReportedThreadWaitMs": 1698.1338540000022,
+        "observedWaitWallUnionMs": 565.8336710000822,
+        "reportedEndAlignedWallUnionEstimateMs": 685.9544110000361,
+        "emptyStacks": 0,
+        "noResolvedOwnedStack": 0,
+        "baseLibCloneGateStackMatches": 0,
+        "groups": [
+          {
+            "caller": "CombatSolver.CombatBeamSolver.PrepareReplayForkSeed(class CombatSolver.SimulationSnapshot,class System.Object)",
+            "count": 1027,
+            "reportedThreadWaitMs": 868.0888760000004,
+            "observedThreadWaitMs": 840.7823880000633,
+            "maxWaitMs": 4.930383,
+            "missingStacks": 0,
+            "distinctThreads": 16,
+            "observedWaitWallUnionMs": 288.63403800005017,
+            "reportedEndAlignedWallUnionEstimateMs": 293.7139110000171
+          },
+          {
+            "caller": "ExecutionChoiceReplayCheckpoint.Fork",
+            "count": 1138,
+            "reportedThreadWaitMs": 632.3805229999998,
+            "observedThreadWaitMs": 613.0164049999785,
+            "maxWaitMs": 6.361536,
+            "missingStacks": 0,
+            "distinctThreads": 16,
+            "observedWaitWallUnionMs": 269.09583800000655,
+            "reportedEndAlignedWallUnionEstimateMs": 274.43706100002055
+          },
+          {
+            "caller": "CombatSolver.Engine.Common.PredictedCard.PreviewStorage.RegisterIdentity(class MegaCrit.Sts2.Core.Models.CardModel,class MegaCrit.Sts2.Core.Models.CardModel)",
+            "count": 202,
+            "reportedThreadWaitMs": 153.58512599999997,
+            "observedThreadWaitMs": 4.224449000013919,
+            "maxWaitMs": 2.792567,
+            "missingStacks": 0,
+            "distinctThreads": 16,
+            "observedWaitWallUnionMs": 1.8626230000227224,
+            "reportedEndAlignedWallUnionEstimateMs": 108.57735700000194
+          },
+          {
+            "caller": "System.Lazy`1[CombatSolver.Engine.Common.Mirrors.MethodMirrorRegistry`2.LookupResult[System.__Canon,System.__Canon]].ExecutionAndPublication(class System.LazyHelper,bool)",
+            "count": 13,
+            "reportedThreadWaitMs": 24.096567000000004,
+            "observedThreadWaitMs": 23.945682000001398,
+            "maxWaitMs": 3.149273,
+            "missingStacks": 0,
+            "distinctThreads": 11,
+            "observedWaitWallUnionMs": 4.425384000001941,
+            "reportedEndAlignedWallUnionEstimateMs": 4.473097999998572
+          },
+          {
+            "caller": "CombatSolver.CombatBeamSolver.AdmittedJobWave.Publish(class AdmittedJobOutcome)",
+            "count": 95,
+            "reportedThreadWaitMs": 5.419340999999998,
+            "observedThreadWaitMs": 2.646543999999267,
+            "maxWaitMs": 0.778834,
+            "missingStacks": 0,
+            "distinctThreads": 16,
+            "observedWaitWallUnionMs": 1.9071279999989201,
+            "reportedEndAlignedWallUnionEstimateMs": 4.150861000003715
+          },
+          {
+            "caller": "CombatSolver.Engine.Common.Mirrors.MethodMirrorRegistry`2[System.__Canon,System.__Canon].PublishResolvedLookup(class System.Type,value class LookupResult<!0,!1>)",
+            "count": 21,
+            "reportedThreadWaitMs": 5.182683000000002,
+            "observedThreadWaitMs": 4.29145199998311,
+            "maxWaitMs": 0.444174,
+            "missingStacks": 0,
+            "distinctThreads": 13,
+            "observedWaitWallUnionMs": 1.032242999990558,
+            "reportedEndAlignedWallUnionEstimateMs": 1.2376970000022993
+          },
+          {
+            "caller": "CombatSolver.CombatBeamSolver.AdmittedJobWave.WaitForNextOutcome()",
+            "count": 47,
+            "reportedThreadWaitMs": 3.8388080000000007,
+            "observedThreadWaitMs": 2.2332690000021103,
+            "maxWaitMs": 0.702223,
+            "missingStacks": 0,
+            "distinctThreads": 1,
+            "observedWaitWallUnionMs": 2.2332690000021103,
+            "reportedEndAlignedWallUnionEstimateMs": 3.8388079999967886
+          },
+          {
+            "caller": "CombatSolver.Engine.Common.Mirrors.MethodMirrorRegistry`2[System.__Canon,System.__Canon].ResolveLookup(class System.Type)",
+            "count": 5,
+            "reportedThreadWaitMs": 3.090885,
+            "observedThreadWaitMs": 3.0127210000046034,
+            "maxWaitMs": 0.867227,
+            "missingStacks": 0,
+            "distinctThreads": 5,
+            "observedWaitWallUnionMs": 2.1345430000019405,
+            "reportedEndAlignedWallUnionEstimateMs": 2.185782999999901
+          },
+          {
+            "caller": "CombatSolver.Engine.Common.Mirrors.MethodMirrorRegistry`3[System.__Canon,System.__Canon,MegaCrit.Sts2.Core.Entities.Cards.CardLocation].PublishResolvedLookup(class System.Type,value class LookupResult<!0,!1,!2>)",
+            "count": 6,
+            "reportedThreadWaitMs": 1.6530750000000003,
+            "observedThreadWaitMs": 1.5201140000017404,
+            "maxWaitMs": 0.655852,
+            "missingStacks": 0,
+            "distinctThreads": 5,
+            "observedWaitWallUnionMs": 0.9535789999999906,
+            "reportedEndAlignedWallUnionEstimateMs": 0.999097999998412
+          },
+          {
+            "caller": "CombatSolver.CombatBeamSolver.ParallelExpansionExecutor.StandPatJobWave.Publish(class StandPatJobOutcome)",
+            "count": 12,
+            "reportedThreadWaitMs": 0.267537,
+            "observedThreadWaitMs": 0.13512399998217006,
+            "maxWaitMs": 0.052964,
+            "missingStacks": 0,
+            "distinctThreads": 7,
+            "observedWaitWallUnionMs": 0.07980599999427795,
+            "reportedEndAlignedWallUnionEstimateMs": 0.16699899998639012
+          },
+          {
+            "caller": "CombatSolver.Engine.Common.Mirrors.MethodMirrorRegistry`3[System.__Canon,System.__Canon,MegaCrit.Sts2.Core.Entities.Cards.CardLocation].ResolveLookup(class System.Type)",
+            "count": 2,
+            "reportedThreadWaitMs": 0.19813999999999998,
+            "observedThreadWaitMs": 0.1671089999999822,
+            "maxWaitMs": 0.136849,
+            "missingStacks": 0,
+            "distinctThreads": 2,
+            "observedWaitWallUnionMs": 0.1671089999999822,
+            "reportedEndAlignedWallUnionEstimateMs": 0.1981400000022404
+          },
+          {
+            "caller": "CombatSolver.CombatBeamSolver.ParallelExpansionExecutor.RetentionIndexJob.Signal()",
+            "count": 2,
+            "reportedThreadWaitMs": 0.141749,
+            "observedThreadWaitMs": 0.01320599999598926,
+            "maxWaitMs": 0.110598,
+            "missingStacks": 0,
+            "distinctThreads": 1,
+            "observedWaitWallUnionMs": 0.01320599999598926,
+            "reportedEndAlignedWallUnionEstimateMs": 0.14174899999852641
+          },
+          {
+            "caller": "System.Lazy`1[CombatSolver.Engine.Common.Mirrors.MethodMirrorRegistry`3.LookupResult[System.__Canon,System.__Canon,System.Boolean]].ExecutionAndPublication(class System.LazyHelper,bool)",
+            "count": 4,
+            "reportedThreadWaitMs": 0.08918400000000001,
+            "observedThreadWaitMs": 0.03746300000420888,
+            "maxWaitMs": 0.032744,
+            "missingStacks": 0,
+            "distinctThreads": 4,
+            "observedWaitWallUnionMs": 0.02291500000137603,
+            "reportedEndAlignedWallUnionEstimateMs": 0.058254999999917345
+          },
+          {
+            "caller": "CombatSolver.Engine.Common.Mirrors.MethodMirrorRegistry`2[System.__Canon,System.__Canon].Lookup(class System.Type)",
+            "count": 2,
+            "reportedThreadWaitMs": 0.053585999999999995,
+            "observedThreadWaitMs": 0.0065130000039062,
+            "maxWaitMs": 0.034238,
+            "missingStacks": 0,
+            "distinctThreads": 2,
+            "observedWaitWallUnionMs": 0.0065130000039062,
+            "reportedEndAlignedWallUnionEstimateMs": 0.03423800000018673
+          },
+          {
+            "caller": "CombatSolver.CombatBeamSolver.ParallelExpansionExecutor.StandPatJobWave.Take()",
+            "count": 1,
+            "reportedThreadWaitMs": 0.041572,
+            "observedThreadWaitMs": 0.002484000000549713,
+            "maxWaitMs": 0.041572,
+            "missingStacks": 0,
+            "distinctThreads": 1,
+            "observedWaitWallUnionMs": 0.002484000000549713,
+            "reportedEndAlignedWallUnionEstimateMs": 0.04157199999826844
+          },
+          {
+            "caller": "CombatSolver.Engine.Common.Mirrors.MethodMirrorRegistry`3[System.__Canon,System.__Canon,System.Boolean].PublishResolvedLookup(class System.Type,value class LookupResult<!0,!1,!2>)",
+            "count": 1,
+            "reportedThreadWaitMs": 0.006202,
+            "observedThreadWaitMs": 0.0009719999980006833,
+            "maxWaitMs": 0.006202,
+            "missingStacks": 0,
+            "distinctThreads": 1,
+            "observedWaitWallUnionMs": 0.0009719999980006833,
+            "reportedEndAlignedWallUnionEstimateMs": 0.006202000000484986
+          }
+        ],
+        "threads": [
+          {
+            "tid": "349674",
+            "count": 218,
+            "sumReportedThreadWaitMs": 162.472896,
+            "observedWaitWallUnionMs": 140.55285399996592
+          },
+          {
+            "tid": "349673",
+            "count": 244,
+            "sumReportedThreadWaitMs": 157.43918,
+            "observedWaitWallUnionMs": 149.67677799999547
+          },
+          {
+            "tid": "349672",
+            "count": 232,
+            "sumReportedThreadWaitMs": 139.760863,
+            "observedWaitWallUnionMs": 118.84317799999917
+          },
+          {
+            "tid": "349676",
+            "count": 181,
+            "sumReportedThreadWaitMs": 123.245721,
+            "observedWaitWallUnionMs": 106.51022600004399
+          },
+          {
+            "tid": "349675",
+            "count": 174,
+            "sumReportedThreadWaitMs": 117.426494,
+            "observedWaitWallUnionMs": 103.27120999999624
+          },
+          {
+            "tid": "349671",
+            "count": 192,
+            "sumReportedThreadWaitMs": 116.408963,
+            "observedWaitWallUnionMs": 100.10675400001946
+          },
+          {
+            "tid": "349680",
+            "count": 159,
+            "sumReportedThreadWaitMs": 114.146163,
+            "observedWaitWallUnionMs": 96.62387800002034
+          },
+          {
+            "tid": "349678",
+            "count": 163,
+            "sumReportedThreadWaitMs": 107.703526,
+            "observedWaitWallUnionMs": 88.10296299996298
+          },
+          {
+            "tid": "349677",
+            "count": 167,
+            "sumReportedThreadWaitMs": 107.454983,
+            "observedWaitWallUnionMs": 98.28207500001554
+          },
+          {
+            "tid": "349681",
+            "count": 131,
+            "sumReportedThreadWaitMs": 97.687852,
+            "observedWaitWallUnionMs": 93.73037300001488
+          },
+          {
+            "tid": "349679",
+            "count": 144,
+            "sumReportedThreadWaitMs": 95.658031,
+            "observedWaitWallUnionMs": 88.01055800000904
+          },
+          {
+            "tid": "349682",
+            "count": 128,
+            "sumReportedThreadWaitMs": 85.442362,
+            "observedWaitWallUnionMs": 73.67872600000919
+          },
+          {
+            "tid": "349683",
+            "count": 119,
+            "sumReportedThreadWaitMs": 85.043637,
+            "observedWaitWallUnionMs": 76.37331299997095
+          },
+          {
+            "tid": "349684",
+            "count": 118,
+            "sumReportedThreadWaitMs": 74.191611,
+            "observedWaitWallUnionMs": 67.84433700000409
+          },
+          {
+            "tid": "349685",
+            "count": 87,
+            "sumReportedThreadWaitMs": 58.89746,
+            "observedWaitWallUnionMs": 51.261199000005945
+          },
+          {
+            "tid": "349686",
+            "count": 73,
+            "sumReportedThreadWaitMs": 51.273732,
+            "observedWaitWallUnionMs": 40.93171999999686
+          },
+          {
+            "tid": "349663",
+            "count": 48,
+            "sumReportedThreadWaitMs": 3.88038,
+            "observedWaitWallUnionMs": 2.23575300000266
+          }
+        ],
+        "solverTotalElapsedMs": 32092.705,
+        "checks": {
+          "referenceResultPath": ".local/tool-tasks/native-sort-storage-20261008/screen/screen-huge-deck/A1/result.json",
+          "referenceResultSha256": "7e3ae9fbb4e424ad97e488dd9dece462645dda3e30689662a4c0f034da361405",
+          "completeQuality14Equal": true,
+          "rootContinuationStampEqual": true,
+          "rootStampJsonSha256": "7361352d0470bcca62f83f5fff8e05e8c9339c0ccf07866b8968c97c4c530b41",
+          "fixedBudgetEqual": true,
+          "noTimeBoundary": true,
+          "logicalWorkEqual": true
+        },
+        "quality": {
+          "won": true,
+          "outstandingStolenResource": 0,
+          "projectedBattleHpLost": 15,
+          "strategicHpDeficit": 9,
+          "potionStrategicCost": 0,
+          "projectedBattlePotionCount": 0,
+          "enemyHp": 0,
+          "score": 10001355990,
+          "combatEndedTurn": 3,
+          "theftPolicy": null,
+          "survives": true,
+          "deathSaveUseCount": 0,
+          "growthHpCredit": 0,
+          "growthRewardCount": 0
+        },
+        "resultPath": ".local/tool-tasks/roi-contention-20261008/huge-evaluate/result.json",
+        "limits": [
+          "Monitor contention only; omits hold time, spins, Interlocked, uncontented costs and lane work starvation",
+          "Reported DurationNs differs from trace timestamp pairs; end-aligned intervals are estimates, not causal/critical-path savings",
+          "Sums across worker threads overlap; neither sum nor union proves attainable complete-request speedup",
+          "Fixed-node Evaluate, not complete Coordinator performance acceptance"
+        ]
+      },
+      "parserReuse": {
+        "source": ".local/tool-tasks/continuation-fork-contention-20261005/ContentionProbe.cs",
+        "executable": ".local/tool-tasks/continuation-fork-contention-20261005/probe-build/GcTraceAnalysis.dll",
+        "newBuild": false
+      }
+    },
+    "cpu": {
+      "command": {
+        "diagnosticOnly": true,
+        "command": [
+          "perf",
+          "record",
+          "-e",
+          "cycles:u",
+          "-F",
+          "199",
+          "--call-graph",
+          "fp",
+          "-k",
+          "1",
+          "-o",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/cpu/perf.data",
+          "--",
+          "dotnet",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/native-sort-storage-20261008/harness/OfflineSearchHarness.dll",
+          "--request",
+          "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/screen-huge-deck.json",
+          "--label",
+          "roi-huge-thread-cpu",
+          "--out",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/cpu/run",
+          "--profile",
+          "VeryHigh",
+          "--dop",
+          "16",
+          "--budget-ms",
+          "60000",
+          "--search-mode",
+          "Evaluate",
+          "--nodes",
+          "10000",
+          "--beam",
+          "135",
+          "--card-branches",
+          "72",
+          "--pile-branches",
+          "42",
+          "--hand-branches",
+          "54",
+          "--enable-no-gc-region",
+          "--no-gc-region-budget-gigabytes",
+          "16"
+        ],
+        "outerTimeoutSeconds": 120,
+        "envOverrides": {
+          "OFFLINE_HARNESS_COMBATSOLVER_DLL": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/health-callback-guard-20261008/build-final/CombatSolver.dll",
+          "DOTNET_PerfMapEnabled": "3"
+        },
+        "removedEnvironmentKeys": [],
+        "sourceRuntime": "499ec165",
+        "sourceHead": "521f6f2f0a3bd016809d3946ca8f17c2fd38fa77",
+        "dllSha256": "349470cde0c9f2a0120496b9221aa50fbf8fd8580a2429ef434622f5bb9c4628",
+        "hostSha256": "65d7d5c136bf9ca527be565a9cc7288430f8398994056c1ac72f31dca097c2e4",
+        "requestSha256": "9868d91456908a09cfcfd459f4a45cfbcd1a76d52ea209b0bf64727fc2a68388"
+      },
+      "clock": {
+        "realtime": 1791465730.0633595,
+        "monotonic": 41873.27315766,
+        "finishedRealtime": 1791465775.1715837,
+        "finishedMonotonic": 41918.381382296,
+        "exitCode": 0,
+        "tracedProcessId": 350896
+      },
+      "analysis": {
+        "diagnosticOnly": true,
+        "startMonotonic": 41878.84179806709,
+        "endMonotonic": 41918.05279803276,
+        "searchWindowSeconds": 39.210999965667725,
+        "rawSamples": 20277,
+        "includedSamples": 18761,
+        "estimatedUserCycles": 398311118542,
+        "searchMapEntries": 43073,
+        "owners": {
+          "Unanchored": {
+            "cycles": 334195339974,
+            "percentOfIncluded": 83.90309092985078
+          },
+          "CoordinatorSolve": {
+            "cycles": 13435997835,
+            "percentOfIncluded": 3.373241973305156
+          },
+          "WorkerLane": {
+            "cycles": 50679780733,
+            "percentOfIncluded": 12.723667096844062
+          }
+        },
+        "stages": [
+          {
+            "owner": "Unanchored",
+            "stage": "Other",
+            "cycles": 334195339974,
+            "percentOfIncluded": 83.90309092985078
+          },
+          {
+            "owner": "CoordinatorSolve",
+            "stage": "Other",
+            "cycles": 10469105460,
+            "percentOfIncluded": 2.628373894839213
+          },
+          {
+            "owner": "CoordinatorSolve",
+            "stage": "Fork",
+            "cycles": 164142894,
+            "percentOfIncluded": 0.04120971932715253
+          },
+          {
+            "owner": "CoordinatorSolve",
+            "stage": "Replay",
+            "cycles": 1984579232,
+            "percentOfIncluded": 0.4982485146948605
+          },
+          {
+            "owner": "CoordinatorSolve",
+            "stage": "Snapshot",
+            "cycles": 818170249,
+            "percentOfIncluded": 0.20540984444393004
+          },
+          {
+            "owner": "WorkerLane",
+            "stage": "Other",
+            "cycles": 9178248889,
+            "percentOfIncluded": 2.3042914098397675
+          },
+          {
+            "owner": "WorkerLane",
+            "stage": "Replay",
+            "cycles": 20611690869,
+            "percentOfIncluded": 5.174771657002237
+          },
+          {
+            "owner": "WorkerLane",
+            "stage": "Snapshot",
+            "cycles": 14406253169,
+            "percentOfIncluded": 3.616834303228452
+          },
+          {
+            "owner": "WorkerLane",
+            "stage": "Fork",
+            "cycles": 6483587806,
+            "percentOfIncluded": 1.6277697267736042
+          }
+        ],
+        "inclusivePaths": {
+          "ProjectedShuffle": {
+            "cycles": 841574356,
+            "percentOfIncluded": 0.21128568016894564
+          },
+          "StableShuffle": {
+            "cycles": 42347873,
+            "percentOfIncluded": 0.010631858120107841
+          },
+          "CardValue": {
+            "cycles": 0,
+            "percentOfIncluded": 0.0
+          },
+          "DynamicVarBaseValue": {
+            "cycles": 0,
+            "percentOfIncluded": 0.0
+          },
+          "StrategicContext": {
+            "cycles": 0,
+            "percentOfIncluded": 0.0
+          },
+          "ListenerFilter": {
+            "cycles": 63412469192,
+            "percentOfIncluded": 15.920336199531286
+          },
+          "LayoutMatch": {
+            "cycles": 135235548,
+            "percentOfIncluded": 0.033952240272635034
+          },
+          "BaseHookListeners": {
+            "cycles": 191838689333,
+            "percentOfIncluded": 48.16302643903513
+          },
+          "EffectiveHookListeners": {
+            "cycles": 193207584189,
+            "percentOfIncluded": 48.50670121793931
+          },
+          "MirroredHookListeners": {
+            "cycles": 1303561248,
+            "percentOfIncluded": 0.32727212154449203
+          },
+          "ListenerProjection": {
+            "cycles": 0,
+            "percentOfIncluded": 0.0
+          },
+          "HookProjection": {
+            "cycles": 0,
+            "percentOfIncluded": 0.0
+          },
+          "CloneModel": {
+            "cycles": 264017861,
+            "percentOfIncluded": 0.06628433119477697
+          },
+          "CloneGate": {
+            "cycles": 0,
+            "percentOfIncluded": 0.0
+          },
+          "SortComparator": {
+            "cycles": 0,
+            "percentOfIncluded": 0.0
+          },
+          "Retention": {
+            "cycles": 0,
+            "percentOfIncluded": 0.0
+          },
+          "CardNormalize": {
+            "cycles": 48436726286,
+            "percentOfIncluded": 12.160525787806392
+          },
+          "PowerNormalize": {
+            "cycles": 12305945424,
+            "percentOfIncluded": 3.089530984986149
+          },
+          "SwordNormalize": {
+            "cycles": 12246512180,
+            "percentOfIncluded": 3.0746096731690065
+          },
+          "RelicDamage": {
+            "cycles": 14940126936,
+            "percentOfIncluded": 3.7508686653507604
+          }
+        },
+        "nearestOwned": [
+          {
+            "path": "CombatSolver.SimulatedCombatState::GetBaseHookListeners",
+            "cycles": 191743474232,
+            "percentOfIncluded": 48.139121733249226
+          },
+          {
+            "path": "CombatSolver.Engine.Common.MirroredHookListenerFilter::Filter",
+            "cycles": 62972753197,
+            "percentOfIncluded": 15.809941090148058
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::NormalizeCardAfflictions",
+            "cycles": 17257776729,
+            "percentOfIncluded": 4.332737883936386
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::RecordRelicDamageEntry",
+            "cycles": 14940126936,
+            "percentOfIncluded": 3.7508686653507604
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::NormalizePowerAfflictions",
+            "cycles": 12258757407,
+            "percentOfIncluded": 3.0776839601848507
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::NormalizeSwordSageReplays",
+            "cycles": 12246512180,
+            "percentOfIncluded": 3.0746096731690065
+          },
+          {
+            "path": "CombatSolver.Engine.Common.PredictedCard::get_Preview",
+            "cycles": 10587539047,
+            "percentOfIncluded": 2.6581078343369406
+          },
+          {
+            "path": "[no resolved owned frame]",
+            "cycles": 10064553556,
+            "percentOfIncluded": 2.5268070830763767
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictionCardGenerationOptionsEntry [CombatSolver] CombatSolver.Engine.InCombat.Simulation.CombatPredictionHistory::FindLatestCardGenerationOptions",
+            "cycles": 6724974571,
+            "percentOfIncluded": 1.6883722944055561
+          },
+          {
+            "path": "CombatSolver.TriggeredPowerSupport::CompensateHistorySince",
+            "cycles": 6031200232,
+            "percentOfIncluded": 1.5141932904300885
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Simulation.CombatPredictedCardExtensions::HasKeyword",
+            "cycles": 5639622535,
+            "percentOfIncluded": 1.4158837834212576
+          },
+          {
+            "path": "CombatSolver.SimulationCardPileLookupFastPath::Find",
+            "cycles": 5004662444,
+            "percentOfIncluded": 1.2564706861107324
+          },
+          {
+            "path": "CombatSolver.SearchGcPolicy::ReclaimWithinSearch",
+            "cycles": 3065600643,
+            "percentOfIncluded": 0.7696497788516409
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState+ConcatenatedListenerView+<GetEnumerator>d__13::MoveNext",
+            "cycles": 2982485152,
+            "percentOfIncluded": 0.7487828014736956
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::CombatSolver.Engine.Common.ICombatPredictionCreatureSemantics.IsHittable",
+            "cycles": 2456700137,
+            "percentOfIncluded": 0.6167792016433387
+          },
+          {
+            "path": "CombatSolver.Engine.Common.PredictionForkContext::Register",
+            "cycles": 2269604553,
+            "percentOfIncluded": 0.5698069793551799
+          },
+          {
+            "path": "CombatSolver.SearchGcPolicy::CollectGeneration2",
+            "cycles": 2030134763,
+            "percentOfIncluded": 0.5096856875176413
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Simulation.SimCardPileAddResult [CombatSolver] CombatSolver.Engine.InCombat.Simulation.CombatPredictionSimulator::AddToPile",
+            "cycles": 1815277539,
+            "percentOfIncluded": 0.4557436271537541
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::GetEffectiveHookListeners",
+            "cycles": 1796366625,
+            "percentOfIncluded": 0.45099585258265434
+          },
+          {
+            "path": "CombatSolver.SearchGcRuntimeInfo::GetDetailedMemoryInfo",
+            "cycles": 1588894797,
+            "percentOfIncluded": 0.39890796993467775
+          },
+          {
+            "path": "CombatSolver.SimulatedCombatState::RemapCachedModels",
+            "cycles": 1463177574,
+            "percentOfIncluded": 0.3673454005893423
+          },
+          {
+            "path": "CombatSolver.Engine.InCombat.Mirrors.HookMirrors+HookListenerEnumerable+Enumerator::MoveNext",
+            "cycles": 1403275459,
+            "percentOfIncluded": 0.3523063740064869
+          },
+          {
+            "path": "CombatSolver.Engine.Common.SimCardPile [CombatSolver] CombatSolver.Engine.Common.SimCardPile::Fork",
+            "cycles": 801890964,
+            "percentOfIncluded": 0.20132276671946442
+          },
+          {
+            "path": "CombatSolver.PersistentPowerSupport::GetModifiedHandDraw",
+            "cycles": 716506918,
+            "percentOfIncluded": 0.179886245862968
+          },
+          {
+            "path": "CombatSolver.StateFingerprint,int32> [CombatSolver] CombatSolver.CombatBeamSolver::BuildProjectedShuffleOrder",
+            "cycles": 704313129,
+            "percentOfIncluded": 0.17682487287277007
+          }
+        ],
+        "threads": [
+          {
+            "tid": 350918,
+            "cycles": 57790481269,
+            "percentOfIncluded": 14.50887976226711,
+            "byOwner": {
+              "WorkerLane": 6293905326,
+              "Unanchored": 51496575943
+            }
+          },
+          {
+            "tid": 350920,
+            "cycles": 52000002906,
+            "percentOfIncluded": 13.055122110661555,
+            "byOwner": {
+              "WorkerLane": 6056190986,
+              "Unanchored": 45943811920
+            }
+          },
+          {
+            "tid": 350919,
+            "cycles": 46814884400,
+            "percentOfIncluded": 11.753346120832324,
+            "byOwner": {
+              "WorkerLane": 5538184295,
+              "Unanchored": 41276700105
+            }
+          },
+          {
+            "tid": 350921,
+            "cycles": 32768873488,
+            "percentOfIncluded": 8.226954248214058,
+            "byOwner": {
+              "CoordinatorSolve": 2,
+              "Unanchored": 27676313694,
+              "WorkerLane": 5092559792
+            }
+          },
+          {
+            "tid": 350929,
+            "cycles": 29871944990,
+            "percentOfIncluded": 7.499651302565923,
+            "byOwner": {
+              "WorkerLane": 2294574970,
+              "Unanchored": 27577370020
+            }
+          },
+          {
+            "tid": 350923,
+            "cycles": 24150880154,
+            "percentOfIncluded": 6.063320612892559,
+            "byOwner": {
+              "WorkerLane": 3490691053,
+              "Unanchored": 20660189101
+            }
+          },
+          {
+            "tid": 350922,
+            "cycles": 23788023447,
+            "percentOfIncluded": 5.972221798395935,
+            "byOwner": {
+              "WorkerLane": 3054923446,
+              "Unanchored": 20733100001
+            }
+          },
+          {
+            "tid": 350916,
+            "cycles": 23340491438,
+            "percentOfIncluded": 5.85986440033028,
+            "byOwner": {
+              "CoordinatorSolve": 13435997828,
+              "Unanchored": 9904493610
+            }
+          },
+          {
+            "tid": 350925,
+            "cycles": 21765949883,
+            "percentOfIncluded": 5.464559955713334,
+            "byOwner": {
+              "WorkerLane": 2722163636,
+              "Unanchored": 19043786247
+            }
+          },
+          {
+            "tid": 350924,
+            "cycles": 17530927658,
+            "percentOfIncluded": 4.40131516342581,
+            "byOwner": {
+              "CoordinatorSolve": 1,
+              "Unanchored": 14717241758,
+              "WorkerLane": 2813685899
+            }
+          },
+          {
+            "tid": 350932,
+            "cycles": 15522659185,
+            "percentOfIncluded": 3.8971192272563213,
+            "byOwner": {
+              "WorkerLane": 1599595447,
+              "Unanchored": 13923063738
+            }
+          },
+          {
+            "tid": 350930,
+            "cycles": 15460968322,
+            "percentOfIncluded": 3.881631117553078,
+            "byOwner": {
+              "WorkerLane": 2042985395,
+              "Unanchored": 13417982927
+            }
+          },
+          {
+            "tid": 350902,
+            "cycles": 9628613262,
+            "percentOfIncluded": 2.417359901286489,
+            "byOwner": {
+              "Unanchored": 9628613262
+            }
+          },
+          {
+            "tid": 350927,
+            "cycles": 9441237536,
+            "percentOfIncluded": 2.3703173465403693,
+            "byOwner": {
+              "WorkerLane": 2297014936,
+              "Unanchored": 7144222600
+            }
+          },
+          {
+            "tid": 350926,
+            "cycles": 8135887056,
+            "percentOfIncluded": 2.0425960203624367,
+            "byOwner": {
+              "WorkerLane": 2058555104,
+              "Unanchored": 6077331952
+            }
+          },
+          {
+            "tid": 350931,
+            "cycles": 6063881009,
+            "percentOfIncluded": 1.5223981271716855,
+            "byOwner": {
+              "CoordinatorSolve": 1,
+              "Unanchored": 4442449349,
+              "WorkerLane": 1621431659
+            }
+          },
+          {
+            "tid": 350928,
+            "cycles": 2001149757,
+            "percentOfIncluded": 0.5024087111414612,
+            "byOwner": {
+              "CoordinatorSolve": 3,
+              "Unanchored": 4137,
+              "WorkerLane": 2001145617
+            }
+          },
+          {
+            "tid": 350933,
+            "cycles": 1702173172,
+            "percentOfIncluded": 0.4273476417707667,
+            "byOwner": {
+              "WorkerLane": 1702173172
+            }
+          },
+          {
+            "tid": 350896,
+            "cycles": 292130067,
+            "percentOfIncluded": 0.07334218237977615,
+            "byOwner": {
+              "Unanchored": 292130067
+            }
+          },
+          {
+            "tid": 350915,
+            "cycles": 115591854,
+            "percentOfIncluded": 0.02902049393527321,
+            "byOwner": {
+              "Unanchored": 115591854
+            }
+          },
+          {
+            "tid": 350904,
+            "cycles": 104001416,
+            "percentOfIncluded": 0.026110598263159843,
+            "byOwner": {
+              "Unanchored": 104001416
+            }
+          },
+          {
+            "tid": 350962,
+            "cycles": 18264357,
+            "percentOfIncluded": 0.004585449953507665,
+            "byOwner": {
+              "Unanchored": 18264357
+            }
+          },
+          {
+            "tid": 350911,
+            "cycles": 1384592,
+            "percentOfIncluded": 0.0003476157042937282,
+            "byOwner": {
+              "Unanchored": 1384592
+            }
+          },
+          {
+            "tid": 350901,
+            "cycles": 699019,
+            "percentOfIncluded": 0.00017549572870542197,
+            "byOwner": {
+              "Unanchored": 699019
+            }
+          },
+          {
+            "tid": 350905,
+            "cycles": 13244,
+            "percentOfIncluded": 3.325038991750737e-06,
+            "byOwner": {
+              "Unanchored": 13244
+            }
+          },
+          {
+            "tid": 350914,
+            "cycles": 5061,
+            "percentOfIncluded": 1.2706147944163758e-06,
+            "byOwner": {
+              "Unanchored": 5061
+            }
+          }
+        ],
+        "limits": [
+          "User cycles sampling; percentage is not wall time or achievable speedup",
+          "Only frame-pointer stack + generated perf-map resolution; incomplete/unanchored stacks remain separate",
+          "Per-thread sample weight is not thread scheduling/blocked time",
+          "Fixed-node Evaluate and symbol collection overhead; not complete Coordinator acceptance",
+          "Initial literal namespace assumptions corrected against generated map without recollection",
+          "Zero path matches are not zero-cost proofs: methods may inline or sit outside resolved stacks"
+        ],
+        "checks": {
+          "quality14Equal": true,
+          "rootStampEqual": true,
+          "fixedBudgetEqual": true,
+          "logicalWorkEqual": true,
+          "noTimeBoundary": true
+        },
+        "quality": {
+          "won": true,
+          "outstandingStolenResource": 0,
+          "projectedBattleHpLost": 15,
+          "strategicHpDeficit": 9,
+          "potionStrategicCost": 0,
+          "projectedBattlePotionCount": 0,
+          "enemyHp": 0,
+          "score": 10001355990,
+          "combatEndedTurn": 3,
+          "theftPolicy": null,
+          "survives": true,
+          "deathSaveUseCount": 0,
+          "growthHpCredit": 0,
+          "growthRewardCount": 0
+        },
+        "solverTotalElapsedMs": 39181.7139,
+        "sourceInputsHash": "d8fa24fe6c27f3e5422dfa18d76f2dc4bf51c9fb076ab1dfa2007ca56a669a15",
+        "listenerPathsUnionPercent": 64.56228289542057,
+        "nearestBaseAndFilterExclusivePercent": 63.949062823397284,
+        "initialPathCorrections": {
+          "CardValue": "PredictionUtils -> CardChoiceSupport",
+          "DynamicVarBaseValue": "PredictionUtils -> CardChoiceSupport",
+          "Base/Effective/MirroredHookListeners": "CombatPredictionSimulator -> SimulatedCombatState",
+          "savedInitialReport": "cpu-analysis-initial.json",
+          "noTraceRerun": true,
+          "includedSamplesAndWeightUnchanged": true
+        },
+        "reportedLostRecords": 0,
+        "threadNames": {
+          "350918": [
+            "CombatSolver ex"
+          ],
+          "350920": [
+            "CombatSolver ex"
+          ],
+          "350919": [
+            "CombatSolver ex"
+          ],
+          "350921": [
+            ".NET TP Worker",
+            "CombatSolver ex"
+          ],
+          "350929": [
+            "CombatSolver ex"
+          ],
+          "350923": [
+            "CombatSolver ex"
+          ],
+          "350922": [
+            "CombatSolver ex"
+          ],
+          "350916": [
+            ".NET TP Worker"
+          ],
+          "350925": [
+            "CombatSolver ex"
+          ],
+          "350924": [
+            ".NET TP Worker",
+            "CombatSolver ex"
+          ],
+          "350932": [
+            "CombatSolver ex"
+          ],
+          "350930": [
+            "CombatSolver ex"
+          ],
+          "350902": [
+            ".NET Tiered Com",
+            "dotnet"
+          ],
+          "350927": [
+            "CombatSolver ex"
+          ],
+          "350926": [
+            "CombatSolver ex"
+          ],
+          "350931": [
+            ".NET TP Worker",
+            "CombatSolver ex"
+          ],
+          "350928": [
+            ".NET TP Worker",
+            "CombatSolver ex"
+          ],
+          "350933": [
+            "CombatSolver ex"
+          ],
+          "350896": [
+            "dotnet"
+          ],
+          "350915": [
+            ".NET TP Worker"
+          ],
+          "350904": [
+            ".NET TP Worker",
+            "dotnet"
+          ],
+          "350962": [
+            ".NET TP Worker"
+          ],
+          "350911": [
+            ".NET Timer"
+          ],
+          "350901": [
+            ".NET Finalizer",
+            "dotnet"
+          ],
+          "350905": [
+            ".NET TP Gate",
+            "dotnet"
+          ],
+          "350914": [
+            ".NET TP Worker"
+          ]
+        }
+      },
+      "lossCheck": {
+        "command": [
+          "perf",
+          "script",
+          "-i",
+          ".local/tool-tasks/roi-contention-20261008/cpu/perf.data",
+          "--show-lost-events",
+          "--hide-call-graph",
+          "-F",
+          "comm,pid,tid,time,period"
+        ],
+        "exitCode": 0,
+        "lostEventLines": [],
+        "stderr": "",
+        "parsedSamples": 20277,
+        "threadNames": {
+          "350896": [
+            "dotnet"
+          ],
+          "350897": [
+            "dotnet"
+          ],
+          "350898": [
+            "dotnet"
+          ],
+          "350899": [
+            "dotnet"
+          ],
+          "350900": [
+            "dotnet"
+          ],
+          "350901": [
+            ".NET Finalizer",
+            "dotnet"
+          ],
+          "350902": [
+            ".NET Tiered Com",
+            "dotnet"
+          ],
+          "350903": [
+            "dotnet"
+          ],
+          "350904": [
+            ".NET TP Worker",
+            "dotnet"
+          ],
+          "350905": [
+            ".NET TP Gate",
+            "dotnet"
+          ],
+          "350906": [
+            ".NET TP Worker"
+          ],
+          "350907": [
+            ".NET BGC"
+          ],
+          "350910": [
+            ".NET Long Runni",
+            "dotnet"
+          ],
+          "350912": [
+            ".NET TP Worker"
+          ],
+          "350913": [
+            ".NET TP Worker"
+          ],
+          "350914": [
+            ".NET TP Worker"
+          ],
+          "350915": [
+            ".NET TP Worker"
+          ],
+          "350916": [
+            ".NET TP Worker"
+          ],
+          "350921": [
+            ".NET TP Worker",
+            "CombatSolver ex"
+          ],
+          "350924": [
+            ".NET TP Worker",
+            "CombatSolver ex"
+          ],
+          "350928": [
+            ".NET TP Worker",
+            "CombatSolver ex"
+          ],
+          "350931": [
+            ".NET TP Worker",
+            "CombatSolver ex"
+          ],
+          "350918": [
+            "CombatSolver ex"
+          ],
+          "350920": [
+            "CombatSolver ex"
+          ],
+          "350919": [
+            "CombatSolver ex"
+          ],
+          "350911": [
+            ".NET Timer"
+          ],
+          "350923": [
+            "CombatSolver ex"
+          ],
+          "350922": [
+            "CombatSolver ex"
+          ],
+          "350925": [
+            "CombatSolver ex"
+          ],
+          "350929": [
+            "CombatSolver ex"
+          ],
+          "350926": [
+            "CombatSolver ex"
+          ],
+          "350930": [
+            "CombatSolver ex"
+          ],
+          "350932": [
+            "CombatSolver ex"
+          ],
+          "350927": [
+            "CombatSolver ex"
+          ],
+          "350933": [
+            "CombatSolver ex"
+          ],
+          "350962": [
+            ".NET TP Worker"
+          ]
+        },
+        "previousUnsupportedOptionFailure": "  Error: unknown option `no-callchain'\n\n Usage: perf script [<options>]\n    or: perf script [<options>] record <script> [<record-options>] <command>\n    or: perf script [<options>] report <script> [script-args]\n    or: perf script [<options>] <script> [<record-options>] <command>\n    or: perf script [<options>] <top-script> [script-args]\n\n    -a, --all-cpus        system-wide collection from all CPUs\n    -c, --comms <comm[,comm...]>\n                          only display events for these comms\n    -C, --cpu <cpu>       list of cpus to profile\n    -d, --debug-mode      do various checks like samples ordering and lost events\n    -D, --dump-raw-trace  dump raw trace in ASCII\n    -F, --fields <str>    comma separated output fields prepend with 'type:'. +field to add and -field to remove.Valid types: hw,sw,trace,raw,synth. Fields: comm,tid,pid,time,cpu,event,trace,ip,sym,dso,dsoff,addr,symoff,srcline,period,iregs,uregs,brstack,brstacksym,flags,data_src,weight,bpf-output,brstackinsn,brstackinsnlen,brstackdisasm,brstackoff,callindent,insn,disasm,insnlen,synth,phys_addr,metric,misc,srccode,ipc,tod,data_page_size,code_page_size,ins_lat,machine_pid,vcpu,cgroup,retire_lat,brcntr\n    -f, --force           don't complain, do it\n    -g, --gen-script <lang>\n                          generate perf-script.xx script in specified language\n    -G, --hide-call-graph\n                          When printing symbols do not display call chain\n    -i, --input <file>    input file name\n    -I, --show-info       display extended information from perf.data file\n    -k, --vmlinux <file>  vmlinux pathname\n    -L, --Latency         show latency attributes (irqs/preemption disabled, etc)\n    -l, --list            list available scripts\n    -s, --script <name>   script file name (lang:script name, script name, or *)\n    -S, --symbols <symbol[,symbol...]>\n                          only consider these symbols\n    -v, --verbose         be more verbose (show symbol address, etc)\n        --addr-range <n>  Use with -S to list traced records within address range\n        --addr2line <path>\n                          addr2line binary to use for line numbers\n        --call-ret-trace[=...]\n                          Decode calls and returns from itrace\n        --call-trace[=...]\n                          Decode calls from itrace\n        --deltatime       Show time stamps relative to previous event\n        --demangle        Enable symbol demangling\n        --demangle-kernel\n                          Enable kernel symbol demangling\n        --dlarg <argument>\n                          filter argument\n        --dlfilter <file>\n                          filter .so file name\n        --dsos <dso[,dso...]>\n                          only consider symbols in these DSOs\n        --dump-unsorted-raw-trace\n                          dump unsorted raw trace in ASCII\n        --full-source-path\n                          Show full source file name path for source lines\n        --graph-function <symbol[,symbol...]>\n                          Only print symbols and callees with --call-trace/--call-ret-trace\n        --guest-code      Guest code can be found in hypervisor process\n        --guestkallsyms <file>\n                          file saving guest os /proc/kallsyms\n        --guestmodules <file>\n                          file saving guest os /proc/modules\n        --guestmount <directory>\n                          guest mount directory under which every guest os instance has a subdir\n        --guestvmlinux <file>\n                          file saving guest os vmlinux\n        --header          Show data header.\n        --header-only     Show only data header.\n        --inline          Show inline function\n        --insn-trace[=<raw|disasm>]\n                          Decode instructions from itrace\n        --itrace[=<opts>]\n                          Instruction Tracing options\n\t\t\t\ti[period]:    \t\tsynthesize instructions events\n\t\t\t\ty[period]:    \t\tsynthesize cycles events (same period as i)\n\t\t\t\tb:\t    \t\tsynthesize branches events\n\t\t\t\tc:\t    \t\tsynthesize branches events (calls only)\n\t\t\t\tr:\t    \t\tsynthesize branches events (returns only)\n\t\t\t\tx:\t    \t\tsynthesize transactions events\n\t\t\t\tw:\t    \t\tsynthesize ptwrite events\n\t\t\t\tp:\t    \t\tsynthesize power events\n\t\t\t\to:\t\t\tsynthesize other events recorded due to the use\n\t\t\t\t\t\t\tof aux-output (refer to perf record)\n\t\t\t\tI:\t\t\tsynthesize interrupt or similar (asynchronous) events\n\t\t\t\t\t\t\t(e.g. Intel PT Event Trace)\n\t\t\t\te[flags]:\t\tsynthesize error events\n\t\t\t\t\t\t\teach flag must be preceded by + or -\n\t\t\t\t\t\t\terror flags are: o (overflow)\n\t\t\t\t\t\t\t\t\t l (data lost)\n\t\t\t\td[flags]:\t\tcreate a debug log\n\t\t\t\t\t\t\teach flag must be preceded by + or -\n\t\t\t\t\t\t\tlog flags are: a (all perf events)\n\t\t\t\t\t\t\t               o (output to stdout)\n\t\t\t\tf:\t    \t\tsynthesize first level cache events\n\t\t\t\tm:\t    \t\tsynthesize last level cache events\n\t\t\t\tt:\t    \t\tsynthesize TLB events\n\t\t\t\ta:\t    \t\tsynthesize remote access events\n\t\t\t\tg[len]:     \t\tsynthesize a call chain (use with i or x)\n\t\t\t\tG[len]:\t\t\tsynthesize a call chain on existing event records\n\t\t\t\tl[len]:     \t\tsynthesize last branch entries (use with i or x)\n\t\t\t\tL[len]:\t\t\tsynthesize last branch entries on existing event records\n\t\t\t\tsNUMBER:    \t\tskip initial number of events\n\t\t\t\tq:\t\t\tquicker (less detailed) decoding\n\t\t\t\tA:\t\t\tapproximate IPC\n\t\t\t\tZ:\t\t\tprefer to ignore timestamps (so-called \"timeless\" decoding)\n\t\t\t\tT:\t\t\tuse the timestamp trace as kernel time\n\t\t\t\tPERIOD[ns|us|ms|i|t]:   specify period to sample stream\n\t\t\t\tconcatenate multiple options. Default is iybxwpe or cewp\n\n        --kallsyms <file>\n                          kallsyms pathname\n        --list-dlfilters  list available dlfilters\n        --max-blocks <n>  Maximum number of code blocks to dump with brstackinsn\n        --max-stack <n>   Set the maximum stack depth when parsing the callchain, anything beyond the specified depth will be ignored. Default: kernel.perf_event_max_stack or 127\n        --merge-callchains\n                          Enable merge deferred user callchains\n        --ns              Use 9 decimal places when displaying time\n        --per-event-dump  Dump trace output to files named by the monitored events\n        --pid <pid[,pid...]>\n                          only consider symbols in these pids\n        --reltime         Show time stamps relative to start\n        --show-bpf-events\n                          Show bpf related events (if recorded)\n        --show-cgroup-events\n                          Show cgroup events (if recorded)\n        --show-kernel-path\n                          Show the path of [kernel.kallsyms]\n        --show-lost-events\n                          Show lost events (if recorded)\n        --show-mmap-events\n                          Show the mmap events\n        --show-namespace-events\n                          Show namespace events (if recorded)\n        --show-on-off-events\n                          Show the on/off switch events, used with --switch-on and --switch-off\n        --show-round-events\n                          Show round events (if recorded)\n        --show-switch-events\n                          Show context switch events (if recorded)\n        --show-task-events\n                          Show the fork/comm/exit events\n        --show-text-poke-events\n                          Show text poke related events (if recorded)\n        --stitch-lbr      Enable LBR callgraph stitching approach\n        --stop-bt <symbol[,symbol...]>\n                          Stop display of callgraph at these symbols\n        --switch-off <event>\n                          Stop considering events after the occurrence of this event\n        --switch-on <event>\n                          Consider events after the occurrence of this event\n        --symfs <directory[,layout]>\n                          setup root directory which contains debug files:\n\t\t\t\tdirectory:\tLook for files with symbols relative to this directory.\n\t\t\t\tlayout:   \tLayout of files, 'hierarchy' matches full path (default), 'flat' only matches base name.\n\n        --tid <tid[,tid...]>\n                          only consider symbols in these tids\n        --time <str>      Time span of interest (start,stop)\n        --unwind-style <unwind style>\n                          unwind styles (libdw,libunwind)\n        --xed[=...]       Run xed disassembler on output\n\n",
+        "interpretation": "No reported lost records does not prove complete unwinding, symbols or unsampled time; comm thread names do not establish source ownership."
+      },
+      "parserCorrectionsDidNotRecollectTrace": true
+    },
+    "candidate": {
+      "source": {
+        "path": "src/Engine/Common/MirroredHookListenerFilter.cs",
+        "baselineSourceHead": "521f6f2f",
+        "beforeSha256": "ac23178d17b4c097cbe786c2ea1704743b028e7d5c93778b49cc92b1b3365b9c",
+        "afterSha256": "a8b06b96bfeae8bddef189c50139b7a71a376c4e99f953b864b701ce66437705",
+        "before": "using System.Reflection;\nusing System.Runtime.CompilerServices;\nusing HarmonyLib;\nusing MegaCrit.Sts2.Core.Hooks;\nusing MegaCrit.Sts2.Core.Models;\n\nnamespace CombatSolver.Engine.Common;\n\n// Root-frozen dispatch metadata for mirrors and the native keyword no-op guard.\n// Domain/native listener enumeration remains complete. External and patched hooks\n// always retain the original dispatch path.\ninternal sealed class MirroredHookListenerFilter(bool enabled)\n{\n    // This filter belongs to one captured root. Only immutable runtime-type layouts\n    // cross branches; receiver models remain exclusively in each returned snapshot.\n    // A direct-mapped table has bounded retention and needs no worker-side lock.\n    internal const int SharedLayoutSlots = 2048;\n    private const int MaxSharedLayoutLength = 1024;\n    private readonly MirroredHookListenerLayout?[] _sharedLayouts =\n        enabled ? new MirroredHookListenerLayout?[SharedLayoutSlots] : [];\n    private long _sharedHits;\n    private long _sharedMisses;\n    private long _sharedCollisions;\n    private long _sharedBypasses;\n    private long _listenerPrefixReuses;\n    private long _listenerPrefixBuilds;\n    private long _listenerSplitBuilds;\n    private long _listenerWholeBuilds;\n    private long _effectivePrefixReuses;\n    private long _effectivePrefixBuilds;\n\n    internal HookListenerSegmentStatistics ListenerSegmentStatistics => new(\n        Volatile.Read(ref _listenerPrefixReuses), Volatile.Read(ref _listenerPrefixBuilds),\n        Volatile.Read(ref _listenerSplitBuilds), Volatile.Read(ref _listenerWholeBuilds),\n        Volatile.Read(ref _effectivePrefixReuses), Volatile.Read(ref _effectivePrefixBuilds));\n\n    internal void RecordEffectivePrefix(bool reused)\n    {\n        if (reused) Interlocked.Increment(ref _effectivePrefixReuses);\n        else Interlocked.Increment(ref _effectivePrefixBuilds);\n    }\n\n    internal void RecordListenerPrefix(bool reused)\n    {\n        if (reused) Interlocked.Increment(ref _listenerPrefixReuses);\n        else Interlocked.Increment(ref _listenerPrefixBuilds);\n    }\n\n    internal void RecordListenerSegmentResult(bool split)\n    {\n        if (split) Interlocked.Increment(ref _listenerSplitBuilds);\n        else Interlocked.Increment(ref _listenerWholeBuilds);\n    }\n\n    internal HookLayoutCacheStatistics Statistics => new(\n        Volatile.Read(ref _sharedHits), Volatile.Read(ref _sharedMisses),\n        Volatile.Read(ref _sharedCollisions), Volatile.Read(ref _sharedBypasses));\n\n    private static readonly Dictionary<string, MirroredHookMask> HookNames = new()\n    {\n        [nameof(AbstractModel.AfterAttack)] = MirroredHookMask.AfterAttack,\n        [nameof(AbstractModel.AfterAutoPostPlayPhaseEntered)] = MirroredHookMask.AfterAutoPostPlayPhaseEntered,\n        [nameof(AbstractModel.AfterBlockBroken)] = MirroredHookMask.AfterBlockBroken,\n        [nameof(AbstractModel.AfterBlockGained)] = MirroredHookMask.AfterBlockGained,\n        [nameof(AbstractModel.AfterCardDiscarded)] = MirroredHookMask.AfterCardDiscarded,\n        [nameof(AbstractModel.AfterCardDrawn)] = MirroredHookMask.AfterCardDrawn,\n        [nameof(AbstractModel.AfterCardDrawnEarly)] = MirroredHookMask.AfterCardDrawnEarly,\n        [nameof(AbstractModel.AfterCardExhausted)] = MirroredHookMask.AfterCardExhausted,\n        [nameof(AbstractModel.AfterCardGeneratedForCombat)] = MirroredHookMask.AfterCardGeneratedForCombat,\n        [nameof(AbstractModel.AfterCardPlayed)] = MirroredHookMask.AfterCardPlayed,\n        [nameof(AbstractModel.AfterCardPlayedLate)] = MirroredHookMask.AfterCardPlayedLate,\n        [nameof(AbstractModel.AfterCurrentHpChanged)] = MirroredHookMask.AfterCurrentHpChanged,\n        [nameof(AbstractModel.AfterDamageGiven)] = MirroredHookMask.AfterDamageGiven,\n        [nameof(AbstractModel.AfterDamageReceived)] = MirroredHookMask.AfterDamageReceived,\n        [nameof(AbstractModel.AfterDamageReceivedLate)] = MirroredHookMask.AfterDamageReceivedLate,\n        [nameof(AbstractModel.AfterDeath)] = MirroredHookMask.AfterDeath,\n        [nameof(AbstractModel.AfterEnergyReset)] = MirroredHookMask.AfterEnergyReset,\n        // A shared bit conservatively retains any receiver of the gold callback family.\n        // Exact registries still distinguish each method; unrelated default calls are no-ops.\n        [nameof(AbstractModel.ModifyGoldGained)] = MirroredHookMask.GoldCallbacks,\n        [nameof(AbstractModel.AfterModifyingGoldGained)] = MirroredHookMask.GoldCallbacks,\n        [nameof(AbstractModel.AfterGoldGained)] = MirroredHookMask.GoldCallbacks,\n        // Both extra-turn callbacks share the last bit; ExtraTurnMirrors still distinguishes the methods.\n        [nameof(AbstractModel.ShouldTakeExtraTurn)] = MirroredHookMask.ExtraTurnCallbacks,\n        [nameof(AbstractModel.AfterTakingExtraTurn)] = MirroredHookMask.ExtraTurnCallbacks,\n        [nameof(AbstractModel.AfterModifyingBlockAmount)] = MirroredHookMask.AfterModifyingBlockAmount,\n        [nameof(AbstractModel.AfterModifyingCardPlayCount)] = MirroredHookMask.AfterModifyingCardPlayCount,\n        [nameof(AbstractModel.AfterModifyingCardPlayResultLocation)] = MirroredHookMask.AfterModifyingCardPlayResultLocation,\n        [nameof(AbstractModel.AfterModifyingHpLostAfterOsty)] = MirroredHookMask.AfterModifyingHpLostAfterOsty,\n        [nameof(AbstractModel.AfterOrbChanneled)] = MirroredHookMask.AfterOrbChanneled,\n        [nameof(AbstractModel.AfterOrbEvoked)] = MirroredHookMask.AfterOrbEvoked,\n        [nameof(AbstractModel.AfterPreventingDeath)] = MirroredHookMask.AfterPreventingDeath,\n        [nameof(AbstractModel.AfterShuffle)] = MirroredHookMask.AfterShuffle,\n        [nameof(AbstractModel.BeforeSideTurnStart)] = MirroredHookMask.BeforeSideTurnStart,\n        [nameof(AbstractModel.AfterPlayerTurnStartEarly)] = MirroredHookMask.AfterPlayerTurnStartEarly,\n        [nameof(AbstractModel.AfterPlayerTurnStart)] = MirroredHookMask.AfterPlayerTurnStart,\n        [nameof(AbstractModel.AfterPlayerTurnStartLate)] = MirroredHookMask.AfterPlayerTurnStartLate,\n        [nameof(AbstractModel.AfterSideTurnEndLate)] = MirroredHookMask.AfterSideTurnEndLate,\n        [nameof(AbstractModel.AfterStarsGained)] = MirroredHookMask.AfterStarsGained,\n        [nameof(AbstractModel.BeforeAttack)] = MirroredHookMask.BeforeAttack,\n        [nameof(AbstractModel.BeforeBlockGained)] = MirroredHookMask.BeforeBlockGained,\n        [nameof(AbstractModel.BeforeCardPlayed)] = MirroredHookMask.BeforeCardPlayed,\n        [nameof(AbstractModel.BeforeDamageReceived)] = MirroredHookMask.BeforeDamageReceived,\n        [nameof(AbstractModel.BeforeDeath)] = MirroredHookMask.BeforeDeath,\n        [nameof(AbstractModel.BeforeSideTurnEnd)] = MirroredHookMask.BeforeSideTurnEnd,\n        [nameof(AbstractModel.BeforeSideTurnEndEarly)] = MirroredHookMask.BeforeSideTurnEndEarly,\n        [nameof(AbstractModel.BeforeSideTurnEndVeryEarly)] = MirroredHookMask.BeforeSideTurnEndVeryEarly,\n        [nameof(AbstractModel.ModifyAttackHitCount)] = MirroredHookMask.ModifyAttackHitCount,\n        [nameof(AbstractModel.ModifyBlockAdditive)] = MirroredHookMask.ModifyBlockAdditive,\n        [nameof(AbstractModel.ModifyBlockMultiplicative)] = MirroredHookMask.ModifyBlockMultiplicative,\n        [nameof(AbstractModel.ModifyCardPlayCount)] = MirroredHookMask.ModifyCardPlayCount,\n        [nameof(AbstractModel.ModifyCardPlayResultLocation)] = MirroredHookMask.ModifyCardPlayResultLocation,\n        [nameof(AbstractModel.ModifyDamageAdditive)] = MirroredHookMask.ModifyDamageAdditive,\n        [nameof(AbstractModel.ModifyDamageCap)] = MirroredHookMask.ModifyDamageCap,\n        [nameof(AbstractModel.ModifyDamageMultiplicative)] = MirroredHookMask.ModifyDamageMultiplicative,\n        [nameof(AbstractModel.ModifyHpLostAfterOsty)] = MirroredHookMask.ModifyHpLostAfterOsty,\n        [nameof(AbstractModel.ModifyHpLostAfterOstyLate)] = MirroredHookMask.ModifyHpLostAfterOstyLate,\n        [nameof(AbstractModel.ModifyHpLostBeforeOsty)] = MirroredHookMask.ModifyHpLostBeforeOsty,\n        [nameof(AbstractModel.ModifyHpLostBeforeOstyLate)] = MirroredHookMask.ModifyHpLostBeforeOstyLate,\n        [nameof(AbstractModel.ModifyOrbPassiveTriggerCounts)] = MirroredHookMask.ModifyOrbPassiveTriggerCounts,\n        [nameof(AbstractModel.ModifyOrbValue)] = MirroredHookMask.ModifyOrbValue,\n        [nameof(AbstractModel.ModifyShuffleOrder)] = MirroredHookMask.ModifyShuffleOrder,\n        [nameof(AbstractModel.ShouldDie)] = MirroredHookMask.ShouldDie,\n        [nameof(AbstractModel.ShouldDieLate)] = MirroredHookMask.ShouldDieLate,\n        [nameof(AbstractModel.ShouldDraw)] = MirroredHookMask.ShouldDraw,\n        [nameof(AbstractModel.ShouldPlay)] = MirroredHookMask.ShouldPlay,\n        [nameof(AbstractModel.TryModifyEnergyCostInCombat)] = MirroredHookMask.TryModifyEnergyCostInCombat,\n        [nameof(AbstractModel.TryModifyEnergyCostInCombatLate)] = MirroredHookMask.TryModifyEnergyCostInCombatLate,\n        [nameof(AbstractModel.TryModifyStarCost)] = MirroredHookMask.TryModifyStarCost,\n        [nameof(AbstractModel.TryModifyKeywordsInCombat)] = MirroredHookMask.TryModifyKeywordsInCombat,\n    };\n    private static readonly MethodInfo[] BaseHooks = typeof(AbstractModel)\n        .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)\n        .Where(method => HookNames.ContainsKey(method.Name))\n        .ToArray();\n    private static readonly ConditionalWeakTable<Type, Participation> TypeParticipation = new();\n    private static readonly MethodInfo NativeKeywordHook = typeof(Hook)\n        .GetMethod(nameof(Hook.ModifyKeywordsInCombat))!;\n\n    // Re-read the patch table for every captured root, as with the OnPlay patch audit.\n    // The immutable decision is shared by its forks; no model or live state is cached.\n    internal static MirroredHookListenerFilter Capture()\n        => new(!BaseHooks.Append(NativeKeywordHook).Any(method =>\n            Harmony.GetPatchInfo(method) is { } patches && patches.Owners.Count != 0));\n\n    internal IReadOnlyList<AbstractModel> Filter(\n        IReadOnlyList<AbstractModel> source,\n        ref MirroredHookListenerLayout? layout)\n    {\n        if (!enabled || source.Count == 0)\n        {\n            Interlocked.Increment(ref _sharedBypasses);\n            return source;\n        }\n        // Only runtime types determine participation. The layout has no model references\n        // and can survive model remapping, value changes and Fork without copying.\n        if (layout is null || !layout.Matches(source))\n        {\n            int slot = -1;\n            if (source.Count <= MaxSharedLayoutLength)\n            {\n                uint hash = unchecked((uint)source.Count);\n                for (int index = 0; index < source.Count; index++)\n                    hash = unchecked(hash * 16777619u\n                        ^ (uint)RuntimeHelpers.GetHashCode(source[index].GetType()));\n                slot = (int)(hash & (SharedLayoutSlots - 1));\n                MirroredHookListenerLayout? shared = Volatile.Read(ref _sharedLayouts[slot]);\n                // Hashes select a slot only. Exact type order establishes reuse, so\n                // collisions and racing replacement can only cause a cache miss.\n                if (shared is not null && shared.Matches(source))\n                {\n                    Interlocked.Increment(ref _sharedHits);\n                    layout = shared;\n                }\n                else\n                {\n                    Interlocked.Increment(ref _sharedMisses);\n                    if (shared is not null)\n                        Interlocked.Increment(ref _sharedCollisions);\n                    layout = null;\n                }\n            }\n            else\n            {\n                Interlocked.Increment(ref _sharedBypasses);\n                layout = null;\n            }\n            if (layout is null)\n            {\n                var entries = new MirroredHookListenerLayout.Entry[source.Count];\n                MirroredHookMask combined = 0;\n                for (int index = 0; index < source.Count; index++)\n                {\n                    Type type = source[index].GetType();\n                    MirroredHookMask mask = MaskFor(type);\n                    entries[index] = new(type, mask);\n                    combined |= mask;\n                }\n                layout = new(entries, combined);\n                if (slot >= 0)\n                    Volatile.Write(ref _sharedLayouts[slot], layout);\n            }\n        }\n        return layout.HasAny(MirroredHookMask.All)\n            ? new MirroredHookListenerSnapshot(source, layout)\n            : Array.Empty<AbstractModel>();\n    }\n\n    internal IReadOnlyList<AbstractModel> Filter(IReadOnlyList<AbstractModel> source)\n    {\n        MirroredHookListenerLayout? layout = null;\n        return Filter(source, ref layout);\n    }\n\n    private static MirroredHookMask MaskFor(Type type)\n        => TypeParticipation.GetValue(type, static value => new Participation(Participates(value))).Mask;\n\n    private static MirroredHookMask Participates(Type type)\n    {\n        if (type.Assembly != typeof(AbstractModel).Assembly || type.Assembly.IsDynamic)\n            return MirroredHookMask.All;\n        MirroredHookMask result = 0;\n        foreach (MethodInfo method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public))\n        {\n            if (method.DeclaringType != typeof(AbstractModel)\n                && HookNames.TryGetValue(method.Name, out MirroredHookMask mask)\n                && method.GetBaseDefinition().DeclaringType == typeof(AbstractModel))\n                result |= mask;\n        }\n        return result;\n    }\n\n    private sealed record Participation(MirroredHookMask Mask);\n}\n\ninternal readonly record struct HookLayoutCacheStatistics(\n    long Hits, long Misses, long Collisions, long Bypasses);\n\ninternal readonly record struct HookListenerSegmentStatistics(\n    long PrefixReuses, long PrefixBuilds, long SplitBuilds, long WholeBuilds,\n    long EffectivePrefixReuses, long EffectivePrefixBuilds);\n\n[Flags]\ninternal enum MirroredHookMask : ulong\n{\n    AfterAttack = 1UL << 0,\n    AfterAutoPostPlayPhaseEntered = 1UL << 1,\n    AfterBlockBroken = 1UL << 2,\n    AfterBlockGained = 1UL << 3,\n    AfterCardDiscarded = 1UL << 4,\n    AfterCardDrawn = 1UL << 5,\n    AfterCardDrawnEarly = 1UL << 6,\n    AfterCardExhausted = 1UL << 7,\n    AfterCardGeneratedForCombat = 1UL << 8,\n    AfterCardPlayed = 1UL << 9,\n    AfterCardPlayedLate = 1UL << 10,\n    AfterCurrentHpChanged = 1UL << 11,\n    AfterDamageGiven = 1UL << 12,\n    AfterDamageReceived = 1UL << 13,\n    AfterDamageReceivedLate = 1UL << 14,\n    AfterDeath = 1UL << 15,\n    AfterModifyingBlockAmount = 1UL << 16,\n    AfterModifyingCardPlayCount = 1UL << 17,\n    AfterModifyingCardPlayResultLocation = 1UL << 18,\n    AfterModifyingHpLostAfterOsty = 1UL << 19,\n    AfterOrbChanneled = 1UL << 20,\n    AfterOrbEvoked = 1UL << 21,\n    AfterPreventingDeath = 1UL << 22,\n    AfterShuffle = 1UL << 23,\n    AfterStarsGained = 1UL << 24,\n    BeforeAttack = 1UL << 25,\n    BeforeBlockGained = 1UL << 26,\n    BeforeCardPlayed = 1UL << 27,\n    BeforeDamageReceived = 1UL << 28,\n    BeforeDeath = 1UL << 29,\n    BeforeSideTurnEnd = 1UL << 30,\n    BeforeSideTurnEndEarly = 1UL << 31,\n    BeforeSideTurnEndVeryEarly = 1UL << 32,\n    ModifyAttackHitCount = 1UL << 33,\n    ModifyBlockAdditive = 1UL << 34,\n    ModifyBlockMultiplicative = 1UL << 35,\n    ModifyCardPlayCount = 1UL << 36,\n    ModifyCardPlayResultLocation = 1UL << 37,\n    ModifyDamageAdditive = 1UL << 38,\n    ModifyDamageCap = 1UL << 39,\n    ModifyDamageMultiplicative = 1UL << 40,\n    ModifyHpLostAfterOsty = 1UL << 41,\n    ModifyHpLostAfterOstyLate = 1UL << 42,\n    ModifyHpLostBeforeOsty = 1UL << 43,\n    ModifyHpLostBeforeOstyLate = 1UL << 44,\n    ModifyOrbPassiveTriggerCounts = 1UL << 45,\n    ModifyShuffleOrder = 1UL << 46,\n    ShouldDie = 1UL << 47,\n    ShouldDieLate = 1UL << 48,\n    ShouldDraw = 1UL << 49,\n    ShouldPlay = 1UL << 50,\n    TryModifyEnergyCostInCombat = 1UL << 51,\n    TryModifyEnergyCostInCombatLate = 1UL << 52,\n    TryModifyStarCost = 1UL << 53,\n    TryModifyKeywordsInCombat = 1UL << 54,\n    AfterSideTurnEndLate = 1UL << 55,\n    AfterEnergyReset = 1UL << 56,\n    BeforeSideTurnStart = 1UL << 57,\n    AfterPlayerTurnStartEarly = 1UL << 58,\n    AfterPlayerTurnStart = 1UL << 59,\n    AfterPlayerTurnStartLate = 1UL << 60,\n    ModifyOrbValue = 1UL << 61,\n    GoldCallbacks = 1UL << 62,\n    ExtraTurnCallbacks = 1UL << 63,\n    All = ulong.MaxValue,\n}\n\n// Immutable type metadata, shared across forks. It never retains any combat models.\ninternal sealed class MirroredHookListenerLayout(\n    MirroredHookListenerLayout.Entry[] entries,\n    MirroredHookMask combined)\n{\n    internal readonly record struct Entry(Type Type, MirroredHookMask Mask);\n    internal Entry[] Entries { get; } = entries;\n    internal bool HasAny(MirroredHookMask mask) => (combined & mask) != 0;\n    internal bool Matches(IReadOnlyList<AbstractModel> source)\n    {\n        if (source.Count != Entries.Length)\n            return false;\n        for (int index = 0; index < source.Count; index++)\n            if (source[index].GetType() != Entries[index].Type)\n                return false;\n        return true;\n    }\n}\n\n// The original complete listener sequence plus its type-only dispatch layout.\n// Model identity and order come exclusively from the branch's native snapshot.\ninternal sealed class MirroredHookListenerSnapshot(\n    IReadOnlyList<AbstractModel> source,\n    MirroredHookListenerLayout layout) : IReadOnlyList<AbstractModel>\n{\n    internal MirroredHookListenerLayout Layout { get; } = layout;\n    internal bool HasAny(MirroredHookMask mask) => Layout.HasAny(mask);\n    public int Count => source.Count;\n    public AbstractModel this[int index] => source[index];\n    public IEnumerator<AbstractModel> GetEnumerator() => source.GetEnumerator();\n    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();\n}\n",
+        "after": "using System.Reflection;\nusing System.Runtime.CompilerServices;\nusing HarmonyLib;\nusing MegaCrit.Sts2.Core.Hooks;\nusing MegaCrit.Sts2.Core.Models;\n\nnamespace CombatSolver.Engine.Common;\n\n// Root-frozen dispatch metadata for mirrors and the native keyword no-op guard.\n// Domain/native listener enumeration remains complete. External and patched hooks\n// always retain the original dispatch path.\ninternal sealed class MirroredHookListenerFilter(bool enabled)\n{\n    // This filter belongs to one captured root. Only immutable runtime-type layouts\n    // cross branches; receiver models remain exclusively in each returned snapshot.\n    // A direct-mapped table has bounded retention and needs no worker-side lock.\n    internal const int SharedLayoutSlots = 2048;\n    private const int MaxSharedLayoutLength = 1024;\n    private readonly MirroredHookListenerLayout?[] _sharedLayouts =\n        enabled ? new MirroredHookListenerLayout?[SharedLayoutSlots] : [];\n    private long _sharedHits;\n    private long _sharedMisses;\n    private long _sharedCollisions;\n    private long _sharedBypasses;\n    private long _listenerPrefixReuses;\n    private long _listenerPrefixBuilds;\n    private long _listenerSplitBuilds;\n    private long _listenerWholeBuilds;\n    private long _effectivePrefixReuses;\n    private long _effectivePrefixBuilds;\n\n    internal HookListenerSegmentStatistics ListenerSegmentStatistics => new(\n        Volatile.Read(ref _listenerPrefixReuses), Volatile.Read(ref _listenerPrefixBuilds),\n        Volatile.Read(ref _listenerSplitBuilds), Volatile.Read(ref _listenerWholeBuilds),\n        Volatile.Read(ref _effectivePrefixReuses), Volatile.Read(ref _effectivePrefixBuilds));\n\n    internal void RecordEffectivePrefix(bool reused)\n    {\n        if (reused) Interlocked.Increment(ref _effectivePrefixReuses);\n        else Interlocked.Increment(ref _effectivePrefixBuilds);\n    }\n\n    internal void RecordListenerPrefix(bool reused)\n    {\n        if (reused) Interlocked.Increment(ref _listenerPrefixReuses);\n        else Interlocked.Increment(ref _listenerPrefixBuilds);\n    }\n\n    internal void RecordListenerSegmentResult(bool split)\n    {\n        if (split) Interlocked.Increment(ref _listenerSplitBuilds);\n        else Interlocked.Increment(ref _listenerWholeBuilds);\n    }\n\n    internal HookLayoutCacheStatistics Statistics => new(\n        Volatile.Read(ref _sharedHits), Volatile.Read(ref _sharedMisses),\n        Volatile.Read(ref _sharedCollisions), Volatile.Read(ref _sharedBypasses));\n\n    private static readonly Dictionary<string, MirroredHookMask> HookNames = new()\n    {\n        [nameof(AbstractModel.AfterAttack)] = MirroredHookMask.AfterAttack,\n        [nameof(AbstractModel.AfterAutoPostPlayPhaseEntered)] = MirroredHookMask.AfterAutoPostPlayPhaseEntered,\n        [nameof(AbstractModel.AfterBlockBroken)] = MirroredHookMask.AfterBlockBroken,\n        [nameof(AbstractModel.AfterBlockGained)] = MirroredHookMask.AfterBlockGained,\n        [nameof(AbstractModel.AfterCardDiscarded)] = MirroredHookMask.AfterCardDiscarded,\n        [nameof(AbstractModel.AfterCardDrawn)] = MirroredHookMask.AfterCardDrawn,\n        [nameof(AbstractModel.AfterCardDrawnEarly)] = MirroredHookMask.AfterCardDrawnEarly,\n        [nameof(AbstractModel.AfterCardExhausted)] = MirroredHookMask.AfterCardExhausted,\n        [nameof(AbstractModel.AfterCardGeneratedForCombat)] = MirroredHookMask.AfterCardGeneratedForCombat,\n        [nameof(AbstractModel.AfterCardPlayed)] = MirroredHookMask.AfterCardPlayed,\n        [nameof(AbstractModel.AfterCardPlayedLate)] = MirroredHookMask.AfterCardPlayedLate,\n        [nameof(AbstractModel.AfterCurrentHpChanged)] = MirroredHookMask.AfterCurrentHpChanged,\n        [nameof(AbstractModel.AfterDamageGiven)] = MirroredHookMask.AfterDamageGiven,\n        [nameof(AbstractModel.AfterDamageReceived)] = MirroredHookMask.AfterDamageReceived,\n        [nameof(AbstractModel.AfterDamageReceivedLate)] = MirroredHookMask.AfterDamageReceivedLate,\n        [nameof(AbstractModel.AfterDeath)] = MirroredHookMask.AfterDeath,\n        [nameof(AbstractModel.AfterEnergyReset)] = MirroredHookMask.AfterEnergyReset,\n        // A shared bit conservatively retains any receiver of the gold callback family.\n        // Exact registries still distinguish each method; unrelated default calls are no-ops.\n        [nameof(AbstractModel.ModifyGoldGained)] = MirroredHookMask.GoldCallbacks,\n        [nameof(AbstractModel.AfterModifyingGoldGained)] = MirroredHookMask.GoldCallbacks,\n        [nameof(AbstractModel.AfterGoldGained)] = MirroredHookMask.GoldCallbacks,\n        // Both extra-turn callbacks share the last bit; ExtraTurnMirrors still distinguishes the methods.\n        [nameof(AbstractModel.ShouldTakeExtraTurn)] = MirroredHookMask.ExtraTurnCallbacks,\n        [nameof(AbstractModel.AfterTakingExtraTurn)] = MirroredHookMask.ExtraTurnCallbacks,\n        [nameof(AbstractModel.AfterModifyingBlockAmount)] = MirroredHookMask.AfterModifyingBlockAmount,\n        [nameof(AbstractModel.AfterModifyingCardPlayCount)] = MirroredHookMask.AfterModifyingCardPlayCount,\n        [nameof(AbstractModel.AfterModifyingCardPlayResultLocation)] = MirroredHookMask.AfterModifyingCardPlayResultLocation,\n        [nameof(AbstractModel.AfterModifyingHpLostAfterOsty)] = MirroredHookMask.AfterModifyingHpLostAfterOsty,\n        [nameof(AbstractModel.AfterOrbChanneled)] = MirroredHookMask.AfterOrbChanneled,\n        [nameof(AbstractModel.AfterOrbEvoked)] = MirroredHookMask.AfterOrbEvoked,\n        [nameof(AbstractModel.AfterPreventingDeath)] = MirroredHookMask.AfterPreventingDeath,\n        [nameof(AbstractModel.AfterShuffle)] = MirroredHookMask.AfterShuffle,\n        [nameof(AbstractModel.BeforeSideTurnStart)] = MirroredHookMask.BeforeSideTurnStart,\n        [nameof(AbstractModel.AfterPlayerTurnStartEarly)] = MirroredHookMask.AfterPlayerTurnStartEarly,\n        [nameof(AbstractModel.AfterPlayerTurnStart)] = MirroredHookMask.AfterPlayerTurnStart,\n        [nameof(AbstractModel.AfterPlayerTurnStartLate)] = MirroredHookMask.AfterPlayerTurnStartLate,\n        [nameof(AbstractModel.AfterSideTurnEndLate)] = MirroredHookMask.AfterSideTurnEndLate,\n        [nameof(AbstractModel.AfterStarsGained)] = MirroredHookMask.AfterStarsGained,\n        [nameof(AbstractModel.BeforeAttack)] = MirroredHookMask.BeforeAttack,\n        [nameof(AbstractModel.BeforeBlockGained)] = MirroredHookMask.BeforeBlockGained,\n        [nameof(AbstractModel.BeforeCardPlayed)] = MirroredHookMask.BeforeCardPlayed,\n        [nameof(AbstractModel.BeforeDamageReceived)] = MirroredHookMask.BeforeDamageReceived,\n        [nameof(AbstractModel.BeforeDeath)] = MirroredHookMask.BeforeDeath,\n        [nameof(AbstractModel.BeforeSideTurnEnd)] = MirroredHookMask.BeforeSideTurnEnd,\n        [nameof(AbstractModel.BeforeSideTurnEndEarly)] = MirroredHookMask.BeforeSideTurnEndEarly,\n        [nameof(AbstractModel.BeforeSideTurnEndVeryEarly)] = MirroredHookMask.BeforeSideTurnEndVeryEarly,\n        [nameof(AbstractModel.ModifyAttackHitCount)] = MirroredHookMask.ModifyAttackHitCount,\n        [nameof(AbstractModel.ModifyBlockAdditive)] = MirroredHookMask.ModifyBlockAdditive,\n        [nameof(AbstractModel.ModifyBlockMultiplicative)] = MirroredHookMask.ModifyBlockMultiplicative,\n        [nameof(AbstractModel.ModifyCardPlayCount)] = MirroredHookMask.ModifyCardPlayCount,\n        [nameof(AbstractModel.ModifyCardPlayResultLocation)] = MirroredHookMask.ModifyCardPlayResultLocation,\n        [nameof(AbstractModel.ModifyDamageAdditive)] = MirroredHookMask.ModifyDamageAdditive,\n        [nameof(AbstractModel.ModifyDamageCap)] = MirroredHookMask.ModifyDamageCap,\n        [nameof(AbstractModel.ModifyDamageMultiplicative)] = MirroredHookMask.ModifyDamageMultiplicative,\n        [nameof(AbstractModel.ModifyHpLostAfterOsty)] = MirroredHookMask.ModifyHpLostAfterOsty,\n        [nameof(AbstractModel.ModifyHpLostAfterOstyLate)] = MirroredHookMask.ModifyHpLostAfterOstyLate,\n        [nameof(AbstractModel.ModifyHpLostBeforeOsty)] = MirroredHookMask.ModifyHpLostBeforeOsty,\n        [nameof(AbstractModel.ModifyHpLostBeforeOstyLate)] = MirroredHookMask.ModifyHpLostBeforeOstyLate,\n        [nameof(AbstractModel.ModifyOrbPassiveTriggerCounts)] = MirroredHookMask.ModifyOrbPassiveTriggerCounts,\n        [nameof(AbstractModel.ModifyOrbValue)] = MirroredHookMask.ModifyOrbValue,\n        [nameof(AbstractModel.ModifyShuffleOrder)] = MirroredHookMask.ModifyShuffleOrder,\n        [nameof(AbstractModel.ShouldDie)] = MirroredHookMask.ShouldDie,\n        [nameof(AbstractModel.ShouldDieLate)] = MirroredHookMask.ShouldDieLate,\n        [nameof(AbstractModel.ShouldDraw)] = MirroredHookMask.ShouldDraw,\n        [nameof(AbstractModel.ShouldPlay)] = MirroredHookMask.ShouldPlay,\n        [nameof(AbstractModel.TryModifyEnergyCostInCombat)] = MirroredHookMask.TryModifyEnergyCostInCombat,\n        [nameof(AbstractModel.TryModifyEnergyCostInCombatLate)] = MirroredHookMask.TryModifyEnergyCostInCombatLate,\n        [nameof(AbstractModel.TryModifyStarCost)] = MirroredHookMask.TryModifyStarCost,\n        [nameof(AbstractModel.TryModifyKeywordsInCombat)] = MirroredHookMask.TryModifyKeywordsInCombat,\n    };\n    private static readonly MethodInfo[] BaseHooks = typeof(AbstractModel)\n        .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)\n        .Where(method => HookNames.ContainsKey(method.Name))\n        .ToArray();\n    private static readonly ConditionalWeakTable<Type, Participation> TypeParticipation = new();\n    private static readonly MethodInfo NativeKeywordHook = typeof(Hook)\n        .GetMethod(nameof(Hook.ModifyKeywordsInCombat))!;\n\n    // Re-read the patch table for every captured root, as with the OnPlay patch audit.\n    // The immutable decision is shared by its forks; no model or live state is cached.\n    internal static MirroredHookListenerFilter Capture()\n        => new(!BaseHooks.Append(NativeKeywordHook).Any(method =>\n            Harmony.GetPatchInfo(method) is { } patches && patches.Owners.Count != 0));\n\n    internal IReadOnlyList<AbstractModel> Filter(\n        IReadOnlyList<AbstractModel> source,\n        ref MirroredHookListenerLayout? layout)\n    {\n        if (!enabled || source.Count == 0)\n        {\n            Interlocked.Increment(ref _sharedBypasses);\n            return source;\n        }\n        // Only runtime types determine participation. The layout has no model references\n        // and can survive model remapping, value changes and Fork without copying.\n        if (layout is null || !layout.Matches(source))\n        {\n            int slot = -1;\n            if (source.Count <= MaxSharedLayoutLength)\n            {\n                uint hash = unchecked((uint)source.Count);\n                for (int index = 0; index < source.Count; index++)\n                    hash = unchecked(hash * 16777619u\n                        ^ (uint)RuntimeHelpers.GetHashCode(source[index].GetType()));\n                slot = (int)(hash & (SharedLayoutSlots - 1));\n                MirroredHookListenerLayout? shared = Volatile.Read(ref _sharedLayouts[slot]);\n                // Hashes select a slot only. Exact type order establishes reuse, so\n                // collisions and racing replacement can only cause a cache miss.\n                if (shared is not null && shared.Matches(source))\n                {\n                    Interlocked.Increment(ref _sharedHits);\n                    layout = shared;\n                }\n                else\n                {\n                    Interlocked.Increment(ref _sharedMisses);\n                    if (shared is not null)\n                        Interlocked.Increment(ref _sharedCollisions);\n                    layout = null;\n                }\n            }\n            else\n            {\n                Interlocked.Increment(ref _sharedBypasses);\n                layout = null;\n            }\n            if (layout is null)\n            {\n                var entries = new MirroredHookListenerLayout.Entry[source.Count];\n                MirroredHookMask combined = 0;\n                Type? lastType = null;\n                Type? previousType = null;\n                MirroredHookMask lastMask = 0;\n                MirroredHookMask previousMask = 0;\n                for (int index = 0; index < source.Count; index++)\n                {\n                    Type type = source[index].GetType();\n                    MirroredHookMask mask;\n                    if (type == lastType)\n                    {\n                        mask = lastMask;\n                    }\n                    else\n                    {\n                        // Participation is immutable type metadata. Keep this reuse local\n                        // to one layout build; models and branch values are never cached.\n                        mask = type == previousType ? previousMask : MaskFor(type);\n                        previousType = lastType;\n                        previousMask = lastMask;\n                        lastType = type;\n                        lastMask = mask;\n                    }\n                    entries[index] = new(type, mask);\n                    combined |= mask;\n                }\n                layout = new(entries, combined);\n                if (slot >= 0)\n                    Volatile.Write(ref _sharedLayouts[slot], layout);\n            }\n        }\n        return layout.HasAny(MirroredHookMask.All)\n            ? new MirroredHookListenerSnapshot(source, layout)\n            : Array.Empty<AbstractModel>();\n    }\n\n    internal IReadOnlyList<AbstractModel> Filter(IReadOnlyList<AbstractModel> source)\n    {\n        MirroredHookListenerLayout? layout = null;\n        return Filter(source, ref layout);\n    }\n\n    private static MirroredHookMask MaskFor(Type type)\n        => TypeParticipation.GetValue(type, static value => new Participation(Participates(value))).Mask;\n\n    private static MirroredHookMask Participates(Type type)\n    {\n        if (type.Assembly != typeof(AbstractModel).Assembly || type.Assembly.IsDynamic)\n            return MirroredHookMask.All;\n        MirroredHookMask result = 0;\n        foreach (MethodInfo method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public))\n        {\n            if (method.DeclaringType != typeof(AbstractModel)\n                && HookNames.TryGetValue(method.Name, out MirroredHookMask mask)\n                && method.GetBaseDefinition().DeclaringType == typeof(AbstractModel))\n                result |= mask;\n        }\n        return result;\n    }\n\n    private sealed record Participation(MirroredHookMask Mask);\n}\n\ninternal readonly record struct HookLayoutCacheStatistics(\n    long Hits, long Misses, long Collisions, long Bypasses);\n\ninternal readonly record struct HookListenerSegmentStatistics(\n    long PrefixReuses, long PrefixBuilds, long SplitBuilds, long WholeBuilds,\n    long EffectivePrefixReuses, long EffectivePrefixBuilds);\n\n[Flags]\ninternal enum MirroredHookMask : ulong\n{\n    AfterAttack = 1UL << 0,\n    AfterAutoPostPlayPhaseEntered = 1UL << 1,\n    AfterBlockBroken = 1UL << 2,\n    AfterBlockGained = 1UL << 3,\n    AfterCardDiscarded = 1UL << 4,\n    AfterCardDrawn = 1UL << 5,\n    AfterCardDrawnEarly = 1UL << 6,\n    AfterCardExhausted = 1UL << 7,\n    AfterCardGeneratedForCombat = 1UL << 8,\n    AfterCardPlayed = 1UL << 9,\n    AfterCardPlayedLate = 1UL << 10,\n    AfterCurrentHpChanged = 1UL << 11,\n    AfterDamageGiven = 1UL << 12,\n    AfterDamageReceived = 1UL << 13,\n    AfterDamageReceivedLate = 1UL << 14,\n    AfterDeath = 1UL << 15,\n    AfterModifyingBlockAmount = 1UL << 16,\n    AfterModifyingCardPlayCount = 1UL << 17,\n    AfterModifyingCardPlayResultLocation = 1UL << 18,\n    AfterModifyingHpLostAfterOsty = 1UL << 19,\n    AfterOrbChanneled = 1UL << 20,\n    AfterOrbEvoked = 1UL << 21,\n    AfterPreventingDeath = 1UL << 22,\n    AfterShuffle = 1UL << 23,\n    AfterStarsGained = 1UL << 24,\n    BeforeAttack = 1UL << 25,\n    BeforeBlockGained = 1UL << 26,\n    BeforeCardPlayed = 1UL << 27,\n    BeforeDamageReceived = 1UL << 28,\n    BeforeDeath = 1UL << 29,\n    BeforeSideTurnEnd = 1UL << 30,\n    BeforeSideTurnEndEarly = 1UL << 31,\n    BeforeSideTurnEndVeryEarly = 1UL << 32,\n    ModifyAttackHitCount = 1UL << 33,\n    ModifyBlockAdditive = 1UL << 34,\n    ModifyBlockMultiplicative = 1UL << 35,\n    ModifyCardPlayCount = 1UL << 36,\n    ModifyCardPlayResultLocation = 1UL << 37,\n    ModifyDamageAdditive = 1UL << 38,\n    ModifyDamageCap = 1UL << 39,\n    ModifyDamageMultiplicative = 1UL << 40,\n    ModifyHpLostAfterOsty = 1UL << 41,\n    ModifyHpLostAfterOstyLate = 1UL << 42,\n    ModifyHpLostBeforeOsty = 1UL << 43,\n    ModifyHpLostBeforeOstyLate = 1UL << 44,\n    ModifyOrbPassiveTriggerCounts = 1UL << 45,\n    ModifyShuffleOrder = 1UL << 46,\n    ShouldDie = 1UL << 47,\n    ShouldDieLate = 1UL << 48,\n    ShouldDraw = 1UL << 49,\n    ShouldPlay = 1UL << 50,\n    TryModifyEnergyCostInCombat = 1UL << 51,\n    TryModifyEnergyCostInCombatLate = 1UL << 52,\n    TryModifyStarCost = 1UL << 53,\n    TryModifyKeywordsInCombat = 1UL << 54,\n    AfterSideTurnEndLate = 1UL << 55,\n    AfterEnergyReset = 1UL << 56,\n    BeforeSideTurnStart = 1UL << 57,\n    AfterPlayerTurnStartEarly = 1UL << 58,\n    AfterPlayerTurnStart = 1UL << 59,\n    AfterPlayerTurnStartLate = 1UL << 60,\n    ModifyOrbValue = 1UL << 61,\n    GoldCallbacks = 1UL << 62,\n    ExtraTurnCallbacks = 1UL << 63,\n    All = ulong.MaxValue,\n}\n\n// Immutable type metadata, shared across forks. It never retains any combat models.\ninternal sealed class MirroredHookListenerLayout(\n    MirroredHookListenerLayout.Entry[] entries,\n    MirroredHookMask combined)\n{\n    internal readonly record struct Entry(Type Type, MirroredHookMask Mask);\n    internal Entry[] Entries { get; } = entries;\n    internal bool HasAny(MirroredHookMask mask) => (combined & mask) != 0;\n    internal bool Matches(IReadOnlyList<AbstractModel> source)\n    {\n        if (source.Count != Entries.Length)\n            return false;\n        for (int index = 0; index < source.Count; index++)\n            if (source[index].GetType() != Entries[index].Type)\n                return false;\n        return true;\n    }\n}\n\n// The original complete listener sequence plus its type-only dispatch layout.\n// Model identity and order come exclusively from the branch's native snapshot.\ninternal sealed class MirroredHookListenerSnapshot(\n    IReadOnlyList<AbstractModel> source,\n    MirroredHookListenerLayout layout) : IReadOnlyList<AbstractModel>\n{\n    internal MirroredHookListenerLayout Layout { get; } = layout;\n    internal bool HasAny(MirroredHookMask mask) => Layout.HasAny(mask);\n    public int Count => source.Count;\n    public AbstractModel this[int index] => source[index];\n    public IEnumerator<AbstractModel> GetEnumerator() => source.GetEnumerator();\n    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();\n}\n",
+        "patch": "diff --git a/src/Engine/Common/MirroredHookListenerFilter.cs b/src/Engine/Common/MirroredHookListenerFilter.cs\nindex 0d221b5a..2a301b4e 100644\n--- a/src/Engine/Common/MirroredHookListenerFilter.cs\n+++ b/src/Engine/Common/MirroredHookListenerFilter.cs\n@@ -189,10 +189,28 @@ internal sealed class MirroredHookListenerFilter(bool enabled)\n             {\n                 var entries = new MirroredHookListenerLayout.Entry[source.Count];\n                 MirroredHookMask combined = 0;\n+                Type? lastType = null;\n+                Type? previousType = null;\n+                MirroredHookMask lastMask = 0;\n+                MirroredHookMask previousMask = 0;\n                 for (int index = 0; index < source.Count; index++)\n                 {\n                     Type type = source[index].GetType();\n-                    MirroredHookMask mask = MaskFor(type);\n+                    MirroredHookMask mask;\n+                    if (type == lastType)\n+                    {\n+                        mask = lastMask;\n+                    }\n+                    else\n+                    {\n+                        // Participation is immutable type metadata. Keep this reuse local\n+                        // to one layout build; models and branch values are never cached.\n+                        mask = type == previousType ? previousMask : MaskFor(type);\n+                        previousType = lastType;\n+                        previousMask = lastMask;\n+                        lastType = type;\n+                        lastMask = mask;\n+                    }\n                     entries[index] = new(type, mask);\n                     combined |= mask;\n                 }\n",
+        "decision": "Withdrawn after first target screen introduced inner time boundary, unequal work and no performance evidence; no dependent runs"
+      },
+      "build": {
+        "command": {
+          "command": [
+            "dotnet",
+            "build",
+            "CombatSolver.csproj",
+            "-c",
+            "Release",
+            "--no-restore",
+            "-p:CopyModOnBuild=false",
+            "-o",
+            "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/build-candidate"
+          ],
+          "baselineRuntime": "499ec165",
+          "scope": "Local per-build immutable two-type mask reuse; no semantic, scoring, budget or dispatch changes"
+        },
+        "elapsedSeconds": 14.404700854000112,
+        "warnings": 0,
+        "errors": 0,
+        "log": "  CombatSolver -> /home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/build-candidate/CombatSolver.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:14.27\n"
+      },
+      "native": {
+        "command": {
+          "command": [
+            "bash",
+            "tools/testing/run-unattended-test.sh",
+            "--scenario-id",
+            "MIRRORED-HOOK-FILTER",
+            "--character-id",
+            "IRONCLAD",
+            "--encounter-id",
+            "FUZZY_WURM_CRAWLER_WEAK",
+            "--seed",
+            "COMBATSOLVER",
+            "--combat-solver-build-dir",
+            "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/build-candidate",
+            "--headless-instance",
+            "roi-hook-mask-20261008",
+            "--evidence-directory",
+            "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/native",
+            "--verify-combat-root-snapshot",
+            "--stop-after-combat-root-snapshot-assertion",
+            "--timeout-seconds",
+            "120",
+            "--exit-on-complete",
+            "--cleanup-instance-on-exit"
+          ],
+          "maximumTimeoutSeconds": 120,
+          "dllSha256": "90fcf1b94ce3ed52d5699cd6e2956786ef375efb9b00ae2f528e247fde1ba7df",
+          "scope": "Existing full mirrored listener-filter contract, no performance acceptance",
+          "noSearchProfilerOrContractChanges": true,
+          "launcherExit": 0,
+          "launcherElapsedSeconds": 37.08076675000484
+        },
+        "result": {
+          "processReusable": false,
+          "processId": 353940,
+          "reusedProcess": false,
+          "developmentStrategyScriptHash": null,
+          "developmentStrategyParametersHash": null,
+          "mainAssemblyHash": "90FCF1B94CE3ED52D5699CD6E2956786EF375EFB9B00AE2F528E247FDE1BA7DF",
+          "schemaVersion": 1,
+          "runId": "c8b84baf38694531982d0c7ebbf12a5a",
+          "scenarioId": "MIRRORED-HOOK-FILTER",
+          "status": "Passed",
+          "stage": "passed",
+          "characterId": "CHARACTER.IRONCLAD",
+          "encounterId": "ENCOUNTER.FUZZY_WURM_CRAWLER_WEAK",
+          "seed": "COMBATSOLVER",
+          "startedAtUtc": "2026-10-08T13:34:27.6725759+00:00",
+          "elapsedMilliseconds": 29546.5937,
+          "mainThread": true,
+          "combatEnded": false,
+          "startedTurn": 1,
+          "finishedTurn": 1,
+          "managedHeapBytes": 90101840,
+          "managedFragmentedBytes": 8734120,
+          "workingSetBytes": 1562853376,
+          "privateMemoryBytes": 1697730560,
+          "solverMetrics": null,
+          "replayVerification": null,
+          "generatedScenario": null,
+          "stageTimings": [
+            {
+              "stage": "created",
+              "startedMilliseconds": 0,
+              "durationMilliseconds": 1.5614
+            },
+            {
+              "stage": "strategy_load",
+              "startedMilliseconds": 1.5614,
+              "durationMilliseconds": 5.3865
+            },
+            {
+              "stage": "game_startup",
+              "startedMilliseconds": 6.9479,
+              "durationMilliseconds": 12882.7047
+            },
+            {
+              "stage": "start_run",
+              "startedMilliseconds": 12889.6526,
+              "durationMilliseconds": 11251.1429
+            },
+            {
+              "stage": "inject_run_relics",
+              "startedMilliseconds": 24140.7955,
+              "durationMilliseconds": 2.225299999998242
+            },
+            {
+              "stage": "enter_encounter",
+              "startedMilliseconds": 24143.0208,
+              "durationMilliseconds": 1996.5743000000002
+            },
+            {
+              "stage": "wait_player_turn",
+              "startedMilliseconds": 26139.5951,
+              "durationMilliseconds": 2.953400000002148
+            },
+            {
+              "stage": "inject_state",
+              "startedMilliseconds": 26142.5485,
+              "durationMilliseconds": 82.94059999999808
+            },
+            {
+              "stage": "mirrored_hook_filter",
+              "startedMilliseconds": 26225.4891,
+              "durationMilliseconds": 3162.7870000000003
+            },
+            {
+              "stage": "combat_root_snapshot",
+              "startedMilliseconds": 29388.2761,
+              "durationMilliseconds": 46.82259999999951
+            },
+            {
+              "stage": "cleanup",
+              "startedMilliseconds": 29435.0987,
+              "durationMilliseconds": 105.72260000000097
+            },
+            {
+              "stage": "passed",
+              "startedMilliseconds": 29540.8213,
+              "durationMilliseconds": 6.018000000000029
+            }
+          ],
+          "completedChecks": [
+            "MirroredHookFilter:Methods=64:Models=1675:OrderDuplicatesExternalForkInvalidationPatchRefreshSharedLayoutsSegmentsNoAnchorEffectivePrefixReuse",
+            "CombatRootSnapshot",
+            "NativeOutcome:combatEnded=False:turn=1:hp=80:maxHp=80"
+          ],
+          "error": null,
+          "finishedAtUtc": "2026-10-08T13:34:57.2189786+00:00"
+        },
+        "difference": null,
+        "instanceRemoved": true,
+        "fullParentSiblingRngDifferentialAdded": false,
+        "existingContractOnly": true
+      },
+      "screenPlan": {
+        "purpose": "Serial independent-process screening; fixed-node Evaluate, not complete-request acceptance",
+        "roots": [
+          "screen-huge-deck",
+          "silent-large-deck"
+        ],
+        "order": [
+          "A1",
+          "C1",
+          "C2",
+          "A2"
+        ],
+        "outerTimeoutSeconds": 120,
+        "dlls": {
+          "A": {
+            "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/health-callback-guard-20261008/build-final/CombatSolver.dll",
+            "sha256": "349470cde0c9f2a0120496b9221aa50fbf8fd8580a2429ef434622f5bb9c4628"
+          },
+          "C": {
+            "path": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/build-candidate/CombatSolver.dll",
+            "sha256": "90fcf1b94ce3ed52d5699cd6e2956786ef375efb9b00ae2f528e247fde1ba7df"
+          }
+        },
+        "disableDiagnostics": true,
+        "parameters": [
+          "--profile",
+          "VeryHigh",
+          "--dop",
+          "16",
+          "--budget-ms",
+          "60000",
+          "--search-mode",
+          "Evaluate",
+          "--nodes",
+          "10000",
+          "--beam",
+          "135",
+          "--card-branches",
+          "72",
+          "--pile-branches",
+          "42",
+          "--hand-branches",
+          "54",
+          "--enable-no-gc-region",
+          "--no-gc-region-budget-gigabytes",
+          "16"
+        ]
+      },
+      "screenRuns": [
+        {
+          "root": "screen-huge-deck",
+          "variant": "A1",
+          "launcherExit": 0,
+          "launcherElapsedSeconds": 39.949796473003516,
+          "commandPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/screen/screen-huge-deck/A1/command.json",
+          "resultPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/screen/screen-huge-deck/A1/result.json",
+          "wallSeconds": 35.5238817,
+          "peakProcessWorkingSetBytes": 11950419968,
+          "quality": {
+            "won": true,
+            "outstandingStolenResource": 0,
+            "projectedBattleHpLost": 15,
+            "strategicHpDeficit": 9,
+            "potionStrategicCost": 0,
+            "projectedBattlePotionCount": 0,
+            "enemyHp": 0,
+            "score": 10001355990,
+            "combatEndedTurn": 3,
+            "theftPolicy": null,
+            "survives": true,
+            "deathSaveUseCount": 0,
+            "growthHpCredit": 0,
+            "growthRewardCount": 0
+          },
+          "logicalWork": {
+            "totalExpanded": 742,
+            "totalTransitions": 5440,
+            "totalChoiceBranches": 3350
+          },
+          "checks": {
+            "statusPassed": true,
+            "quality14Equal": true,
+            "rootStampEqual": true,
+            "policyEqual": true,
+            "budgetEqual": true,
+            "logicalWorkEqual": true,
+            "noTimeBoundary": true
+          },
+          "metrics": {
+            "boundary": "None",
+            "totalExpanded": 742,
+            "totalTransitions": 5440,
+            "totalChoiceBranches": 3350,
+            "turnLayerBudgetStops": 0,
+            "turnLayerTimeBudgetStops": 0,
+            "workerAllocatedBytes": 22712387384,
+            "totalGcPauseMilliseconds": 1444.786,
+            "maxParallelConcurrency": 16
+          },
+          "qualityPath": ".local/tool-tasks/roi-contention-20261008/screen/screen-huge-deck/A1/quality.json",
+          "command": {
+            "command": [
+              "dotnet",
+              "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/native-sort-storage-20261008/harness/OfflineSearchHarness.dll",
+              "--request",
+              "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/screen-huge-deck.json",
+              "--label",
+              "roi-local-mask-screen-huge-deck-A1",
+              "--out",
+              "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/screen/screen-huge-deck/A1",
+              "--profile",
+              "VeryHigh",
+              "--dop",
+              "16",
+              "--budget-ms",
+              "60000",
+              "--search-mode",
+              "Evaluate",
+              "--nodes",
+              "10000",
+              "--beam",
+              "135",
+              "--card-branches",
+              "72",
+              "--pile-branches",
+              "42",
+              "--hand-branches",
+              "54",
+              "--enable-no-gc-region",
+              "--no-gc-region-budget-gigabytes",
+              "16"
+            ],
+            "outerTimeoutSeconds": 120,
+            "requestSha256": "9868d91456908a09cfcfd459f4a45cfbcd1a76d52ea209b0bf64727fc2a68388",
+            "dllSha256": "349470cde0c9f2a0120496b9221aa50fbf8fd8580a2429ef434622f5bb9c4628",
+            "hostSha256": "65d7d5c136bf9ca527be565a9cc7288430f8398994056c1ac72f31dca097c2e4",
+            "noProfilerOrCorrectnessInstrumentation": true,
+            "removedEnvironmentKeys": []
+          }
+        },
+        {
+          "root": "screen-huge-deck",
+          "variant": "C1",
+          "launcherExit": 0,
+          "launcherElapsedSeconds": 45.20826223699987,
+          "commandPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/screen/screen-huge-deck/C1/command.json",
+          "resultPath": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/screen/screen-huge-deck/C1/result.json",
+          "wallSeconds": 40.8419645,
+          "peakProcessWorkingSetBytes": 11987304448,
+          "quality": {
+            "won": true,
+            "outstandingStolenResource": 0,
+            "projectedBattleHpLost": 15,
+            "strategicHpDeficit": 9,
+            "potionStrategicCost": 0,
+            "projectedBattlePotionCount": 0,
+            "enemyHp": 0,
+            "score": 10001355990,
+            "combatEndedTurn": 3,
+            "theftPolicy": null,
+            "survives": true,
+            "deathSaveUseCount": 0,
+            "growthHpCredit": 0,
+            "growthRewardCount": 0
+          },
+          "logicalWork": {
+            "totalExpanded": 552,
+            "totalTransitions": 5198,
+            "totalChoiceBranches": 3195
+          },
+          "checks": {
+            "statusPassed": true,
+            "quality14Equal": true,
+            "rootStampEqual": true,
+            "policyEqual": true,
+            "budgetEqual": true,
+            "logicalWorkEqual": false,
+            "noTimeBoundary": false
+          },
+          "metrics": {
+            "boundary": "None",
+            "totalExpanded": 552,
+            "totalTransitions": 5198,
+            "totalChoiceBranches": 3195,
+            "turnLayerBudgetStops": 1,
+            "turnLayerTimeBudgetStops": 1,
+            "workerAllocatedBytes": 20410849072,
+            "totalGcPauseMilliseconds": 885.92,
+            "maxParallelConcurrency": 16
+          },
+          "qualityPath": ".local/tool-tasks/roi-contention-20261008/screen/screen-huge-deck/C1/quality.json",
+          "command": {
+            "command": [
+              "dotnet",
+              "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/native-sort-storage-20261008/harness/OfflineSearchHarness.dll",
+              "--request",
+              "/home/ltlly/Code/nmslmod/CombatSolver-perf-20261001/.local/veryhigh-dop16/frozen-corpus/requests/screen-huge-deck.json",
+              "--label",
+              "roi-local-mask-screen-huge-deck-C1",
+              "--out",
+              "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/roi-contention-20261008/screen/screen-huge-deck/C1",
+              "--profile",
+              "VeryHigh",
+              "--dop",
+              "16",
+              "--budget-ms",
+              "60000",
+              "--search-mode",
+              "Evaluate",
+              "--nodes",
+              "10000",
+              "--beam",
+              "135",
+              "--card-branches",
+              "72",
+              "--pile-branches",
+              "42",
+              "--hand-branches",
+              "54",
+              "--enable-no-gc-region",
+              "--no-gc-region-budget-gigabytes",
+              "16"
+            ],
+            "outerTimeoutSeconds": 120,
+            "requestSha256": "9868d91456908a09cfcfd459f4a45cfbcd1a76d52ea209b0bf64727fc2a68388",
+            "dllSha256": "90fcf1b94ce3ed52d5699cd6e2956786ef375efb9b00ae2f528e247fde1ba7df",
+            "hostSha256": "65d7d5c136bf9ca527be565a9cc7288430f8398994056c1ac72f31dca097c2e4",
+            "noProfilerOrCorrectnessInstrumentation": true,
+            "removedEnvironmentKeys": []
+          }
+        }
+      ],
+      "decision": "First target candidate has one inner time-budget stop, 552/5198/3195 work instead of 742/5440/3350. The complete 14 quality fields remain equal, but no constant-work timing or complete-request conclusion is valid. Stop dependent C2/A2 and sentinel requests; withdraw without changing budget or seeking a favorable retry.",
+      "candidateDllSha256": "90fcf1b94ce3ed52d5699cd6e2956786ef375efb9b00ae2f528e247fde1ba7df",
+      "productionSourceRestored": true,
+      "noNewPersistentCache": true,
+      "newPruning": 0,
+      "newSemanticCertificates": 0,
+      "wholeCoordinatorCandidateRuns": 0,
+      "finalFixedRegressionRuns": 0,
+      "buildArtifactsRemoved": true,
+      "initialDerivedSampleListRemovedAfterPathCorrection": true
+    },
+    "priority": [
+      {
+        "rank": 1,
+        "work": "Reduce complete base-listener reconstruction/copy/scan under existing exact invalidation and branch ownership",
+        "evidence": "Nearest-owned 48.139% of sampled cycles on fixed huge root; highest measured owned attribution",
+        "cost": "Moderate: preserve receiver identity/order, attachments, unknown appenders, remapping, Fork and snapshots",
+        "nextAcceptance": "Measure the exact removable work before implementation; minimum native contract, then short serial controls and eventual complete Coordinator/fixed regression"
+      },
+      {
+        "rank": 2,
+        "work": "Mechanism-controlled card-count/repetition/pile-movement scale inputs for this specific hot path",
+        "evidence": "2,305-card sample attribution differs from previous 396-card complete-request profile; no new scale matrix yet",
+        "cost": "Small diagnosis fixtures; do not expand random scenario counts or repeat successful unchanged checks"
+      },
+      {
+        "rank": 3,
+        "work": "Per-item immutable metadata lookup, generic cache and small arithmetic changes",
+        "evidence": "Two-type local mask candidate rejected; keep full evidence and stop",
+        "cost": "Low coding cost but failed screening and mandatory validation dominate benefit"
+      },
+      {
+        "rank": 4,
+        "work": "Global clone-lock rewrites or handwritten assembly/native backend",
+        "evidence": "2578 monitor pairs no unresolved owned stacks, no clone-gate match, small observed union; scalar proposed shuffle path only 0.2113% inclusive in this sample",
+        "cost": "High independent concurrency/platform/semantic proof cost; no proven low-level kernel. Monitor does not cover atomics/spin/idle/hold time"
+      }
+    ],
+    "artifacts": [
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/command.json",
+        "bytes": 2230,
+        "sha256": "d38d9790e1b0b75d22f383703cbf5cc6e83b3af8ffc916a41bb7022dfab8b0ef"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/contention.nettrace",
+        "bytes": 18126834,
+        "sha256": "d3bd220659f74cff185e5d7eb98347dcd05735813429de7e87dbe2055b399997"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/contention-analysis.json",
+        "bytes": 8529023,
+        "sha256": "d88657ac1cc505a5437cb5aef2956088d2109585612ebde1d3dba168198ac753"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/contention-analysis.json.etlx",
+        "bytes": 4245588,
+        "sha256": "537fe0f901e5311d94e89caa33575f637e2c29d2da6d4511bab259a1ca3317b2"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/contention-summary.json",
+        "bytes": 12093,
+        "sha256": "3a40af86b6d632add007132f3e7a8a557586ff86cb128147811db4074b6dffe5"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/source-scan.json",
+        "bytes": 5459,
+        "sha256": "dc403d08b442950263df24aee1a6428b6f4d51c11f10ea856be4c4f54fe9be98"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/cpu/command.json",
+        "bytes": 1810,
+        "sha256": "71cabef15bf8bd24621800205984f1801ccdd6dbbce6a9fe9c1e4932e0b092ae"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/cpu/clock.json",
+        "bytes": 196,
+        "sha256": "f23f9527702ededbc3c77d695a0fd29bd88727f20c822bb0cf23dc1adb85635b"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/cpu/perf.data",
+        "bytes": 17753532,
+        "sha256": "aa4ad8ab054c9ce150c34a8eb0d761c6734a8e96c2891281a5eb35ca0fc5837e"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/cpu/managed-perf.map",
+        "bytes": 7646135,
+        "sha256": "d8fa24fe6c27f3e5422dfa18d76f2dc4bf51c9fb076ab1dfa2007ca56a669a15"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/cpu/frames.txt",
+        "bytes": 125980822,
+        "sha256": "6899a2f5d187f94ada9bd7aeb4a00a1c0e37540e2a44314d71b72d54f6dd7987"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/cpu/cpu-analysis.json",
+        "bytes": 16579,
+        "sha256": "946b5173af159fb0abcccabc836102b46603c806f84151cb9a52a513c03e55a0"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/cpu/cpu-analysis-initial.json",
+        "bytes": 13981,
+        "sha256": "e13bd75a0da1dcae216ddff3b8818362542d49400edf58495e421ba1581580e8"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/cpu/loss-check.json",
+        "bytes": 11054,
+        "sha256": "481e6bc3e93e686218712987d396bb613d01d6494bce6d1ef0e812485d020566"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/build-command.json",
+        "bytes": 435,
+        "sha256": "94980de6adc249614c286ebea5310469bb56da354672adf30ba55a348e68df61"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/build.log",
+        "bytes": 234,
+        "sha256": "8fa6cde326a449c93d3f08c89aa156d63a2b5fe64b0e9a3fa534eeb3ddfb1b23"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/candidate.patch",
+        "bytes": 1684,
+        "sha256": "576cec35e064c1e34ce75363e9faf66702ad48784515b714c3e4ed352d13098d"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/candidate-source.json",
+        "bytes": 39666,
+        "sha256": "b41bb4a5b0e51a23295fad0855332463a2e1bee4ddc9cec419892c3f57521bad"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/native-command.json",
+        "bytes": 1122,
+        "sha256": "97340ebf1a10478f8e3b77fd7f506a1eeb9e6af1bd5e27f9471e381913d79220"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/native/result.json",
+        "bytes": 2844,
+        "sha256": "2a284d02d8076809591d24b039153bf84b8d9200218da4447f3ba7736037bf00"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/native/difference.json",
+        "bytes": 4,
+        "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/native/policy.json",
+        "bytes": 4,
+        "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/screen-plan.json",
+        "bytes": 1205,
+        "sha256": "bd19b6193f00de659e33c956931a0dd528b05fe01e6b206c5e01dca7cbc86bef"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/screen-runs.json",
+        "bytes": 2658,
+        "sha256": "0258d49d2f9a08ba22783a262eb063214a1e63d7a81b0bd204324461871acf91"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/screen/screen-huge-deck/A1/result.json",
+        "bytes": 769745,
+        "sha256": "1622199b8fec6627b49beb60c8a13b7aa64a1b8aee7659e76a7ae83996142f20"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/screen/screen-huge-deck/A1/quality.json",
+        "bytes": 2280,
+        "sha256": "36d2257aa1b8ef6bc3646860856f5c33d5d189522e586518b08f2dc461d760bf"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/screen/screen-huge-deck/C1/result.json",
+        "bytes": 769742,
+        "sha256": "357126e6711d6ed6175bc0b494ad9b599c1d3cad31c6815f5c26d16e30e4feec"
+      },
+      {
+        "path": ".local/tool-tasks/roi-contention-20261008/screen/screen-huge-deck/C1/quality.json",
+        "bytes": 2280,
+        "sha256": "36d2257aa1b8ef6bc3646860856f5c33d5d189522e586518b08f2dc461d760bf"
+      }
+    ],
+    "validation": {
+      "tools": {
+        "exitCode": 0,
+        "output": "TOOLS_OK files=295 projects=37 errors=0"
+      },
+      "documentation": {
+        "checker": "tools/inspection/verify-documentation.py",
+        "scope": "Every tracked maintained Markdown, including current modified task files; unchanged incoming untracked skills excluded, repository checker logic unchanged",
+        "exitCode": 0,
+        "output": "DOCUMENTATION_OK files=601 links=2632 errors=0\n",
+        "excludedIncomingSkills": [
+          ".agents/skills/analyzing-dotnet-performance/LICENSE",
+          ".agents/skills/analyzing-dotnet-performance/SKILL.md",
+          ".agents/skills/analyzing-dotnet-performance/references/async-patterns.md",
+          ".agents/skills/analyzing-dotnet-performance/references/collections-and-linq.md",
+          ".agents/skills/analyzing-dotnet-performance/references/critical-patterns.md",
+          ".agents/skills/analyzing-dotnet-performance/references/io-and-serialization.md",
+          ".agents/skills/analyzing-dotnet-performance/references/memory-and-strings.md",
+          ".agents/skills/analyzing-dotnet-performance/references/regex-patterns.md",
+          ".agents/skills/analyzing-dotnet-performance/references/structural-patterns.md",
+          ".agents/skills/android-tombstone-symbolication/LICENSE",
+          ".agents/skills/android-tombstone-symbolication/SKILL.md",
+          ".agents/skills/android-tombstone-symbolication/scripts/Symbolicate-Tombstone.ps1",
+          ".agents/skills/apple-crash-symbolication/LICENSE",
+          ".agents/skills/apple-crash-symbolication/SKILL.md",
+          ".agents/skills/apple-crash-symbolication/references/ips-crash-format.md",
+          ".agents/skills/apple-crash-symbolication/scripts/Symbolicate-Crash.ps1",
+          ".agents/skills/clr-activation-debugging/LICENSE",
+          ".agents/skills/clr-activation-debugging/SKILL.md",
+          ".agents/skills/clr-activation-debugging/references/activation-flow.md",
+          ".agents/skills/clr-activation-debugging/references/com-activation.md",
+          ".agents/skills/clr-activation-debugging/references/log-format.md",
+          ".agents/skills/dotnet-trace-collect/LICENSE",
+          ".agents/skills/dotnet-trace-collect/SKILL.md",
+          ".agents/skills/dotnet-trace-collect/references/dotnet-monitor.md",
+          ".agents/skills/dotnet-trace-collect/references/dotnet-trace-collect-linux.md",
+          ".agents/skills/dotnet-trace-collect/references/dotnet-trace-collect.md",
+          ".agents/skills/dotnet-trace-collect/references/perfcollect.md",
+          ".agents/skills/dotnet-trace-collect/references/perfview.md",
+          ".agents/skills/dump-collect/LICENSE",
+          ".agents/skills/dump-collect/SKILL.md",
+          ".agents/skills/dump-collect/references/container-dumps.md",
+          ".agents/skills/dump-collect/references/coreclr-dumps.md",
+          ".agents/skills/dump-collect/references/nativeaot-dumps.md",
+          ".agents/skills/microbenchmarking/LICENSE",
+          ".agents/skills/microbenchmarking/SKILL.md",
+          ".agents/skills/microbenchmarking/references/bdn-internals-and-tuning.md",
+          ".agents/skills/microbenchmarking/references/comparison-strategies.md",
+          ".agents/skills/microbenchmarking/references/diagnosers-and-exporters.md",
+          ".agents/skills/microbenchmarking/references/project-setup-and-running.md",
+          ".agents/skills/microbenchmarking/references/writing-benchmarks.md"
+        ],
+        "knownPriorWorkspaceFailure": {
+          "source": "docs/performance/pmu-jit-direction-20261008.json previous stage workspace documentation record",
+          "reason": "Incoming untracked microbenchmarking references/writing-benchmarks.md link references/bdn-internals-and-tuning.md has a duplicated relative directory; left unchanged",
+          "notRetestedUnchangedFailure": true
+        }
+      }
+    },
+    "production": {
+      "runtimeChanged": false,
+      "deploymentReused": ".local/tool-tasks/health-callback-guard-20261008/deployment.json",
+      "deployedSource": "499ec165",
+      "newDeploy": false,
+      "newPr": false,
+      "merge": false,
+      "versionBump": false,
+      "release": false,
+      "incomingSkillFilesPreserved": true
+    },
+    "unverified": [
+      "No full Coordinator candidate or final fixed regression; no new full-request speed claim",
+      "No causal thread scheduling/blocked-time or instruction-latency/IBS evidence; many frame-pointer stacks do not resolve search ancestors",
+      "No mechanism scale matrix, portable native kernel, Windows/visible-game acceptance",
+      "Runtime mask candidate passed existing native contract but added no full multi-sibling state/RNG differential; no new branch state introduced"
+    ]
   }
 }
