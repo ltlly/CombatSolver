@@ -1,6 +1,6 @@
 # CombatSolver 开发笔记
 
-2026-10-08 [生命通知剪枝门槛](performance/health-callback-pruning-guard-20261008.md)：未知生命事件、Tracker通知、Ritsu详情及指定补丁撤销有限回复资格；原生正常受伤对账及每组16所属Fork通过，额外2回复反例被拒绝认证。固定回归及完整闭包限制见报告，不计新增提速。
+2026-10-08 [生命通知剪枝门槛](performance/health-callback-pruning-guard-20261008.md)：未知生命事件、Tracker通知、Ritsu详情及指定补丁撤销有限回复资格；原生正常受伤对账及每组16所属Fork通过，额外2回复反例被拒绝认证。固定回归及完整闭包限制见报告，不计新增提速。 同日[开放额度支配研究](performance/open-potion-tier-bound-research-20261008.md)的两次只读完整请求保持质量；储君6458次比较无新增否证，生产源码及部署沿用499ec165。
 
 [默认方法局部验证归档](archive/development/volume-24.md)。
 
