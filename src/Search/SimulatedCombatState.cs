@@ -2299,6 +2299,14 @@ internal sealed partial class SimulatedCombatState
         ref StateFingerprintBuilder fingerprint,
         CombatPredictionSimulator simulator)
     {
+        fingerprint.Add("max_hand_sizes");
+        // Player order is frozen at capture and shared unchanged by forks.
+        for (int index = 0; index < _players.Count; index++)
+        {
+            Player player = _players[index];
+            fingerprint.Add(player.NetId);
+            fingerprint.Add(GetMaxHandSize(player));
+        }
         fingerprint.Add("player_hooks");
         foreach (Player player in simulator.State.Players)
             fingerprint.Add(simulator.State.GetPlayerCombatState(player).HooksActive);

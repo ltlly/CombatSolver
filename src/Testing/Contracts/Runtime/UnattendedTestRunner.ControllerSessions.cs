@@ -11,6 +11,73 @@ namespace CombatSolver;
 
 internal sealed partial class UnattendedTestRunner
 {
+    private async Task AssertOverlayVisibilityLifecycleAsync(CombatState combat)
+    {
+        NGame host = NGame.Instance
+            ?? throw new InvalidOperationException("界面可见性合同要求游戏宿主。");
+        SolverSettingsData originalSettings = SolverSettings.Current;
+        bool originalDisabled = SolverController.SolverDisabled;
+        SolverSettings.ApplyForTesting(originalSettings with
+        {
+            AutomaticCalculationEnabled = false,
+            AutoEnableFullAuto = false,
+        });
+        try
+        {
+            SolverOverlay.ShowManualCalculationReady(host, false);
+            if (!SolverOverlay.ExerciseVisibilityShortcutForTesting())
+                throw new InvalidOperationException("Ctrl+F9 隐藏意图必须控制已有与新建图层的可见性。");
+            _completedChecks.Add("OverlayVisibility:Shortcut:IgnoredKeys:Render:NewLayer");
+            if (!SolverOverlay.ToggleVisibilityFromShortcut() || SolverOverlay.IsVisible)
+                throw new InvalidOperationException("Ctrl+F9 必须隐藏界面。");
+            if (!SolverOverlay.ExerciseVisibilityShortcutForTesting() || SolverOverlay.IsVisible)
+                throw new InvalidOperationException("快捷键合同必须保留初始隐藏意图。");
+
+            SolverController.SetSolverDisabled(true, persist: false);
+            AssertHiddenAndInitialized("disabled");
+            SolverController.MonitorCombatPresence();
+            AssertHiddenAndInitialized("disabled_monitor");
+            SolverController.SetSolverDisabled(false, persist: false);
+            SolverOverlay.ShowManualCalculationReady(host, false);
+            SolverController.MonitorCombatPresence();
+            AssertHiddenAndInitialized("manual_monitor");
+            SolverOverlay.ShowSearching(host, LocalContext.GetMe(combat)!.PlayerCombatState!.TurnNumber,
+                deployWhenReady: false, reviewedWorldlinesBeforeSearch: 0);
+            AssertHiddenAndInitialized("searching");
+            SolverOverlay.ShowSearchStopped(host);
+            AssertHiddenAndInitialized("search_stopped");
+            _completedChecks.Add("OverlayVisibility:Disabled:Manual:Searching:Stopped:Monitor");
+
+            SolverController.BeginCombat(combat);
+            if (!SolverOverlay.InitializationPending || SolverOverlay.IsVisible)
+                throw new InvalidOperationException("战斗重置必须登记初始化并保持隐藏。");
+            await SolverController.LastCombatReferenceReleaseForTesting;
+            SolverController.MonitorCombatPresence();
+            AssertHiddenAndInitialized("combat_reset_monitor");
+            if (!SolverOverlay.ToggleVisibilityFromShortcut() || !SolverOverlay.IsVisible)
+                throw new InvalidOperationException("战斗重置后再次按 Ctrl+F9 必须恢复显示。");
+            SolverController.BeginCombat(combat);
+            await SolverController.LastCombatReferenceReleaseForTesting;
+            SolverController.MonitorCombatPresence();
+            if (SolverOverlay.InitializationPending || !SolverOverlay.IsVisible)
+                throw new InvalidOperationException("显示状态下战斗重置必须完成界面初始化。");
+            _completedChecks.Add("OverlayVisibility:CombatReset:PendingConsumed:Restore:VisibleReset");
+        }
+        finally
+        {
+            if (!SolverOverlay.IsVisible)
+                SolverOverlay.ToggleVisibilityFromShortcut();
+            SolverSettings.ApplyForTesting(originalSettings);
+            SolverController.SetSolverDisabled(originalDisabled, persist: false);
+        }
+
+        static void AssertHiddenAndInitialized(string boundary)
+        {
+            if (SolverOverlay.IsVisible || SolverOverlay.InitializationPending)
+                throw new InvalidOperationException($"界面边界 {boundary} 必须完成初始化并保持隐藏。");
+        }
+    }
+
     private void AssertSearchPortfolioSettings(CombatState combat)
     {
         if (!new SolverSettingsData().UseBeamWidthPortfolio)

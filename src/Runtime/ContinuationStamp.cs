@@ -1,4 +1,5 @@
 using System.Text;
+using STS2RitsuLib;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -114,6 +115,7 @@ internal sealed record ContinuationStamp(string StateText)
             state.RunState.Rng.CombatOrbGeneration.CaptureState(),
             state.RunState.Rng.MonsterAi.CaptureState(),
             state.RunState.Rng.Niche.CaptureState());
+        text.Append(";max_hand_size=").Append(RitsuLibFramework.GetMaxHandSize(player));
         return new ContinuationStamp(text.ToString());
     }
 
@@ -179,6 +181,7 @@ internal sealed record ContinuationStamp(string StateText)
             simulator.Rng.CombatOrbGenerationState,
             simulator.Rng.MonsterAiState,
             simulator.Rng.NicheState);
+        text.Append(";max_hand_size=").Append(simulator.GetMaxHandSize(player));
         return new ContinuationStamp(text.ToString());
     }
 

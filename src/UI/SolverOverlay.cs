@@ -157,8 +157,24 @@ internal static class SolverOverlay
     private static Vector2 _panelPosition = new(SolverUiTokens.Size.PanelMargin, SolverUiTokens.Size.PanelMargin);
     private static Vector2 _requestedPanelPosition = new(SolverUiTokens.Size.PanelMargin, SolverUiTokens.Size.PanelMargin);
 
+    // Ctrl+F9 的隐藏意图跨战斗保持，图层每次呈现均采用该状态。
+    private static bool _userHiddenFromShortcut;
+    // 战斗（重）开始后，是否仍需要在可操作边界初始化一次界面。
+    private static bool _initializationPending = true;
+
     public static bool IsVisible
         => _layer != null && GodotObject.IsInstanceValid(_layer) && _layer.Visible;
+
+    internal static bool InitializationPending => _initializationPending;
+
+    /// <summary>
+    /// 战斗生命周期重置后，要求界面在下一个可操作边界重新初始化；
+    /// <see cref="_userHiddenFromShortcut"/> 独立保存快捷键隐藏意图。
+    /// </summary>
+    internal static void MarkInitializationPending()
+    {
+        _initializationPending = true;
+    }
 
     internal static bool TheftPolicyVisibleForTesting
         => _theftPolicyControls != null
@@ -433,20 +449,56 @@ internal static class SolverOverlay
         if (_inputBridge == null || _layer == null)
             return false;
         bool originalVisible = _layer.Visible;
+        bool originalHidden = _userHiddenFromShortcut;
+        bool originalPending = _initializationPending;
         InputEventKey wrong = new() { Pressed = true, CtrlPressed = true, Keycode = Key.F8 };
         InputEventKey repeated = new() { Pressed = true, Echo = true, CtrlPressed = true, Keycode = Key.F9 };
         InputEventKey shortcut = new() { Pressed = true, CtrlPressed = true, Keycode = Key.F9 };
         try
         {
+            _userHiddenFromShortcut = false;
+            ShowLayer();
             bool ignored = !_inputBridge.Handle(wrong) && !_inputBridge.Handle(repeated)
-                && _layer.Visible == originalVisible;
-            bool first = _inputBridge.Handle(shortcut) && _layer.Visible != originalVisible;
-            bool second = _inputBridge.Handle(shortcut) && _layer.Visible == originalVisible;
-            return ignored && first && second;
+                && _layer.Visible;
+            bool first = _inputBridge.Handle(shortcut) && !_layer.Visible;
+            // 覆盖已有图层刷新、初始化请求和新图层的默认可见性。
+            bool survivesRender = ShowLayerRespectsShortcutHideForTesting();
+            bool second = _inputBridge.Handle(shortcut) && _layer.Visible;
+            return ignored && first && survivesRender && second;
         }
         finally
         {
+            _userHiddenFromShortcut = originalHidden;
+            _initializationPending = originalPending;
             _layer.Visible = originalVisible;
+        }
+    }
+    /// <summary>
+    /// 验证隐藏意图在呈现、初始化请求和图层重建边界持续生效。
+    /// </summary>
+    private static bool ShowLayerRespectsShortcutHideForTesting()
+    {
+        if (!_userHiddenFromShortcut || _layer == null)
+            return false;
+        ShowLayer();
+        if (_layer.Visible)
+            return false;
+        // 初始化请求与快捷键隐藏意图分别维护。
+        MarkInitializationPending();
+        ShowLayer();
+        if (_layer.Visible || InitializationPending)
+            return false;
+        CanvasLayer originalLayer = _layer;
+        using CanvasLayer replacement = new();
+        try
+        {
+            _layer = replacement;
+            ShowLayer();
+            return !_layer.Visible;
+        }
+        finally
+        {
+            _layer = originalLayer;
         }
     }
     internal static float OverlayOpacityForTesting => _panel?.Modulate.A ?? 1f;
@@ -2575,8 +2627,10 @@ internal static class SolverOverlay
 
     private static void ShowLayer()
     {
+        // 呈现路径完成后消费初始化请求，并应用用户选择的可见性。
+        _initializationPending = false;
         if (_layer != null)
-            _layer.Visible = true;
+            _layer.Visible = !_userHiddenFromShortcut;
     }
 
     internal static bool ToggleVisibilityFromShortcut()
@@ -2591,7 +2645,8 @@ internal static class SolverOverlay
         {
             return false;
         }
-        _layer.Visible = !_layer.Visible;
+        _userHiddenFromShortcut = !_userHiddenFromShortcut;
+        _layer.Visible = !_userHiddenFromShortcut;
         Entry.Logger.Info($"[CombatSolver/Test] UI_ACTION action=toggle_visibility visible={_layer.Visible}");
         return true;
     }

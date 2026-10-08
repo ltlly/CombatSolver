@@ -23,7 +23,9 @@ internal static partial class CombatSearchCoordinator
                 $"[CombatSolver/Test] SUPPLEMENTAL_AUDIT_BUDGET exhausted=true " +
                 $"elapsed_ms={requestClock.ElapsedMilliseconds} " +
                 $"budget_ms={profile.SoftTimeBudgetMilliseconds}");
-            return primary;
+            return SmartPotionAuditMinimumMilliseconds(context, primary) > 0
+                ? SearchSmartPotionGradientWithMinimumBudget(context, primary, memoryForecast)
+                : primary;
         }
 
         using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -39,8 +41,10 @@ internal static partial class CombatSearchCoordinator
             if (!policy.PotionStrategy.HasForcedDirectives
                 && HasReachedAcceptableBattleHpLoss(policy, selected))
                 return selected;
-            selected = AuditSmartPotionUse(
-                auditContext, cancellationToken, selected, memoryForecast);
+            long minimumMilliseconds = SmartPotionAuditMinimumMilliseconds(context, selected);
+            selected = minimumMilliseconds > 0 && minimumMilliseconds > context.RemainingMilliseconds
+                ? SearchSmartPotionGradientWithMinimumBudget(context, selected, memoryForecast)
+                : AuditSmartPotionUse(auditContext, cancellationToken, selected, memoryForecast);
             if (selected.ResultScope == SolverResultScope.SearchCompletion)
                 selected = RunPlanSearchPass(auditContext, selected);
             if (selected.ResultScope != SolverResultScope.SearchCompletion)
@@ -615,6 +619,58 @@ internal static partial class CombatSearchCoordinator
         return auditedSelection;
     }
 
+    /// <summary>
+    /// Smart searches the primary with potions disabled and leaves every optional potion to this audit. When the
+    /// time-bound primary spends the whole request budget, a zero floor would skip the audit on exactly the roots
+    /// where the primary could not finish, so a potion that wins outright would never be considered.
+    /// </summary>
+    private static long SmartPotionAuditMinimumMilliseconds(SearchPassContext context, SolverResult primary)
+        => context.Policy.PotionPolicy == SolverPotionPolicy.Smart
+            && !context.Policy.PotionStrategy.HasForcedDirectives
+            && !context.Policy.IncludeTurnSetup
+            && primary.ResultScope == SolverResultScope.SearchCompletion
+            && primary.ExplicitPotionCount == 0
+            && context.Root.SearchablePotions.Count > 0
+                ? DedicatedMemberMilliseconds(context.Profile)
+                : 0;
+
+    /// <summary>
+    /// Runs only the Smart potion gradient under its own floor. The posterior opening-prefix searches of
+    /// <see cref="AuditSmartPotionUse"/> draw from the exhausted request ledger and stay skipped, so no other
+    /// audit is extended.
+    /// </summary>
+    /// <remarks>
+    /// The first optional-potion layer receives the floor as its soft budget and retains its anytime result.
+    /// The linked token allows one sixth of the floor for completion. The explicit layer limit bounds the
+    /// number of members independently of how quickly the first member completes.
+    /// </remarks>
+    private static SolverResult SearchSmartPotionGradientWithMinimumBudget(
+        SearchPassContext context, SolverResult primary, SmartLayerMemoryForecast memoryForecast)
+    {
+        CancellationToken callerCancellationToken = context.CancellationToken;
+        long minimumMilliseconds = SmartPotionAuditMinimumMilliseconds(context, primary);
+        context.Policy.Diagnostics.Info(
+            $"[CombatSolver/Test] SMART_POTION_AUDIT_MINIMUM_BUDGET " +
+            $"remaining_ms={context.RemainingMilliseconds} minimum_ms={minimumMilliseconds}");
+        using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(callerCancellationToken);
+        deadline.CancelAfter(TimeSpan.FromMilliseconds(minimumMilliseconds + minimumMilliseconds / 6));
+        SearchPassContext minimumContext = context with
+        {
+            CancellationToken = deadline.Token,
+            Profile = context.Profile with { SoftTimeBudgetMilliseconds = (int)minimumMilliseconds },
+        };
+        try
+        {
+            return SearchSmartPotionGradient(
+                minimumContext, callerCancellationToken, primary, memoryForecast, out _, maximumLayers: 1);
+        }
+        catch (OperationCanceledException)
+            when (deadline.IsCancellationRequested && !callerCancellationToken.IsCancellationRequested)
+        {
+            return primary;
+        }
+    }
+
     private static SolverResult AuditSmartPotionUse(
         SearchPassContext context,
         CancellationToken callerCancellationToken,
@@ -908,27 +964,15 @@ internal static partial class CombatSearchCoordinator
         SearchPolicySnapshot policy,
         SolverResult candidate,
         SolverResult current)
-    {
-        if (!IsCompleteVictory(candidate) || !IsCompleteVictory(current)
-            || candidate.Snapshot.StrategyGoalHpCredit != current.Snapshot.StrategyGoalHpCredit
-            || policy.TheftPolicy == SolverTheftPolicy.PreserveResources)
-            return IsBetterCompletedResult(root, policy, candidate, current);
-
-        int candidateCost = StrategicHpDeficit(root, policy, candidate)
-            + SmartPotionHpRequired(root, policy, candidate);
-        int currentCost = StrategicHpDeficit(root, policy, current)
-            + SmartPotionHpRequired(root, policy, current);
-        return candidateCost != currentCost
-            ? candidateCost < currentCost
-            : IsBetterCompletedResult(root, policy, candidate, current);
-    }
+        => IsBetterPotionPolicyResult(root, policy, candidate, current);
 
     private static SolverResult SearchSmartPotionGradient(
         SearchPassContext context,
         CancellationToken callerCancellationToken,
         SolverResult potionFree,
         SmartLayerMemoryForecast memoryForecast,
-        out int maximumOptionalPotionUses)
+        out int maximumOptionalPotionUses,
+        int maximumLayers = int.MaxValue)
     {
         CombatRootSnapshot root = context.Root;
         SolverDisplayNames displayNames = context.DisplayNames;
@@ -992,7 +1036,9 @@ internal static partial class CombatSearchCoordinator
         SolverResult selected = potionFree;
         bool deadlineExpired = false;
         bool acceptablePotionLayerFound = false;
-        for (int optionalPotionCount = 1; optionalPotionCount <= maximumOptionalPotionUses; optionalPotionCount++)
+        for (int optionalPotionCount = 1;
+             optionalPotionCount <= Math.Min(maximumOptionalPotionUses, maximumLayers);
+             optionalPotionCount++)
         {
             int potionCount = forcedPotionCount + optionalPotionCount;
             if (searchCancellationToken.IsCancellationRequested)
@@ -1082,12 +1128,15 @@ internal static partial class CombatSearchCoordinator
             int hpRequired = SmartPotionHpRequired(root, policy, candidate);
             bool protectsLoot = policy.TheftPolicy == SolverTheftPolicy.PreserveResources
                 && candidate.OutstandingStolenResource < potionFree.OutstandingStolenResource;
+            bool protectsDeathSave = candidate.Snapshot.ProjectedDeathSaveUseCount
+                < potionFree.Snapshot.ProjectedDeathSaveUseCount;
             bool acceptable = IsSmartPotionGradientCandidateAcceptable(
                 potionFreeWon,
                 candidateWon,
                 hpSaved,
                 hpRequired,
-                protectsLoot);
+                protectsLoot,
+                protectsDeathSave);
             bool improvesSelection = acceptable
                 && IsBetterPotionPolicyResult(root, policy, candidate, selected);
             if (improvesSelection)
@@ -1132,9 +1181,10 @@ internal static partial class CombatSearchCoordinator
         bool candidateWon,
         int hpSaved,
         int hpRequired,
-        bool protectsLoot)
+        bool protectsLoot,
+        bool protectsDeathSave = false)
         => candidateWon
-            && (!potionFreeWon || hpSaved >= hpRequired || protectsLoot);
+            && (!potionFreeWon || hpSaved >= hpRequired || protectsLoot || protectsDeathSave);
 
     private static void ObserveSmartLayerMemory(
         SearchPassContext context,

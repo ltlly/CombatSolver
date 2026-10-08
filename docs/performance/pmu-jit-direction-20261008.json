@@ -5775,5 +5775,88 @@
       "No mechanism scale matrix, portable native kernel, Windows/visible-game acceptance",
       "Runtime mask candidate passed existing native contract but added no full multi-sibling state/RNG differential; no new branch state introduced"
     ]
+  },
+  "upstreamSync20261008": {
+    "headBefore": "a5a2c699",
+    "upstreamPrevious": "9a4489d8",
+    "upstreamNew": "5c773caaec742bc55588bc9ee21c361326a732f0",
+    "prototypeStash": "41758ac2ca1dcb052ec52527799c3c8d570bf84b",
+    "paths": [
+      "src/Engine/Common/MirroredHookListenerFilter.cs",
+      "src/Search/SimulatedCombatState.cs",
+      "src/Testing/Contracts/Combat/UnattendedTestRunner.MirroredHookFilter.cs",
+      "src/Testing/Contracts/Combat/UnattendedTestRunner.ProjectedHookReceivers.cs"
+    ],
+    "nativeBeforeSync": {
+      "runId": "4253f1a0e0d847fd8f5a08923826bb77",
+      "status": "Passed",
+      "scope": "Runtime before upstream sync; not new upstream performance validation"
+    },
+    "build": {
+      "exitCode": 0,
+      "elapsedSeconds": 14.160167123001884,
+      "dllSha256": "5e82c710bccb4d4af7b98b5d98663c7c2f756ba6a02151e8006bd23a72180246"
+    },
+    "nativeSmartBudget": {
+      "runId": "4433095783b14513ae052e8295a643c9",
+      "status": "Passed",
+      "stage": "passed",
+      "elapsedMilliseconds": 27005.6063,
+      "completedChecks": [
+        "SmartPotionAuditBudget:ExhaustedLedger:Loss21To0:OnePotion:OneMember:PolicyGuards:FullReplay:LiveIsolation",
+        "NativeOutcome:combatEnded=False:turn=1:hp=80:maxHp=80"
+      ],
+      "error": null,
+      "command": {
+        "command": [
+          "bash",
+          "tools/testing/run-unattended-test.sh",
+          "--scenario-id",
+          "SMART-POTION-AUDIT-BUDGET",
+          "--character-id",
+          "IRONCLAD",
+          "--encounter-id",
+          "MECHA_KNIGHT_ELITE",
+          "--seed",
+          "COMBATSOLVER",
+          "--combat-solver-build-dir",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/projected-listener-producer-20261008/build-upstream-control",
+          "--headless-instance",
+          "projected-upstream-budget-20261008",
+          "--evidence-directory",
+          "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005/.local/tool-tasks/projected-listener-producer-20261008/native-upstream-budget",
+          "--timeout-seconds",
+          "120",
+          "--exit-on-complete",
+          "--cleanup-instance-on-exit"
+        ],
+        "maximumTimeoutSeconds": 120,
+        "dllSha256": "5e82c710bccb4d4af7b98b5d98663c7c2f756ba6a02151e8006bd23a72180246",
+        "scope": "Merged 0.50.1 Smart audit budget, opportunity policy, full replay/live isolation; not a performance run",
+        "launcherExit": 0,
+        "launcherElapsedSeconds": 34.551668979998794
+      }
+    },
+    "validation": {
+      "documentation": "DOCUMENTATION_OK files=611 links=2678 errors=0 (tracked maintained files only)",
+      "tools": "TOOLS_OK files=295 projects=37 errors=0",
+      "boundaries": "REFACTOR_BOUNDARIES_OK search_files=253",
+      "emptySnapshotAttempt": "First scoped check examined 0 files and is invalid; repaired with an isolated tracked index.",
+      "knownExternalSkillLinkFailure": "Untracked user-added microbenchmarking reference link remains outside this task scope."
+    },
+    "sourceConflicts": "Kept local reviewed growth/retained-victory proof consumers; integrated upstream plan witness, Smart audit/quality, hand-limit stamps and continuation retention.",
+    "archiveCollisionResolution": "Both volume-22 development and volume-21 testing histories retained; incoming plan witness JSON only adds prTransport, so take incoming superset.",
+    "versionScope": "Adopts upstream 0.50.1; no independent version increment, release, PR merge or publication.",
+    "prototypeBeforeSync": {
+      "dllSha256": "721a11484a88653e5cfbdaa44f38bc308b82e05bc0473bfd2cfef0a8a4e24f5d",
+      "nativeRunId": "4253f1a0e0d847fd8f5a08923826bb77",
+      "status": "Passed",
+      "comparisons": 9,
+      "projectedBuilds": 8,
+      "masks": 64,
+      "siblings": 16,
+      "scope": "Pre-sync local projected producer; not post-sync correctness or any performance acceptance."
+    },
+    "deployment": "Pending final disposition; baseline binary preserved, prototype not installed."
   }
 }

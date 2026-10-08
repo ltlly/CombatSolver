@@ -78,7 +78,7 @@ v2 索引保存稳定战斗/检查点 ID、永久递增编号、原生事件位�
 
 完整预测路线可用无人测试场景 `CHECKPOINT-RECORDED-PLAN-DEPLOYMENT` 验证：传原 ZIP、含获胜预测的检查点 selector、`ReplayMode=DeploySolver`、显式政策文件和 EvidenceDirectory。测试按事件游标及起始回合选择最后一条完整获胜预测，保留所有动作、完整牌身份与选择，逐步对账增量/完整回放，再通过正常原生部署入口执行。断言真实胜负、战损、药水数量/身份及终局回合；后台搜索代次跨战斗结束保留，用于确认执行期间没有额外搜索。此模式证明保存预测的可执行性，不能称为纯玩家录制通关或搜索自主发现。
 
-同一输入使用 `CHECKPOINT-RECORDED-PLAN-PATH`、`ReplayMode=SearchOnly`，将冻结路线作为只读观察目标运行正常协调器；不把参照动作注入候选或评分。`RecordedPrediction-path-trace.json` 保存准确动作和完整状态的生成、转置、保留与展开事件，观察器丢事件时显式失败。路径诊断耗时不能作正常性能证据。两种模式都要求原生录制和对应检查点的完整获胜预测，旧身份不匹配时失败，不删去费用层或改写录制内容。Power Potion 等已录制前缀与未来预测用药分别计算，不能漏掉前缀消耗。
+同一输入使用 `CHECKPOINT-RECORDED-PLAN-PATH`、`ReplayMode=SearchOnly`，将冻结路线作为只读观察目标运行正常协调器；不把参照动作注入候选或评分。`RecordedPrediction-path-trace.json` 保存准确动作和完整状态的生成、转置、保留与展开事件，并默认观察倒数第二步对应的完整候选池（单动作路线不采池）。可通过 `-RecordedPlanRetentionStepForTest N`（Linux：`--recorded-plan-retention-step-for-test N`）指定从1开始的动作步数；越界显式失败，输出记录实际观察步数，观察器丢事件时同样失败。候选池按 solverId 与 boundaryId 联合分组，边界编号不能跨成员直接合并。路径诊断耗时不能作正常性能证据。两种模式都要求原生录制和对应检查点的完整获胜预测，旧身份不匹配时失败，不删去费用层或改写录制内容。Power Potion 等已录制前缀与未来预测用药分别计算，不能漏掉前缀消耗。
 
 Q002 专属固定路线/成员诊断已在任务收尾移除；失败证据与[历史用法](archive/testing/q002-pre-0492-validation-20261004.md#一次性诊断入口的历史用法)保留，当前使用上述通用保存预测及正常搜索/部署入口。
 
@@ -91,3 +91,5 @@ Q002 专属固定路线/成员诊断已在任务收尾移除；失败证据与[�
 恢复继续执行游戏构建、模型解码、原生事件、完整 ContinuationStamp 与可比较的 native-state 校验。缺少实际使用的模型、事件无法解码或状态不同仍按具体错误失败；只有完整校验通过才标记 `restorationVerified=true`。求解器已有的第三方不兼容门禁保持独立。
 
 游戏模块标识（MVID）仅记录在 `replayVerification.gameModuleComparison` 的 `expected`、`actual` 与 `matches` 中，不因标识不同提前拒绝恢复。同一版本的不同平台构建可以有不同MVID；兼容性由实际模型/事件解码和状态对账决定，标识相同也不跳过对账。旧包缺少模型编号映射且编号表不同时，原生二进制仍标为不可比较，只有全部已记录ContinuationStamp字段匹配才报告 `restored_continuation`，不宣称完整原生状态恢复。
+
+旧原版录制缺少PR #224新增的`max_hand_size`字段时，仅Testing原生回放在完整native-state核验通过、实际最终字段为唯一默认`max_hand_size=10`时迁移该缺失字段，并记录`legacyDefaultHandLimitVerified`。所有已记录字段仍逐项比较；无完整原生核验、非默认上限、显式冲突、重复或错位字段继续失败。该兼容不恢复历史未记录的非默认上限，不修改原始包、生产续用或搜索状态等价。

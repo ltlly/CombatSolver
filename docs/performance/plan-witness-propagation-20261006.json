@@ -1335,5 +1335,22 @@
     ],
     "rawIgnoredResultsRetained": true
   },
-  "reportEncoding": "Each run is retained as one compact JSON line; all numeric results, quality, commands and counters remain unchanged."
+  "reportEncoding": "Each run is retained as one compact JSON line; all numeric results, quality, commands and counters remain unchanged.",
+  "prTransport": {
+    "sourceReuse": {
+      "status": "Passed",
+      "sourceFilesCompared": 823,
+      "testedSourceWorktree": "/home/ltlly/Code/nmslmod/CombatSolver-common-state-cost-20261005",
+      "sameCompileSourcesAndManifest": true,
+      "candidateDllSha256": "42703cfb25d2b882f263f4d6c1051ec35ae48b9c0244299b9d9ad55aefb87e7b",
+      "buildAndNativeAndPerformanceReuse": "Exact main sources; only indexes/history and excluded tools differ. Reuse the corresponding completed evidence and deployment."
+    },
+    "testPrerequisiteCommit": "fd1ad5f7",
+    "validation": {
+      "boundary": "REFACTOR_BOUNDARIES_OK search_files=252",
+      "documentation": "DOCUMENTATION_OK files=481 links=1943 errors=0",
+      "tools": "TOOLS_OK files=293 projects=37 errors=0",
+      "coverage": "COVERAGE_OK data=529 fixtures=479 groups=37 errors=0"
+    }
+  }
 }

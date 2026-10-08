@@ -18,6 +18,11 @@ internal sealed partial class UnattendedTestRunner
         public async Task RunBeforeExecutionAsync(ScenarioContext scenario)
         {
             UnattendedTestRequest request = runner._request;
+            if (request.ScenarioId == "OVERLAY-VISIBILITY-LIFECYCLE")
+            {
+                runner.SetStage("overlay_visibility_lifecycle");
+                await runner.AssertOverlayVisibilityLifecycleAsync(scenario.CombatState);
+            }
             if (request.ScenarioId == "REMAINING-HEALING-LOUSE")
             {
                 runner.SetStage("remaining_healing_louse");

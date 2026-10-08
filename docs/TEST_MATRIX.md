@@ -1,5 +1,7 @@
 # CombatSolver 测试入口
 
+2026-10-08 [上游同步验证](performance/pmu-jit-direction-20261008.md#同步上游0501后继续实验)：0.50.1控制构建零警告/错误，SMART-POTION-AUDIT-BUDGET原生4433095783b14513ae052e8295a643c9通过21→0战损/单药单成员/政策/完整回放/live，实例已清理；旧原型及旧性能结果不作为同步后验收。
+
 2026-10-08 [硬件/JIT方向证据](performance/pmu-jit-direction-20261008.md)：排序合同1150c989f11a45d7a6722b6e6a604053覆盖603类型/363609比较/43案例/16Fork；12次Evaluate无收益。后续Monitor/CPU两次独立诊断14质量/根/预算/工作匹配；2578对完整、无丢失，CPU窗口18761样本，限定祖先缺失。两类型mask原生c8b84baf38694531982d0c7ebbf12a5a通过1675模型/64回调等既有合同，A/C首两条质量同但C一次时间截断/工作改变，后续交错及哨兵停止，原型撤回；无整请求或新固定回归，生产/部署保持。
 
 2026-10-08 [原始慢根的剪枝范围与见证时机](performance/pruning-scope-and-incumbent-latency-20261008.md)：六次完整请求四次完成、两次120秒超时不重试；六次独立诊断组件门槛1/6、四个完整根戳匹配。亡灵首次发布胜利约45.85/69.86秒、猎手396张未获胜，2,305张铁甲根独立留档。无新剪枝或性能验收，生产源码/五文件部署复用499ec165。
@@ -8,29 +10,19 @@
 
 2026-10-08 [生命通知剪枝门槛](performance/health-callback-pruning-guard-20261008.md)：未知生命事件、Tracker通知、Ritsu详情及指定补丁撤销有限回复资格；原生正常受伤对账及每组16所属Fork通过，额外2回复反例被拒绝认证。固定回归及完整闭包限制见报告，不计新增提速。 同日[开放额度研究](performance/open-potion-tier-bound-research-20261008.md)两次只读请求的14项质量/根/政策/预算一致，潜在新增删除0；未实施新消费者或原生/性能验收。 同日[终局战败观察](performance/terminal-defeat-snapshot-opportunity-20261008.md)两次14项质量一致，猎手工作量有变化；无新剪枝合同。
 
+[公共模拟成本研究的旧验证](archive/testing/volume-27.md)。
+
 [默认方法局部验证归档](archive/testing/volume-25.md)。
 
 2026-10-07 [原生回调](performance/native-generation-callback-proof-20261007.md)与[模型能力](performance/model-capability-recovery-proof-20261007.md)：两类15界/30回复反例；未知治疗、生成OnPlay、当前/未来能力及默认注入拒绝。原生、清理后16Fork状态/历史/RNG、质量与峰值范围见各报告；非全来源认证。
 
-2026-10-06 [跨成员评估机会](performance/cross-member-snapshot-opportunity-20261006.md)：两根完整Coordinator观察及储君新增累计战损字段诊断正常退出，17字段/12份非历史反例精确解释±150000/−180000评分差；该诊断不能证明整快照复用安全。后续排序排列原型合同`bcf768ce45f74969b75204ca5cfcd2f5`通过36组完整顺序/RNG、未知来源/补丁副作用与异常回退、16路并发及父/live隔离，实例清理；未直接覆盖同缓存升级失效。原生/普通候选构建零警告/错误。12次Evaluate交错同根/政策/九项质量/逻辑工作一致但均无提速，原型撤回；完整Coordinator、全部资源目标及最终固定回归未做。生产及既有部署未变。
+2026-10-07 PR #227–#230 的本机 `SMART-POTION-AUDIT-BUDGET`、旧报告、GC 合同，以及 O068 和固定哨兵整场部署通过。O056 最终与当前主线同为 62 战损，历史界 42 未达成；组件证明合同被 native-version 门禁拒绝。最小复跑入口、同根对照、失败及未验证范围见[整合验证](archive/testing/pr-integration-20261007.md)。
 
-2026-10-06 [原生空判定认证](performance/native-noop-guard-research-20261006.md)：范围内合同`000236e700ac4f31b0b35a65361a5564`通过；新增`0045993cec824efba5e7188fbd2bd094`成功复现未知来源读取1→2、分支HP79→78，父/live保持，Passed表示反例复现而非候选安全。两实例清理。12次Evaluate/8次完整Coordinator全样本保留；猎手完整基线120秒超时、候选未启动，原型撤回，未做最终固定回归或新部署。
-
-2026-10-06 [监听类型同步遍历](performance/listener-type-traversal-research-20261006.md)：原生`2107f524896d4794a4b899ac81c7d6b5`通过数组/列表/嵌套冻结段、顺序/短路、未知访问器及异常/List子类/协变/外部标记回退，64方法/1674模型、Fork/补丁刷新/live合同通过并清理实例。12次短搜、4次完整Coordinator质量/工作相应保持，完整请求仅1.0051倍；原型撤回，未追加最终九根或新部署。
-
-2026-10-06 [单次牌值集合复用](performance/intrinsic-variable-set-research-20261006.md)：原生`d21f3161db494846b6bc5b60a563bcaf`通过603类型逐位值、16Fork/修改/Clone、父/live/RNG与三个真实补丁的回退次数/根刷新；续接合同通过、实例清理。12次Evaluate无收益，原型及临时合同撤回，未执行整请求或最终固定回归。
-
-2026-10-06 [指纹内联研究](performance/fingerprint-inline-research-20261006.md)：12个编译方法IL一致，CARD-CONTINUATION-CONTRACT原生`b250abe60dc4464384b1f0c361af9060`通过完整状态/指纹/历史/RNG、隔离及选择结算；实例清理。12次Evaluate及4次亡灵完整Coordinator保持对应质量/工作，整请求1.0008倍没有稳定收益，原型撤回；未追加最终回归或新部署。
-
-2026-10-06 [指纹关键词复用研究](performance/fingerprint-keyword-reuse-research-20261006.md)原生`0d8ec7b7363847fcbe87a255d4807c6d`通过603卡/16标志指纹、全局回调、特殊comparer、Fork/父/live/RNG及补丁刷新；前置拒绝全部保存并清理实例。12次Evaluate与4次完整Coordinator逐次记录，整请求0.988倍未证明收益，原型和专属合同撤回。没有追加最终九根或DOP验收，当前运行时与既有五文件部署保持。
+贡献者 2026-10-06 的 Linux [计划续搜完整胜利证明](performance/plan-witness-propagation-20261006.md)：原生计划循环与最终 GC 合同 Passed；政策门禁、16 Fork、DOP1/16 实际成员派发与一次压缩完整回收通过，实例清理。11 根 44 次纯交错质量及峰值通过；2 次完整诊断、9 次根审计单列。未做全29根、上传包或可见性能，历史战损差异保留。
 
 0.50.0 定稿沿用 PR #207、PR #211 与开局药水准入的既有行为证据，来源和范围见 [历史卷 20](archive/testing/volume-20.md)。
 
 按改动选择最小验证层，方法见 [无人测试](HEADLESS_TESTING.md) 与 [社区验收](community/testing-guide.md)。以下命令提供当前复跑入口，不表示本轮已执行。单人共享损血剪枝的新基线验证见[策略证据](strategy/hp-loss-pruning/README.md#单人共享损血剪枝2026-10-05)。
-
-2026-10-05 [重场景共性分析](performance/heavy-scene-common-costs-20261005.md)复用七份整请求记录及87902组分配栈，阶段／历史／最终DLL范围分别保留。保持完整评估的类型原型CARD-CONTINUATION-SEARCH通过（`4ec5d4c324b84beca0b1e659c908b6cf`）；[两根诊断](performance/pending-choice-evaluation-opportunity-20261005.json)未启用延后评估，原型已撤回。[公共回放核对](performance/common-replay-state-cost-20261005.md)复用续接计数和同一14,199个CPU样本，监听维护并集18.713%，核对Fork／pending拥有者；仅L0文档与既有数据处理，无新游戏测试或性能验收。
-
-2026-10-05 [状态派生研究](performance/derived-state-opportunities-20261005.md)的默认回调/空派发证明原型原生合同及两回合严格差分通过（最终`eb894f987cae462cb3a37f8e3bd2eb72`/`e67cc8a1023e488e9274221bf1fa0782`）；16次固定Evaluate交错收益小并撤回，过期反射oracle/签名测试修正保留。新增大牌组CPU及可选宿主有序依赖重复计数；记录输出相同、诊断工作/质量字段保持，未把它们算作整请求或完整质量验收。 [牌堆投影组合](performance/pile-listener-projections-20261005.md)新增八个完整分支差分、14来源拒绝与原生/基类补丁刷新（`c6d4be826dda489cb06d2da93a535259`）；续接`2d695710335144d6bc927d04e3c74fe0`及DOP1/2/16工作量通过。最终完整请求与内存结果按报告更新，不把最小合同外推。
 
 2026-10-05 [排序比较键研究](performance/native-sort-key-research-20261005.md)原生603类型/363609对比较、40案例与16并行Fork通过（`5c68036ad29c47a4a3b43bc40085429a`）；两个原型共16次固定Evaluate ACCA没有稳定收益，已撤回，未扩展为整请求验收或新的部署。
 
@@ -44,15 +36,27 @@ PR #213 的贡献者分阶段验证见 [Q002 历史入口](issues/q002-route-qua
 
 0.49.4 的额外回合镜像顺序、同根成长胜利续用、整场自动部署与上传引导验证见 [历史卷 16](archive/testing/volume-16.md)。
 
-0.49.0 的行为验证沿用本页 PR #203、#204 合并验收与 [战斗状态修复验证](archive/testing/volume-13.md)。版本及发布文档调整采用 L0 检查和发布构建；原有未验证项保留。
+## Ctrl+F9 面板可见性（PR #226）
 
-0.49.3 的框架、局外 Mod 与 BaseLib 验证见 [历史卷 14](archive/testing/volume-14.md)。
-
-移动运行库内存回收验证见 [历史卷 15](archive/testing/volume-15.md)。
+快捷键、新图层、重置和监控合同的通过、失败与可见验证范围见[历史卷21](archive/testing/volume-21.md#ctrlf9-面板可见性pr-226)。
 
 ## 社区批次 Q010 与组合补搜
 
 现行组合入口按共享节点与时间准入，执行期间在每批提交边界处理内存预约、回收和停止。原包 SearchOnly、Beam 组合检查及真实 CLR 合同的结果、失败与未验证项见 [历史卷 20](archive/testing/volume-20.md#社区批次-q010-与组合补搜)。
+
+## 0.50.1 智能药水机会成本
+
+终局单药／双药低收益拒绝与 Force、奖励抵扣、原价高收益哨兵由 `SMART-OPENING-POTION-ADMISSION` 覆盖；跨成员比较由 `python -B tools/testing/checks/BeamWidthPortfolioChecks/run.py` 覆盖（118项通过）。原生 runId `d9629992ac31423586c7465510c18f6d` Passed（23.63秒，含建局），实例已清理。失败基线、同根材料与未验证范围见[问题记录](issues/potion-opportunity-20261006.md)。
+
+## 社区批次 Q015：路线保留
+
+贡献者五主题的同根短搜、原生部署、固定哨兵及失败记录见[Q015 记录](issues/q015-route-quality.md)。维护的开战政策输入为 [High](../coverage/fixtures/search/damaging-continuation-replay-policy.json)、[Medium](../coverage/fixtures/search/damaging-continuation-medium-replay-policy.json) 与 [Force](../coverage/fixtures/search/damaging-continuation-forced-dexterity-policy.json)，原生部署使用 Instant／0 秒，断言计划外重算。本机最终整合收窄破盾收尾资格，O068 保持 3 战损、0 药、T4，独立哨兵保持 5 战损、1 药、T4，均完整部署、零重算；其余贡献者旧结果保留原验证范围。旧报告默认手牌上限兼容合同通过，详细同根对照见[本机验证](archive/testing/pr-integration-20261007.md)。
+
+## 社区批次 Q013 同根哨兵与部署夹具
+
+Q013（O056–O060，#220 / PR #228）的五条同根 `SearchOnly` 质量界夹具与两条 `DeploySolver` 夹具位于 `coverage/fixtures/regressions/community/q013-*.json`；逐条结果、失败基线与未验证项见 `coverage/evidence/test-evidence.json` 的 `Q013-*` 条目与[认领者记录](community/drafts/2026-10-06/Q013-claim-reproduction.md)。夹具依赖不入库的玩家原包 ZIP，故本页不提供行首可执行命令（与 Q010 同口径，矩阵可复跑清单条数不变）：复跑时把夹具 JSON 字段逐个传给 `tools/testing/run-unattended-test.ps1`，显式带 `-Sts2GameRoot` / `-RitsuWorkshopRoot` / `-CleanupInstanceOnExit`，判定以 `result.json.status` 为准（带实例清理时 launcher 退出码 1 不代表失败）。
+
+认领提交未改 `src`（`git diff --name-only 0d290fbe 0143d82f -- src` 为空），七条夹具在基点 `0d290fbe` 上按夹具本体全部 Passed；界锁各主题当时的实际产出，不构成改良值达标声明（O056/O057/O059 未达包内改良值，O060 默认预算下终值 35～43 摆动，O058 缺口在同一次请求内后续搜索的运行态）。合并 `6031debd` 后（`89798a78` 把 `max_hand_size` 写进续用指纹）七条全部在 `native_replay_events` 报 `restore_mismatch` 而未进入搜索，属旧包容兼容性边界，逐条 runId 与包内取证见[调查流水](archive/community/q013-claim-reproduction-20261006.md)；PR #227 的默认手牌上限兼容已进入整合，本机 O056 原生恢复通过，但历史质量界 42 未达成；其他六条夹具在最终整合上未复跑，见本页整合验证。
 
 ## 开局药水补搜准入
 
@@ -187,3 +191,9 @@ pwsh -NoProfile -File tools\testing\run-unattended-test.ps1 -ScenarioId RADIANT-
 ## 性能研究分支
 
 已结束的诊断、原型及未验证项见[历史卷22](archive/testing/volume-22.md)、[历史卷23](archive/testing/volume-23.md)和[性能专题](performance/README.md)。
+
+既有组件、药水、魂枢及未达标原型的合同与历史结果见[历史卷18](archive/testing/volume-18.md)。PR #207最新上游整合、逐次ABBA、23根品质回归及NoGC波动/超时限制见[当前验收](performance/pr207-upstream-0494-integration-20261005.md)。
+
+## 手牌上限状态一致性（PR #224）
+
+原版根／Fork 合同与贡献者的动态上限及耗时证据见[历史卷21](archive/testing/volume-21.md#手牌上限状态一致性pr-224)。
