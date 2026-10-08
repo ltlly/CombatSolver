@@ -1,6 +1,6 @@
 # CombatSolver 测试入口
 
-2026-10-08 [生命通知剪枝门槛](performance/health-callback-pruning-guard-20261008.md)：未知生命事件、Tracker通知、Ritsu详情及指定补丁撤销有限回复资格；原生正常受伤对账及每组16所属Fork通过，额外2回复反例被拒绝认证。固定回归及完整闭包限制见报告，不计新增提速。 同日[开放额度研究](performance/open-potion-tier-bound-research-20261008.md)两次只读请求的14项质量/根/政策/预算一致，潜在新增删除0；未实施新消费者或原生/性能验收。
+2026-10-08 [生命通知剪枝门槛](performance/health-callback-pruning-guard-20261008.md)：未知生命事件、Tracker通知、Ritsu详情及指定补丁撤销有限回复资格；原生正常受伤对账及每组16所属Fork通过，额外2回复反例被拒绝认证。固定回归及完整闭包限制见报告，不计新增提速。 同日[开放额度研究](performance/open-potion-tier-bound-research-20261008.md)两次只读请求的14项质量/根/政策/预算一致，潜在新增删除0；未实施新消费者或原生/性能验收。 同日[终局战败观察](performance/terminal-defeat-snapshot-opportunity-20261008.md)两次14项质量一致，猎手工作量有变化；无新剪枝合同。
 
 [默认方法局部验证归档](archive/testing/volume-25.md)。
 
