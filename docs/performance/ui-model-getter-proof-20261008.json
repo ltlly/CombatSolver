@@ -5535,7 +5535,7 @@
     "Current getter leaf purity is separate from returned model ownership and any subsequent model method effects; native model module/owner binding is not a non-healing certificate.",
     "Ritsu TryGetCardModel performed five successful same-model observations, but Godot validity/ready/tree calls remain an explicit unproved wrapper boundary.",
     "UpdateVisuals reaches energy/star costs, CanPlay, dynamic variable previews, descriptions and UI writes. CanPlay dispatches Hook.ShouldPlay; wrapper safety cannot follow from simple model getters.",
-    "Selected ten caller groups have 175 direct IL references and 24 distinct referenced model virtual targets. Declaration/reference inventory does not resolve receivers, legal futures, notifications or health effects."
+    "Selected ten caller groups have 175 direct IL references and 24 distinct model targets called using callvirt (10 virtual,14 nonvirtual by actual definition; see correction). Declaration/reference inventory does not resolve receivers, legal futures, notifications or health effects."
   ],
   "validation": {
     "successfulNativeRequests": 1,
@@ -5637,5 +5637,12 @@
     "merge": false,
     "versionChange": false,
     "release": false
+  },
+  "definitionClassificationCorrection": {
+    "evidence": "docs/performance/visual-slot-binding-proof-20261008.json",
+    "actualTargets": 24,
+    "virtualMethods": 10,
+    "nonvirtualMethods": 14,
+    "reason": "callvirt opcode is also used for nonvirtual instance calls. The historical field name actualReferencedModelVirtualTargets is a label error; declaration lookups and references remain original evidence, not virtual dispatch proof."
   }
 }
