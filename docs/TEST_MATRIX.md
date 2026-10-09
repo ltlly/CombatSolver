@@ -20,7 +20,7 @@
 
 2026-10-09 [机制规模筛选](performance/mechanism-scale-roi-20261009.md)保留BDN原始样本、实场索引成本和实际JIT；这些是诊断。[牌堆监听索引复用](performance/pile-hook-projection-20261009.md)分别记录原型、结构完成通知的复入失效检查及最终版本验证范围，不能以早期原型数字代替最终版本。
 
-[冷索引与评估热点](performance/projection-invalidation-roi-20261009.md)保留五次完整诊断、两个撤回原型的16次短测及失败；最终合同明确要求Void进入非空索引，覆盖移除／恢复、COW、16Fork及父/live/RNG，Passed。[有界评估阶段](performance/bounded-snapshot-values-roi-20261009.md)另保留两个撤回原型的原生/16次短测、四根229槽值观察及亡灵战损失配。[评估消费与 Fork 查询](performance/evaluation-demand-and-fork-query-roi-20261009.md)保留四次诊断、原生身份表／16兄弟分支与八次纯短测及SIGFPE定位；原型未晋级撤回，仅改注释，不重复旧合格行为回归。不把诊断或短测当作整请求验收。
+[冷索引与评估热点](performance/projection-invalidation-roi-20261009.md)保留五次完整诊断、两个撤回原型的16次短测及失败；最终合同明确要求Void进入非空索引，覆盖移除／恢复、COW、16Fork及父/live/RNG，Passed。[有界评估阶段](performance/bounded-snapshot-values-roi-20261009.md)另保留两个撤回原型的原生/16次短测、四根229槽值观察及亡灵战损失配。[评估消费与 Fork 查询](performance/evaluation-demand-and-fork-query-roi-20261009.md)保留四次诊断、原生身份表／16兄弟分支与八次纯短测及SIGFPE定位；原型未晋级撤回，仅改注释，不重复旧合格行为回归。不把诊断或短测当作整请求验收。 同日[空接收者证明](performance/empty-receiver-certification-20261009.md)最终49项缓存合同／16兄弟和第二代严格对账通过；12次纯完整交错与11根质量／内存回归保存。储君严格耗时门槛未过，不能称所有速度门槛通过。
 
 按改动选择最小验证层，方法见 [无人测试](HEADLESS_TESTING.md) 与 [社区验收](community/testing-guide.md)。[大牌组监听构造](performance/projected-listener-producer-20261008.md)记录 `MIRRORED-HOOK-FILTER` 的最终验收；[关键词研究](performance/native-pile-lookup-opportunities-20261006.md#2026-10-09监听优化后的定位与关键词原型)和[根牌堆索引](performance/root-native-pile-index-research-20261009.md)原生合同通过后原型均撤回。后者保留44次纯运行及猎手首领54/69战损波动，DOP1/2等价未验证，不能称质量验收通过。[公共复用筛选](performance/common-reuse-roi-research-20261009.md)另保存四次原生合同、32次纯交错及五次完整诊断；均无新运行时交付，诊断不作性能验收。以下命令提供当前复跑入口，不表示本轮已执行。单人共享损血剪枝的新基线验证见[策略证据](strategy/hp-loss-pruning/README.md#单人共享损血剪枝2026-10-05)。
 

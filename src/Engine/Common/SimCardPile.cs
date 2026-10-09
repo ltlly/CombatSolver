@@ -17,6 +17,8 @@ internal sealed class SimCardPile
     private ulong _cachedCycleShapeFingerprintSecond;
     private bool _fingerprintCacheDisabled;
     private HookCardProjection? _hookCardProjection;
+    // A pending recheck belongs to this pile, never to the shared immutable indices.
+    private PredictedCard? _hookProjectionDirtyCard;
 
     // Indices refer only to this ordered pile. Forks share the immutable indices,
     // then resolve receivers through their own card wrappers and previews.
@@ -55,24 +57,24 @@ internal sealed class SimCardPile
 
     public void Add(PredictedCard card)
     {
-        InvalidateFingerprint();
+        InvalidateMembershipFingerprint(inserted: card);
         _cards.Add(card);
-        card.SetOwnerPile(this);
+        card.SetOwnerPile(this, membershipChangedPile: this);
     }
 
     public void Insert(int index, PredictedCard card)
     {
-        InvalidateFingerprint();
+        InvalidateMembershipFingerprint(inserted: card);
         _cards.Insert(index, card);
-        card.SetOwnerPile(this);
+        card.SetOwnerPile(this, membershipChangedPile: this);
     }
 
     public bool Remove(PredictedCard card)
     {
         if (!_cards.Remove(card))
             return false;
-        InvalidateFingerprint();
-        card.SetOwnerPile(null);
+        InvalidateMembershipFingerprint(removed: card);
+        card.SetOwnerPile(null, membershipChangedPile: this);
         return true;
     }
 
@@ -107,7 +109,16 @@ internal sealed class SimCardPile
         fork._cachedCycleShapeFingerprintFirst = _cachedCycleShapeFingerprintFirst;
         fork._cachedCycleShapeFingerprintSecond = _cachedCycleShapeFingerprintSecond;
         if (!_fingerprintCacheDisabled && !fork._fingerprintCacheDisabled)
+        {
             fork._hookCardProjection = _hookCardProjection;
+            if (_hookProjectionDirtyCard is { } dirty)
+            {
+                if (context.TryRemap(dirty, out PredictedCard? mapped))
+                    fork._hookProjectionDirtyCard = mapped;
+                else
+                    fork._hookCardProjection = null;
+            }
+        }
         context.Register(this, fork);
         return fork;
     }
@@ -163,17 +174,70 @@ internal sealed class SimCardPile
     internal void InvalidateFingerprint()
     {
         _hookCardProjection = null;
+        _hookProjectionDirtyCard = null;
+        InvalidateCardStateFingerprints();
+    }
+
+    internal void InvalidateCardFingerprint(PredictedCard card)
+    {
+        InvalidateHookCardProjection(card);
+        InvalidateCardStateFingerprints();
+    }
+
+    // The membership caller already updates the projection before notifying the
+    // card's mutation observer. Keep all value fingerprints invalidated; an observer
+    // can still reenter or invalidate this projection through a separate card write.
+    internal void InvalidateMembershipStateFingerprints() => InvalidateCardStateFingerprints();
+
+    private void InvalidateMembershipFingerprint(PredictedCard? inserted = null, PredictedCard? removed = null)
+    {
+        InvalidateCardStateFingerprints();
+        if (_hookCardProjection is not { Indices.Length: 0 } cached
+            || inserted is not null && HasPotentialHookReceiver(inserted, cached.Filter)
+            // Removing one occurrence must not leave an unowned alias behind an
+            // empty cached result: later writes could no longer notify this pile.
+            || removed is not null && _cards.Contains(removed))
+        {
+            _hookCardProjection = null;
+            _hookProjectionDirtyCard = null;
+            return;
+        }
+        if (removed is not null && ReferenceEquals(removed, _hookProjectionDirtyCard))
+        {
+            // A reentrant completion may have changed attached types since the
+            // original proof. Keep the full fallback when that card gained a hook.
+            if (HasPotentialHookReceiver(removed, cached.Filter))
+                _hookCardProjection = null;
+            _hookProjectionDirtyCard = null;
+        }
+    }
+
+    private void InvalidateCardStateFingerprints()
+    {
         _hasCachedFingerprint = false;
         _hasCachedUnorderedFingerprint = false;
         _hasCachedCycleShapeFingerprint = false;
     }
 
-    internal void InvalidateHookCardProjection()
-        => _hookCardProjection = null;
+    internal void InvalidateHookCardProjection(PredictedCard card)
+    {
+        // Empty indices prove that every previous member was irrelevant. Only this
+        // card can have changed; recheck its current card/attachment types on demand.
+        // Multiple distinct writes and nonempty projections keep full invalidation.
+        if (_hookCardProjection is { Indices.Length: 0 }
+            && (_hookProjectionDirtyCard is null || ReferenceEquals(_hookProjectionDirtyCard, card)))
+        {
+            _hookProjectionDirtyCard = card;
+            return;
+        }
+        _hookCardProjection = null;
+        _hookProjectionDirtyCard = null;
+    }
 
     internal void DisableFingerprintCache()
     {
         _hookCardProjection = null;
+        _hookProjectionDirtyCard = null;
         _fingerprintCacheDisabled = true;
         _hasCachedFingerprint = false;
         _hasCachedUnorderedFingerprint = false;
@@ -190,10 +254,18 @@ internal sealed class SimCardPile
         }
         if (_hookCardProjection is { } cached && ReferenceEquals(cached.Filter, filter))
         {
-            indices = cached.Indices;
-            return true;
+            if (_hookProjectionDirtyCard is not { } dirty
+                || ReferenceEquals(dirty.OwnerPile, this) && !HasPotentialHookReceiver(dirty, filter))
+            {
+                _hookProjectionDirtyCard = null;
+                indices = cached.Indices;
+                return true;
+            }
+            _hookCardProjection = null;
+            _hookProjectionDirtyCard = null;
         }
 
+        _hookProjectionDirtyCard = null;
         List<int>? selected = null;
         for (int index = 0; index < _cards.Count; index++)
         {
@@ -217,6 +289,14 @@ internal sealed class SimCardPile
         _hookCardProjection = new HookCardProjection(filter, selected?.ToArray() ?? []);
         indices = _hookCardProjection.Indices;
         return true;
+    }
+
+    private static bool HasPotentialHookReceiver(PredictedCard card, MirroredHookListenerFilter filter)
+    {
+        CardModel preview = card.Preview;
+        return filter.HasMirroredCallbacks(preview)
+            || preview.Affliction is { } affliction && filter.HasMirroredCallbacks(affliction)
+            || preview.Enchantment is { } enchantment && filter.HasMirroredCallbacks(enchantment);
     }
 
     private void AttachCards()

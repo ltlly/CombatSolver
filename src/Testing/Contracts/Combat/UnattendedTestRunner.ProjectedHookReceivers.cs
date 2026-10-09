@@ -1,4 +1,6 @@
 using System.Reflection;
+using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Simulation;
@@ -27,6 +29,7 @@ internal sealed partial class UnattendedTestRunner
         parent.AddToPile(PredictedCard.Create(
             ModelDb.Card<MegaCrit.Sts2.Core.Models.Cards.Void>(), player), PileType.Draw);
         int pileCacheChecks = AssertPileHookProjectionCache(parent, root, player);
+        int emptyRecheckChecks = AssertEmptyPileProjectionRevalidation(parent, root, player);
         string parentBefore = DescribeContinuationContractState(parent, root, player);
         CombatPredictionSimulator candidate = parent.Fork();
         CombatPredictionSimulator whole = parent.Fork();
@@ -122,7 +125,7 @@ internal sealed partial class UnattendedTestRunner
             || ContinuationStamp.CaptureLive(live).StateText != liveBefore)
             throw new InvalidOperationException("Projected listeners escaped sibling, parent or live isolation.");
         AssertProjectedGetterPatchFallback(live, player);
-        _completedChecks.Add($"ProjectedHookReceivers:Comparisons={comparisons}:ProjectedBuilds={projectedBuilds}:PileCacheChecks={pileCacheChecks}:NonemptyNativeCardCallback:Masks=64:FullStateFingerprintHistoryRng:MovesRemovedAttachmentsPowerOrder:Fork16ParentLive:GetterPatchFallback");
+        _completedChecks.Add($"ProjectedHookReceivers:Comparisons={comparisons}:ProjectedBuilds={projectedBuilds}:PileCacheChecks={pileCacheChecks}:EmptyRecheckChecks={emptyRecheckChecks}:NonemptyNativeCardCallback:Masks=64:FullStateFingerprintHistoryRng:MovesRemovedAttachmentsPowerOrder:Fork16ParentLive:GetterPatchFallback");
     }
 
     private static int AssertPileHookProjectionCache(
@@ -233,8 +236,9 @@ internal sealed partial class UnattendedTestRunner
             throw new InvalidOperationException("Cross-pile wrapper alias retained a reusable projection.");
         Check(newOwner);
         alias.MutablePreview.BaseReplayCount++;
-        if (cache.GetValue(newOwner) is not null)
-            throw new InvalidOperationException("Aliased wrapper write did not invalidate its current owner.");
+        Check(newOwner);
+        if (oldOwner.TryGetHookCardProjection(filter, out _))
+            throw new InvalidOperationException("Aliased wrapper write restored its previous owner's projection.");
         CombatPredictionSimulator[] siblings = Enumerable.Range(0, 16).Select(_ => parent.Fork()).ToArray();
         Parallel.ForEach(siblings, simulator =>
         {
@@ -252,6 +256,189 @@ internal sealed partial class UnattendedTestRunner
             || DescribeContinuationContractState(parent, root, player) != parentBefore)
             throw new InvalidOperationException("Projection cache escaped parent/Fork state isolation.");
         return checks;
+    }
+
+    private static int AssertEmptyPileProjectionRevalidation(
+        CombatPredictionSimulator parent, CombatRootSnapshot root, Player player)
+    {
+        var filter = new MirroredHookListenerFilter(enabled: true);
+        FieldInfo cache = typeof(SimCardPile).GetField("_hookCardProjection", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        FieldInfo dirty = typeof(SimCardPile).GetField("_hookProjectionDirtyCard", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        CombatPredictionSimulator candidate = parent.Fork(), oracle = parent.Fork();
+        SimCardPile draw = candidate.State.GetPlayerCombatState(player).DrawPile;
+        SimCardPile oracleDraw = oracle.State.GetPlayerCombatState(player).DrawPile;
+        foreach (SimCardPile pile in new[] { draw, oracleDraw })
+            foreach (PredictedCard card in pile.Cards.Where(card =>
+                filter.HasMirroredCallbacks(card.Preview)).ToArray())
+                pile.Remove(card);
+        int checks = 0;
+
+        void CheckPair()
+        {
+            oracleDraw.InvalidateFingerprint();
+            if (!draw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> actual)
+                || !oracleDraw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> expected)
+                || !actual.SequenceEqual(expected)
+                || DescribeContinuationContractState(candidate, root, player)
+                    != DescribeContinuationContractState(oracle, root, player))
+                throw new InvalidOperationException("Local receiver recheck differs from full scan/state/history/RNG.");
+            checks++;
+        }
+
+        CheckPair();
+        if (!draw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> initial) || initial.Length != 0)
+            throw new InvalidOperationException("Local recheck fixture requires a certified empty projection.");
+        object shared = cache.GetValue(draw)!;
+        for (int repeat = 0; repeat < 3; repeat++)
+        {
+            draw.TopCard!.MutablePreview.BaseReplayCount++;
+            oracleDraw.TopCard!.MutablePreview.BaseReplayCount++;
+            if (!ReferenceEquals(shared, cache.GetValue(draw)) || !ReferenceEquals(dirty.GetValue(draw), draw.TopCard))
+                throw new InvalidOperationException("Single write did not defer its own empty projection recheck.");
+            CheckPair();
+            if (!ReferenceEquals(shared, cache.GetValue(draw)) || dirty.GetValue(draw) is not null)
+                throw new InvalidOperationException("Unchanged receiver participation rebuilt the empty projection.");
+        }
+
+        PredictedCard inserted = PredictedCard.Create(ModelDb.Card<StrikeIronclad>(), player);
+        PredictedCard oracleInserted = PredictedCard.Create(ModelDb.Card<StrikeIronclad>(), player);
+        draw.Insert(0, inserted);
+        oracleDraw.Insert(0, oracleInserted);
+        CheckPair();
+        if (!ReferenceEquals(shared, cache.GetValue(draw)))
+            throw new InvalidOperationException("An ordinary insertion discarded the empty certificate.");
+        inserted.MutablePreview.BaseReplayCount++;
+        oracleInserted.MutablePreview.BaseReplayCount++;
+        draw.Remove(inserted);
+        oracleDraw.Remove(oracleInserted);
+        CheckPair();
+        if (!ReferenceEquals(shared, cache.GetValue(draw)) || dirty.GetValue(draw) is not null)
+            throw new InvalidOperationException("Removing a changed nonreceiver lost its empty certificate.");
+        draw.Add(inserted);
+        oracleDraw.Add(oracleInserted);
+        CheckPair();
+        if (!ReferenceEquals(shared, cache.GetValue(draw)))
+            throw new InvalidOperationException("An ordinary addition discarded the empty certificate.");
+        PredictedCard receiver = PredictedCard.Create(ModelDb.Card<MegaCrit.Sts2.Core.Models.Cards.Void>(), player);
+        PredictedCard oracleReceiver = PredictedCard.Create(ModelDb.Card<MegaCrit.Sts2.Core.Models.Cards.Void>(), player);
+        draw.Add(receiver);
+        oracleDraw.Add(oracleReceiver);
+        if (cache.GetValue(draw) is not null)
+            throw new InvalidOperationException("An inserted callback retained an empty certificate.");
+        CheckPair();
+        draw.Remove(receiver);
+        oracleDraw.Remove(oracleReceiver);
+        CheckPair();
+        shared = cache.GetValue(draw)!;
+
+        // Same-pile duplicates need a full fallback when removal detaches their
+        // shared wrapper. Otherwise its remaining occurrence could stop notifying.
+        PredictedCard alias = PredictedCard.Create(ModelDb.Card<StrikeIronclad>(), player);
+        SimCardPile duplicates = new(PileType.Draw, new[] { alias, alias });
+        if (!duplicates.TryGetHookCardProjection(filter, out _) || !duplicates.Remove(alias)
+            || cache.GetValue(duplicates) is not null || duplicates.TryGetHookCardProjection(filter, out _))
+            throw new InvalidOperationException("Removing one duplicate retained an unowned empty certificate.");
+        checks++;
+        PredictedCard observed = PredictedCard.Create(ModelDb.Card<StrikeIronclad>(), player);
+        PredictedCard reentrant = PredictedCard.Create(ModelDb.Card<StrikeIronclad>(), player);
+        SimCardPile observerPile = new(PileType.Draw, new[] { observed });
+        observerPile.TryGetHookCardProjection(filter, out _);
+        reentrant.SetMutationObserver(() =>
+        {
+            if (!observerPile.TryGetHookCardProjection(filter, out _))
+                throw new InvalidOperationException("A membership observer could not read the updated pile.");
+            observed.MutablePreview.BaseReplayCount++;
+        });
+        observerPile.Add(reentrant);
+        if (!ReferenceEquals(dirty.GetValue(observerPile), observed)
+            || !observerPile.TryGetHookCardProjection(filter, out _))
+            throw new InvalidOperationException("Membership completion discarded a reentrant card write.");
+        reentrant.SetMutationObserver(null);
+        checks++;
+
+        // Query before a structural write finishes, then attach an unknown receiver.
+        // This synthetic type is never registered or executed as supported content.
+        CardModel writable = draw.TopCard!.MutablePreview;
+        CheckPair();
+        AssemblyBuilder assembly = AssemblyBuilder.DefineDynamicAssembly(
+            new AssemblyName("CombatSolver.ProjectionUnknown." + Guid.NewGuid().ToString("N")), AssemblyBuilderAccess.RunAndCollect);
+        Type unknown = assembly.DefineDynamicModule("ProjectionUnknown").DefineType(
+            "UnknownProjectionAffliction", TypeAttributes.Public | TypeAttributes.Sealed, typeof(AfflictionModel)).CreateType()!;
+        writable.Affliction = (AfflictionModel)RuntimeHelpers.GetUninitializedObject(unknown);
+        if (!filter.HasMirroredCallbacks(writable.Affliction))
+            throw new InvalidOperationException("Unknown attachment lost conservative participation.");
+        draw.TopCard!.NotifyHookListenerStructureChanged();
+        if (!draw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> changed) || !changed.Contains(0)
+            || ReferenceEquals(shared, cache.GetValue(draw)))
+            throw new InvalidOperationException("Completed unknown attachment escaped a reentrant local recheck.");
+        checks++;
+        writable.Affliction = null;
+        draw.TopCard.NotifyHookListenerStructureChanged();
+        CheckPair();
+
+        shared = cache.GetValue(draw)!;
+        draw.Cards[0].MutablePreview.BaseReplayCount++;
+        oracleDraw.Cards[0].MutablePreview.BaseReplayCount++;
+        draw.Cards[1].MutablePreview.BaseReplayCount++;
+        oracleDraw.Cards[1].MutablePreview.BaseReplayCount++;
+        if (cache.GetValue(draw) is not null || dirty.GetValue(draw) is not null)
+            throw new InvalidOperationException("Two distinct writes retained a single-card certificate.");
+        CheckPair();
+        if (ReferenceEquals(shared, cache.GetValue(draw)))
+            throw new InvalidOperationException("Multiple writes did not use the full scan fallback.");
+
+        string parentBefore = DescribeContinuationContractState(candidate, root, player);
+        shared = cache.GetValue(draw)!;
+        _ = draw.TopCard!.MutablePreview;
+        if (!ReferenceEquals(dirty.GetValue(draw), draw.TopCard))
+            throw new InvalidOperationException("Fork fixture lost the pending receiver recheck.");
+        var siblings = Enumerable.Range(0, 16).Select(_ => (Actual: candidate.Fork(), Expected: oracle.Fork())).ToArray();
+        Parallel.For(0, siblings.Length, index =>
+        {
+            using IDisposable workerIsolation = SimulationNotificationIsolation.Enter();
+            var pair = siblings[index];
+            SimCardPile forkDraw = pair.Actual.State.GetPlayerCombatState(player).DrawPile;
+            SimCardPile expectedDraw = pair.Expected.State.GetPlayerCombatState(player).DrawPile;
+            if (!ReferenceEquals(cache.GetValue(forkDraw), shared)
+                || !ReferenceEquals(dirty.GetValue(forkDraw), forkDraw.TopCard)
+                || ReferenceEquals(forkDraw.TopCard, draw.TopCard))
+                throw new InvalidOperationException("Fork shared a mutable pending card or lost immutable indices.");
+            forkDraw.TopCard!.MutablePreview.BaseReplayCount += index + 1;
+            expectedDraw.TopCard!.MutablePreview.BaseReplayCount += index + 1;
+            expectedDraw.InvalidateFingerprint();
+            if (!forkDraw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> actual)
+                || !expectedDraw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> expected)
+                || !actual.SequenceEqual(expected)
+                || !ReferenceEquals(cache.GetValue(forkDraw), shared)
+                || DescribeContinuationContractState(pair.Actual, root, player)
+                    != DescribeContinuationContractState(pair.Expected, root, player))
+                throw new InvalidOperationException("Fork local recheck differs from full scan/state/history/RNG.");
+            CombatPredictionSimulator grandchild = pair.Actual.Fork();
+            CombatPredictionSimulator grandOracle = pair.Expected.Fork();
+            SimCardPile grandchildDraw = grandchild.State.GetPlayerCombatState(player).DrawPile;
+            SimCardPile grandOracleDraw = grandOracle.State.GetPlayerCombatState(player).DrawPile;
+            grandchildDraw.TopCard!.MutablePreview.BaseReplayCount++;
+            grandOracleDraw.TopCard!.MutablePreview.BaseReplayCount++;
+            grandOracleDraw.InvalidateFingerprint();
+            if (!grandchildDraw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> grandActual)
+                || !grandOracleDraw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> grandExpected)
+                || !grandActual.SequenceEqual(grandExpected)
+                || !ReferenceEquals(cache.GetValue(grandchildDraw), shared)
+                || DescribeContinuationContractState(grandchild, root, player)
+                    != DescribeContinuationContractState(grandOracle, root, player)
+                || DescribeContinuationContractState(pair.Actual, root, player)
+                    != DescribeContinuationContractState(pair.Expected, root, player))
+                throw new InvalidOperationException("Second-generation recheck changed its parent.");
+        });
+        checks += siblings.Length * 2;
+        if (!ReferenceEquals(dirty.GetValue(draw), draw.TopCard)
+            || DescribeContinuationContractState(candidate, root, player) != parentBefore)
+            throw new InvalidOperationException("Child query consumed its parent's pending recheck or state.");
+        CheckPair();
+        draw.DisableFingerprintCache();
+        if (cache.GetValue(draw) is not null || dirty.GetValue(draw) is not null || draw.TryGetHookCardProjection(filter, out _))
+            throw new InvalidOperationException("Opaque pile retained a deferred receiver certificate.");
+        return checks + 1;
     }
 
     private static void DisableMirroredFilterForOracle(CombatPredictionSimulator simulator)
