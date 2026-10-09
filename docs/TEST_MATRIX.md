@@ -190,7 +190,7 @@ pwsh -NoProfile -File tools\testing\run-unattended-test.ps1 -ScenarioId RADIANT-
 
 ## 性能研究分支
 
-已结束的公共性能实验见[历史卷24](archive/testing/volume-24.md#性能研究分支阶段记录)，当前导航见[性能专题](performance/README.md)。[派生牌库复用筛选](performance/deck-derived-reuse-roi-20261009.md)：596种原生牌及6代表新增边界通过；两个候选8次纯交错未过1.03门槛，全部撤回。完整请求84.78%上下文重复是机会观察；无候选长测/固定回归/新增两倍验收。 [上下文读取与逐卡机会](performance/strategic-context-read-certificate-20261009.md)：四次原计算诊断的质量／状态／68剪枝字段相等；512项读取机会80.80%，尚无新原生合同、纯性能或完整回归。 [逐卡缓存实测](performance/strategic-card-metric-cache-roi-20261009.md)：596种及16分支原生通过，两个后端16次短测质量／峰值一致但无足够提速，全部撤回；实际quality.json补验相等。
+已结束的公共性能实验见[历史卷24](archive/testing/volume-24.md#性能研究分支阶段记录)，当前导航见[性能专题](performance/README.md)。[派生牌库复用筛选](performance/deck-derived-reuse-roi-20261009.md)：596种原生牌及6代表新增边界通过；两个候选8次纯交错未过1.03门槛，全部撤回。完整请求84.78%上下文重复是机会观察；无候选长测/固定回归/新增两倍验收。 [上下文读取与逐卡机会](performance/strategic-context-read-certificate-20261009.md)：四次原计算诊断的质量／状态／68剪枝字段相等；512项读取机会80.80%，尚无新原生合同、纯性能或完整回归。 [逐卡缓存实测](performance/strategic-card-metric-cache-roi-20261009.md)：596种及16分支原生通过，两个后端16次短测质量／峰值一致但无足够提速，全部撤回；实际quality.json补验相等。 [标签来源与专用编译](performance/strategic-requirement-specialization-roi-20261009.md)：18别名反例、60,482项原生／57读序通过；16次纯短测及4次完整目标对照留档，完整0.982倍未晋级并撤回，哨兵长测中止不作验收。
 
 既有组件、药水、魂枢及未达标原型的合同与历史结果见[历史卷18](archive/testing/volume-18.md)。PR #207最新上游整合、逐次ABBA、23根品质回归及NoGC波动/超时限制见[当前验收](performance/pr207-upstream-0494-integration-20261005.md)。
 

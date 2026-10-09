@@ -1,5 +1,6 @@
 # 性能工作入口
 
+- [标签来源与需求专用编译](strategic-requirement-specialization-roi-20261009.md)：实际标签别名反例／稀疏计数；编译短测通过而完整请求0.982倍，原型撤回，无新增两倍验收。
 - [逐卡指标缓存筛选](strategic-card-metric-cache-roi-20261009.md)：596种正向读证书及原生失效／隔离通过；两个后端16次纯短测未过收益门槛，全部撤回，保留实际命中及失败证据。
 - [战略上下文读依赖与逐卡复用](strategic-context-read-certificate-20261009.md)：原版getter分类、当前Ritsu链与四次诊断；512项逐卡机会80.80%，未实现证书／缓存，无新性能验收。
 
