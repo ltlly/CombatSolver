@@ -20,6 +20,8 @@
 
 2026-10-09 [机制规模筛选](performance/mechanism-scale-roi-20261009.md)保留BDN原始样本、实场索引成本和实际JIT；这些是诊断。[牌堆监听索引复用](performance/pile-hook-projection-20261009.md)分别记录原型、结构完成通知的复入失效检查及最终版本验证范围，不能以早期原型数字代替最终版本。
 
+[冷索引与评估热点](performance/projection-invalidation-roi-20261009.md)保留五次完整诊断、两个撤回原型的16次短测及失败；最终合同明确要求Void进入非空索引，覆盖移除／恢复、COW、16Fork及父/live/RNG，Passed。不把诊断或短测当作整请求验收。
+
 按改动选择最小验证层，方法见 [无人测试](HEADLESS_TESTING.md) 与 [社区验收](community/testing-guide.md)。[大牌组监听构造](performance/projected-listener-producer-20261008.md)记录 `MIRRORED-HOOK-FILTER` 的最终验收；[关键词研究](performance/native-pile-lookup-opportunities-20261006.md#2026-10-09监听优化后的定位与关键词原型)和[根牌堆索引](performance/root-native-pile-index-research-20261009.md)原生合同通过后原型均撤回。后者保留44次纯运行及猎手首领54/69战损波动，DOP1/2等价未验证，不能称质量验收通过。[公共复用筛选](performance/common-reuse-roi-research-20261009.md)另保存四次原生合同、32次纯交错及五次完整诊断；均无新运行时交付，诊断不作性能验收。以下命令提供当前复跑入口，不表示本轮已执行。单人共享损血剪枝的新基线验证见[策略证据](strategy/hp-loss-pruning/README.md#单人共享损血剪枝2026-10-05)。
 
 2026-10-05 [排序比较键研究](performance/native-sort-key-research-20261005.md)原生603类型/363609对比较、40案例与16并行Fork通过（`5c68036ad29c47a4a3b43bc40085429a`）；两个原型共16次固定Evaluate ACCA没有稳定收益，已撤回，未扩展为整请求验收或新的部署。

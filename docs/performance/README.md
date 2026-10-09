@@ -1,5 +1,6 @@
 # 性能工作入口
 
+- [冷索引原因与当前评估热点](projection-invalidation-roi-20261009.md)：五次完整诊断、两个撤回原型及非空原生卡牌回调合同；无新增提速。
 - [机制规模与投入收益筛选](mechanism-scale-roi-20261009.md)。
 - [大牌组牌堆监听索引复用](pile-hook-projection-20261009.md)。
 

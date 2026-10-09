@@ -24,6 +24,8 @@ internal sealed partial class UnattendedTestRunner
         for (int index = 0; index < 300; index++)
             parent.AddToPile(PredictedCard.Create(ModelDb.Card<StrikeIronclad>(), player), PileType.Draw);
         parent.AddToPile(PredictedCard.Create(ModelDb.Card<Reflex>(), player), PileType.Draw);
+        parent.AddToPile(PredictedCard.Create(
+            ModelDb.Card<MegaCrit.Sts2.Core.Models.Cards.Void>(), player), PileType.Draw);
         int pileCacheChecks = AssertPileHookProjectionCache(parent, root, player);
         string parentBefore = DescribeContinuationContractState(parent, root, player);
         CombatPredictionSimulator candidate = parent.Fork();
@@ -120,7 +122,7 @@ internal sealed partial class UnattendedTestRunner
             || ContinuationStamp.CaptureLive(live).StateText != liveBefore)
             throw new InvalidOperationException("Projected listeners escaped sibling, parent or live isolation.");
         AssertProjectedGetterPatchFallback(live, player);
-        _completedChecks.Add($"ProjectedHookReceivers:Comparisons={comparisons}:ProjectedBuilds={projectedBuilds}:PileCacheChecks={pileCacheChecks}:Masks=64:FullStateFingerprintHistoryRng:MovesRemovedAttachmentsPowerOrder:Fork16ParentLive:GetterPatchFallback");
+        _completedChecks.Add($"ProjectedHookReceivers:Comparisons={comparisons}:ProjectedBuilds={projectedBuilds}:PileCacheChecks={pileCacheChecks}:NonemptyNativeCardCallback:Masks=64:FullStateFingerprintHistoryRng:MovesRemovedAttachmentsPowerOrder:Fork16ParentLive:GetterPatchFallback");
     }
 
     private static int AssertPileHookProjectionCache(
@@ -150,6 +152,10 @@ internal sealed partial class UnattendedTestRunner
 
         SimCardPile parentDraw = parent.State.GetPlayerCombatState(player).DrawPile;
         Check(parentDraw);
+        if (!parentDraw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> parentIndices)
+            || !parentIndices.Contains(parentDraw.Cards.ToList().FindIndex(card =>
+                card.Preview is MegaCrit.Sts2.Core.Models.Cards.Void)))
+            throw new InvalidOperationException("Native callback card did not enter the nonempty pile projection.");
         object shared = cache.GetValue(parentDraw)!;
         Check(parentDraw);
         if (!ReferenceEquals(shared, cache.GetValue(parentDraw)))
@@ -189,12 +195,15 @@ internal sealed partial class UnattendedTestRunner
         child.AddToPile(inserted, PileType.Discard);
         Check(draw);
         Check(child.State.GetPlayerCombatState(player).DiscardPile);
-        PredictedCard callbackCard = draw.Cards.First(card => card.Preview is Reflex);
+        PredictedCard callbackCard = draw.Cards.First(card =>
+            card.Preview is MegaCrit.Sts2.Core.Models.Cards.Void);
         callbackCard.MutablePreview.HasBeenRemovedFromState = true;
         Check(draw);
         callbackCard.MutablePreview.HasBeenRemovedFromState = false;
         Check(draw);
         draw.Remove(callbackCard);
+        if (cache.GetValue(draw) is not null)
+            throw new InvalidOperationException("Card removal retained nonempty projection indices.");
         Check(draw);
         draw.Add(callbackCard);
         Check(draw);
