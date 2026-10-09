@@ -89,7 +89,8 @@ internal sealed class PredictionModHookSubscriberCapture
 
     public static PredictionModHookSubscriberCapture Capture(
         RunState runState,
-        CombatState combat)
+        CombatState combat,
+        IReadOnlySet<CardModel> floatingCards)
     {
         AbstractModel[] runSubscribers = ModHelper.IterateAllRunStateSubscribers(runState).ToArray();
         AbstractModel[] combatSubscribers = ModHelper.IterateAllCombatStateSubscribers(combat).ToArray();
@@ -125,7 +126,9 @@ internal sealed class PredictionModHookSubscriberCapture
                 subscriber.GetType().FullName == LoadoutPowerGiverSummonHookTypeName))
             { AdaptedOnPlay = onPlay,
                 HealingCallbackRejection = PredictionPlayerPotionCallbackAudit.Capture(combat.Players)
-                    ?? PredictionHealthCallbackAudit.Capture(combat) };
+                    ?? PredictionHealthCallbackAudit.Capture(combat)
+                    ?? PredictionCardCallbackAudit.Capture(
+                        EnumerateAuditableCards(runState, combat).Concat(floatingCards)) };
     }
 
     public static string? CaptureLiveLoadoutSummonPowerState(CombatState combat)

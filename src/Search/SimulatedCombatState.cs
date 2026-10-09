@@ -377,7 +377,8 @@ internal sealed partial class SimulatedCombatState
             ?? throw new InvalidOperationException("Combat prediction requires a concrete RunState.");
         _modHookSubscribers = PredictionModHookSubscriberCapture.Capture(
             concreteRunState,
-            inner);
+            inner,
+            _rootFloatingCards);
         _rootMaxHandSizes = _modHookSubscribers.MaxHandSizes;
         int standardCombatListenerCount =
             liveCombatHookListeners.Length - _modHookSubscribers.CombatSubscribers.Length;

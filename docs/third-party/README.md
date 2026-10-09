@@ -348,6 +348,8 @@ StrategicEffectMirrors.Register<TYourPower>(requirements, evaluate, host);
 
 [生命通知剪枝门槛](../performance/health-callback-pruning-guard-20261008.md)补充稳定根拒绝：玩家、敌人和已存在奥斯蒂的当前/最大生命事件、精确Tracker转发（也检查牌堆/历史/能量的独立可达通知）及实际Ritsu浏览器详情回调，未知绑定或指定入口补丁使统一回复消费者退回无限界。根和Fork仅保存不可变拒绝原因，不执行回调，也不扩展未知语义的模拟支持。已观察原版/Ritsu外层绑定保留此前准入；这个保护不是其完整调用图证明，后续注册、其他UI回调/信号及未来来源仍待闭包。
 
+[卡牌通知回复门槛](../performance/card-notification-and-recovery-roi-20261009.md)复现原生重放数变化通知直接重设玩家HP的2点反例。稳定根检查8个无参CardModel事件及暂时离堆的所属实例，未知绑定或所检查方法补丁退回无限回复界；仅保留当前Tracker的精确绑定，转发由现有生命通知门槛检查。它不执行未知回调，不认证附着变化、ExecutionFinished、其他UI信号或未来注册。生成／抽牌／重放来源扩大原型已撤回，组件准入没有扩大。
+
 模型镜像登记、原版类型身份和非gameplay清单不能补足证明。下表的组件资格仅表示已检查的来源表通过，不能解释为全部生命事件、界面回调或扩展链安全。
 
 组合达标早停额外读取冻结的 `CombatRootSnapshot.HasVisibleHealingSource`：牌、玩家 Power 和可搜索药水的 `Heal` / `HealPercent` / `RegenPower` 变量，以及已有 `RegenPower`，会保守保留追加搜索；已选路线实际回血也保留追加搜索。变量在主线程完成物化后读取，治疗随从同样可能触发保守回退。这不是完整治疗来源登记或可达收益上界；没有这些元数据的自定义治疗、后续生成的治疗来源，仍可能因玩家战损目标已经达标而少做追加审计。关闭战损达标早停可保留原追加搜索；不改变模拟执行和既有第三方适配合同。
@@ -357,6 +359,7 @@ StrategicEffectMirrors.Register<TYourPower>(requirements, evaluate, host);
 
 | 位置 | 症状 | 状态 |
 |---|---|---|
+| `PredictionCardCallbackAudit.Capture` | 稳定根检查8个无参卡牌通知、永久牌组／生成超集和暂时离堆的根所属实例；未知绑定、版本／布局或指定Tracker方法补丁使回复消费者退回无限界，Fork仅共享原因。精确Tracker准入复用生命转发门槛，不能解释为其他UI／未来回调安全 | 封闭拒绝门槛，无外部放行入口 |
 | `PredictionHealthCallbackAudit.Capture` | 稳定根检查生命事件、实际Tracker受众和Ritsu详情刷新，未知绑定/所检查补丁退回无限回复界；只共享原因，不持有live对象。保留原外层准入不是完整回复证书，未来注册和其他信号仍未证明 | 封闭拒绝门槛，无外部放行入口 |
 | `PredictionPlayerPotionCallbackAudit.Capture` | 用药完成及指定悬停同步来源在稳定根检查，未知受众、版本/布局、测试委托或依赖补丁拒绝回复剪枝；原版精确回调按已审计身份接纳，Fork只共享不可变原因。不是所有生命/UI事件认证，未知语义不自动获得模拟支持 | 封闭回复证明准入，无外部放行入口 |
 | `PredictionRitsuCapabilityAudit.Validate` | 原版模型类型不替代附着行为审计；当前/未来规范宿主能力、未知保存条目及默认构造注入在根/live拒绝，空宿主/仅注册工厂保留 | 无外部认证入口；精确Runtime/Shared契约，仅缓存元数据，不执行未知工厂；其他回调仍需独立审计 |

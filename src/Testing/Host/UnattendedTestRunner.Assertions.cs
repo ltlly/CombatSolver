@@ -175,6 +175,11 @@ internal sealed partial class UnattendedTestRunner
                 runner.SetStage("hp_loss_clamp");
                 runner.AssertHpLossClamping(scenario.CombatState, scenario.Player);
             }
+            if (request.ScenarioId == "CARD-NOTIFICATION-BOUND")
+            {
+                runner.SetStage("card_notification_bound");
+                await runner.AssertCardNotificationBoundAsync(scenario.CombatState, scenario.Player);
+            }
             if (request.ScenarioId == "COMBAT-MOD-BOUNDARY")
             {
                 runner.SetStage("combat_mod_boundary");
