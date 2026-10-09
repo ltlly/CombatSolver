@@ -190,7 +190,7 @@ pwsh -NoProfile -File tools\testing\run-unattended-test.ps1 -ScenarioId RADIANT-
 
 ## 性能研究分支
 
-已结束的诊断、原型及未验证项见[历史卷22](archive/testing/volume-22.md)、[历史卷23](archive/testing/volume-23.md)和[性能专题](performance/README.md)。小牌组原型的45张原生合同、八次纯短测与独立亡灵CPU诊断见[筛选记录](performance/small-pile-scope-roi-20261009.md)；原型撤回，无新增完整性能或固定回归。
+已结束的诊断、原型及未验证项见[历史卷22](archive/testing/volume-22.md)、[历史卷23](archive/testing/volume-23.md)和[性能专题](performance/README.md)。小牌组原型的45张原生合同、八次纯短测与独立亡灵CPU诊断见[筛选记录](performance/small-pile-scope-roi-20261009.md)；原型撤回。[默认命中许可原生与八次交错、布局容量只读诊断](performance/hitting-and-layout-roi-20261009.md)同样未晋级，全部源码恢复，无新增完整性能或固定回归。
 
 既有组件、药水、魂枢及未达标原型的合同与历史结果见[历史卷18](archive/testing/volume-18.md)。PR #207最新上游整合、逐次ABBA、23根品质回归及NoGC波动/超时限制见[当前验收](performance/pr207-upstream-0494-integration-20261005.md)。
 
