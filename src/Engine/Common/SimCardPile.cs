@@ -19,6 +19,7 @@ internal sealed class SimCardPile
     private HookCardProjection? _hookCardProjection;
     // A pending recheck belongs to this pile, never to the shared immutable indices.
     private PredictedCard? _hookProjectionDirtyCard;
+    private PredictedCard? _hookProjectionSecondDirtyCard;
 
     // Indices refer only to this ordered pile. Forks share the immutable indices,
     // then resolve receivers through their own card wrappers and previews.
@@ -118,6 +119,17 @@ internal sealed class SimCardPile
                 else
                     fork._hookCardProjection = null;
             }
+            if (_hookProjectionSecondDirtyCard is { } secondDirty)
+            {
+                if (fork._hookCardProjection is not null
+                    && context.TryRemap(secondDirty, out PredictedCard? mapped))
+                    fork._hookProjectionSecondDirtyCard = mapped;
+                else
+                {
+                    fork._hookCardProjection = null;
+                    fork._hookProjectionDirtyCard = null;
+                }
+            }
         }
         context.Register(this, fork);
         return fork;
@@ -175,6 +187,7 @@ internal sealed class SimCardPile
     {
         _hookCardProjection = null;
         _hookProjectionDirtyCard = null;
+        _hookProjectionSecondDirtyCard = null;
         InvalidateCardStateFingerprints();
     }
 
@@ -200,15 +213,26 @@ internal sealed class SimCardPile
         {
             _hookCardProjection = null;
             _hookProjectionDirtyCard = null;
+            _hookProjectionSecondDirtyCard = null;
             return;
         }
-        if (removed is not null && ReferenceEquals(removed, _hookProjectionDirtyCard))
+        if (removed is not null && (ReferenceEquals(removed, _hookProjectionDirtyCard)
+            || ReferenceEquals(removed, _hookProjectionSecondDirtyCard)))
         {
             // A reentrant completion may have changed attached types since the
             // original proof. Keep the full fallback when that card gained a hook.
             if (HasPotentialHookReceiver(removed, cached.Filter))
+            {
                 _hookCardProjection = null;
-            _hookProjectionDirtyCard = null;
+                _hookProjectionDirtyCard = null;
+                _hookProjectionSecondDirtyCard = null;
+            }
+            else
+            {
+                if (ReferenceEquals(removed, _hookProjectionDirtyCard))
+                    _hookProjectionDirtyCard = _hookProjectionSecondDirtyCard;
+                _hookProjectionSecondDirtyCard = null;
+            }
         }
     }
 
@@ -222,22 +246,31 @@ internal sealed class SimCardPile
     internal void InvalidateHookCardProjection(PredictedCard card)
     {
         // Empty indices prove that every previous member was irrelevant. Only this
-        // card can have changed; recheck its current card/attachment types on demand.
-        // Multiple distinct writes and nonempty projections keep full invalidation.
-        if (_hookCardProjection is { Indices.Length: 0 }
-            && (_hookProjectionDirtyCard is null || ReferenceEquals(_hookProjectionDirtyCard, card)))
+        // tracked cards can have changed; recheck their current card/attachment types
+        // on demand. A third distinct write and nonempty projections invalidate fully.
+        if (_hookCardProjection is { Indices.Length: 0 })
         {
-            _hookProjectionDirtyCard = card;
-            return;
+            if (_hookProjectionDirtyCard is null || ReferenceEquals(_hookProjectionDirtyCard, card))
+            {
+                _hookProjectionDirtyCard = card;
+                return;
+            }
+            if (_hookProjectionSecondDirtyCard is null || ReferenceEquals(_hookProjectionSecondDirtyCard, card))
+            {
+                _hookProjectionSecondDirtyCard = card;
+                return;
+            }
         }
         _hookCardProjection = null;
         _hookProjectionDirtyCard = null;
+        _hookProjectionSecondDirtyCard = null;
     }
 
     internal void DisableFingerprintCache()
     {
         _hookCardProjection = null;
         _hookProjectionDirtyCard = null;
+        _hookProjectionSecondDirtyCard = null;
         _fingerprintCacheDisabled = true;
         _hasCachedFingerprint = false;
         _hasCachedUnorderedFingerprint = false;
@@ -254,18 +287,23 @@ internal sealed class SimCardPile
         }
         if (_hookCardProjection is { } cached && ReferenceEquals(cached.Filter, filter))
         {
-            if (_hookProjectionDirtyCard is not { } dirty
-                || ReferenceEquals(dirty.OwnerPile, this) && !HasPotentialHookReceiver(dirty, filter))
+            if ((_hookProjectionDirtyCard is not { } dirty
+                    || ReferenceEquals(dirty.OwnerPile, this) && !HasPotentialHookReceiver(dirty, filter))
+                && (_hookProjectionSecondDirtyCard is not { } secondDirty
+                    || ReferenceEquals(secondDirty.OwnerPile, this) && !HasPotentialHookReceiver(secondDirty, filter)))
             {
                 _hookProjectionDirtyCard = null;
+                _hookProjectionSecondDirtyCard = null;
                 indices = cached.Indices;
                 return true;
             }
             _hookCardProjection = null;
             _hookProjectionDirtyCard = null;
+            _hookProjectionSecondDirtyCard = null;
         }
 
         _hookProjectionDirtyCard = null;
+        _hookProjectionSecondDirtyCard = null;
         List<int>? selected = null;
         for (int index = 0; index < _cards.Count; index++)
         {

@@ -264,6 +264,7 @@ internal sealed partial class UnattendedTestRunner
         var filter = new MirroredHookListenerFilter(enabled: true);
         FieldInfo cache = typeof(SimCardPile).GetField("_hookCardProjection", BindingFlags.Instance | BindingFlags.NonPublic)!;
         FieldInfo dirty = typeof(SimCardPile).GetField("_hookProjectionDirtyCard", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        FieldInfo secondDirty = typeof(SimCardPile).GetField("_hookProjectionSecondDirtyCard", BindingFlags.Instance | BindingFlags.NonPublic)!;
         CombatPredictionSimulator candidate = parent.Fork(), oracle = parent.Fork();
         SimCardPile draw = candidate.State.GetPlayerCombatState(player).DrawPile;
         SimCardPile oracleDraw = oracle.State.GetPlayerCombatState(player).DrawPile;
@@ -377,20 +378,64 @@ internal sealed partial class UnattendedTestRunner
         CheckPair();
 
         shared = cache.GetValue(draw)!;
-        draw.Cards[0].MutablePreview.BaseReplayCount++;
-        oracleDraw.Cards[0].MutablePreview.BaseReplayCount++;
-        draw.Cards[1].MutablePreview.BaseReplayCount++;
-        oracleDraw.Cards[1].MutablePreview.BaseReplayCount++;
-        if (cache.GetValue(draw) is not null || dirty.GetValue(draw) is not null)
-            throw new InvalidOperationException("Two distinct writes retained a single-card certificate.");
+        for (int repeat = 0; repeat < 3; repeat++)
+        {
+            draw.Cards[0].MutablePreview.BaseReplayCount++;
+            oracleDraw.Cards[0].MutablePreview.BaseReplayCount++;
+            draw.Cards[1].MutablePreview.BaseReplayCount++;
+            oracleDraw.Cards[1].MutablePreview.BaseReplayCount++;
+            _ = draw.Cards[repeat % 2].MutablePreview;
+            if (!ReferenceEquals(shared, cache.GetValue(draw))
+                || !ReferenceEquals(dirty.GetValue(draw), draw.Cards[0])
+                || !ReferenceEquals(secondDirty.GetValue(draw), draw.Cards[1]))
+                throw new InvalidOperationException("Two distinct writes lost their branch-owned rechecks.");
+            CheckPair();
+            if (!ReferenceEquals(shared, cache.GetValue(draw))
+                || dirty.GetValue(draw) is not null || secondDirty.GetValue(draw) is not null)
+                throw new InvalidOperationException("Two nonreceivers rebuilt the empty projection.");
+        }
+        for (int removedIndex = 0; removedIndex < 2; removedIndex++)
+        {
+            _ = draw.Cards[0].MutablePreview;
+            _ = draw.Cards[1].MutablePreview;
+            PredictedCard removed = draw.Cards[removedIndex], expectedRemoved = oracleDraw.Cards[removedIndex];
+            PredictedCard remaining = draw.Cards[1 - removedIndex];
+            draw.Remove(removed);
+            oracleDraw.Remove(expectedRemoved);
+            if (!ReferenceEquals(shared, cache.GetValue(draw)) || !ReferenceEquals(dirty.GetValue(draw), remaining)
+                || secondDirty.GetValue(draw) is not null)
+                throw new InvalidOperationException("Removal lost the other pending card or retained the removed card.");
+            CheckPair();
+            draw.Insert(removedIndex, removed);
+            oracleDraw.Insert(removedIndex, expectedRemoved);
+            CheckPair();
+        }
+        _ = draw.Cards[0].MutablePreview;
+        CardModel secondWritable = draw.Cards[1].MutablePreview;
+        secondWritable.Affliction = (AfflictionModel)RuntimeHelpers.GetUninitializedObject(unknown);
+        draw.Cards[1].NotifyHookListenerStructureChanged();
+        if (!draw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> secondChanged)
+            || !secondChanged.Contains(1) || ReferenceEquals(shared, cache.GetValue(draw)))
+            throw new InvalidOperationException("The second pending card's unknown receiver escaped its recheck.");
+        checks++;
+        secondWritable.Affliction = null;
+        draw.Cards[1].NotifyHookListenerStructureChanged();
+        CheckPair();
+        shared = cache.GetValue(draw)!;
+        for (int index = 0; index < 3; index++)
+            _ = draw.Cards[index].MutablePreview;
+        if (cache.GetValue(draw) is not null || dirty.GetValue(draw) is not null || secondDirty.GetValue(draw) is not null)
+            throw new InvalidOperationException("A third distinct write retained a two-card certificate.");
         CheckPair();
         if (ReferenceEquals(shared, cache.GetValue(draw)))
-            throw new InvalidOperationException("Multiple writes did not use the full scan fallback.");
+            throw new InvalidOperationException("Three writes did not use the full scan fallback.");
 
         string parentBefore = DescribeContinuationContractState(candidate, root, player);
         shared = cache.GetValue(draw)!;
         _ = draw.TopCard!.MutablePreview;
-        if (!ReferenceEquals(dirty.GetValue(draw), draw.TopCard))
+        _ = draw.Cards[1].MutablePreview;
+        if (!ReferenceEquals(dirty.GetValue(draw), draw.TopCard)
+            || !ReferenceEquals(secondDirty.GetValue(draw), draw.Cards[1]))
             throw new InvalidOperationException("Fork fixture lost the pending receiver recheck.");
         var siblings = Enumerable.Range(0, 16).Select(_ => (Actual: candidate.Fork(), Expected: oracle.Fork())).ToArray();
         Parallel.For(0, siblings.Length, index =>
@@ -401,10 +446,13 @@ internal sealed partial class UnattendedTestRunner
             SimCardPile expectedDraw = pair.Expected.State.GetPlayerCombatState(player).DrawPile;
             if (!ReferenceEquals(cache.GetValue(forkDraw), shared)
                 || !ReferenceEquals(dirty.GetValue(forkDraw), forkDraw.TopCard)
-                || ReferenceEquals(forkDraw.TopCard, draw.TopCard))
+                || !ReferenceEquals(secondDirty.GetValue(forkDraw), forkDraw.Cards[1])
+                || ReferenceEquals(forkDraw.TopCard, draw.TopCard) || ReferenceEquals(forkDraw.Cards[1], draw.Cards[1]))
                 throw new InvalidOperationException("Fork shared a mutable pending card or lost immutable indices.");
             forkDraw.TopCard!.MutablePreview.BaseReplayCount += index + 1;
             expectedDraw.TopCard!.MutablePreview.BaseReplayCount += index + 1;
+            forkDraw.Cards[1].MutablePreview.BaseReplayCount += index + 2;
+            expectedDraw.Cards[1].MutablePreview.BaseReplayCount += index + 2;
             expectedDraw.InvalidateFingerprint();
             if (!forkDraw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> actual)
                 || !expectedDraw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> expected)
@@ -419,6 +467,8 @@ internal sealed partial class UnattendedTestRunner
             SimCardPile grandOracleDraw = grandOracle.State.GetPlayerCombatState(player).DrawPile;
             grandchildDraw.TopCard!.MutablePreview.BaseReplayCount++;
             grandOracleDraw.TopCard!.MutablePreview.BaseReplayCount++;
+            grandchildDraw.Cards[1].MutablePreview.BaseReplayCount++;
+            grandOracleDraw.Cards[1].MutablePreview.BaseReplayCount++;
             grandOracleDraw.InvalidateFingerprint();
             if (!grandchildDraw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> grandActual)
                 || !grandOracleDraw.TryGetHookCardProjection(filter, out ReadOnlySpan<int> grandExpected)
@@ -432,11 +482,13 @@ internal sealed partial class UnattendedTestRunner
         });
         checks += siblings.Length * 2;
         if (!ReferenceEquals(dirty.GetValue(draw), draw.TopCard)
+            || !ReferenceEquals(secondDirty.GetValue(draw), draw.Cards[1])
             || DescribeContinuationContractState(candidate, root, player) != parentBefore)
             throw new InvalidOperationException("Child query consumed its parent's pending recheck or state.");
         CheckPair();
         draw.DisableFingerprintCache();
-        if (cache.GetValue(draw) is not null || dirty.GetValue(draw) is not null || draw.TryGetHookCardProjection(filter, out _))
+        if (cache.GetValue(draw) is not null || dirty.GetValue(draw) is not null || secondDirty.GetValue(draw) is not null
+            || draw.TryGetHookCardProjection(filter, out _))
             throw new InvalidOperationException("Opaque pile retained a deferred receiver certificate.");
         return checks + 1;
     }
