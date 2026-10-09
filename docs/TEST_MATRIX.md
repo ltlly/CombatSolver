@@ -2,7 +2,7 @@
 
 2026-10-08 [原始慢根的剪枝范围与见证时机](performance/pruning-scope-and-incumbent-latency-20261008.md)：六次完整请求四次完成、两次120秒超时不重试；六次独立诊断组件门槛1/6、四个完整根戳匹配。亡灵首次发布胜利约45.85/69.86秒、猎手396张未获胜，2,305张铁甲根独立留档。无新剪枝或性能验收，生产源码/五文件部署复用499ec165。
 
-[已完成的搜索与回复实验归档](archive/testing/volume-26.md)。
+[已完成的搜索与回复实验归档](archive/testing/volume-26.md)。 [2026-10-10任务结项](performance/performance-task-closeout-20261010.md)集中列出最终11根、各阶段完整对照、撤回实验与政策误配排除；未完成全部原始慢根验收。
 
 2026-10-08 [生命通知剪枝门槛](performance/health-callback-pruning-guard-20261008.md)：未知生命事件、Tracker通知、Ritsu详情及指定补丁撤销有限回复资格；原生正常受伤对账及每组16所属Fork通过，额外2回复反例被拒绝认证。固定回归及完整闭包限制见报告，不计新增提速。 同日[开放额度研究](performance/open-potion-tier-bound-research-20261008.md)两次只读请求的14项质量/根/政策/预算一致，潜在新增删除0；未实施新消费者或原生/性能验收。 同日[终局战败观察](performance/terminal-defeat-snapshot-opportunity-20261008.md)两次14项质量一致，猎手工作量有变化；无新剪枝合同。
 
