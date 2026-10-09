@@ -1,5 +1,6 @@
 # 性能工作入口
 
+- [有界评估复用与低成本原型筛选](bounded-snapshot-values-roi-20261009.md)：实际Tier1、两个撤回原型与四根完整值观察；慢根重复率较低，亡灵质量失配单列，无新增验收提速。
 - [冷索引原因与当前评估热点](projection-invalidation-roi-20261009.md)：五次完整诊断、两个撤回原型及非空原生卡牌回调合同；无新增提速。
 - [机制规模与投入收益筛选](mechanism-scale-roi-20261009.md)。
 - [大牌组牌堆监听索引复用](pile-hook-projection-20261009.md)。
