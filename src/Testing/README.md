@@ -29,6 +29,8 @@
 
 `Contracts/Combat/UnattendedTestRunner.HandDrawRelicQuery.cs` 通过检查点 `RestoreOnly` 与场景名 `HAND-DRAW-RELICS-PROBE` 复用原生回放建局，逐一核对8种抽牌遗物在回合1～4及已有计数下的原生命令、冻结查询、Fork/RNG/父分支和live隔离；它只验证查询，完整生命周期沿用对应遗物合同。
 
+`Contracts/Combat/UnattendedTestRunner.HpLossClamping.cs` 使用 `HP-LOSS-CLAMP` / IRONCLAD / FUZZY_WURM_CRAWLER_WEAK / 120秒及 `--verify-combat-root-snapshot --stop-after-combat-root-snapshot-assertion`，直接比较原生扣血的168组负数、小数、零、致死、封顶及decimal极值和全部伤害字段／生命通知。16孩子串行Fork后并行修改，检查完整状态、历史、九RNG与父/live隔离；不执行完整伤害Hook管线。失败基线与最终证据见[回复闭包盘点](../../docs/performance/pruning-source-closure-and-hp-clamp-20261009.md)。
+
 `Contracts/Search/UnattendedTestRunner.PotionCostIncumbent.cs` 使用 `POTION-COST-INCUMBENT` / IRONCLAD / NIBBITS_WEAK / 120秒，验证实际完整14/9成本胜利下同回合和更晚回合的等HP保路及原生EndTurn/用药完整状态。`ZeroAllowanceRelicIncumbent.cs` 使用 `ZERO-ALLOWANCE-RELIC-INCUMBENT` / 同角色遭遇及上限，验证真实完整胜利在零战损让步遗物目标下的本地及协调器后续HP界，保留同HP、正额度、成长和追回，原生HP消耗前缀严格差分。
 
 `Contracts/Search/UnattendedTestRunner.ZeroCreditGrowthDominance.cs` 使用 `ZERO-CREDIT-GROWTH-PROOF` 或 `ZERO-CREDIT-GROWTH-PROOF-REGEN` / NECROBINDER / NIBBITS_WEAK / 120秒，从原生根生成完整成长胜利和真实不同成本用药分支，严格增量回放验证跨成长桶的较差战损剪枝、同战损及更便宜/未知成本保留、16并发见证读、已有再生、正额度/遗物/追回/强制用药拒绝及父/live/RNG隔离。同一入口调用 `Contracts/Search/UnattendedTestRunner.RetainedPrimaryDominance.cs`，用实际完整胜利验证开放用药的P0/P1/P2严格剪枝、相等保留、精确额度及禁药/强制/成长/遗物/追回拒绝、未知消耗堆Feed保留和16个独立消费者。无成长根保留旧消费者；该合同不替代卡牌实际原生执行差分或DOP1/16整协调器验收。
