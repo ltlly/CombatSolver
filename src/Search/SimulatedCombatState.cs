@@ -1689,7 +1689,7 @@ internal sealed partial class SimulatedCombatState
     {
         MirroredHookListenerFilter filter = _modHookSubscribers.MirroredHookFilter;
         if (!CanReuseHookListenerCache || !filter.CanProjectReceivers
-            || _registeredCombatCards is not { Count: >= 256 })
+            || _registeredCombatCards is not { Count: > 0 })
             return null;
 
         // A previously requested complete snapshot already paid the construction cost.

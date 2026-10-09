@@ -245,7 +245,7 @@ internal sealed class SimCardPile
 
     internal void InvalidateHookCardProjection(PredictedCard card)
     {
-        // Empty indices prove that every previous member was irrelevant. Only this
+        // Empty indices prove that every previous member was irrelevant. Only the
         // tracked cards can have changed; recheck their current card/attachment types
         // on demand. A third distinct write and nonempty projections invalidate fully.
         if (_hookCardProjection is { Indices.Length: 0 })

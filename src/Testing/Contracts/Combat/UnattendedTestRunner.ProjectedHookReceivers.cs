@@ -23,11 +23,14 @@ internal sealed partial class UnattendedTestRunner
         CombatRootSnapshot root = CombatRootSnapshot.Capture(live);
         using IDisposable isolation = SimulationNotificationIsolation.Enter();
         CombatPredictionSimulator parent = root.ForkSimulator();
-        for (int index = 0; index < 300; index++)
+        for (int index = 0; index < 10; index++)
             parent.AddToPile(PredictedCard.Create(ModelDb.Card<StrikeIronclad>(), player), PileType.Draw);
         parent.AddToPile(PredictedCard.Create(ModelDb.Card<Reflex>(), player), PileType.Draw);
         parent.AddToPile(PredictedCard.Create(
             ModelDb.Card<MegaCrit.Sts2.Core.Models.Cards.Void>(), player), PileType.Draw);
+        int projectionScopeCards = parent.State.GetPlayerCombatState(player).AllCards.Count();
+        if (projectionScopeCards <= 0 || projectionScopeCards >= 256)
+            throw new InvalidOperationException("Projected receiver fixture did not enter the new small-pile scope.");
         int pileCacheChecks = AssertPileHookProjectionCache(parent, root, player);
         int emptyRecheckChecks = AssertEmptyPileProjectionRevalidation(parent, root, player);
         string parentBefore = DescribeContinuationContractState(parent, root, player);
@@ -118,14 +121,14 @@ internal sealed partial class UnattendedTestRunner
             filter.VerifyProjectedReceivers(source.HookListeners, projected);
         });
         if (projectedBuilds == 0 && !FastLaneVerification.Enabled)
-            throw new InvalidOperationException("Large listener fixture did not exercise projected construction.");
+            throw new InvalidOperationException("Listener fixture did not exercise projected construction.");
         if (DescribeContinuationContractState(parent, root, player) != parentBefore
             || DescribeContinuationContractState(candidate, root, player)
                 != DescribeContinuationContractState(whole, root, player)
             || ContinuationStamp.CaptureLive(live).StateText != liveBefore)
             throw new InvalidOperationException("Projected listeners escaped sibling, parent or live isolation.");
         AssertProjectedGetterPatchFallback(live, player);
-        _completedChecks.Add($"ProjectedHookReceivers:Comparisons={comparisons}:ProjectedBuilds={projectedBuilds}:PileCacheChecks={pileCacheChecks}:EmptyRecheckChecks={emptyRecheckChecks}:NonemptyNativeCardCallback:Masks=64:FullStateFingerprintHistoryRng:MovesRemovedAttachmentsPowerOrder:Fork16ParentLive:GetterPatchFallback");
+        _completedChecks.Add($"ProjectedHookReceivers:Cards={projectionScopeCards}:Comparisons={comparisons}:ProjectedBuilds={projectedBuilds}:PileCacheChecks={pileCacheChecks}:EmptyRecheckChecks={emptyRecheckChecks}:NonemptyNativeCardCallback:Masks=64:FullStateFingerprintHistoryRng:MovesRemovedAttachmentsPowerOrder:Fork16ParentLive:GetterPatchFallback");
     }
 
     private static int AssertPileHookProjectionCache(
