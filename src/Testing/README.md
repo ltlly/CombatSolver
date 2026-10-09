@@ -37,7 +37,7 @@
 
 `Contracts/Search/UnattendedTestRunner.ZeroCreditGrowthDominance.cs` 使用 `ZERO-CREDIT-GROWTH-PROOF` 或 `ZERO-CREDIT-GROWTH-PROOF-REGEN` / NECROBINDER / NIBBITS_WEAK / 120秒，从原生根生成完整成长胜利和真实不同成本用药分支，严格增量回放验证跨成长桶的较差战损剪枝、同战损及更便宜/未知成本保留、16并发见证读、已有再生、正额度/遗物/追回/强制用药拒绝及父/live/RNG隔离。同一入口调用 `Contracts/Search/UnattendedTestRunner.RetainedPrimaryDominance.cs`，用实际完整胜利验证开放用药的P0/P1/P2严格剪枝、相等保留、精确额度及禁药/强制/成长/遗物/追回拒绝、未知消耗堆Feed保留和16个独立消费者。无成长根保留旧消费者；该合同不替代卡牌实际原生执行差分或DOP1/16整协调器验收。
 
-`Contracts/Combat/UnattendedTestRunner.ProjectedHookReceivers.cs` 扩展 `MIRRORED-HOOK-FILTER` / IRONCLAD / FUZZY_WURM_CRAWLER_WEAK / 120秒：同根投影和完整监听路径核对完整状态、指纹、历史、RNG及64回调类，覆盖牌堆/附着/Power变化、16兄弟Fork和getter补丁回退。58项空索引复验检查覆盖双卡反复变化、移出任一待复验牌、第三张变化回退、第二张未知附着、成员增删、重复包装对象、嵌套通知及16兄弟／第二代的完整状态oracle。核对模式返回完整源继续执行原facade审计；合同耗时不用于性能验收。
+`Contracts/Combat/UnattendedTestRunner.ProjectedHookReceivers.cs` 扩展 `MIRRORED-HOOK-FILTER` / IRONCLAD / FUZZY_WURM_CRAWLER_WEAK / 120秒：同根投影和完整监听路径核对完整状态、指纹、历史、RNG及64回调类，覆盖牌堆/附着/Power变化、16兄弟Fork和getter补丁回退。58项空索引复验检查覆盖双卡反复变化、移出任一待复验牌、第三张变化回退、第二张未知附着、成员增删、重复包装对象、嵌套通知及16兄弟／第二代的完整状态oracle。生成回调成员使用Void并先强断言参与性，再核对成员存在及Fork身份；不能以零mask卡牌的物理成员存在代替回调覆盖，修正证据见[小牌组筛选](../../docs/performance/small-pile-incremental-projection-roi-20261009.md)。核对模式返回完整源继续执行原facade审计；合同耗时不用于性能验收。
 
 一次性调查放 .local/tool-tasks/<任务>/，验证时显式接入，结束清理代码、路由、参数、输入和产物。普通构建排除 .local 源码。新增正式文件按上表收纳；根目录只保留本入口。
 
