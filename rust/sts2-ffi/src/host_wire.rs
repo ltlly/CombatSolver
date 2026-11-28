@@ -1,6 +1,6 @@
 use crate::ABI_VERSION;
 use crate::generated_contract_constants::{
-    SUPPORTED_GAME_MODES, SUPPORTED_GAME_VERSION, SUPPORTED_ROOM_TYPES,
+    MAX_SOFT_TIME_BUDGET_MS, SUPPORTED_GAME_MODES, SUPPORTED_GAME_VERSION, SUPPORTED_ROOM_TYPES,
     SUPPORTED_VANILLA_MODIFIERS,
 };
 use serde::{Deserialize, Serialize};
@@ -16,15 +16,17 @@ use sts2_kernel::{
     CreatureHandle, KernelErrorKind, StepOutcome,
 };
 use sts2_search::eval::{
-    ActEndingBossPolicy, BossHpStrategy, PotionSlotDirective, PotionUsePolicy,
+    ActEndingBossPolicy, BossHpStrategy, EvalMode, PotionSlotDirective, PotionUsePolicy,
     PotionValuationRegistry, RelicCounterId, RelicCounterRule, RootEvalBaseline,
-    SolverPotionDirective, SolverPotionPolicy, SolverTheftPolicy, evaluate_fast,
+    SolverPotionDirective, SolverPotionPolicy, SolverTheftPolicy,
+    compute_beam_rank_score_with_centi, compute_terminal_rank_score_with_centi, evaluate_fast,
+    evaluate_full,
 };
 use sts2_search::novelty::{NoveltyPortfolioBudget, NoveltySearchOptions};
 use sts2_search::por::try_classify_potion_use_for_pass;
 use sts2_search::portfolio::PortfolioSchedulingMode;
 use sts2_search::{PlannedAction, SearchEngine, SearchPolicy, SearchProgress};
-use sts2_types::{CombatSide, PileType, PotionId, PowerId, RunRngType};
+use sts2_types::{CombatSide, PileType, PlayerTurnPhase, PotionId, PowerId, RunRngType};
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -784,10 +786,15 @@ fn validate_and_parse_host_policy(
             "maxHandChoiceBranchesPerAction must be positive".to_owned(),
         ));
     }
-    if p.soft_time_budget_milliseconds <= 0 {
+    if p.soft_time_budget_milliseconds <= 0
+        || p.soft_time_budget_milliseconds > MAX_SOFT_TIME_BUDGET_MS
+    {
         return Err((
             "policy.softTimeBudgetMilliseconds",
-            "softTimeBudgetMilliseconds must be positive".to_owned(),
+            format!(
+                "softTimeBudgetMilliseconds ({}) must be in 1..={MAX_SOFT_TIME_BUDGET_MS}",
+                p.soft_time_budget_milliseconds
+            ),
         ));
     }
 
@@ -1248,8 +1255,15 @@ fn identify_source_pile<'a>(
     state: &'a BattleState,
     req: &ChoiceRequest,
 ) -> (&'static str, Option<&'a [CardHandle]>) {
+    let fallback = match req.source_pile {
+        PileType::Hand => ("Hand", Some(state.player.hand.as_slice())),
+        PileType::Draw => ("Draw", Some(state.player.draw.as_slice())),
+        PileType::Discard => ("Discard", Some(state.player.discard.as_slice())),
+        PileType::Exhaust => ("Exhaust", Some(state.player.exhaust.as_slice())),
+        _ => ("None", None),
+    };
     if req.candidates.is_empty() {
-        return ("None", None);
+        return fallback;
     }
     let all_in = |pile: &[CardHandle]| -> bool {
         req.candidates.iter().all(|c| pile.contains(c))
@@ -1266,13 +1280,7 @@ fn identify_source_pile<'a>(
     if all_in(&state.player.exhaust) {
         return ("Exhaust", Some(&state.player.exhaust));
     }
-    match req.source_pile {
-        PileType::Hand => ("Hand", Some(&state.player.hand)),
-        PileType::Draw => ("Draw", Some(&state.player.draw)),
-        PileType::Discard => ("Discard", Some(&state.player.discard)),
-        PileType::Exhaust => ("Exhaust", Some(&state.player.exhaust)),
-        _ => ("None", None),
-    }
+    fallback
 }
 
 fn count_preceding_matching_card(
@@ -1551,6 +1559,13 @@ fn replay_solution_trace(
                 "EnemyTurn"
             } else if sim.player.turn_number > turn_before || sim.round_number > round_before {
                 "PlayerTurnStart"
+            } else if matches!(action, PlannedAction::EndTurn { .. })
+                || matches!(
+                    sim.player.phase,
+                    PlayerTurnPhase::End | PlayerTurnPhase::AutoPostPlay
+                )
+            {
+                "PlayerTurnEnd"
             } else {
                 match choice_req.timing {
                     ChoiceTiming::Action => "Action",
@@ -1865,6 +1880,31 @@ fn replay_solution_trace(
         enemy_hp += escaped_hp;
     }
 
+    let canonical_action_count = traced_actions.len().min(u16::MAX as usize) as u16;
+    let canonical_score = if player_dead || is_event_defeat || all_enemies_dead {
+        compute_terminal_rank_score_with_centi(
+            &fast_terminal,
+            &root_baseline,
+            net_potion_opportunity_cost_centi,
+            canonical_action_count,
+        )
+        .round() as i64
+    } else {
+        let full_terminal = evaluate_full(&sim, content, &fast_terminal, &root_baseline);
+        compute_beam_rank_score_with_centi(
+            &fast_terminal,
+            &full_terminal,
+            &root_baseline,
+            false,
+            false,
+            None,
+            EvalMode::Balanced,
+            net_potion_opportunity_cost_centi,
+            canonical_action_count,
+        )
+        .round() as i64
+    };
+
     let terminal = HostTerminalSnapshotDto {
         player_dead,
         all_enemies_dead,
@@ -1901,7 +1941,7 @@ fn replay_solution_trace(
         net_potion_opportunity_cost_centi: Some(net_potion_opportunity_cost_centi),
         strategic_hp_deficit: Some(strategic_hp_deficit),
         optional_potion_whole_hp: Some(optional_potion_whole_hp),
-        score: Some(sol.score),
+        score: Some(canonical_score),
     };
 
     Ok(HostResultDto {
@@ -2009,6 +2049,24 @@ fn describe_active_enemy_moves(state: &BattleState) -> String {
     parts.join(",")
 }
 
+#[inline]
+fn normalize_choice_source_entry(s: &str) -> &str {
+    s.rsplit_once('.').map_or(s, |(_, entry)| entry)
+}
+
+#[inline]
+fn actual_choice_timing_label(state: &BattleState, req: &ChoiceRequest) -> &'static str {
+    if state.current_side == CombatSide::Enemy {
+        "EnemyTurn"
+    } else {
+        match req.timing {
+            ChoiceTiming::Action | ChoiceTiming::PlayerTurnEnd => "PlayerTurnEnd",
+            ChoiceTiming::EnemyTurn => "EnemyTurn",
+            ChoiceTiming::PlayerTurnStart => "PlayerTurnStart",
+        }
+    }
+}
+
 fn resolve_end_turn_choice_candidates(
     state: &BattleState,
     req: &ChoiceRequest,
@@ -2052,10 +2110,21 @@ fn resolve_end_turn_choice_candidates(
             }
         }
 
-        let picked = exact_src.or(exact_opt).or(fallback).ok_or_else(|| {
+        let picked = if matching_pile.is_some() && tok.source_occurrence >= 0 {
+            exact_src
+        } else if tok.option_occurrence >= 0 {
+            exact_opt
+        } else {
+            fallback
+        }
+        .ok_or_else(|| {
             format!(
-                "choice token '{}'@{} missing from candidates for '{}'",
-                tok.card_id, tok.upgrade_level, req.source_id
+                "choice token '{}'@{} (src={}, opt={}) missing or occurrence mismatched for '{}'",
+                tok.card_id,
+                tok.upgrade_level,
+                tok.source_occurrence,
+                tok.option_occurrence,
+                req.source_id
             )
         })?;
         used[picked] = true;
@@ -2188,40 +2257,92 @@ pub fn eval_end_turn_risk_v1_json(req_json: &[u8]) -> HostEndTurnRiskResponseDto
             );
         }
 
-        let sel_indices: Vec<usize> = if let Some(&current) = prompt_queue.front() {
-            if current.cards.is_empty() {
-                prompt_queue.pop_front();
-                card_cursor = 0;
-                Vec::new()
-            } else {
-                let remaining = current.cards.len().saturating_sub(card_cursor);
-                let take_count = choice_req.max_count.max(1).min(remaining);
-                let slice = &current.cards[card_cursor..card_cursor + take_count];
-                let resolved = match resolve_end_turn_choice_candidates(&state, &choice_req, slice)
-                {
-                    Ok(v) => v,
-                    Err(msg) => {
-                        return end_turn_risk_error("Failed", "choice_mismatch", msg);
-                    }
-                };
-                card_cursor += take_count;
-                if card_cursor >= current.cards.len() {
-                    prompt_queue.pop_front();
-                    card_cursor = 0;
-                }
-                resolved
-            }
-        } else if choice_req.min_count == 0 {
-            Vec::new()
-        } else {
+        let actual_timing = actual_choice_timing_label(&state, &choice_req);
+        let actual_source = normalize_choice_source_entry(&choice_req.source_id);
+        let (actual_pile, _) = identify_source_pile(&state, &choice_req);
+
+        let Some(&current) = prompt_queue.front() else {
             return end_turn_risk_error(
                 "Failed",
                 "missing_choice",
                 format!(
-                    "end-turn evaluation required choice '{}' not present in turnStartChoices",
-                    choice_req.source_id
+                    "end-turn evaluation required choice '{}' ({actual_timing}/{actual_pile}) not present in turnStartChoices",
+                    actual_source
                 ),
             );
+        };
+
+        if current.timing != actual_timing {
+            return end_turn_risk_error(
+                "Failed",
+                "choice_mismatch",
+                format!(
+                    "end-turn choice timing mismatch: expected '{actual_timing}', got '{}'",
+                    current.timing
+                ),
+            );
+        }
+        if normalize_choice_source_entry(&current.source_id) != actual_source {
+            return end_turn_risk_error(
+                "Failed",
+                "choice_mismatch",
+                format!(
+                    "end-turn choice source mismatch: expected '{actual_source}', got '{}'",
+                    current.source_id
+                ),
+            );
+        }
+        if current.source_pile != actual_pile {
+            return end_turn_risk_error(
+                "Failed",
+                "choice_mismatch",
+                format!(
+                    "end-turn choice pile mismatch for '{actual_source}': expected '{actual_pile}', got '{}'",
+                    current.source_pile
+                ),
+            );
+        }
+
+        let sel_indices: Vec<usize> = if current.cards.is_empty() {
+            if card_cursor != 0 || choice_req.min_count > 0 {
+                return end_turn_risk_error(
+                    "Failed",
+                    "choice_mismatch",
+                    format!(
+                        "end-turn choice '{actual_source}' requires at least {} card(s) but received empty selection",
+                        choice_req.min_count
+                    ),
+                );
+            }
+            prompt_queue.pop_front();
+            card_cursor = 0;
+            Vec::new()
+        } else {
+            let remaining = current.cards.len().saturating_sub(card_cursor);
+            let take_count = choice_req.max_count.max(1).min(remaining);
+            if take_count < choice_req.min_count {
+                return end_turn_risk_error(
+                    "Failed",
+                    "choice_mismatch",
+                    format!(
+                        "end-turn choice '{actual_source}' requires {}..={} card(s), remaining {remaining}",
+                        choice_req.min_count, choice_req.max_count
+                    ),
+                );
+            }
+            let slice = &current.cards[card_cursor..card_cursor + take_count];
+            let resolved = match resolve_end_turn_choice_candidates(&state, &choice_req, slice) {
+                Ok(v) => v,
+                Err(msg) => {
+                    return end_turn_risk_error("Failed", "choice_mismatch", msg);
+                }
+            };
+            card_cursor += take_count;
+            if card_cursor >= current.cards.len() {
+                prompt_queue.pop_front();
+                card_cursor = 0;
+            }
+            resolved
         };
 
         step_res = match CombatEngine::resume_choice(&mut state, &content, &sel_indices) {
@@ -2237,6 +2358,17 @@ pub fn eval_end_turn_risk_v1_json(req_json: &[u8]) -> HostEndTurnRiskResponseDto
                 _ => return end_turn_risk_error("Failed", "execution_error", e.to_string()),
             },
         };
+    }
+
+    if !prompt_queue.is_empty() {
+        return end_turn_risk_error(
+            "Failed",
+            "choice_mismatch",
+            format!(
+                "unconsumed turnStartChoices remained after end-turn evaluation ({} remaining)",
+                prompt_queue.len()
+            ),
+        );
     }
 
     let hp_after = state.player.current_hp;
@@ -2317,6 +2449,19 @@ fn solve_in_combat_host_v1_json_with_hook<F: FnOnce()>(
         return failed_resp(
             Some("priorBattleHpLost"),
             "priorBattleHpLost cannot be negative",
+            1,
+            started.elapsed().as_secs_f64() * 1000.0,
+        );
+    }
+    if req.search_budget_milliseconds < 0 || req.search_budget_milliseconds > MAX_SOFT_TIME_BUDGET_MS
+    {
+        return capability_miss_resp(
+            "policy_unsupported",
+            Some("searchBudgetMilliseconds"),
+            format!(
+                "searchBudgetMilliseconds ({}) must be in 0..={MAX_SOFT_TIME_BUDGET_MS}",
+                req.search_budget_milliseconds
+            ),
             1,
             started.elapsed().as_secs_f64() * 1000.0,
         );

@@ -12,6 +12,7 @@ CHECKS = (
     "LoopDisplayChecks",
     "PreCombatRequestChecks",
     "RunStatisticsTests",
+    "RustKernelContractChecks",
     "StateFingerprintChecks",
 )
 EXCLUDED = {

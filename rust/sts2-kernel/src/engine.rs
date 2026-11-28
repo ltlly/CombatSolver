@@ -161,69 +161,7 @@ impl CombatEngine {
         hooks::before_side_turn_start(state, content, current_side, &participants)?;
 
         if current_side == CombatSide::Player && !is_extra_turn {
-            let enemies: SmallVec<[CreatureHandle; 8]> =
-                SmallVec::from_slice(&state.enemy_handles);
-            for eh in enemies {
-                let alive = state.creature(eh).is_some_and(|c| c.is_alive());
-                let keep_dead = !hooks::should_creature_be_removed_after_death(state, content, eh)?;
-                if alive || keep_dead {
-                    let stunned_action = {
-                        state.creature(eh).and_then(|c| c.monster.as_ref()).and_then(|m| {
-                            if m.next_move_id.as_deref() == Some("STUNNED")
-                                && !m.next_move_can_transition_away
-                            {
-                                Some(None)
-                            } else if m.current_state_id == "STUNNED" && m.next_move_can_transition_away
-                            {
-                                Some(Some(m.transient_move_follow_up_state_id.clone()))
-                            } else {
-                                None
-                            }
-                        })
-                    };
-                    match stunned_action {
-                        Some(None) => {}
-                        Some(Some(follow_up)) => {
-                            let needs_roll = if let Some(c) = state.creature_mut(eh) {
-                                if let Some(m) = &mut c.monster {
-                                    m.transient_move_follow_up_state_id = None;
-                                    match follow_up {
-                                        Some(f) if !f.is_empty() => {
-                                            m.current_state_id = f.clone();
-                                            if f != "INIT_MOVE"
-                                                && !f.ends_with("_BRANCH")
-                                                && !f.ends_with("_RAND")
-                                            {
-                                                m.next_move_id = Some(f.clone());
-                                                m.next_move_can_transition_away = true;
-                                                m.state_log_ids.push(f);
-                                                false
-                                            } else {
-                                                m.next_move_id = None;
-                                                m.next_move_can_transition_away = true;
-                                                true
-                                            }
-                                        }
-                                        _ => {
-                                            m.next_move_id = None;
-                                            m.next_move_can_transition_away = true;
-                                            true
-                                        }
-                                    }
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            };
-                            if needs_roll {
-                                content.monster_roll_move(state, eh)?;
-                            }
-                        }
-                        None => content.monster_roll_move(state, eh)?,
-                    }
-                }
-            }
+            Self::prepare_enemy_moves_for_next_round(state, content)?;
         }
 
         for &ch in &participants {
@@ -2469,8 +2407,11 @@ impl CombatEngine {
 
         if state.player_creature().is_some_and(|c| c.is_alive()) {
             if let Some(extra_source) = hooks::should_take_extra_turn(state, content)? {
-                Self::reset_turn_counters(state);
                 hooks::after_taking_extra_turn(state, content, extra_source)?;
+                if state.static_ctx.stop_before_player_turn_start {
+                    return Ok(StepOutcome::Completed);
+                }
+                Self::reset_turn_counters(state);
                 Self::reset_melody_turn_counters(state);
                 state.current_side = CombatSide::Player;
                 state.player.turn_number += 1;
@@ -2478,9 +2419,6 @@ impl CombatEngine {
                     state.compact_prior_turn_history();
                 }
                 Self::notify_side_switch(state);
-                if state.static_ctx.stop_before_player_turn_start {
-                    return Ok(StepOutcome::Completed);
-                }
                 return Self::start_turn(state, content, true);
             }
         }
@@ -2621,6 +2559,75 @@ impl CombatEngine {
         Self::end_enemy_turn(state, content)
     }
 
+    fn prepare_enemy_moves_for_next_round(
+        state: &mut BattleState,
+        content: &dyn ContentDispatcher,
+    ) -> Result<(), KernelError> {
+        let enemies: SmallVec<[CreatureHandle; 8]> = SmallVec::from_slice(&state.enemy_handles);
+        for eh in enemies {
+            let alive = state.creature(eh).is_some_and(|c| c.is_alive());
+            let keep_dead = !hooks::should_creature_be_removed_after_death(state, content, eh)?;
+            if alive || keep_dead {
+                let stunned_action = {
+                    state.creature(eh).and_then(|c| c.monster.as_ref()).and_then(|m| {
+                        if m.next_move_id.as_deref() == Some("STUNNED")
+                            && !m.next_move_can_transition_away
+                        {
+                            Some(None)
+                        } else if m.current_state_id == "STUNNED" && m.next_move_can_transition_away
+                        {
+                            Some(Some(m.transient_move_follow_up_state_id.clone()))
+                        } else {
+                            None
+                        }
+                    })
+                };
+                match stunned_action {
+                    Some(None) => {}
+                    Some(Some(follow_up)) => {
+                        let needs_roll = if let Some(c) = state.creature_mut(eh) {
+                            if let Some(m) = &mut c.monster {
+                                m.transient_move_follow_up_state_id = None;
+                                match follow_up {
+                                    Some(f) if !f.is_empty() => {
+                                        m.current_state_id = f.clone();
+                                        if f != "INIT_MOVE"
+                                            && !f.ends_with("_BRANCH")
+                                            && !f.ends_with("_RAND")
+                                        {
+                                            m.next_move_id = Some(f.clone());
+                                            m.next_move_can_transition_away = true;
+                                            m.state_log_ids.push(f);
+                                            false
+                                        } else {
+                                            m.next_move_id = None;
+                                            m.next_move_can_transition_away = true;
+                                            true
+                                        }
+                                    }
+                                    _ => {
+                                        m.next_move_id = None;
+                                        m.next_move_can_transition_away = true;
+                                        true
+                                    }
+                                }
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        };
+                        if needs_roll {
+                            content.monster_roll_move(state, eh)?;
+                        }
+                    }
+                    None => content.monster_roll_move(state, eh)?,
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn end_enemy_turn(
         state: &mut BattleState,
         content: &dyn ContentDispatcher,
@@ -2634,6 +2641,10 @@ impl CombatEngine {
         if Self::check_win_condition(state, content)? {
             return Ok(StepOutcome::CombatEnded { won: state.won });
         }
+        if state.static_ctx.stop_before_player_turn_start {
+            Self::prepare_enemy_moves_for_next_round(state, content)?;
+            return Ok(StepOutcome::Completed);
+        }
         Self::reset_turn_counters(state);
         state.current_side = CombatSide::Player;
         state.round_number += 1;
@@ -2642,9 +2653,6 @@ impl CombatEngine {
             state.compact_prior_turn_history();
         }
         Self::notify_side_switch(state);
-        if state.static_ctx.stop_before_player_turn_start {
-            return Ok(StepOutcome::Completed);
-        }
         Self::start_turn(state, content, false)
     }
 

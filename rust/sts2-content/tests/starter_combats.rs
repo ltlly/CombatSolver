@@ -629,3 +629,134 @@ fn hook_order_1082_places_powers_before_relics_and_dominion_last() {
     assert_eq!(intents.as_slice(), &[(sts2_types::Dec::from_i32(4), 1)]);
     assert!(sts2_kernel::ContentDispatcher::monster_intends_attack(&content, &state, _enemy).unwrap());
 }
+
+#[test]
+fn stop_before_player_turn_start_matches_end_turn_and_extra_turn_boundaries() {
+    use sts2_types::PowerId;
+
+    let content = Sts2Content;
+    let deck = [
+        CardId::StrikeIronclad,
+        CardId::StrikeIronclad,
+        CardId::StrikeIronclad,
+        CardId::DefendIronclad,
+        CardId::DefendIronclad,
+        CardId::Bash,
+        CardId::StrikeIronclad,
+        CardId::DefendIronclad,
+    ];
+
+    // 1. Compare normal end_player_turn -> start_turn vs stop_before_player_turn_start boundary.
+    let (mut baseline_state, baseline_enemy) = build_starter_battle(
+        CharacterId::Ironclad,
+        &deck,
+        &[],
+        MonsterId::FuzzyWurmCrawler,
+        40,
+    );
+    CombatEngine::start_combat(&mut baseline_state, &content).unwrap();
+
+    let mut stop_state = baseline_state.clone();
+    {
+        let ctx = Arc::make_mut(&mut stop_state.static_ctx);
+        ctx.stop_before_player_turn_start = true;
+    }
+
+    let base_out = CombatEngine::end_player_turn(&mut baseline_state, &content).unwrap();
+    let stop_out = CombatEngine::end_player_turn(&mut stop_state, &content).unwrap();
+    assert_eq!(base_out, StepOutcome::Completed);
+    assert_eq!(stop_out, StepOutcome::Completed);
+
+    // At the pre-turn-start boundary, enemy turn completed and monster moves advanced,
+    // while player side/round/turn/counters and next-turn hand draw have not started yet.
+    assert_eq!(stop_state.current_side, CombatSide::Enemy);
+    assert_eq!(stop_state.round_number, 1);
+    assert_eq!(stop_state.player.turn_number, 1);
+    assert!(stop_state.player.hand.is_empty());
+    assert_eq!(
+        stop_state.player.current_hp,
+        baseline_state.player.current_hp
+    );
+    assert_eq!(
+        stop_state.player.cumulative_hp_lost,
+        baseline_state.player.cumulative_hp_lost
+    );
+    assert!(stop_state.has_living_player_creature());
+
+    let base_monster = baseline_state
+        .creature(baseline_enemy)
+        .unwrap()
+        .monster
+        .as_ref()
+        .unwrap();
+    let stop_monster = stop_state
+        .creature(baseline_enemy)
+        .unwrap()
+        .monster
+        .as_ref()
+        .unwrap();
+    assert_eq!(stop_monster.next_move_id, base_monster.next_move_id);
+    assert_eq!(stop_monster.rng, base_monster.rng);
+
+    // 2. Lethal enemy attack completes cleanly with CombatEnded { won: false }.
+    let (mut lethal_state, _) = build_starter_battle(
+        CharacterId::Ironclad,
+        &deck,
+        &[],
+        MonsterId::FuzzyWurmCrawler,
+        40,
+    );
+    CombatEngine::start_combat(&mut lethal_state, &content).unwrap();
+    {
+        let ctx = Arc::make_mut(&mut lethal_state.static_ctx);
+        ctx.stop_before_player_turn_start = true;
+    }
+    lethal_state.player.current_hp = 1;
+    lethal_state.creatures[0].current_hp = 1;
+    let lethal_out = CombatEngine::end_player_turn(&mut lethal_state, &content).unwrap();
+    assert_eq!(lethal_out, StepOutcome::CombatEnded { won: false });
+    assert!(!lethal_state.has_living_player_creature());
+
+    // 3. Extra-turn path stops after consuming ExtraTurnPower and BEFORE counter reset/turn increment.
+    let (mut extra_state, _) = build_starter_battle(
+        CharacterId::Ironclad,
+        &deck,
+        &[],
+        MonsterId::FuzzyWurmCrawler,
+        40,
+    );
+    CombatEngine::start_combat(&mut extra_state, &content).unwrap();
+    let pc = extra_state.player.creature_handle;
+    sts2_kernel::commands::power::apply(
+        &mut extra_state,
+        &content,
+        PowerId::ExtraTurnPower,
+        pc,
+        sts2_types::Dec::ONE,
+        Some(pc),
+        None,
+    )
+    .unwrap();
+    {
+        let ctx = Arc::make_mut(&mut extra_state.static_ctx);
+        ctx.stop_before_player_turn_start = true;
+    }
+    extra_state.player.counters.wah_started_this_turn = 2;
+    let hp_before_extra = extra_state.player.current_hp;
+    let extra_out = CombatEngine::end_player_turn(&mut extra_state, &content).unwrap();
+    assert_eq!(extra_out, StepOutcome::Completed);
+    assert_eq!(extra_state.current_side, CombatSide::Player);
+    assert_eq!(extra_state.round_number, 1);
+    assert_eq!(extra_state.player.turn_number, 1);
+    assert_eq!(extra_state.player.counters.wah_started_this_turn, 2);
+    assert_eq!(extra_state.player.current_hp, hp_before_extra);
+    assert!(extra_state.player.hand.is_empty());
+    let extra_amt = extra_state
+        .creature(pc)
+        .unwrap()
+        .powers
+        .iter()
+        .find(|p| p.id == PowerId::ExtraTurnPower)
+        .map_or(0, |p| p.amount);
+    assert_eq!(extra_amt, 0);
+}

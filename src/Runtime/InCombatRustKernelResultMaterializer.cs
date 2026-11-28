@@ -211,83 +211,43 @@ internal static class InCombatRustKernelResultMaterializer
         }
 
         HotFastSummary summary = HotEvaluator.ExtractStage1(in state, in hotPolicy);
-        if (!VerifyTerminalMatch(
-                rootPlayerHp,
-                rootShuffleCounter,
-                in state,
-                in summary,
-                in hotPolicy,
-                rustResult.Terminal,
-                explicitPotionCount,
-                totalPotionCount,
-                optionalPaidPotionCount,
-                potionMask,
-                ambergrisCount,
-                out string? divergence))
-        {
-            failureCode = "replay_state_divergence";
-            failureDetail = divergence;
-            return false;
-        }
-
         bool won = hotActions.Length > 0 && summary.IsVictory;
         bool survives = !summary.IsDefeat && summary.PlayerHp > 0;
         int endMaxHp = Math.Max(1, summary.PlayerMaxHp);
-        bool hasRustTelemetry = rustResult.Terminal.Score is not null
-            && rustResult.Terminal.NetPersistentHpDeltaCenti is not null
-            && rustResult.Terminal.NetPotionOpportunityCostCenti is not null
-            && rustResult.Terminal.StrategicHpDeficit is not null
-            && rustResult.Terminal.OptionalPotionWholeHp is not null
-            && rustResult.Terminal.RawPotionStrategicCost is not null;
+        int postCombatHeal = HotRouteQuality.RankedPostCombatRelicHeal(
+            hotPolicy.PostCombatRelicHeal,
+            won,
+            summary.PlayerHp,
+            endMaxHp);
+        int netHpDeltaCenti = HotRouteQuality.ComputeNetPersistentHpDeltaCenti(
+            endPlayerHp: summary.PlayerHp,
+            postCombatMonotoneHeal: postCombatHeal,
+            initialPlayerHp: hotPolicy.InitialPlayerHp,
+            endPlayerMaxHp: endMaxHp,
+            initialPlayerMaxHp: hotPolicy.InitialPlayerMaxHp,
+            deathSaveHpRestored: summary.DeathSaveHpRestored,
+            growthHpCredit: summary.GrowthHpCredit,
+            bossHpRelief: hotPolicy.StrategicBossHpRelief,
+            ignoreLongTermRewards: hotPolicy.IgnoreLongTermRewards,
+            relicHpCredit: summary.RelicHpCredit,
+            relicHealingHpCredit: summary.RelicHealingHpCredit,
+            feedMaxHpExcluded: summary.FeedCount * hotPolicy.FeedMaxHpPerKill);
+        int netPotionCostCenti = HotPotionPolicy.ComputeNetPotionOpportunityCostCenti(
+            optionalPotionStrategicCost,
+            optionalPaidPotionCount,
+            alchemizeCount: summary.AlchemizeCount,
+            endEmptyPotionSlots: summary.EmptyPotionSlots,
+            in hotPolicy);
+        int strategicDeficitWholeHp = HotRouteQuality.RoundCentiToHp(-netHpDeltaCenti);
+        int optionalPotionWholeHp = netPotionCostCenti > 0
+            ? Math.Max(1, HotRouteQuality.RoundCentiToHp(netPotionCostCenti))
+            : 0;
+        int effectiveRawPotionStrategicCost = rawPotionStrategicCost;
 
-        int netHpDeltaCenti;
-        int netPotionCostCenti;
-        int strategicDeficitWholeHp;
-        int optionalPotionWholeHp;
-        int effectiveRawPotionStrategicCost;
-        long routeScore;
-
-        if (hasRustTelemetry)
+        bool isTerminalOutcome = summary.IsVictory || summary.IsDefeat || summary.IsEventDefeat;
+        long? replayedScore = null;
+        if (isTerminalOutcome || rustResult.Terminal.Score is null)
         {
-            netHpDeltaCenti = rustResult.Terminal.NetPersistentHpDeltaCenti!.Value;
-            netPotionCostCenti = rustResult.Terminal.NetPotionOpportunityCostCenti!.Value;
-            strategicDeficitWholeHp = rustResult.Terminal.StrategicHpDeficit!.Value;
-            optionalPotionWholeHp = rustResult.Terminal.OptionalPotionWholeHp!.Value;
-            effectiveRawPotionStrategicCost = rustResult.Terminal.RawPotionStrategicCost!.Value;
-            routeScore = rustResult.Terminal.Score!.Value;
-        }
-        else
-        {
-            int postCombatHeal = HotRouteQuality.RankedPostCombatRelicHeal(
-                hotPolicy.PostCombatRelicHeal,
-                won,
-                summary.PlayerHp,
-                endMaxHp);
-            netHpDeltaCenti = HotRouteQuality.ComputeNetPersistentHpDeltaCenti(
-                endPlayerHp: summary.PlayerHp,
-                postCombatMonotoneHeal: postCombatHeal,
-                initialPlayerHp: hotPolicy.InitialPlayerHp,
-                endPlayerMaxHp: endMaxHp,
-                initialPlayerMaxHp: hotPolicy.InitialPlayerMaxHp,
-                deathSaveHpRestored: summary.DeathSaveHpRestored,
-                growthHpCredit: summary.GrowthHpCredit,
-                bossHpRelief: hotPolicy.StrategicBossHpRelief,
-                ignoreLongTermRewards: hotPolicy.IgnoreLongTermRewards,
-                relicHpCredit: summary.RelicHpCredit,
-                relicHealingHpCredit: summary.RelicHealingHpCredit,
-                feedMaxHpExcluded: summary.FeedCount * hotPolicy.FeedMaxHpPerKill);
-            netPotionCostCenti = HotPotionPolicy.ComputeNetPotionOpportunityCostCenti(
-                optionalPotionStrategicCost,
-                optionalPaidPotionCount,
-                alchemizeCount: summary.AlchemizeCount,
-                endEmptyPotionSlots: summary.EmptyPotionSlots,
-                in hotPolicy);
-            strategicDeficitWholeHp = HotRouteQuality.RoundCentiToHp(-netHpDeltaCenti);
-            optionalPotionWholeHp = netPotionCostCenti > 0
-                ? Math.Max(1, HotRouteQuality.RoundCentiToHp(netPotionCostCenti))
-                : 0;
-            effectiveRawPotionStrategicCost = rawPotionStrategicCost;
-
             HotEvalLookup evalLookup = new(rules);
             HotEvaluator.EvaluateState(
                 in state,
@@ -300,8 +260,35 @@ internal static class InCombatRustKernelResultMaterializer
                 hotActions.Length,
                 HotEvalMode.Balanced,
                 out HotEvalFeatures terminalEval);
-            routeScore = terminalEval.Score;
+            replayedScore = terminalEval.Score;
         }
+
+        if (!VerifyTerminalMatch(
+                rootPlayerHp,
+                rootShuffleCounter,
+                in state,
+                in summary,
+                in hotPolicy,
+                rustResult.Terminal,
+                explicitPotionCount,
+                totalPotionCount,
+                optionalPaidPotionCount,
+                potionMask,
+                ambergrisCount,
+                effectiveRawPotionStrategicCost,
+                netHpDeltaCenti,
+                netPotionCostCenti,
+                strategicDeficitWholeHp,
+                optionalPotionWholeHp,
+                isTerminalOutcome ? replayedScore : null,
+                out string? divergence))
+        {
+            failureCode = "replay_state_divergence";
+            failureDetail = divergence;
+            return false;
+        }
+
+        long routeScore = rustResult.Terminal.Score ?? replayedScore!.Value;
 
         HotRouteKey winningKey = new(
             Won: won,
@@ -1195,6 +1182,12 @@ internal static class InCombatRustKernelResultMaterializer
         int optionalPaidPotionCount,
         ushort potionMask,
         byte ambergrisCount,
+        int rawPotionStrategicCost,
+        int netHpDeltaCenti,
+        int netPotionCostCenti,
+        int strategicDeficitWholeHp,
+        int optionalPotionWholeHp,
+        long? expectedTerminalScore,
         out string? divergence)
     {
         bool replayedDead = summary.IsDefeat || state.Player.CurrentHp <= 0;
@@ -1303,6 +1296,36 @@ internal static class InCombatRustKernelResultMaterializer
         if (terminal.AmbergrisCount is int rustAmbergris && rustAmbergris != ambergrisCount)
         {
             divergence = $"AmbergrisCount mismatch: Rust={rustAmbergris}, HotKernel={ambergrisCount}.";
+            return false;
+        }
+        if (terminal.RawPotionStrategicCost is int rustRawPotionCost && rustRawPotionCost != rawPotionStrategicCost)
+        {
+            divergence = $"RawPotionStrategicCost mismatch: Rust={rustRawPotionCost}, HotKernel={rawPotionStrategicCost}.";
+            return false;
+        }
+        if (terminal.NetPersistentHpDeltaCenti is int rustNetHpDelta && rustNetHpDelta != netHpDeltaCenti)
+        {
+            divergence = $"NetPersistentHpDeltaCenti mismatch: Rust={rustNetHpDelta}, HotKernel={netHpDeltaCenti}.";
+            return false;
+        }
+        if (terminal.NetPotionOpportunityCostCenti is int rustNetPotionCost && rustNetPotionCost != netPotionCostCenti)
+        {
+            divergence = $"NetPotionOpportunityCostCenti mismatch: Rust={rustNetPotionCost}, HotKernel={netPotionCostCenti}.";
+            return false;
+        }
+        if (terminal.StrategicHpDeficit is int rustDeficit && rustDeficit != strategicDeficitWholeHp)
+        {
+            divergence = $"StrategicHpDeficit mismatch: Rust={rustDeficit}, HotKernel={strategicDeficitWholeHp}.";
+            return false;
+        }
+        if (terminal.OptionalPotionWholeHp is int rustOptWholeHp && rustOptWholeHp != optionalPotionWholeHp)
+        {
+            divergence = $"OptionalPotionWholeHp mismatch: Rust={rustOptWholeHp}, HotKernel={optionalPotionWholeHp}.";
+            return false;
+        }
+        if (expectedTerminalScore is long expectedScore && terminal.Score is long rustScore && rustScore != expectedScore)
+        {
+            divergence = $"TerminalScore mismatch: Rust={rustScore}, HotKernel={expectedScore}.";
             return false;
         }
 

@@ -403,12 +403,13 @@ internal static class InCombatRustKernelBridge
                     rc = activated.AssessEligibilityV1((nint)reqPtr, (nuint)reqBytes.Length, out outPtr, out outLen);
                 }
             }
-            if (rc != 0 || outPtr == 0 || outLen == 0)
+            if (rc != 0 || outPtr == 0 || outLen == 0 || outLen > (nuint)RustKernelAbi.MaxControlResponseBytes)
             {
+                MarkRuntimeCorrupt($"AssessEligibilityV1 violated control wire bounds: rc={rc}, ptr=0x{outPtr:X}, len={outLen}.");
                 result = default;
                 return false;
             }
-            respBytes = new byte[checked((int)outLen)];
+            respBytes = new byte[(int)outLen];
             Marshal.Copy(outPtr, respBytes, 0, respBytes.Length);
         }
         finally
@@ -417,18 +418,23 @@ internal static class InCombatRustKernelBridge
                 activated.FreeBuffer(outPtr, outLen);
         }
 
-        RustKernelEligibilityResponseDto? dto = JsonSerializer.Deserialize<RustKernelEligibilityResponseDto>(
-            respBytes, RustKernelAbi.JsonOptions);
-        if (dto is null || dto.AbiVersion != RustKernelAbi.Version)
+        if (!RustKernelWireValidator.TryParseEligibilityResponseBytes(
+                respBytes,
+                out bool eligible,
+                out string? failureCode,
+                out string? detail,
+                out string? contractError))
         {
+            MarkRuntimeCorrupt($"AssessEligibilityV1 returned invalid contract payload: {contractError}.");
             result = default;
             return false;
         }
-        result = dto.Eligible
+
+        result = eligible
             ? RustKernelEligibilityResult.Eligible()
             : RustKernelEligibilityResult.Ineligible(
-                dto.FailureCode ?? "ineligible",
-                dto.Detail ?? "Rust combat kernel rejected eligibility.");
+                failureCode!,
+                detail ?? "Rust combat kernel rejected eligibility.");
         return true;
     }
 
@@ -465,13 +471,15 @@ internal static class InCombatRustKernelBridge
                     rc = activated.EvalEndTurnRiskV1((nint)reqPtr, (nuint)reqBytes.Length, out outPtr, out outLen);
                 }
             }
-            if (rc != 0 || outPtr == 0 || outLen == 0)
+            if (rc != 0 || outPtr == 0 || outLen == 0 || outLen > (nuint)RustKernelAbi.MaxControlResponseBytes)
             {
+                string reason = $"EvalEndTurnRiskV1 violated control wire bounds: rc={rc}, ptr=0x{outPtr:X}, len={outLen}.";
+                MarkRuntimeCorrupt(reason);
                 projection = default;
-                failureReason = $"native_rc={rc}";
+                failureReason = reason;
                 return false;
             }
-            respBytes = new byte[checked((int)outLen)];
+            respBytes = new byte[(int)outLen];
             Marshal.Copy(outPtr, respBytes, 0, respBytes.Length);
         }
         finally
@@ -480,25 +488,36 @@ internal static class InCombatRustKernelBridge
                 activated.FreeBuffer(outPtr, outLen);
         }
 
-        RustKernelEndTurnRiskResponseDto? dto = JsonSerializer.Deserialize<RustKernelEndTurnRiskResponseDto>(
-            respBytes, RustKernelAbi.JsonOptions);
-        if (dto is null || dto.AbiVersion != RustKernelAbi.Version || dto.Outcome != "Succeeded")
+        int expectedHpBefore = request.LiveState.Player.CurrentHp;
+        if (!RustKernelWireValidator.TryParseEndTurnRiskResponseBytes(
+                respBytes,
+                expectedHpBefore,
+                out int hpBefore,
+                out int hpAfter,
+                out int hpLost,
+                out bool playerDead,
+                out string monsterMoves,
+                out failureReason,
+                out bool isContractViolation))
         {
+            if (isContractViolation)
+                MarkRuntimeCorrupt($"EvalEndTurnRiskV1 returned invalid contract payload: {failureReason}.");
             projection = default;
-            failureReason = dto is null
-                ? "null_response"
-                : $"{dto.Outcome}:{dto.FailureCode}:{dto.Error}";
             return false;
         }
 
-        projection = new LiveEndTurnRiskProjection(
-            dto.HpBefore,
-            dto.HpAfter,
-            dto.HpLost,
-            dto.PlayerDead,
-            dto.MonsterMoves ?? string.Empty);
+        projection = new LiveEndTurnRiskProjection(hpBefore, hpAfter, hpLost, playerDead, monsterMoves);
         failureReason = null;
         return true;
+    }
+
+    private static void MarkRuntimeCorrupt(string reason)
+    {
+        lock (Sync)
+        {
+            _snapshot = new KernelAvailabilitySnapshot(null, true, reason);
+        }
+        Entry.Logger.Error($"[CombatSolver/InCombatRustKernel] RUST_KERNEL_RUNTIME_CORRUPT reason={reason}");
     }
 
     private static bool TryGetFastAvailability(

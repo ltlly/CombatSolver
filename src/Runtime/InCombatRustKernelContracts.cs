@@ -9,6 +9,7 @@ internal static class RustKernelAbi
     public const string EngineId = InCombatRustKernelMetadata.EngineId;
     public const string SupportedGameVersion = InCombatRustKernelMetadata.SupportedGameVersion;
     public const int MaxSoftTimeBudgetMilliseconds = InCombatRustKernelMetadata.MaxSoftTimeBudgetMilliseconds;
+    public const int MaxControlResponseBytes = 1 * 1024 * 1024;
 
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -527,8 +528,8 @@ internal sealed record RustKernelEligibilityRequestDto(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] RustKernelPolicyDto? Policy = null);
 
 internal sealed record RustKernelEligibilityResponseDto(
-    int AbiVersion,
-    bool Eligible,
+    int? AbiVersion,
+    bool? Eligible,
     string? FailureCode,
     string? FieldPath,
     string? Detail);
@@ -558,14 +559,14 @@ internal sealed record RustKernelEndTurnRiskRequestDto(
     IReadOnlyList<RustKernelEndTurnChoiceDto> TurnStartChoices);
 
 internal sealed record RustKernelEndTurnRiskResponseDto(
-    int AbiVersion,
-    string Outcome,
+    int? AbiVersion,
+    string? Outcome,
     string? FailureCode,
     string? Error,
-    int HpBefore,
-    int HpAfter,
-    int HpLost,
-    bool PlayerDead,
+    int? HpBefore,
+    int? HpAfter,
+    int? HpLost,
+    bool? PlayerDead,
     string? MonsterMoves);
 
 internal sealed record RustKernelPotionUseDto(
@@ -644,6 +645,141 @@ internal static class RustKernelWireValidator
             throw new InvalidDataException("RustKernel response payload deserialized to null.");
         ValidateResponse(response);
         return response;
+    }
+
+    public static bool TryParseEligibilityResponseBytes(
+        ReadOnlySpan<byte> utf8,
+        out bool eligible,
+        out string? failureCode,
+        out string? detail,
+        out string? contractError)
+    {
+        eligible = false;
+        failureCode = null;
+        detail = null;
+        if (utf8.IsEmpty || utf8.Length > RustKernelAbi.MaxControlResponseBytes)
+        {
+            contractError = $"eligibility_response_length_out_of_range:{utf8.Length}";
+            return false;
+        }
+
+        RustKernelEligibilityResponseDto? dto;
+        try
+        {
+            dto = JsonSerializer.Deserialize<RustKernelEligibilityResponseDto>(utf8, RustKernelAbi.JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            contractError = $"eligibility_json_invalid:{ex.Message}";
+            return false;
+        }
+
+        if (dto is null || dto.AbiVersion != RustKernelAbi.Version || !dto.Eligible.HasValue)
+        {
+            contractError = "eligibility_missing_required_fields";
+            return false;
+        }
+        if (!dto.Eligible.Value && string.IsNullOrWhiteSpace(dto.FailureCode))
+        {
+            contractError = "eligibility_missing_failure_code";
+            return false;
+        }
+
+        eligible = dto.Eligible.Value;
+        failureCode = dto.FailureCode;
+        detail = dto.Detail;
+        contractError = null;
+        return true;
+    }
+
+    public static bool TryParseEndTurnRiskResponseBytes(
+        ReadOnlySpan<byte> utf8,
+        int expectedHpBefore,
+        out int hpBefore,
+        out int hpAfter,
+        out int hpLost,
+        out bool playerDead,
+        out string monsterMoves,
+        out string? failureReason,
+        out bool isContractViolation)
+    {
+        hpBefore = 0;
+        hpAfter = 0;
+        hpLost = 0;
+        playerDead = false;
+        monsterMoves = string.Empty;
+        if (utf8.IsEmpty || utf8.Length > RustKernelAbi.MaxControlResponseBytes)
+        {
+            failureReason = $"end_turn_risk_length_out_of_range:{utf8.Length}";
+            isContractViolation = true;
+            return false;
+        }
+
+        RustKernelEndTurnRiskResponseDto? dto;
+        try
+        {
+            dto = JsonSerializer.Deserialize<RustKernelEndTurnRiskResponseDto>(utf8, RustKernelAbi.JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            failureReason = $"end_turn_risk_json_invalid:{ex.Message}";
+            isContractViolation = true;
+            return false;
+        }
+
+        if (dto is null || dto.AbiVersion != RustKernelAbi.Version || string.IsNullOrWhiteSpace(dto.Outcome))
+        {
+            failureReason = "end_turn_risk_missing_required_envelope";
+            isContractViolation = true;
+            return false;
+        }
+
+        if (string.Equals(dto.Outcome, "Failed", StringComparison.Ordinal)
+            || string.Equals(dto.Outcome, "CapabilityMiss", StringComparison.Ordinal))
+        {
+            failureReason = $"{dto.Outcome}:{dto.FailureCode}:{dto.Error}";
+            isContractViolation = false;
+            return false;
+        }
+
+        if (!string.Equals(dto.Outcome, "Succeeded", StringComparison.Ordinal))
+        {
+            failureReason = $"end_turn_risk_unknown_outcome:{dto.Outcome}";
+            isContractViolation = true;
+            return false;
+        }
+
+        if (!dto.HpBefore.HasValue
+            || !dto.HpAfter.HasValue
+            || !dto.HpLost.HasValue
+            || !dto.PlayerDead.HasValue
+            || dto.MonsterMoves is null)
+        {
+            failureReason = "end_turn_risk_succeeded_missing_fields";
+            isContractViolation = true;
+            return false;
+        }
+
+        if (dto.HpBefore.Value != expectedHpBefore
+            || dto.HpLost.Value < 0
+            || dto.HpAfter.Value < 0
+            || (dto.HpAfter.Value == 0 && !dto.PlayerDead.Value))
+        {
+            failureReason =
+                $"end_turn_risk_invariant_violation:expectedBefore={expectedHpBefore}," +
+                $"before={dto.HpBefore.Value},after={dto.HpAfter.Value},lost={dto.HpLost.Value},dead={dto.PlayerDead.Value}";
+            isContractViolation = true;
+            return false;
+        }
+
+        hpBefore = dto.HpBefore.Value;
+        hpAfter = dto.HpAfter.Value;
+        hpLost = dto.HpLost.Value;
+        playerDead = dto.PlayerDead.Value;
+        monsterMoves = dto.MonsterMoves;
+        failureReason = null;
+        isContractViolation = false;
+        return true;
     }
 
     public static void ValidateResponse(RustKernelResponseDto response)

@@ -5,6 +5,7 @@ use std::sync::Arc;
 use sts2_combat_rs::host_wire::{
     HostEligibilityResponseDto, HostEndTurnRiskResponseDto, HostProgressDto, HostSolveResponse,
 };
+use sts2_combat_rs::generated_contract_constants::MAX_SOFT_TIME_BUDGET_MS;
 use sts2_combat_rs::{
     ABI_VERSION, OracleActionJson, OracleStepResponse, SolveInCombatJsonResponse,
     sts2_rs_abi_version, sts2_rs_assess_eligibility_v1, sts2_rs_cancel_token_cancel,
@@ -13,6 +14,7 @@ use sts2_combat_rs::{
     sts2_rs_solve_in_combat_host_v1, sts2_rs_solve_in_combat_with_controls, sts2_rs_step_oracle,
 };
 use sts2_content::Sts2Content;
+use sts2_kernel::commands::power;
 use sts2_kernel::snapshot::export_live_state;
 use sts2_kernel::{
     BattleState, CardHandle, CardInst, CardTempFlags, CombatEngine, ContentDispatcher,
@@ -21,8 +23,8 @@ use sts2_kernel::{
 };
 use sts2_search::{InCombatSolveRequest, SearchPolicy, SearchProgress};
 use sts2_types::{
-    CardId, CardKeywords, CharacterId, CombatSide, GameMode, MonsterId, PileType, PlayerRngSet,
-    PlayerTurnPhase, RelicId, Rng, RoomType, RunRngSet,
+    CardId, CardKeywords, CharacterId, CombatSide, Dec, GameMode, MonsterId, PileType,
+    PlayerRngSet, PlayerTurnPhase, PowerId, RelicId, Rng, RoomType, RunRngSet,
 };
 
 #[test]
@@ -1415,8 +1417,567 @@ fn ffi_eval_end_turn_risk_v1_and_terminal_telemetry_parity() {
     assert_eq!(res.terminal.optional_paid_potion_count, Some(0));
     assert_eq!(res.terminal.used_potion_slot_mask, Some(1));
     assert_eq!(res.terminal.raw_potion_strategic_cost, Some(9));
-    assert!(res.terminal.net_persistent_hp_delta_centi.is_some());
-    assert!(res.terminal.net_potion_opportunity_cost_centi.is_some());
-    assert!(res.terminal.strategic_hp_deficit.is_some());
-    assert!(res.terminal.score.is_some());
+    assert_eq!(res.terminal.net_persistent_hp_delta_centi, Some(0));
+    assert_eq!(res.terminal.net_potion_opportunity_cost_centi, Some(0));
+    assert_eq!(res.terminal.strategic_hp_deficit, Some(0));
+    assert_eq!(res.terminal.optional_potion_whole_hp, Some(0));
+    assert_eq!(res.actions.len(), 3);
+    assert_eq!(res.terminal.score, Some(9_999_994_970));
+
+    // 3. Unforced paid-potion win exports canonical Balanced score including net potion cost & action penalty.
+    let mut live_paid = build_smoke_live_state_json();
+    live_paid.player.potion_slots = vec![Some("POTION.FIRE_POTION".to_owned()), None, None];
+    live_paid.creatures[1].current_hp = 26;
+    live_paid.creatures[1].max_hp = 26;
+    let paid_policy = serde_json::json!({
+        "potionPolicy": "RequireAtLeastOne",
+        "potionDirectives": [],
+        "predictPotionReward": false,
+        "relicStrategyEnabled": true,
+        "relicCounterRules": [],
+        "growthBudgets": {
+            "handOfGreed": 0, "theHunt": 0, "feed": 0, "royalties": 0,
+            "alchemize": 0, "geneticAlgorithm": 0, "theScythe": 0,
+            "goopy": 0, "forbiddenGrimoire": 0, "madScience": 0, "showOff": 0,
+            "thirdParty": null
+        },
+        "acceptableBattleHpLoss": 0,
+        "stopAtAcceptableBattleHpLoss": true,
+        "useBeamWidthPortfolio": false,
+        "useNoveltyPortfolio": false,
+        "useEarlyTurnExploration": false,
+        "beamWidth": 16,
+        "maxExpandedNodes": 500,
+        "maxCardBranchesPerNode": 32,
+        "maxPileChoiceBranchesPerAction": 18,
+        "maxHandChoiceBranchesPerAction": 24,
+        "softTimeBudgetMilliseconds": 2000,
+        "theftPolicy": "Ignore"
+    });
+    let paid_req = build_host_request_json_with_policy_override(
+        serde_json::to_value(&live_paid).unwrap(),
+        "RequireAtLeastOne",
+        1,
+        Some(paid_policy),
+    );
+    let paid_resp = call_host_v1(&paid_req);
+    assert_eq!(paid_resp.outcome, "Succeeded");
+    let paid_res = paid_resp.result.unwrap();
+    assert_eq!(paid_res.terminal.optional_paid_potion_count, Some(1));
+    assert_eq!(paid_res.terminal.net_persistent_hp_delta_centi, Some(0));
+    assert_eq!(paid_res.terminal.net_potion_opportunity_cost_centi, Some(900));
+    assert_eq!(paid_res.actions.len(), 2);
+    assert_eq!(paid_res.terminal.score, Some(9_999_643_980));
+}
+
+#[test]
+fn ffi_host_v1_and_eligibility_enforce_max_soft_time_budget() {
+    let live = build_smoke_live_state_json();
+    let live_val = serde_json::to_value(&live).unwrap();
+
+    let make_policy = |soft_ms: i32| {
+        serde_json::json!({
+            "potionPolicy": "Smart",
+            "potionDirectives": [],
+            "predictPotionReward": false,
+            "relicStrategyEnabled": true,
+            "relicCounterRules": [],
+            "growthBudgets": {
+                "handOfGreed": 0, "theHunt": 0, "feed": 0, "royalties": 0,
+                "alchemize": 0, "geneticAlgorithm": 0, "theScythe": 0,
+                "goopy": 0, "forbiddenGrimoire": 0, "madScience": 0, "showOff": 0,
+                "thirdParty": null
+            },
+            "acceptableBattleHpLoss": 0,
+            "stopAtAcceptableBattleHpLoss": true,
+            "useBeamWidthPortfolio": false,
+            "useNoveltyPortfolio": false,
+            "useEarlyTurnExploration": false,
+            "beamWidth": 16,
+            "maxExpandedNodes": 500,
+            "maxCardBranchesPerNode": 32,
+            "maxPileChoiceBranchesPerAction": 18,
+            "maxHandChoiceBranchesPerAction": 24,
+            "softTimeBudgetMilliseconds": soft_ms,
+            "theftPolicy": "Ignore"
+        })
+    };
+
+    // Exact ceiling (600_000 ms) passes both eligibility and host solve.
+    let ok_elig = call_assess_eligibility_v1(&serde_json::json!({
+        "abiVersion": ABI_VERSION,
+        "policy": make_policy(MAX_SOFT_TIME_BUDGET_MS)
+    }));
+    assert!(ok_elig.eligible);
+
+    let mut ok_req: serde_json::Value = serde_json::from_slice(&build_host_request_json_with_policy_override(
+        live_val.clone(),
+        "Smart",
+        1,
+        Some(make_policy(MAX_SOFT_TIME_BUDGET_MS)),
+    ))
+    .unwrap();
+    ok_req["searchBudgetMilliseconds"] = serde_json::json!(MAX_SOFT_TIME_BUDGET_MS);
+    let ok_solve = call_host_v1(&serde_json::to_vec(&ok_req).unwrap());
+    assert_eq!(ok_solve.outcome, "Succeeded");
+
+    // MAX_SOFT_TIME_BUDGET_MS + 1 is rejected in both eligibility and host solve.
+    let bad_soft_elig = call_assess_eligibility_v1(&serde_json::json!({
+        "abiVersion": ABI_VERSION,
+        "policy": make_policy(MAX_SOFT_TIME_BUDGET_MS + 1)
+    }));
+    assert!(!bad_soft_elig.eligible);
+    assert_eq!(
+        bad_soft_elig.failure_code.as_deref(),
+        Some("policy_unsupported")
+    );
+    assert_eq!(
+        bad_soft_elig.field_path.as_deref(),
+        Some("policy.softTimeBudgetMilliseconds")
+    );
+
+    let bad_soft_solve = call_host_v1(&build_host_request_json_with_policy_override(
+        live_val.clone(),
+        "Smart",
+        1,
+        Some(make_policy(MAX_SOFT_TIME_BUDGET_MS + 1)),
+    ));
+    assert_eq!(bad_soft_solve.outcome, "CapabilityMiss");
+    assert_eq!(
+        bad_soft_solve.failure_code.as_deref(),
+        Some("policy_unsupported")
+    );
+    assert_eq!(
+        bad_soft_solve.field_path.as_deref(),
+        Some("policy.softTimeBudgetMilliseconds")
+    );
+
+    let mut bad_req: serde_json::Value = serde_json::from_slice(&build_host_request_json_with_policy_override(
+        live_val,
+        "Smart",
+        1,
+        Some(make_policy(2000)),
+    ))
+    .unwrap();
+    bad_req["searchBudgetMilliseconds"] = serde_json::json!(MAX_SOFT_TIME_BUDGET_MS + 1);
+    let bad_req_solve = call_host_v1(&serde_json::to_vec(&bad_req).unwrap());
+    assert_eq!(bad_req_solve.outcome, "CapabilityMiss");
+    assert_eq!(
+        bad_req_solve.failure_code.as_deref(),
+        Some("policy_unsupported")
+    );
+    assert_eq!(
+        bad_req_solve.field_path.as_deref(),
+        Some("searchBudgetMilliseconds")
+    );
+}
+
+fn build_end_turn_choice_live_state_json(
+    hand_ids: &[CardId],
+    monster_id: MonsterId,
+    power_id: PowerId,
+    power_amount: i32,
+) -> sts2_kernel::snapshot::LiveStateJson {
+    let content = Sts2Content;
+    let run_rngs = RunRngSet::from_string_seed("RISK_CHOICE_SEED");
+    let player_rngs = PlayerRngSet::from_seed(run_rngs.seed);
+    let pc = CreatureHandle(1);
+    let ec = CreatureHandle(2);
+    let mut cards = Vec::new();
+    let mut hand_handles = Vec::new();
+    let mut deck_handles = Vec::new();
+    for (i, &cid) in hand_ids.iter().enumerate() {
+        let meta = content.card_meta(cid).unwrap();
+        let h = CardHandle((i + 1) as u32);
+        hand_handles.push(h);
+        deck_handles.push(h);
+        cards.push(CardInst {
+            handle: h,
+            id: cid,
+            upgrade_level: 0,
+            canonical_base_energy_cost: meta.canonical_energy_cost as i16,
+            base_energy_cost: meta.canonical_energy_cost as i16,
+            captured_energy_x_value: 0,
+            base_replay_count: 0,
+            floor_added_to_deck: sts2_kernel::OptI16::some(1),
+            deck_card_handle: sts2_kernel::OptCardHandle::some(h),
+            clone_of_handle: sts2_kernel::OptCardHandle::NONE,
+            temp_star_cost_override_this_turn: sts2_kernel::OptI16::NONE,
+            temp_cost_override_this_turn: sts2_kernel::OptI16::NONE,
+            temp_cost_override_this_turn_or_until_played: sts2_kernel::OptI16::NONE,
+            temp_cost_override_this_combat: sts2_kernel::OptI16::NONE,
+            local_keywords: meta.base_keywords,
+            keywords_added_from_outside: CardKeywords::empty(),
+            keywords_removed_from_outside: CardKeywords::empty(),
+            temp_flags: CardTempFlags::empty(),
+            affliction: None,
+            ext_index: None,
+            pile: PileType::Hand,
+            removed_from_state: false,
+            transform_into_after_play: None,
+        });
+    }
+    let mut state = BattleState {
+        static_ctx: Arc::new(RootStaticContext {
+            encounter_id: "RISK_CHOICE_ENC".to_owned(),
+            encounter_is_weak: false,
+            room_type: RoomType::Monster,
+            encounter_slots: vec!["slot_0".to_owned()],
+            game_mode: GameMode::Standard,
+            ascension: 0,
+            character_id: CharacterId::Silent,
+            dominion_id: None,
+            run_model_ids: Vec::new(),
+            card_generation_pools: Vec::new(),
+            colorless_card_pool: Vec::new(),
+            curse_card_pool: Vec::new(),
+            other_character_card_pool: Vec::new(),
+            tarot_card_pool: Vec::new(),
+            potion_generation_pool: Vec::new(),
+            transformation_pools: Vec::new(),
+            map_col: 0,
+            map_row: 0,
+            act_index: 0,
+            total_floor: 1,
+            ..Default::default()
+        }),
+        current_side: CombatSide::Player,
+        round_number: 1,
+        is_in_progress: true,
+        is_starting: false,
+        won: false,
+        is_player_extra_turn: false,
+        gold_was_stolen: false,
+        battleworn_dummy_timed_out: false,
+        end_player_turn_requested: false,
+        card_action_boundary_depth: 0,
+        next_creature_id: 2,
+        initial_encounter_monster_count: 1,
+        next_card_handle: (cards.len() + 1) as u32,
+        next_creature_handle: 3,
+        next_power_handle: 1,
+        next_attack_id: 1,
+        run_rngs,
+        player_rngs,
+        player: PlayerInst {
+            creature_handle: pc,
+            current_hp: 70,
+            max_hp: 70,
+            block: 0,
+            cumulative_hp_lost: 0,
+            gold: 99,
+            max_energy: 3,
+            base_orb_slot_count: 0,
+            is_active_for_hooks: true,
+            can_use_or_remove_potions: true,
+            energy: 3,
+            stars: 0,
+            phase: PlayerTurnPhase::Play,
+            turn_number: 1,
+            counters: PlayerCounters::default(),
+            hand: hand_handles,
+            draw: Vec::new(),
+            discard: Vec::new(),
+            exhaust: Vec::new(),
+            play: Vec::new(),
+            deck: deck_handles,
+            potion_slots: smallvec::smallvec![None, None, None],
+            combat_generated_potion_mask: 0,
+            orb_capacity: 0,
+            orbs: Vec::new(),
+            arrows: Vec::new(),
+            relics: Vec::new(),
+            card_or_potion_effect_depth: 0,
+            death_save_use_count: 0,
+            death_save_relic_hp_restored: 0,
+            death_save_potion_hp_restored: 0,
+        },
+        cards,
+        card_extensions: Vec::new(),
+        creatures: vec![
+            CreatureInst {
+                handle: pc,
+                combat_id: Some(0),
+                side: CombatSide::Player,
+                slot_name: None,
+                is_player: true,
+                pet_owner_player_index: None,
+                monster_id: None,
+                current_hp: 70,
+                max_hp: 70,
+                block: 0,
+                cumulative_hp_lost: 0,
+                is_detached: false,
+                monster: None,
+                has_minion_power: false,
+                powers: Vec::new(),
+            },
+            CreatureInst {
+                handle: ec,
+                combat_id: Some(1),
+                side: CombatSide::Enemy,
+                slot_name: Some(std::borrow::Cow::Borrowed("slot_0")),
+                is_player: false,
+                pet_owner_player_index: None,
+                monster_id: Some(monster_id),
+                current_hp: 200,
+                max_hp: 200,
+                block: 0,
+                cumulative_hp_lost: 0,
+                is_detached: false,
+                monster: Some(Box::new(MonsterInst {
+                    monster_id,
+                    rng: Rng::from_seed(77),
+                    is_performing_move: false,
+                    spawned_this_turn: false,
+                    current_state_id: std::borrow::Cow::Borrowed(""),
+                    next_move_id: None,
+                    next_move_can_transition_away: true,
+                    performed_first_move: false,
+                    state_log_ids: Vec::new(),
+                    transient_move_follow_up_state_id: None,
+                    setup_fields: Default::default(),
+                    private_fields: Default::default(),
+                })),
+                has_minion_power: false,
+                powers: Vec::new(),
+            },
+        ],
+        power_extensions: Vec::new(),
+        ally_handles: vec![pc],
+        enemy_handles: vec![ec],
+        escaped_handles: smallvec::SmallVec::new(),
+        removed_handles: smallvec::SmallVec::new(),
+        spawned_enemy_handles: smallvec::smallvec![ec],
+        pet_handles: smallvec::SmallVec::new(),
+        attacking_creatures: smallvec::SmallVec::new(),
+        deferred_death_cleanup: smallvec::SmallVec::new(),
+        damage_history: Vec::new(),
+        semantic_history: SemanticHistory::default(),
+        pending: None,
+        vakuu_auto_select_depth: 0,
+        hook_cache: Default::default(),
+        deck_dirty: Default::default(),
+        relic_dirty_mask: Default::default(),
+        handle_layout: Default::default(),
+        card_meta_dirty: Default::default(),
+        extra_clutter_hint: Default::default(),
+        eot_card_cleanup_dirty: Default::default(),
+    };
+    content.monster_setup_for_combat(&mut state, ec).unwrap();
+    content.monster_roll_move(&mut state, ec).unwrap();
+    power::apply(
+        &mut state,
+        &content,
+        power_id,
+        pc,
+        Dec::from_i32(power_amount),
+        Some(pc),
+        None,
+    )
+    .unwrap();
+    export_live_state(&state).unwrap()
+}
+
+#[test]
+fn ffi_eval_end_turn_risk_v1_strict_choice_matching() {
+    let make_risk_req = |live: &sts2_kernel::snapshot::LiveStateJson, choices: serde_json::Value| {
+        serde_json::json!({
+            "abiVersion": ABI_VERSION,
+            "liveState": live,
+            "characterId": "SILENT",
+            "ascension": 0,
+            "gameMode": "Standard",
+            "dominionId": null,
+            "runModelIds": [],
+            "encounterIsWeak": false,
+            "initialEncounterMonsterCount": 1,
+            "totalFloor": 1,
+            "actIndex": 0,
+            "mapCol": 0,
+            "mapRow": 0,
+            "hasMurderousModifier": false,
+            "turnStartChoices": choices
+        })
+    };
+
+    // 1. Optional end-turn prompt (Purity via SimpletonPower) distinguishes missing input from explicit empty skip.
+    let opt_live = build_end_turn_choice_live_state_json(
+        &[CardId::Purity, CardId::StrikeSilent, CardId::StrikeSilent],
+        MonsterId::FuzzyWurmCrawler,
+        PowerId::SimpletonPower,
+        1,
+    );
+    let missing_opt = call_eval_end_turn_risk_v1(&make_risk_req(&opt_live, serde_json::json!([])));
+    assert_eq!(missing_opt.outcome, "Failed");
+    assert_eq!(missing_opt.failure_code.as_deref(), Some("missing_choice"));
+
+    let wrong_src = call_eval_end_turn_risk_v1(&make_risk_req(
+        &opt_live,
+        serde_json::json!([{
+            "timing": "PlayerTurnEnd",
+            "sourceId": "SURVIVOR",
+            "effect": "Exhaust",
+            "sourcePile": "Hand",
+            "cards": []
+        }]),
+    ));
+    assert_eq!(wrong_src.outcome, "Failed");
+    assert_eq!(wrong_src.failure_code.as_deref(), Some("choice_mismatch"));
+
+    let wrong_pile = call_eval_end_turn_risk_v1(&make_risk_req(
+        &opt_live,
+        serde_json::json!([{
+            "timing": "PlayerTurnEnd",
+            "sourceId": "PURITY",
+            "effect": "Exhaust",
+            "sourcePile": "Discard",
+            "cards": []
+        }]),
+    ));
+    assert_eq!(wrong_pile.outcome, "Failed");
+    assert_eq!(wrong_pile.failure_code.as_deref(), Some("choice_mismatch"));
+
+    let explicit_skip = call_eval_end_turn_risk_v1(&make_risk_req(
+        &opt_live,
+        serde_json::json!([{
+            "timing": "PlayerTurnEnd",
+            "sourceId": "PURITY",
+            "effect": "Exhaust",
+            "sourcePile": "Hand",
+            "cards": []
+        }]),
+    ));
+    assert_eq!(explicit_skip.outcome, "Succeeded");
+
+    let leftover_extra = call_eval_end_turn_risk_v1(&make_risk_req(
+        &opt_live,
+        serde_json::json!([
+            {
+                "timing": "PlayerTurnEnd",
+                "sourceId": "PURITY",
+                "effect": "Exhaust",
+                "sourcePile": "Hand",
+                "cards": []
+            },
+            {
+                "timing": "PlayerTurnEnd",
+                "sourceId": "EXTRA_UNCONSUMED",
+                "effect": "Exhaust",
+                "sourcePile": "Hand",
+                "cards": []
+            }
+        ]),
+    ));
+    assert_eq!(leftover_extra.outcome, "Failed");
+    assert_eq!(leftover_extra.failure_code.as_deref(), Some("choice_mismatch"));
+
+    // 2. Same-card nested prompts (2x DaggerThrow via StampedePower=2): strict occurrence & count required.
+    let nested_live = build_end_turn_choice_live_state_json(
+        &[
+            CardId::DaggerThrow,
+            CardId::DaggerThrow,
+            CardId::DefendSilent,
+            CardId::DefendSilent,
+            CardId::DefendSilent,
+        ],
+        MonsterId::FuzzyWurmCrawler,
+        PowerId::StampedePower,
+        2,
+    );
+    let bad_occ = call_eval_end_turn_risk_v1(&make_risk_req(
+        &nested_live,
+        serde_json::json!([
+            {
+                "timing": "PlayerTurnEnd",
+                "sourceId": "DAGGER_THROW",
+                "effect": "Discard",
+                "sourcePile": "Hand",
+                "cards": [{ "cardId": "DEFEND_SILENT", "upgradeLevel": 0, "optionOccurrence": 0, "sourceOccurrence": 5 }]
+            },
+            {
+                "timing": "PlayerTurnEnd",
+                "sourceId": "DAGGER_THROW",
+                "effect": "Discard",
+                "sourcePile": "Hand",
+                "cards": [{ "cardId": "DEFEND_SILENT", "upgradeLevel": 0, "optionOccurrence": 0, "sourceOccurrence": 0 }]
+            }
+        ]),
+    ));
+    assert_eq!(bad_occ.outcome, "Failed");
+    assert_eq!(bad_occ.failure_code.as_deref(), Some("choice_mismatch"));
+
+    let good_nested = call_eval_end_turn_risk_v1(&make_risk_req(
+        &nested_live,
+        serde_json::json!([
+            {
+                "timing": "PlayerTurnEnd",
+                "sourceId": "DAGGER_THROW",
+                "effect": "Discard",
+                "sourcePile": "Hand",
+                "cards": [{ "cardId": "DEFEND_SILENT", "upgradeLevel": 0, "optionOccurrence": 1, "sourceOccurrence": 1 }]
+            },
+            {
+                "timing": "PlayerTurnEnd",
+                "sourceId": "DAGGER_THROW",
+                "effect": "Discard",
+                "sourcePile": "Hand",
+                "cards": [{ "cardId": "DEFEND_SILENT", "upgradeLevel": 0, "optionOccurrence": 0, "sourceOccurrence": 0 }]
+            }
+        ]),
+    ));
+    assert_eq!(good_nested.outcome, "Succeeded", "good_nested={good_nested:?}");
+
+    // 3. Mixed PlayerTurnEnd + EnemyTurn (KnowledgeDemon) rejects swapped sourceId cleanly.
+    let mixed_live = build_end_turn_choice_live_state_json(
+        &[CardId::Purity, CardId::StrikeSilent, CardId::StrikeSilent],
+        MonsterId::KnowledgeDemon,
+        PowerId::SimpletonPower,
+        1,
+    );
+    let wrong_enemy_src = call_eval_end_turn_risk_v1(&make_risk_req(
+        &mixed_live,
+        serde_json::json!([
+            {
+                "timing": "PlayerTurnEnd",
+                "sourceId": "PURITY",
+                "effect": "Exhaust",
+                "sourcePile": "Hand",
+                "cards": [{ "cardId": "STRIKE_SILENT", "upgradeLevel": 0, "optionOccurrence": 0, "sourceOccurrence": 0 }]
+            },
+            {
+                "timing": "EnemyTurn",
+                "sourceId": "WRONG_ENEMY_SOURCE",
+                "effect": "ApplyKnowledgeCurse",
+                "sourcePile": "None",
+                "cards": [{ "cardId": "MIND_ROT", "upgradeLevel": 0, "optionOccurrence": 0, "sourceOccurrence": -1 }]
+            }
+        ]),
+    ));
+    assert_eq!(wrong_enemy_src.outcome, "Failed");
+    assert_eq!(
+        wrong_enemy_src.failure_code.as_deref(),
+        Some("choice_mismatch")
+    );
+
+    let good_mixed = call_eval_end_turn_risk_v1(&make_risk_req(
+        &mixed_live,
+        serde_json::json!([
+            {
+                "timing": "PlayerTurnEnd",
+                "sourceId": "PURITY",
+                "effect": "Exhaust",
+                "sourcePile": "Hand",
+                "cards": [{ "cardId": "STRIKE_SILENT", "upgradeLevel": 0, "optionOccurrence": 0, "sourceOccurrence": 0 }]
+            },
+            {
+                "timing": "EnemyTurn",
+                "sourceId": "KNOWLEDGE_DEMON",
+                "effect": "ApplyKnowledgeCurse",
+                "sourcePile": "None",
+                "cards": [{ "cardId": "MIND_ROT", "upgradeLevel": 0, "optionOccurrence": 0, "sourceOccurrence": -1 }]
+            }
+        ]),
+    ));
+    assert_eq!(good_mixed.outcome, "Succeeded", "good_mixed={good_mixed:?}");
 }
