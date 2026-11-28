@@ -2645,6 +2645,7 @@ pub struct RootStaticContext {
     pub has_root_card_hook_mask: bool,
     pub root_initial_card_hook_mask: [u64; 8],
     pub pool_cache: RootPoolCache,
+    pub stop_before_player_turn_start: bool,
 }
 
 impl RootStaticContext {
@@ -2844,6 +2845,7 @@ impl Default for RootStaticContext {
             has_root_card_hook_mask: false,
             root_initial_card_hook_mask: [0; 8],
             pool_cache: RootPoolCache::default(),
+            stop_before_player_turn_start: false,
         }
     }
 }

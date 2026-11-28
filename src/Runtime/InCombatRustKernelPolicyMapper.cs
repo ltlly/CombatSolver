@@ -59,18 +59,6 @@ internal static class InCombatRustKernelPolicyMapper
         var relicCounterRules = new List<RustKernelRelicCounterRuleDto>(settingsSnapshot.RelicCounterRules.Length);
         foreach (RelicCounterRule rule in settingsSnapshot.RelicCounterRules)
         {
-            RelicCounterCatalog.Entry? catalogEntry = RelicCounterCatalog.All.FirstOrDefault(e => e.Id == rule.Id);
-            if (catalogEntry is null
-                || rule.Minimum < 0
-                || rule.Maximum < rule.Minimum
-                || rule.Maximum >= catalogEntry.Period
-                || rule.HpAllowance is < 0 or > 1000
-                || rule.Priority is < 1 or > 3)
-            {
-                policy = null;
-                unsupportedReason = $"Relic counter rule '{rule.Id}' is out of range for Rust combat kernel.";
-                return false;
-            }
             relicCounterRules.Add(new RustKernelRelicCounterRuleDto(
                 rule.Id.ToString(),
                 rule.Enabled,
@@ -157,6 +145,16 @@ internal static class InCombatRustKernelPolicyMapper
             TheftPolicy: searchPolicy.TheftPolicy?.ToString());
 
         RustKernelWireValidator.ValidatePolicy(policy);
+        if (InCombatRustKernelBridge.TryAssessEligibility(
+                new RustKernelEligibilityRequestDto(RustKernelAbi.Version, Policy: policy),
+                out RustKernelEligibilityResult nativePolicyEligibility)
+            && !nativePolicyEligibility.IsEligible)
+        {
+            policy = null;
+            unsupportedReason = nativePolicyEligibility.Detail
+                ?? "Search policy is unsupported by Rust combat kernel.";
+            return false;
+        }
         unsupportedReason = null;
         return true;
     }

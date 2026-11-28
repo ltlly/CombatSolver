@@ -1,7 +1,11 @@
 use crate::ABI_VERSION;
+use crate::generated_contract_constants::{
+    SUPPORTED_GAME_MODES, SUPPORTED_GAME_VERSION, SUPPORTED_ROOM_TYPES,
+    SUPPORTED_VANILLA_MODIFIERS,
+};
 use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
@@ -12,13 +16,15 @@ use sts2_kernel::{
     CreatureHandle, KernelErrorKind, StepOutcome,
 };
 use sts2_search::eval::{
-    BossHpStrategy, PostCombatRelicHealProfile, PotionSlotDirective, PotionValuationRegistry,
-    RelicCounterId, RelicCounterRule, SolverPotionDirective, SolverPotionPolicy, SolverTheftPolicy,
+    ActEndingBossPolicy, BossHpStrategy, PotionSlotDirective, PotionUsePolicy,
+    PotionValuationRegistry, RelicCounterId, RelicCounterRule, RootEvalBaseline,
+    SolverPotionDirective, SolverPotionPolicy, SolverTheftPolicy, evaluate_fast,
 };
 use sts2_search::novelty::{NoveltyPortfolioBudget, NoveltySearchOptions};
+use sts2_search::por::try_classify_potion_use_for_pass;
 use sts2_search::portfolio::PortfolioSchedulingMode;
 use sts2_search::{PlannedAction, SearchEngine, SearchPolicy, SearchProgress};
-use sts2_types::{CombatSide, PileType, PotionId, RelicId, RunRngType};
+use sts2_types::{CombatSide, PileType, PotionId, PowerId, RunRngType};
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -262,6 +268,30 @@ pub struct HostTerminalSnapshotDto {
     pub confidence: String,
     pub search_boundary: String,
     pub has_risk: bool,
+    #[serde(default)]
+    pub explicit_potion_count: Option<i32>,
+    #[serde(default)]
+    pub total_potion_count: Option<i32>,
+    #[serde(default)]
+    pub optional_paid_potion_count: Option<i32>,
+    #[serde(default)]
+    pub optional_potion_strategic_cost: Option<i32>,
+    #[serde(default)]
+    pub raw_potion_strategic_cost: Option<i32>,
+    #[serde(default)]
+    pub used_potion_slot_mask: Option<u16>,
+    #[serde(default)]
+    pub ambergris_count: Option<i32>,
+    #[serde(default)]
+    pub net_persistent_hp_delta_centi: Option<i32>,
+    #[serde(default)]
+    pub net_potion_opportunity_cost_centi: Option<i32>,
+    #[serde(default)]
+    pub strategic_hp_deficit: Option<i32>,
+    #[serde(default)]
+    pub optional_potion_whole_hp: Option<i32>,
+    #[serde(default)]
+    pub score: Option<i64>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -318,6 +348,110 @@ pub struct HostSolveResponse {
     pub best_so_far: Option<HostResultDto>,
     pub effective_degree_of_parallelism: i32,
     pub total_elapsed_milliseconds: f64,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HostEligibilityHostInputDto {
+    pub live_game_version: Option<String>,
+    pub is_in_progress: bool,
+    pub current_side: String,
+    pub is_singleplayer: bool,
+    pub player_count: i32,
+    pub has_concrete_run_state: bool,
+    pub run_player_count: i32,
+    pub game_mode: Option<String>,
+    #[serde(default)]
+    pub modifier_class_names: Vec<String>,
+    pub room_type: Option<String>,
+    pub player_phase: Option<String>,
+    pub test_subject_kills: i32,
+    pub wongo_points: i32,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HostEligibilityPolicyFlagsDto {
+    pub verify_incremental_search: bool,
+    pub measure_phase_performance: bool,
+    pub include_turn_setup: bool,
+    pub transposition_pruning_disabled_mask: u64,
+    pub show_off_growth_budget: i32,
+    pub has_nonzero_third_party_growth: bool,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HostEligibilityRequestDto {
+    pub abi_version: i32,
+    #[serde(default)]
+    pub host: Option<HostEligibilityHostInputDto>,
+    #[serde(default)]
+    pub policy_flags: Option<HostEligibilityPolicyFlagsDto>,
+    #[serde(default)]
+    pub policy: Option<serde_json::Value>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HostEligibilityResponseDto {
+    pub abi_version: i32,
+    pub eligible: bool,
+    pub failure_code: Option<String>,
+    pub field_path: Option<String>,
+    pub detail: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HostEndTurnChoiceDto {
+    pub timing: String,
+    #[serde(default)]
+    pub source_id: String,
+    #[serde(default)]
+    pub effect: String,
+    #[serde(default)]
+    pub source_pile: String,
+    #[serde(default)]
+    pub cards: Vec<HostChoiceCardTokenDto>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HostEndTurnRiskRequestDto {
+    pub abi_version: i32,
+    pub live_state: LiveStateJson,
+    pub character_id: String,
+    pub ascension: u8,
+    pub game_mode: String,
+    #[serde(default)]
+    pub dominion_id: Option<String>,
+    #[serde(default)]
+    pub run_model_ids: Vec<String>,
+    pub encounter_is_weak: bool,
+    pub initial_encounter_monster_count: usize,
+    pub total_floor: i32,
+    pub act_index: i32,
+    pub map_col: i32,
+    pub map_row: i32,
+    #[serde(default)]
+    pub has_murderous_modifier: bool,
+    #[serde(default)]
+    pub turn_start_choices: Vec<HostEndTurnChoiceDto>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HostEndTurnRiskResponseDto {
+    pub abi_version: i32,
+    pub outcome: String,
+    pub failure_code: Option<String>,
+    pub error: Option<String>,
+    pub hp_before: i32,
+    pub hp_after: i32,
+    pub hp_lost: i32,
+    pub player_dead: bool,
+    pub monster_moves: Option<String>,
 }
 
 fn failed_with_code_resp(
@@ -403,11 +537,25 @@ fn parse_boss_hp_strategy(
     }
 }
 
-fn map_policy(
-    req: &HostSolveRequest,
+struct ValidatedHostPolicyParts {
+    potion_policy: SolverPotionPolicy,
+    theft_policy: SolverTheftPolicy,
+    potion_directives: Vec<PotionSlotDirective>,
+    potion_hp_threshold_overrides: BTreeMap<PotionId, i32>,
+    relic_counter_rules: Vec<RelicCounterRule>,
+    growth_budgets: sts2_kernel::GrowthCounters,
+    act_transition_boss_hp_strategy: BossHpStrategy,
+    final_boss_hp_strategy: BossHpStrategy,
+    beam_width: usize,
+    portfolio_scheduling_mode: PortfolioSchedulingMode,
+    novelty_options: NoveltySearchOptions,
+    novelty_budget: NoveltyPortfolioBudget,
+    effective_etc_depth: i32,
+}
+
+fn validate_and_parse_host_policy(
     p: &HostPolicyDto,
-    effective_dop: usize,
-) -> Result<SearchPolicy, (&'static str, String)> {
+) -> Result<ValidatedHostPolicyParts, (&'static str, String)> {
     let potion_policy = match p.potion_policy.as_str() {
         "Disabled" => SolverPotionPolicy::Disabled,
         "Smart" => SolverPotionPolicy::Smart,
@@ -636,6 +784,12 @@ fn map_policy(
             "maxHandChoiceBranchesPerAction must be positive".to_owned(),
         ));
     }
+    if p.soft_time_budget_milliseconds <= 0 {
+        return Err((
+            "policy.softTimeBudgetMilliseconds",
+            "softTimeBudgetMilliseconds must be positive".to_owned(),
+        ));
+    }
 
     if let Some(ver) = p.portfolio_options_version {
         if ver != 1 && ver != 2 {
@@ -650,7 +804,8 @@ fn map_policy(
         || p.adaptive_novelty_refinement == Some(true)
         || p.use_early_turn_exploration
         || p.early_turn_exploration_depth.is_some_and(|d| d > 0)
-        || p.early_turn_exploration_budget_milliseconds.is_some_and(|b| b > 0)
+        || p.early_turn_exploration_budget_milliseconds
+            .is_some_and(|b| b > 0)
         || p.beam_width_portfolio_widths.is_some()
         || p.beam_width_portfolio_plain_baseline_member == Some(false)
         || p.offensive_refinement_portfolio == Some(true)
@@ -722,7 +877,7 @@ fn map_policy(
         None => NoveltySearchOptions::default(),
     };
 
-    let mut novelty_budget = match &p.novelty_budget {
+    let novelty_budget = match &p.novelty_budget {
         Some(nb) => {
             if nb.time_divisor < 2 || nb.maximum_milliseconds < 1 || nb.maximum_expanded_nodes < 1 {
                 return Err((
@@ -770,6 +925,30 @@ fn map_policy(
         ));
     }
 
+    Ok(ValidatedHostPolicyParts {
+        potion_policy,
+        theft_policy,
+        potion_directives,
+        potion_hp_threshold_overrides,
+        relic_counter_rules,
+        growth_budgets,
+        act_transition_boss_hp_strategy,
+        final_boss_hp_strategy,
+        beam_width,
+        portfolio_scheduling_mode,
+        novelty_options,
+        novelty_budget,
+        effective_etc_depth,
+    })
+}
+
+fn map_policy(
+    req: &HostSolveRequest,
+    p: &HostPolicyDto,
+    effective_dop: usize,
+) -> Result<SearchPolicy, (&'static str, String)> {
+    let parts = validate_and_parse_host_policy(p)?;
+    let mut novelty_budget = parts.novelty_budget;
     let mut budget_ms = p
         .soft_time_budget_milliseconds
         .max(req.search_budget_milliseconds)
@@ -789,34 +968,35 @@ fn map_policy(
     }
 
     Ok(SearchPolicy {
-        beam_width,
+        beam_width: parts.beam_width,
         max_nodes: p.max_expanded_nodes as usize,
         time_budget_ms: budget_ms,
-        allow_potions: potion_policy != SolverPotionPolicy::Disabled
-            || potion_directives
+        allow_potions: parts.potion_policy != SolverPotionPolicy::Disabled
+            || parts
+                .potion_directives
                 .iter()
                 .any(|d| d.directive != SolverPotionDirective::Disabled),
         allow_random_cards: true,
         max_degree_of_parallelism: effective_dop,
-        potion_policy,
-        potion_directives,
-        potion_hp_threshold_overrides,
+        potion_policy: parts.potion_policy,
+        potion_directives: parts.potion_directives,
+        potion_hp_threshold_overrides: parts.potion_hp_threshold_overrides,
         predict_potion_reward: p.predict_potion_reward,
         potion_reward_replacement_hp_credit: req.potion_reward_replacement_hp_credit,
         relic_strategy_enabled: p.relic_strategy_enabled,
-        relic_counter_rules,
-        growth_budgets,
+        relic_counter_rules: parts.relic_counter_rules,
+        growth_budgets: parts.growth_budgets,
         brightest_flame_max_hp_loss_limit: p.brightest_flame_max_hp_loss_limit,
         initial_brightest_flame_max_hp_spent: req
             .initial_brightest_flame_max_hp_spent
             .unwrap_or(0)
             .max(0),
         ignore_long_term_rewards: p.ignore_long_term_rewards,
-        act_transition_boss_hp_strategy,
-        final_boss_hp_strategy,
+        act_transition_boss_hp_strategy: parts.act_transition_boss_hp_strategy,
+        final_boss_hp_strategy: parts.final_boss_hp_strategy,
         is_non_final_act3_boss: req.is_non_final_act3_boss.unwrap_or(false),
         prior_battle_hp_lost: req.prior_battle_hp_lost.max(0),
-        theft_policy,
+        theft_policy: parts.theft_policy,
         use_beam_width_portfolio: p.use_beam_width_portfolio,
         beam_width_portfolio_widths: p
             .beam_width_portfolio_widths
@@ -831,12 +1011,12 @@ fn map_policy(
             .bounded_offensive_refinement_portfolio
             .unwrap_or(false),
         stop_portfolio_at_hp_target: p.stop_portfolio_at_hp_target.unwrap_or(true),
-        portfolio_scheduling_mode,
+        portfolio_scheduling_mode: parts.portfolio_scheduling_mode,
         use_novelty_search: p.use_novelty_portfolio,
         adaptive_novelty_refinement: p.adaptive_novelty_refinement.unwrap_or(false),
-        novelty_options,
+        novelty_options: parts.novelty_options,
         novelty_budget,
-        early_turn_exploration_depth: effective_etc_depth,
+        early_turn_exploration_depth: parts.effective_etc_depth,
         early_turn_exploration_budget_ms: etc_budget_ms,
         use_boss_tempo_search: false,
         acceptable_battle_hp_loss: p.acceptable_battle_hp_loss.max(0),
@@ -853,6 +1033,177 @@ fn map_policy(
         max_hand_choice_branches_per_action: p.max_hand_choice_branches_per_action as usize,
         ..Default::default()
     })
+}
+
+fn eligibility_ineligible(
+    code: &str,
+    field_path: Option<&str>,
+    detail: impl Into<String>,
+) -> HostEligibilityResponseDto {
+    HostEligibilityResponseDto {
+        abi_version: ABI_VERSION as i32,
+        eligible: false,
+        failure_code: Some(code.to_owned()),
+        field_path: field_path.map(str::to_owned),
+        detail: Some(detail.into()),
+    }
+}
+
+pub fn assess_eligibility_v1_json(req_json: &[u8]) -> HostEligibilityResponseDto {
+    let req: HostEligibilityRequestDto = match serde_json::from_slice(req_json) {
+        Ok(r) => r,
+        Err(e) => {
+            return eligibility_ineligible(
+                "invalid_request",
+                None,
+                format!("invalid eligibility request JSON: {e}"),
+            );
+        }
+    };
+    if req.abi_version != ABI_VERSION as i32 {
+        return eligibility_ineligible(
+            "abi_version_mismatch",
+            Some("abiVersion"),
+            format!(
+                "unsupported ABI version {}; expected {}",
+                req.abi_version, ABI_VERSION
+            ),
+        );
+    }
+
+    if let Some(host) = &req.host {
+        if let Some(live_ver) = host.live_game_version.as_deref() {
+            let trimmed = live_ver.trim();
+            if !trimmed.is_empty() && trimmed != SUPPORTED_GAME_VERSION {
+                return eligibility_ineligible(
+                    "game_version_mismatch",
+                    Some("host.liveGameVersion"),
+                    format!(
+                        "Live game version '{trimmed}' does not match Rust combat kernel '{SUPPORTED_GAME_VERSION}'."
+                    ),
+                );
+            }
+        }
+        if !host.is_in_progress
+            || host.current_side != "Player"
+            || !host.is_singleplayer
+            || host.player_count != 1
+        {
+            return eligibility_ineligible(
+                "live_combat_precondition",
+                Some("host"),
+                "Rust combat kernel requires single-player active combat on the player turn.",
+            );
+        }
+        if !host.has_concrete_run_state || host.run_player_count != 1 {
+            return eligibility_ineligible(
+                "live_combat_precondition",
+                Some("host.runPlayerCount"),
+                "Rust combat kernel requires a concrete single-player RunState.",
+            );
+        }
+        let game_mode = host.game_mode.as_deref().unwrap_or("");
+        if !SUPPORTED_GAME_MODES.contains(&game_mode) {
+            return eligibility_ineligible(
+                "non_standard_mode",
+                Some("host.gameMode"),
+                format!("Game mode {game_mode} routes to HotKernel."),
+            );
+        }
+        for mod_name in &host.modifier_class_names {
+            if !SUPPORTED_VANILLA_MODIFIERS.contains(&mod_name.as_str()) {
+                return eligibility_ineligible(
+                    "modifiers_present",
+                    Some("host.modifierClassNames"),
+                    format!("Combat or run has unsupported modifier {mod_name}."),
+                );
+            }
+        }
+        let room_type = host.room_type.as_deref().unwrap_or("");
+        if !SUPPORTED_ROOM_TYPES.contains(&room_type) {
+            return eligibility_ineligible(
+                "encounter_unmapped",
+                Some("host.roomType"),
+                format!("Encounter room type '{room_type}' is outside mapped vanilla combat rooms."),
+            );
+        }
+        if host.player_phase.as_deref() != Some("Play") {
+            return eligibility_ineligible(
+                "live_combat_precondition",
+                Some("host.playerPhase"),
+                "Player combat state is missing or not in PlayerTurnPhase.Play.",
+            );
+        }
+        if host.test_subject_kills < 0 || host.wongo_points < 0 {
+            return eligibility_ineligible(
+                "extra_field_unsupported",
+                Some("host"),
+                "Run or player extra fields contain state outside Rust combat kernel support.",
+            );
+        }
+    }
+
+    if let Some(flags) = &req.policy_flags {
+        if flags.verify_incremental_search {
+            return eligibility_ineligible(
+                "policy_unsupported",
+                Some("policyFlags.verifyIncrementalSearch"),
+                "VerifyIncrementalSearch runs on HotKernel.",
+            );
+        }
+        if flags.measure_phase_performance {
+            return eligibility_ineligible(
+                "policy_unsupported",
+                Some("policyFlags.measurePhasePerformance"),
+                "MeasurePhasePerformance runs on HotKernel.",
+            );
+        }
+        if flags.include_turn_setup {
+            return eligibility_ineligible(
+                "policy_unsupported",
+                Some("policyFlags.includeTurnSetup"),
+                "IncludeTurnSetup runs on HotKernel.",
+            );
+        }
+        if flags.transposition_pruning_disabled_mask != 0 {
+            return eligibility_ineligible(
+                "policy_unsupported",
+                Some("policyFlags.transpositionPruningDisabledMask"),
+                "TranspositionPruningDisabledMask is not supported by Rust combat kernel.",
+            );
+        }
+        if flags.show_off_growth_budget != 0 || flags.has_nonzero_third_party_growth {
+            return eligibility_ineligible(
+                "policy_unsupported",
+                Some("policyFlags"),
+                "ShowOff or third-party GrowthBudgets are nonzero and not supported by Rust combat kernel.",
+            );
+        }
+    }
+
+    if let Some(policy_val) = &req.policy {
+        let policy_dto: HostPolicyDto = match serde_json::from_value(policy_val.clone()) {
+            Ok(p) => p,
+            Err(e) => {
+                return eligibility_ineligible(
+                    "policy_unsupported",
+                    Some("policy"),
+                    format!("unsupported or invalid host policy JSON: {e}"),
+                );
+            }
+        };
+        if let Err((field, msg)) = validate_and_parse_host_policy(&policy_dto) {
+            return eligibility_ineligible("policy_unsupported", Some(field), msg);
+        }
+    }
+
+    HostEligibilityResponseDto {
+        abi_version: ABI_VERSION as i32,
+        eligible: true,
+        failure_code: None,
+        field_path: None,
+        detail: None,
+    }
 }
 
 fn sum_alive_enemy_hp(state: &BattleState) -> i32 {
@@ -959,20 +1310,12 @@ struct TurnAcc {
     combat_ended: bool,
 }
 
-fn has_renewable_potion_shaped_rock(state: &BattleState) -> bool {
-    state
-        .player
-        .relics
-        .iter()
-        .any(|r| !r.is_melted && r.id == RelicId::PetrifiedToad)
-}
-
 fn replay_solution_trace(
     root: &BattleState,
     sol: &sts2_search::InCombatSolveResponse,
+    search_policy: &SearchPolicy,
     prior_battle_hp_lost: i32,
     effective_dop: i32,
-    potion_hp_threshold_overrides: &BTreeMap<PotionId, i32>,
     content: &dyn ContentDispatcher,
 ) -> Result<HostResultDto, String> {
     let mut sim = root.clone();
@@ -980,7 +1323,10 @@ fn replay_solution_trace(
     let root_initial_cum_hp_lost = root.player.cumulative_hp_lost;
     let root_initial_hp = root.player.current_hp;
     let root_shuffle_counter = root.run_rngs.get(RunRngType::Shuffle).counter;
-    let renewable_rock = has_renewable_potion_shaped_rock(root);
+    let root_baseline = RootEvalBaseline::from_state_with_policy(root, content, search_policy);
+    let renewable_rock = root_baseline.renewable_potion_shaped_rock;
+    let allow_paid_optional = search_policy.potion_policy != SolverPotionPolicy::Disabled;
+    let potion_hp_threshold_overrides = &search_policy.potion_hp_threshold_overrides;
 
     let mut turn_accs: BTreeMap<i32, TurnAcc> = BTreeMap::new();
     turn_accs.insert(
@@ -996,6 +1342,13 @@ fn replay_solution_trace(
     let mut traced_actions = Vec::with_capacity(sol.actions.len());
     let mut potion_uses = Vec::new();
     let mut action_turns = BTreeSet::new();
+    let mut explicit_potion_count = 0i32;
+    let mut total_potion_count = 0i32;
+    let mut optional_paid_potion_count = 0i32;
+    let mut optional_potion_strategic_cost = 0i32;
+    let mut raw_potion_strategic_cost = 0i32;
+    let mut used_potion_slot_mask = 0u16;
+    let mut ambergris_count = 0i32;
 
     for action in &sol.actions {
         if !sim.is_in_progress {
@@ -1010,6 +1363,7 @@ fn replay_solution_trace(
         let energy_before = sim.player.energy;
         let raw_enemy_hp_before = sum_alive_enemy_hp(&sim);
         let slots_before = sim.player.potion_slots.clone();
+        let generated_mask_before = sim.player.combat_generated_potion_mask;
         let alive_before: Vec<(u32, CreatureHandle)> = sim
             .enemy_handles
             .iter()
@@ -1126,6 +1480,33 @@ fn replay_solution_trace(
             ),
         };
 
+        let explicit_potion_classification = if let PlannedAction::UsePotion {
+            potion_slot,
+            potion_id,
+            ..
+        } = action
+        {
+            let cls = try_classify_potion_use_for_pass(
+                &sim,
+                *potion_slot,
+                *potion_id,
+                search_policy,
+                Some(&root_baseline),
+                allow_paid_optional,
+                renewable_rock,
+            )
+            .ok_or_else(|| {
+                format!(
+                    "UsePotion '{}'@{} rejected by potion policy during trace replay",
+                    potion_id.model_entry(),
+                    potion_slot
+                )
+            })?;
+            Some((*potion_slot, *potion_id, cls))
+        } else {
+            None
+        };
+
         let mut empty_q: SmallVec<[Vec<usize>; 2]> = SmallVec::new();
         let mut step_outcome = match action {
             PlannedAction::TurnSetup { .. } => {
@@ -1223,26 +1604,38 @@ fn replay_solution_trace(
             PlannedAction::UsePotion { potion_slot, .. } => Some(*potion_slot),
             _ => None,
         };
-        if let PlannedAction::UsePotion {
-            potion_slot,
-            potion_id,
-            ..
-        } = action
-        {
-            potion_uses.push(HostPotionUseDto {
-                id: potion_id.model_entry().to_owned(),
-                turn: Some(turn_before),
-                slot: Some(*potion_slot as i32),
-            });
-            let acc = turn_accs.entry(turn_before).or_default();
-            acc.potion_count += 1;
-            acc.potion_strategic_cost +=
+        if let Some((potion_slot, potion_id, cls)) = explicit_potion_classification {
+            explicit_potion_count += 1;
+            total_potion_count += 1;
+            let slot_cost = if potion_slot < 16 && root_baseline.root_slot_costs[potion_slot] >= 0 {
+                root_baseline.root_slot_costs[potion_slot] as i32
+            } else {
                 PotionValuationRegistry::strategic_hp_cost_for_root(
-                    *potion_id,
+                    potion_id,
                     renewable_rock,
                     root.player.max_hp,
                     potion_hp_threshold_overrides,
-                );
+                )
+            };
+            if !cls.is_generated {
+                used_potion_slot_mask |= cls.root_potion_slot_bit;
+                if potion_id == PotionId::Ambergris {
+                    ambergris_count += 1;
+                }
+                raw_potion_strategic_cost += slot_cost;
+                if !cls.is_forced && cls.optional_paid_count_delta > 0 {
+                    optional_paid_potion_count += i32::from(cls.optional_paid_count_delta);
+                    optional_potion_strategic_cost += cls.optional_paid_cost_delta;
+                }
+            }
+            potion_uses.push(HostPotionUseDto {
+                id: potion_id.model_entry().to_owned(),
+                turn: Some(turn_before),
+                slot: Some(potion_slot as i32),
+            });
+            let acc = turn_accs.entry(turn_before).or_default();
+            acc.potion_count += 1;
+            acc.potion_strategic_cost += slot_cost;
         }
         for (slot_idx, (before_opt, after_opt)) in slots_before
             .iter()
@@ -1253,6 +1646,25 @@ fn replay_solution_trace(
                 continue;
             }
             if let (Some(pid), None) = (before_opt, after_opt) {
+                total_potion_count += 1;
+                let is_gen = slot_idx < 16 && (generated_mask_before & (1u16 << slot_idx)) != 0;
+                if !is_gen {
+                    if slot_idx < 16 {
+                        used_potion_slot_mask |= 1u16 << slot_idx;
+                    }
+                    let auto_cost = if slot_idx < 16 && root_baseline.root_slot_costs[slot_idx] >= 0
+                    {
+                        root_baseline.root_slot_costs[slot_idx] as i32
+                    } else {
+                        PotionValuationRegistry::strategic_hp_cost_for_root(
+                            *pid,
+                            renewable_rock,
+                            root.player.max_hp,
+                            potion_hp_threshold_overrides,
+                        )
+                    };
+                    raw_potion_strategic_cost += auto_cost;
+                }
                 if *pid == PotionId::FairyInABottle {
                     potion_uses.push(HostPotionUseDto {
                         id: pid.model_entry().to_owned(),
@@ -1385,9 +1797,39 @@ fn replay_solution_trace(
     };
     let death_turn = if player_dead { Some(final_turn) } else { None };
     let only_death_routes = player_dead && !all_enemies_dead;
-    let post_combat_relic_heal = if all_enemies_dead {
-        PostCombatRelicHealProfile::from_state(&sim)
-            .heal_for(sim.player.current_hp, sim.player.max_hp)
+    let won = !traced_actions.is_empty() && all_enemies_dead;
+    let post_combat_relic_heal = ActEndingBossPolicy::ranked_post_combat_relic_heal(
+        root_baseline.post_combat_relic_heal,
+        won,
+        sim.player.current_hp,
+        sim.player.max_hp.max(1),
+    );
+    let fast_terminal = evaluate_fast(&sim, content, &root_baseline, None);
+    let end_max_hp = sim.player.max_hp.max(1);
+    let net_persistent_hp_delta_centi = ActEndingBossPolicy::compute_net_persistent_hp_delta_centi(
+        sim.player.current_hp,
+        post_combat_relic_heal,
+        root_baseline.initial_player_hp,
+        end_max_hp,
+        root_baseline.initial_player_max_hp,
+        fast_terminal.death_save_hp_restored,
+        fast_terminal.strategic_hp_credit,
+        root_baseline.boss_hp_relief,
+        root_baseline.ignore_long_term_rewards,
+        i32::from(fast_terminal.feed_count) * root_baseline.feed_max_hp_per_kill,
+    );
+    let net_potion_opportunity_cost_centi =
+        PotionUsePolicy::compute_net_potion_opportunity_cost_centi(
+            optional_potion_strategic_cost,
+            optional_paid_potion_count,
+            i32::from(fast_terminal.alchemize_count),
+            i32::from(fast_terminal.empty_potion_slots),
+            &root_baseline,
+        );
+    let strategic_hp_deficit =
+        ActEndingBossPolicy::round_centi_to_hp(-net_persistent_hp_delta_centi);
+    let optional_potion_whole_hp = if net_potion_opportunity_cost_centi > 0 {
+        ActEndingBossPolicy::round_centi_to_hp(net_potion_opportunity_cost_centi).max(1)
     } else {
         0
     };
@@ -1448,6 +1890,18 @@ fn replay_solution_trace(
         confidence: confidence.to_owned(),
         search_boundary: search_boundary.to_owned(),
         has_risk,
+        explicit_potion_count: Some(explicit_potion_count),
+        total_potion_count: Some(total_potion_count),
+        optional_paid_potion_count: Some(optional_paid_potion_count),
+        optional_potion_strategic_cost: Some(optional_potion_strategic_cost),
+        raw_potion_strategic_cost: Some(raw_potion_strategic_cost),
+        used_potion_slot_mask: Some(used_potion_slot_mask),
+        ambergris_count: Some(ambergris_count),
+        net_persistent_hp_delta_centi: Some(net_persistent_hp_delta_centi),
+        net_potion_opportunity_cost_centi: Some(net_potion_opportunity_cost_centi),
+        strategic_hp_deficit: Some(strategic_hp_deficit),
+        optional_potion_whole_hp: Some(optional_potion_whole_hp),
+        score: Some(sol.score),
     };
 
     Ok(HostResultDto {
@@ -1481,6 +1935,327 @@ impl Clone for TurnAcc {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
+fn import_live_state_with_host_meta(
+    mut live_state: LiveStateJson,
+    character_id: &str,
+    ascension: u8,
+    game_mode: &str,
+    dominion_id: Option<&str>,
+    run_model_ids: &[String],
+    encounter_is_weak: bool,
+    initial_encounter_monster_count: usize,
+    total_floor: i32,
+    act_index: i32,
+    map_col: i32,
+    map_row: i32,
+    has_murderous_modifier: bool,
+    stop_before_player_turn_start: bool,
+    content: &dyn ContentDispatcher,
+) -> Result<BattleState, (&'static str, Option<&'static str>, String)> {
+    live_state.character_id = Some(character_id.to_owned());
+    live_state.ascension = ascension;
+    live_state.game_mode = Some(game_mode.to_owned());
+    live_state.dominion_id = dominion_id.map(str::to_owned);
+    live_state.run_model_ids = run_model_ids
+        .iter()
+        .filter(|id| {
+            let entry = id
+                .strip_prefix("RUN.")
+                .or_else(|| id.strip_prefix("RUN_MODEL."))
+                .unwrap_or(id.as_str());
+            !matches!(entry, "MULTIPLAYER_SCALING_MODEL" | "MULTIPLAYER_SCALING")
+        })
+        .cloned()
+        .collect();
+    live_state.encounter_is_weak = encounter_is_weak;
+    live_state.initial_encounter_monster_count = initial_encounter_monster_count;
+    live_state.total_floor = total_floor;
+    live_state.has_murderous_modifier = has_murderous_modifier;
+
+    let mut root_state = import_live_state(&live_state, content).map_err(|e| match e.kind() {
+        KernelErrorKind::Unsupported { kind, id } => {
+            (map_unsupported_code(kind), None, format!("unsupported {kind}: {id}"))
+        }
+        _ => ("failed", Some("liveState"), e.to_string()),
+    })?;
+    {
+        let ctx = Arc::make_mut(&mut root_state.static_ctx);
+        ctx.act_index = act_index;
+        ctx.map_col = map_col;
+        ctx.map_row = map_row;
+        ctx.stop_before_player_turn_start = stop_before_player_turn_start;
+    }
+    Ok(root_state)
+}
+
+fn describe_active_enemy_moves(state: &BattleState) -> String {
+    let mut parts = Vec::new();
+    for &eh in &state.enemy_handles {
+        let Some(c) = state.creature(eh) else {
+            continue;
+        };
+        if !c.is_alive() {
+            continue;
+        }
+        let monster_entry = c.monster_id.map_or("?", |m| m.model_entry());
+        let move_id = c
+            .monster
+            .as_ref()
+            .and_then(|m| m.next_move_id.as_deref())
+            .unwrap_or("null");
+        parts.push(format!("{monster_entry}:{move_id}"));
+    }
+    parts.join(",")
+}
+
+fn resolve_end_turn_choice_candidates(
+    state: &BattleState,
+    req: &ChoiceRequest,
+    tokens: &[HostChoiceCardTokenDto],
+) -> Result<Vec<usize>, String> {
+    let (_, matching_pile) = identify_source_pile(state, req);
+    let mut used = vec![false; req.candidates.len()];
+    let mut selected = Vec::with_capacity(tokens.len());
+
+    for tok in tokens {
+        let mut exact_src: Option<usize> = None;
+        let mut exact_opt: Option<usize> = None;
+        let mut fallback: Option<usize> = None;
+
+        for (cand_idx, &cand_h) in req.candidates.iter().enumerate() {
+            if used[cand_idx] {
+                continue;
+            }
+            let Some(card) = state.card(cand_h) else {
+                continue;
+            };
+            if card.id.model_entry() != tok.card_id || card.upgrade_level != tok.upgrade_level {
+                continue;
+            }
+            if fallback.is_none() {
+                fallback = Some(cand_idx);
+            }
+            let opt_occ = count_preceding_matching_card(state, &req.candidates, cand_h);
+            if exact_opt.is_none() && tok.option_occurrence >= 0 && opt_occ == tok.option_occurrence
+            {
+                exact_opt = Some(cand_idx);
+            }
+            if let Some(pile) = matching_pile {
+                let src_occ = count_preceding_matching_card(state, pile, cand_h);
+                if exact_src.is_none()
+                    && tok.source_occurrence >= 0
+                    && src_occ == tok.source_occurrence
+                {
+                    exact_src = Some(cand_idx);
+                }
+            }
+        }
+
+        let picked = exact_src.or(exact_opt).or(fallback).ok_or_else(|| {
+            format!(
+                "choice token '{}'@{} missing from candidates for '{}'",
+                tok.card_id, tok.upgrade_level, req.source_id
+            )
+        })?;
+        used[picked] = true;
+        selected.push(picked);
+    }
+
+    Ok(selected)
+}
+
+fn end_turn_risk_error(
+    outcome: &str,
+    failure_code: &str,
+    msg: impl Into<String>,
+) -> HostEndTurnRiskResponseDto {
+    HostEndTurnRiskResponseDto {
+        abi_version: ABI_VERSION as i32,
+        outcome: outcome.to_owned(),
+        failure_code: Some(failure_code.to_owned()),
+        error: Some(msg.into()),
+        hp_before: 0,
+        hp_after: 0,
+        hp_lost: 0,
+        player_dead: false,
+        monster_moves: None,
+    }
+}
+
+pub fn eval_end_turn_risk_v1_json(req_json: &[u8]) -> HostEndTurnRiskResponseDto {
+    let req: HostEndTurnRiskRequestDto = match serde_json::from_slice(req_json) {
+        Ok(r) => r,
+        Err(e) => {
+            return end_turn_risk_error(
+                "Failed",
+                "invalid_request",
+                format!("invalid end-turn risk request JSON: {e}"),
+            );
+        }
+    };
+    if req.abi_version != ABI_VERSION as i32 {
+        return end_turn_risk_error(
+            "Failed",
+            "abi_version_mismatch",
+            format!(
+                "unsupported ABI version {}; expected {}",
+                req.abi_version, ABI_VERSION
+            ),
+        );
+    }
+
+    let content = Sts2Content;
+    let mut state = match import_live_state_with_host_meta(
+        req.live_state,
+        &req.character_id,
+        req.ascension,
+        &req.game_mode,
+        req.dominion_id.as_deref(),
+        &req.run_model_ids,
+        req.encounter_is_weak,
+        req.initial_encounter_monster_count,
+        req.total_floor,
+        req.act_index,
+        req.map_col,
+        req.map_row,
+        req.has_murderous_modifier,
+        true,
+        &content,
+    ) {
+        Ok(s) => s,
+        Err((code, _field, msg)) => {
+            let outcome = if code == "failed" {
+                "Failed"
+            } else {
+                "CapabilityMiss"
+            };
+            let fcode = if code == "failed" {
+                "live_capture_error"
+            } else {
+                code
+            };
+            return end_turn_risk_error(outcome, fcode, msg);
+        }
+    };
+
+    let hp_before = state.player.current_hp;
+    let hp_lost_before = state.player.cumulative_hp_lost;
+    let monster_moves = describe_active_enemy_moves(&state);
+    let has_well_laid_plans = state.player_creature().is_some_and(|c| {
+        c.powers
+            .iter()
+            .any(|p| p.id == PowerId::WellLaidPlansPower && p.amount > 0)
+    });
+
+    let mut prompt_queue: VecDeque<&HostEndTurnChoiceDto> = req
+        .turn_start_choices
+        .iter()
+        .filter(|c| c.timing == "PlayerTurnEnd" || c.timing == "EnemyTurn")
+        .filter(|c| {
+            !(c.timing == "PlayerTurnEnd"
+                && (c.source_id == "WELL_LAID_PLANS"
+                    || c.source_id == "WELL_LAID_PLANS_POWER"
+                    || (c.source_id.is_empty()
+                        && c.effect == "ApplyRetain"
+                        && has_well_laid_plans)))
+        })
+        .collect();
+    let mut card_cursor = 0usize;
+
+    let mut step_res = match CombatEngine::end_player_turn(&mut state, &content) {
+        Ok(o) => o,
+        Err(e) => match e.kind() {
+            KernelErrorKind::Unsupported { kind, id } => {
+                return end_turn_risk_error(
+                    "CapabilityMiss",
+                    map_unsupported_code(kind),
+                    format!("unsupported {kind}: {id}"),
+                );
+            }
+            _ => return end_turn_risk_error("Failed", "execution_error", e.to_string()),
+        },
+    };
+
+    let mut guards = 0usize;
+    while let StepOutcome::NeedsChoice(choice_req) = step_res {
+        guards += 1;
+        if guards > 32 {
+            return end_turn_risk_error(
+                "Failed",
+                "choice_limit_exceeded",
+                "end-turn risk evaluation exceeded maximum nested choice resumes",
+            );
+        }
+
+        let sel_indices: Vec<usize> = if let Some(&current) = prompt_queue.front() {
+            if current.cards.is_empty() {
+                prompt_queue.pop_front();
+                card_cursor = 0;
+                Vec::new()
+            } else {
+                let remaining = current.cards.len().saturating_sub(card_cursor);
+                let take_count = choice_req.max_count.max(1).min(remaining);
+                let slice = &current.cards[card_cursor..card_cursor + take_count];
+                let resolved = match resolve_end_turn_choice_candidates(&state, &choice_req, slice)
+                {
+                    Ok(v) => v,
+                    Err(msg) => {
+                        return end_turn_risk_error("Failed", "choice_mismatch", msg);
+                    }
+                };
+                card_cursor += take_count;
+                if card_cursor >= current.cards.len() {
+                    prompt_queue.pop_front();
+                    card_cursor = 0;
+                }
+                resolved
+            }
+        } else if choice_req.min_count == 0 {
+            Vec::new()
+        } else {
+            return end_turn_risk_error(
+                "Failed",
+                "missing_choice",
+                format!(
+                    "end-turn evaluation required choice '{}' not present in turnStartChoices",
+                    choice_req.source_id
+                ),
+            );
+        };
+
+        step_res = match CombatEngine::resume_choice(&mut state, &content, &sel_indices) {
+            Ok(o) => o,
+            Err(e) => match e.kind() {
+                KernelErrorKind::Unsupported { kind, id } => {
+                    return end_turn_risk_error(
+                        "CapabilityMiss",
+                        map_unsupported_code(kind),
+                        format!("unsupported {kind}: {id}"),
+                    );
+                }
+                _ => return end_turn_risk_error("Failed", "execution_error", e.to_string()),
+            },
+        };
+    }
+
+    let hp_after = state.player.current_hp;
+    let hp_lost = (state.player.cumulative_hp_lost - hp_lost_before).max(0);
+    let player_dead = !state.has_living_player_creature() || hp_after <= 0;
+
+    HostEndTurnRiskResponseDto {
+        abi_version: ABI_VERSION as i32,
+        outcome: "Succeeded".to_owned(),
+        failure_code: None,
+        error: None,
+        hp_before,
+        hp_after,
+        hp_lost,
+        player_dead,
+        monster_moves: Some(monster_moves),
+    }
+}
+
 pub fn solve_in_combat_host_v1_json(
     req_json: &[u8],
     cancel: &AtomicBool,
@@ -1496,7 +2271,7 @@ fn solve_in_combat_host_v1_json_with_hook<F: FnOnce()>(
     post_search_hook: F,
 ) -> HostSolveResponse {
     let started = Instant::now();
-    let mut req: HostSolveRequest = match serde_json::from_slice(req_json) {
+    let req: HostSolveRequest = match serde_json::from_slice(req_json) {
         Ok(r) => r,
         Err(e) => {
             return failed_resp(None, format!("invalid host request JSON: {e}"), 1, 0.0);
@@ -1590,56 +2365,43 @@ fn solve_in_combat_host_v1_json_with_hook<F: FnOnce()>(
         }
     };
 
-    req.live_state.character_id = Some(req.character_id.clone());
-    req.live_state.ascension = req.ascension;
-    req.live_state.game_mode = Some(req.game_mode.clone());
-    req.live_state.dominion_id = req.dominion_id.clone();
-    req.live_state.run_model_ids = req
-        .run_model_ids
-        .iter()
-        .filter(|id| {
-            let entry = id
-                .strip_prefix("RUN.")
-                .or_else(|| id.strip_prefix("RUN_MODEL."))
-                .unwrap_or(id.as_str());
-            !matches!(entry, "MULTIPLAYER_SCALING_MODEL" | "MULTIPLAYER_SCALING")
-        })
-        .cloned()
-        .collect();
-    req.live_state.encounter_is_weak = req.encounter_is_weak;
-    req.live_state.initial_encounter_monster_count = req.initial_encounter_monster_count;
-    req.live_state.total_floor = req.total_floor;
-    req.live_state.has_murderous_modifier = req.has_murderous_modifier;
-
     let content = Sts2Content;
-    let mut root_state = match import_live_state(&req.live_state, &content) {
+    let root_state = match import_live_state_with_host_meta(
+        req.live_state,
+        &req.character_id,
+        req.ascension,
+        &req.game_mode,
+        req.dominion_id.as_deref(),
+        &req.run_model_ids,
+        req.encounter_is_weak,
+        req.initial_encounter_monster_count,
+        req.total_floor,
+        req.act_index,
+        req.map_col,
+        req.map_row,
+        req.has_murderous_modifier,
+        false,
+        &content,
+    ) {
         Ok(s) => s,
-        Err(e) => match e.kind() {
-            KernelErrorKind::Unsupported { kind, id } => {
-                return capability_miss_resp(
-                    map_unsupported_code(kind),
-                    None,
-                    format!("unsupported {kind}: {id}"),
-                    dop_i32,
-                    started.elapsed().as_secs_f64() * 1000.0,
-                );
-            }
-            _ => {
+        Err((code, field, msg)) => {
+            if code == "failed" {
                 return failed_resp(
-                    Some("liveState"),
-                    e.to_string(),
+                    field,
+                    msg,
                     dop_i32,
                     started.elapsed().as_secs_f64() * 1000.0,
                 );
             }
-        },
+            return capability_miss_resp(
+                code,
+                field,
+                msg,
+                dop_i32,
+                started.elapsed().as_secs_f64() * 1000.0,
+            );
+        }
     };
-    {
-        let ctx = Arc::make_mut(&mut root_state.static_ctx);
-        ctx.act_index = req.act_index;
-        ctx.map_col = req.map_col;
-        ctx.map_row = req.map_row;
-    }
 
     let root_turn = root_state.player.turn_number.max(1);
     let prior_loss = req.prior_battle_hp_lost;
@@ -1748,9 +2510,9 @@ fn solve_in_combat_host_v1_json_with_hook<F: FnOnce()>(
     let trace_res = replay_solution_trace(
         &root_state,
         &sol,
+        &search_policy,
         prior_loss,
         dop_i32,
-        &search_policy.potion_hp_threshold_overrides,
         &content,
     );
     let elapsed_ms = started.elapsed().as_secs_f64() * 1000.0;

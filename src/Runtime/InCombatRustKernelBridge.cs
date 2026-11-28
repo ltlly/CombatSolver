@@ -37,6 +37,20 @@ internal static class InCombatRustKernelBridge
     private delegate void FreeBufferDelegate(nint ptr, nuint len);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int AssessEligibilityV1Delegate(
+        nint reqPtr,
+        nuint reqLen,
+        out nint outPtr,
+        out nuint outLen);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int EvalEndTurnRiskV1Delegate(
+        nint reqPtr,
+        nuint reqLen,
+        out nint outPtr,
+        out nuint outLen);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void NativeProgressCallback(nint ptr, nuint len, nint userData);
 
     private sealed class ActivatedRustKernel(
@@ -47,6 +61,8 @@ internal static class InCombatRustKernelBridge
         CancelTokenCancelDelegate cancelTokenCancel,
         CancelTokenFreeDelegate cancelTokenFree,
         SolveInCombatHostV1Delegate solveHostV1,
+        AssessEligibilityV1Delegate assessEligibilityV1,
+        EvalEndTurnRiskV1Delegate evalEndTurnRiskV1,
         FreeBufferDelegate freeBuffer)
     {
         public nint LibraryHandle { get; } = libraryHandle;
@@ -56,6 +72,8 @@ internal static class InCombatRustKernelBridge
         public CancelTokenCancelDelegate CancelTokenCancel { get; } = cancelTokenCancel;
         public CancelTokenFreeDelegate CancelTokenFree { get; } = cancelTokenFree;
         public SolveInCombatHostV1Delegate SolveHostV1 { get; } = solveHostV1;
+        public AssessEligibilityV1Delegate AssessEligibilityV1 { get; } = assessEligibilityV1;
+        public EvalEndTurnRiskV1Delegate EvalEndTurnRiskV1 { get; } = evalEndTurnRiskV1;
         public FreeBufferDelegate FreeBuffer { get; } = freeBuffer;
     }
 
@@ -156,6 +174,8 @@ internal static class InCombatRustKernelBridge
                 var cancelCancel = ResolveExport<CancelTokenCancelDelegate>(handle, "sts2_rs_cancel_token_cancel");
                 var cancelFree = ResolveExport<CancelTokenFreeDelegate>(handle, "sts2_rs_cancel_token_free");
                 var solveHostV1 = ResolveExport<SolveInCombatHostV1Delegate>(handle, "sts2_rs_solve_in_combat_host_v1");
+                var assessEligibilityV1 = ResolveExport<AssessEligibilityV1Delegate>(handle, "sts2_rs_assess_eligibility_v1");
+                var evalEndTurnRiskV1 = ResolveExport<EvalEndTurnRiskV1Delegate>(handle, "sts2_rs_eval_end_turn_risk_v1");
                 var freeBuffer = ResolveExport<FreeBufferDelegate>(handle, "sts2_rs_free_buffer");
 
                 uint actualAbi = abiVersion();
@@ -179,7 +199,7 @@ internal static class InCombatRustKernelBridge
                         capBytes, RustKernelAbi.JsonOptions);
                     if (probe is null
                         || probe.AbiVersion != RustKernelAbi.Version
-                        || !string.Equals(probe.EngineId, "sts2-combat-rs", StringComparison.Ordinal))
+                        || !string.Equals(probe.EngineId, RustKernelAbi.EngineId, StringComparison.Ordinal))
                     {
                         throw new InvalidDataException("Rust combat kernel reported incompatible capabilities metadata.");
                     }
@@ -210,6 +230,8 @@ internal static class InCombatRustKernelBridge
                     cancelCancel,
                     cancelFree,
                     solveHostV1,
+                    assessEligibilityV1,
+                    evalEndTurnRiskV1,
                     freeBuffer);
                 ResidentActivatedLibraries[libPath] = activated;
                 _snapshot = new KernelAvailabilitySnapshot(activated, false, null);
@@ -349,6 +371,134 @@ internal static class InCombatRustKernelBridge
         }
 
         return RustKernelWireValidator.DeserializeAndValidateResponse(responseBytes);
+    }
+
+    public static bool TryAssessEligibility(
+        RustKernelEligibilityRequestDto request,
+        out RustKernelEligibilityResult result)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (RunInCombatHookForTesting is not null || !HasInstalledBackendArtifact() || IsCorrupt)
+        {
+            result = default;
+            return false;
+        }
+        if (EnsureActivated(out _) != RustKernelAvailability.Ready || _snapshot.Activated is not { } activated)
+        {
+            result = default;
+            return false;
+        }
+
+        byte[] reqBytes = JsonSerializer.SerializeToUtf8Bytes(request, RustKernelAbi.JsonOptions);
+        nint outPtr = 0;
+        nuint outLen = 0;
+        byte[] respBytes;
+        try
+        {
+            int rc;
+            unsafe
+            {
+                fixed (byte* reqPtr = reqBytes)
+                {
+                    rc = activated.AssessEligibilityV1((nint)reqPtr, (nuint)reqBytes.Length, out outPtr, out outLen);
+                }
+            }
+            if (rc != 0 || outPtr == 0 || outLen == 0)
+            {
+                result = default;
+                return false;
+            }
+            respBytes = new byte[checked((int)outLen)];
+            Marshal.Copy(outPtr, respBytes, 0, respBytes.Length);
+        }
+        finally
+        {
+            if (outPtr != 0)
+                activated.FreeBuffer(outPtr, outLen);
+        }
+
+        RustKernelEligibilityResponseDto? dto = JsonSerializer.Deserialize<RustKernelEligibilityResponseDto>(
+            respBytes, RustKernelAbi.JsonOptions);
+        if (dto is null || dto.AbiVersion != RustKernelAbi.Version)
+        {
+            result = default;
+            return false;
+        }
+        result = dto.Eligible
+            ? RustKernelEligibilityResult.Eligible()
+            : RustKernelEligibilityResult.Ineligible(
+                dto.FailureCode ?? "ineligible",
+                dto.Detail ?? "Rust combat kernel rejected eligibility.");
+        return true;
+    }
+
+    public static bool TryEvaluateEndTurnRisk(
+        RustKernelEndTurnRiskRequestDto request,
+        out LiveEndTurnRiskProjection projection,
+        out string? failureReason)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (RunInCombatHookForTesting is not null || !HasInstalledBackendArtifact() || IsCorrupt)
+        {
+            projection = default;
+            failureReason = "rust_kernel_unavailable";
+            return false;
+        }
+        if (EnsureActivated(out string? activationError) != RustKernelAvailability.Ready || _snapshot.Activated is not { } activated)
+        {
+            projection = default;
+            failureReason = activationError ?? "rust_kernel_not_ready";
+            return false;
+        }
+
+        byte[] reqBytes = JsonSerializer.SerializeToUtf8Bytes(request, RustKernelAbi.JsonOptions);
+        nint outPtr = 0;
+        nuint outLen = 0;
+        byte[] respBytes;
+        try
+        {
+            int rc;
+            unsafe
+            {
+                fixed (byte* reqPtr = reqBytes)
+                {
+                    rc = activated.EvalEndTurnRiskV1((nint)reqPtr, (nuint)reqBytes.Length, out outPtr, out outLen);
+                }
+            }
+            if (rc != 0 || outPtr == 0 || outLen == 0)
+            {
+                projection = default;
+                failureReason = $"native_rc={rc}";
+                return false;
+            }
+            respBytes = new byte[checked((int)outLen)];
+            Marshal.Copy(outPtr, respBytes, 0, respBytes.Length);
+        }
+        finally
+        {
+            if (outPtr != 0)
+                activated.FreeBuffer(outPtr, outLen);
+        }
+
+        RustKernelEndTurnRiskResponseDto? dto = JsonSerializer.Deserialize<RustKernelEndTurnRiskResponseDto>(
+            respBytes, RustKernelAbi.JsonOptions);
+        if (dto is null || dto.AbiVersion != RustKernelAbi.Version || dto.Outcome != "Succeeded")
+        {
+            projection = default;
+            failureReason = dto is null
+                ? "null_response"
+                : $"{dto.Outcome}:{dto.FailureCode}:{dto.Error}";
+            return false;
+        }
+
+        projection = new LiveEndTurnRiskProjection(
+            dto.HpBefore,
+            dto.HpAfter,
+            dto.HpLost,
+            dto.PlayerDead,
+            dto.MonsterMoves ?? string.Empty);
+        failureReason = null;
+        return true;
     }
 
     private static bool TryGetFastAvailability(

@@ -1374,6 +1374,7 @@ pub fn import_live_state(
         has_root_card_hook_mask: false,
         root_initial_card_hook_mask: [0; 8],
         pool_cache: crate::state::RootPoolCache::default(),
+        stop_before_player_turn_start: false,
     };
     static_ctx_val.set_root_initial_cards(&cards, &player);
     let card_meta_dirty = if static_ctx_val.root_combat_delta_len > 0 {

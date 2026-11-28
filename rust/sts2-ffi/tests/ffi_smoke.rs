@@ -2,13 +2,15 @@ use std::ffi::c_void;
 use std::ptr;
 use std::slice;
 use std::sync::Arc;
-use sts2_combat_rs::host_wire::{HostProgressDto, HostSolveResponse};
+use sts2_combat_rs::host_wire::{
+    HostEligibilityResponseDto, HostEndTurnRiskResponseDto, HostProgressDto, HostSolveResponse,
+};
 use sts2_combat_rs::{
     ABI_VERSION, OracleActionJson, OracleStepResponse, SolveInCombatJsonResponse,
-    sts2_rs_abi_version, sts2_rs_cancel_token_cancel, sts2_rs_cancel_token_create,
-    sts2_rs_cancel_token_free, sts2_rs_capabilities, sts2_rs_free_buffer,
-    sts2_rs_solve_in_combat, sts2_rs_solve_in_combat_host_v1,
-    sts2_rs_solve_in_combat_with_controls, sts2_rs_step_oracle,
+    sts2_rs_abi_version, sts2_rs_assess_eligibility_v1, sts2_rs_cancel_token_cancel,
+    sts2_rs_cancel_token_create, sts2_rs_cancel_token_free, sts2_rs_capabilities,
+    sts2_rs_eval_end_turn_risk_v1, sts2_rs_free_buffer, sts2_rs_solve_in_combat,
+    sts2_rs_solve_in_combat_host_v1, sts2_rs_solve_in_combat_with_controls, sts2_rs_step_oracle,
 };
 use sts2_content::Sts2Content;
 use sts2_kernel::snapshot::export_live_state;
@@ -1212,4 +1214,209 @@ fn ffi_host_v1_rejects_unsatisfied_hard_potion_policy_and_propagates_unsupported
         Some("projection_unsupported")
     );
     assert!(dc_resp.result.is_none());
+}
+
+fn call_assess_eligibility_v1(req_val: &serde_json::Value) -> HostEligibilityResponseDto {
+    let bytes = serde_json::to_vec(req_val).unwrap();
+    let mut ptr: *mut u8 = ptr::null_mut();
+    let mut len: usize = 0;
+    let rc = unsafe { sts2_rs_assess_eligibility_v1(bytes.as_ptr(), bytes.len(), &mut ptr, &mut len) };
+    assert_eq!(rc, 0);
+    let out = unsafe { slice::from_raw_parts(ptr, len) };
+    let resp: HostEligibilityResponseDto = serde_json::from_slice(out).unwrap();
+    unsafe { sts2_rs_free_buffer(ptr, len) };
+    resp
+}
+
+fn call_eval_end_turn_risk_v1(req_val: &serde_json::Value) -> HostEndTurnRiskResponseDto {
+    let bytes = serde_json::to_vec(req_val).unwrap();
+    let mut ptr: *mut u8 = ptr::null_mut();
+    let mut len: usize = 0;
+    let rc = unsafe { sts2_rs_eval_end_turn_risk_v1(bytes.as_ptr(), bytes.len(), &mut ptr, &mut len) };
+    assert_eq!(rc, 0);
+    let out = unsafe { slice::from_raw_parts(ptr, len) };
+    let resp: HostEndTurnRiskResponseDto = serde_json::from_slice(out).unwrap();
+    unsafe { sts2_rs_free_buffer(ptr, len) };
+    resp
+}
+
+#[test]
+fn ffi_assess_eligibility_v1_validates_host_and_policy_single_source() {
+    let valid_req = serde_json::json!({
+        "abiVersion": ABI_VERSION,
+        "host": {
+            "liveGameVersion": sts2_combat_rs::SUPPORTED_GAME_VERSION,
+            "isInProgress": true,
+            "currentSide": "Player",
+            "isSingleplayer": true,
+            "playerCount": 1,
+            "hasConcreteRunState": true,
+            "runPlayerCount": 1,
+            "gameMode": "Standard",
+            "modifierClassNames": ["Murderous", "Flight"],
+            "roomType": "Monster",
+            "playerPhase": "Play",
+            "testSubjectKills": 0,
+            "wongoPoints": 0
+        },
+        "policyFlags": {
+            "verifyIncrementalSearch": false,
+            "measurePhasePerformance": false,
+            "includeTurnSetup": false,
+            "transpositionPruningDisabledMask": 0,
+            "showOffGrowthBudget": 0,
+            "hasNonzeroThirdPartyGrowth": false
+        }
+    });
+    let ok = call_assess_eligibility_v1(&valid_req);
+    assert!(ok.eligible);
+    assert!(ok.failure_code.is_none());
+
+    let mut bad_ver = valid_req.clone();
+    bad_ver["host"]["liveGameVersion"] = serde_json::json!("v0.99.9");
+    let ver_res = call_assess_eligibility_v1(&bad_ver);
+    assert!(!ver_res.eligible);
+    assert_eq!(ver_res.failure_code.as_deref(), Some("game_version_mismatch"));
+
+    let mut bad_mod = valid_req.clone();
+    bad_mod["host"]["modifierClassNames"] = serde_json::json!(["Draft", "CustomModModifier"]);
+    let mod_res = call_assess_eligibility_v1(&bad_mod);
+    assert!(!mod_res.eligible);
+    assert_eq!(mod_res.failure_code.as_deref(), Some("modifiers_present"));
+
+    let mut bad_relic = serde_json::json!({
+        "abiVersion": ABI_VERSION,
+        "policy": {
+            "potionPolicy": "Smart",
+            "potionDirectives": [],
+            "predictPotionReward": false,
+            "relicStrategyEnabled": true,
+            "relicCounterRules": [{
+                "id": "InkBottle",
+                "enabled": true,
+                "minimum": 10,
+                "maximum": 10,
+                "hpAllowance": 10,
+                "priority": 1
+            }],
+            "growthBudgets": {
+                "handOfGreed": 0, "theHunt": 0, "feed": 0, "royalties": 0,
+                "alchemize": 0, "geneticAlgorithm": 0, "theScythe": 0,
+                "goopy": 0, "forbiddenGrimoire": 0, "madScience": 0, "showOff": 0,
+                "thirdParty": null
+            },
+            "acceptableBattleHpLoss": 0,
+            "stopAtAcceptableBattleHpLoss": true,
+            "useBeamWidthPortfolio": true,
+            "useNoveltyPortfolio": false,
+            "useEarlyTurnExploration": false,
+            "beamWidth": 16,
+            "maxExpandedNodes": 500,
+            "maxCardBranchesPerNode": 32,
+            "maxPileChoiceBranchesPerAction": 18,
+            "maxHandChoiceBranchesPerAction": 24,
+            "softTimeBudgetMilliseconds": 2000
+        }
+    });
+    let relic_res = call_assess_eligibility_v1(&bad_relic);
+    assert!(!relic_res.eligible);
+    assert_eq!(relic_res.failure_code.as_deref(), Some("policy_unsupported"));
+    assert_eq!(relic_res.field_path.as_deref(), Some("policy.relicCounterRules"));
+
+    bad_relic["policy"]["relicCounterRules"] = serde_json::json!([]);
+    bad_relic["policy"]["growthBudgets"]["thirdParty"] = serde_json::json!({ "Custom": 2 });
+    let tp_res = call_assess_eligibility_v1(&bad_relic);
+    assert!(!tp_res.eligible);
+    assert_eq!(tp_res.failure_code.as_deref(), Some("policy_unsupported"));
+    assert_eq!(
+        tp_res.field_path.as_deref(),
+        Some("policy.growthBudgets.thirdParty")
+    );
+}
+
+#[test]
+fn ffi_eval_end_turn_risk_v1_and_terminal_telemetry_parity() {
+    // 1. Live end-turn risk stops before next player turn start and captures damage + monster moves.
+    let mut live = build_smoke_live_state_json();
+    live.player.current_hp = 5;
+    live.player.max_hp = 80;
+    live.creatures[0].current_hp = 5;
+    live.creatures[0].max_hp = 80;
+    let risk_req = serde_json::json!({
+        "abiVersion": ABI_VERSION,
+        "liveState": live,
+        "characterId": "IRONCLAD",
+        "ascension": 0,
+        "gameMode": "Standard",
+        "dominionId": null,
+        "runModelIds": [],
+        "encounterIsWeak": true,
+        "initialEncounterMonsterCount": 1,
+        "totalFloor": 1,
+        "actIndex": 0,
+        "mapCol": 0,
+        "mapRow": 0,
+        "hasMurderousModifier": false,
+        "turnStartChoices": []
+    });
+    let risk_resp = call_eval_end_turn_risk_v1(&risk_req);
+    assert_eq!(risk_resp.outcome, "Succeeded");
+    assert_eq!(risk_resp.hp_before, 5);
+    assert!(
+        risk_resp
+            .monster_moves
+            .as_deref()
+            .is_some_and(|m| m.contains("FUZZY_WURM_CRAWLER:")),
+        "unexpected monster_moves: {:?}",
+        risk_resp.monster_moves
+    );
+
+    // 2. Host solve terminal snapshot populates potion/cost/score telemetry for materializer.
+    let mut live_pot = build_smoke_live_state_json();
+    live_pot.player.potion_slots = vec![Some("POTION.BLOCK_POTION".to_owned()), None, None];
+    live_pot.creatures[1].current_hp = 12;
+    live_pot.creatures[1].max_hp = 12;
+    let pot_policy = serde_json::json!({
+        "potionPolicy": "Smart",
+        "potionDirectives": [{ "slot": 0, "potionId": "BLOCK_POTION", "directive": "Force" }],
+        "predictPotionReward": false,
+        "relicStrategyEnabled": true,
+        "relicCounterRules": [],
+        "growthBudgets": {
+            "handOfGreed": 0, "theHunt": 0, "feed": 0, "royalties": 0,
+            "alchemize": 0, "geneticAlgorithm": 0, "theScythe": 0,
+            "goopy": 0, "forbiddenGrimoire": 0, "madScience": 0, "showOff": 0,
+            "thirdParty": null
+        },
+        "acceptableBattleHpLoss": 0,
+        "stopAtAcceptableBattleHpLoss": true,
+        "useBeamWidthPortfolio": false,
+        "useNoveltyPortfolio": false,
+        "useEarlyTurnExploration": false,
+        "beamWidth": 16,
+        "maxExpandedNodes": 500,
+        "maxCardBranchesPerNode": 32,
+        "maxPileChoiceBranchesPerAction": 18,
+        "maxHandChoiceBranchesPerAction": 24,
+        "softTimeBudgetMilliseconds": 2000,
+        "theftPolicy": "Ignore"
+    });
+    let solve_req = build_host_request_json_with_policy_override(
+        serde_json::to_value(&live_pot).unwrap(),
+        "Smart",
+        1,
+        Some(pot_policy),
+    );
+    let solve_resp = call_host_v1(&solve_req);
+    assert_eq!(solve_resp.outcome, "Succeeded");
+    let res = solve_resp.result.unwrap();
+    assert_eq!(res.terminal.explicit_potion_count, Some(1));
+    assert_eq!(res.terminal.total_potion_count, Some(1));
+    assert_eq!(res.terminal.optional_paid_potion_count, Some(0));
+    assert_eq!(res.terminal.used_potion_slot_mask, Some(1));
+    assert_eq!(res.terminal.raw_potion_strategic_cost, Some(9));
+    assert!(res.terminal.net_persistent_hp_delta_centi.is_some());
+    assert!(res.terminal.net_potion_opportunity_cost_centi.is_some());
+    assert!(res.terminal.strategic_hp_deficit.is_some());
+    assert!(res.terminal.score.is_some());
 }

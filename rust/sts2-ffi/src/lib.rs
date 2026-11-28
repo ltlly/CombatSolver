@@ -1,6 +1,13 @@
+pub mod generated_contract_constants;
 pub mod host_wire;
 
-use host_wire::{HostProgressDto, solve_in_combat_host_v1_json};
+pub use generated_contract_constants::{
+    ABI_VERSION, ENGINE_ID, SUPPORTED_GAME_VERSION, SUPPORTED_STARTER_CHARACTERS,
+};
+use host_wire::{
+    HostProgressDto, assess_eligibility_v1_json, eval_end_turn_risk_v1_json,
+    solve_in_combat_host_v1_json,
+};
 use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use std::ffi::c_void;
@@ -19,8 +26,6 @@ use sts2_kernel::{
 };
 use sts2_search::{InCombatSolveRequest, InCombatSolveResponse, SearchEngine, SearchProgress};
 use sts2_types::Dec;
-
-pub const ABI_VERSION: u32 = 1;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -268,16 +273,9 @@ pub unsafe extern "C" fn sts2_rs_capabilities(out_ptr: *mut *mut u8, out_len: *m
     let res = catch_unwind(AssertUnwindSafe(|| {
         let caps = CapabilitiesJson {
             abi_version: ABI_VERSION,
-            engine_id: "sts2-combat-rs",
-            supported_game_version: "v0.114.0",
-            starter_characters: vec![
-                "IRONCLAD",
-                "SILENT",
-                "DEFECT",
-                "REGENT",
-                "NECROBINDER",
-                "FOOL",
-            ],
+            engine_id: ENGINE_ID,
+            supported_game_version: SUPPORTED_GAME_VERSION,
+            starter_characters: SUPPORTED_STARTER_CHARACTERS.to_vec(),
         };
         let bytes = serde_json::to_vec(&caps).unwrap_or_default();
         unsafe { write_owned_bytes(bytes, out_ptr, out_len) }
@@ -619,6 +617,50 @@ pub unsafe extern "C" fn sts2_rs_solve_in_combat_host_v1(
 }
 
 /// # Safety
+/// `req_ptr` must be readable for `req_len` bytes, and `out_ptr`/`out_len` must be valid writable pointers.
+/// On success (`0`), the caller must release the returned buffer once via `sts2_rs_free_buffer`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn sts2_rs_assess_eligibility_v1(
+    req_ptr: *const u8,
+    req_len: usize,
+    out_ptr: *mut *mut u8,
+    out_len: *mut usize,
+) -> i32 {
+    if req_ptr.is_null() || out_ptr.is_null() || out_len.is_null() {
+        return -1;
+    }
+    let res = catch_unwind(AssertUnwindSafe(|| {
+        let req_slice = unsafe { slice::from_raw_parts(req_ptr, req_len) };
+        let resp = assess_eligibility_v1_json(req_slice);
+        let bytes = serde_json::to_vec(&resp).unwrap_or_default();
+        unsafe { write_owned_bytes(bytes, out_ptr, out_len) }
+    }));
+    res.unwrap_or(-2)
+}
+
+/// # Safety
+/// `req_ptr` must be readable for `req_len` bytes, and `out_ptr`/`out_len` must be valid writable pointers.
+/// On success (`0`), the caller must release the returned buffer once via `sts2_rs_free_buffer`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn sts2_rs_eval_end_turn_risk_v1(
+    req_ptr: *const u8,
+    req_len: usize,
+    out_ptr: *mut *mut u8,
+    out_len: *mut usize,
+) -> i32 {
+    if req_ptr.is_null() || out_ptr.is_null() || out_len.is_null() {
+        return -1;
+    }
+    let res = catch_unwind(AssertUnwindSafe(|| {
+        let req_slice = unsafe { slice::from_raw_parts(req_ptr, req_len) };
+        let resp = eval_end_turn_risk_v1_json(req_slice);
+        let bytes = serde_json::to_vec(&resp).unwrap_or_default();
+        unsafe { write_owned_bytes(bytes, out_ptr, out_len) }
+    }));
+    res.unwrap_or(-2)
+}
+
+/// # Safety
 /// `ptr` must be null or a buffer pointer previously returned by an `sts2_rs_*` export with the exact matching `len`,
 /// and must be freed at most once.
 #[unsafe(no_mangle)]
@@ -629,5 +671,15 @@ pub unsafe extern "C" fn sts2_rs_free_buffer(ptr: *mut u8, len: usize) {
     unsafe {
         let slice = slice::from_raw_parts_mut(ptr, len);
         let _ = Box::from_raw(slice as *mut [u8]);
+    }
+}
+
+#[cfg(test)]
+mod contract_tests {
+    use super::*;
+
+    #[test]
+    fn supported_game_version_matches_generated_ids() {
+        assert_eq!(SUPPORTED_GAME_VERSION, sts2_types::GAME_VERSION);
     }
 }

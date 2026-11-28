@@ -2478,6 +2478,9 @@ impl CombatEngine {
                     state.compact_prior_turn_history();
                 }
                 Self::notify_side_switch(state);
+                if state.static_ctx.stop_before_player_turn_start {
+                    return Ok(StepOutcome::Completed);
+                }
                 return Self::start_turn(state, content, true);
             }
         }
@@ -2639,6 +2642,9 @@ impl CombatEngine {
             state.compact_prior_turn_history();
         }
         Self::notify_side_switch(state);
+        if state.static_ctx.stop_before_player_turn_start {
+            return Ok(StepOutcome::Completed);
+        }
         Self::start_turn(state, content, false)
     }
 

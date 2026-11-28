@@ -5,9 +5,10 @@ namespace CombatSolver;
 
 internal static class RustKernelAbi
 {
-    public const int Version = 1;
-    public const string SupportedGameVersion = "v0.114.0";
-    public const int MaxSoftTimeBudgetMilliseconds = 600_000;
+    public const int Version = InCombatRustKernelMetadata.AbiVersion;
+    public const string EngineId = InCombatRustKernelMetadata.EngineId;
+    public const string SupportedGameVersion = InCombatRustKernelMetadata.SupportedGameVersion;
+    public const int MaxSoftTimeBudgetMilliseconds = InCombatRustKernelMetadata.MaxSoftTimeBudgetMilliseconds;
 
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -482,7 +483,90 @@ internal sealed record RustKernelTerminalSnapshotDto(
     bool OnlyDeathRoutes,
     string Confidence,
     string SearchBoundary,
-    bool HasRisk);
+    bool HasRisk,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? ExplicitPotionCount = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? TotalPotionCount = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? OptionalPaidPotionCount = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? OptionalPotionStrategicCost = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? RawPotionStrategicCost = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ushort? UsedPotionSlotMask = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? AmbergrisCount = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? NetPersistentHpDeltaCenti = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? NetPotionOpportunityCostCenti = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? StrategicHpDeficit = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? OptionalPotionWholeHp = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? Score = null);
+
+internal sealed record RustKernelEligibilityHostInputDto(
+    string? LiveGameVersion,
+    bool IsInProgress,
+    string CurrentSide,
+    bool IsSingleplayer,
+    int PlayerCount,
+    bool HasConcreteRunState,
+    int RunPlayerCount,
+    string? GameMode,
+    IReadOnlyList<string> ModifierClassNames,
+    string? RoomType,
+    string? PlayerPhase,
+    int TestSubjectKills,
+    int WongoPoints);
+
+internal sealed record RustKernelEligibilityPolicyFlagsDto(
+    bool VerifyIncrementalSearch,
+    bool MeasurePhasePerformance,
+    bool IncludeTurnSetup,
+    ulong TranspositionPruningDisabledMask,
+    int ShowOffGrowthBudget,
+    bool HasNonzeroThirdPartyGrowth);
+
+internal sealed record RustKernelEligibilityRequestDto(
+    int AbiVersion,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] RustKernelEligibilityHostInputDto? Host = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] RustKernelEligibilityPolicyFlagsDto? PolicyFlags = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] RustKernelPolicyDto? Policy = null);
+
+internal sealed record RustKernelEligibilityResponseDto(
+    int AbiVersion,
+    bool Eligible,
+    string? FailureCode,
+    string? FieldPath,
+    string? Detail);
+
+internal sealed record RustKernelEndTurnChoiceDto(
+    string Timing,
+    string SourceId,
+    string Effect,
+    string SourcePile,
+    IReadOnlyList<RustKernelChoiceCardTokenDto> Cards);
+
+internal sealed record RustKernelEndTurnRiskRequestDto(
+    int AbiVersion,
+    RustKernelLiveStateDto LiveState,
+    string CharacterId,
+    byte Ascension,
+    string GameMode,
+    string? DominionId,
+    IReadOnlyList<string> RunModelIds,
+    bool EncounterIsWeak,
+    int InitialEncounterMonsterCount,
+    int TotalFloor,
+    int ActIndex,
+    int MapCol,
+    int MapRow,
+    bool HasMurderousModifier,
+    IReadOnlyList<RustKernelEndTurnChoiceDto> TurnStartChoices);
+
+internal sealed record RustKernelEndTurnRiskResponseDto(
+    int AbiVersion,
+    string Outcome,
+    string? FailureCode,
+    string? Error,
+    int HpBefore,
+    int HpAfter,
+    int HpLost,
+    bool PlayerDead,
+    string? MonsterMoves);
 
 internal sealed record RustKernelPotionUseDto(
     string Id,
@@ -533,30 +617,14 @@ internal static class RustKernelWireValidator
     public static void ValidatePolicy(RustKernelPolicyDto policy)
     {
         ArgumentNullException.ThrowIfNull(policy);
-        if (string.IsNullOrWhiteSpace(policy.PotionPolicy))
-            throw new InvalidDataException("RustKernel policy.potionPolicy must not be empty.");
-        if (policy.BeamWidth <= 0)
-            throw new InvalidDataException("RustKernel policy.beamWidth must be positive.");
-        if (policy.MaxExpandedNodes <= 0)
-            throw new InvalidDataException("RustKernel policy.maxExpandedNodes must be positive.");
-        if (policy.MaxCardBranchesPerNode <= 0
-            || policy.MaxPileChoiceBranchesPerAction <= 0
-            || policy.MaxHandChoiceBranchesPerAction <= 0)
-        {
-            throw new InvalidDataException("RustKernel branch caps must be positive.");
-        }
-        if (policy.SoftTimeBudgetMilliseconds <= 0)
-            throw new InvalidDataException("RustKernel softTimeBudgetMilliseconds must be positive.");
-        foreach (RustKernelPotionDirectiveDto d in policy.PotionDirectives)
-        {
-            if (d.Slot < 0 || string.IsNullOrWhiteSpace(d.PotionId) || string.IsNullOrWhiteSpace(d.Directive))
-                throw new InvalidDataException("RustKernel potion directive contains invalid slot/id/directive.");
-        }
-        foreach (KeyValuePair<string, int> kv in policy.PotionHpThresholdOverrides)
-        {
-            if (string.IsNullOrWhiteSpace(kv.Key) || kv.Value is < 0 or > 100)
-                throw new InvalidDataException($"RustKernel potion threshold override '{kv.Key}'={kv.Value} is invalid.");
-        }
+        if (policy.PotionDirectives is null)
+            throw new InvalidDataException("RustKernel policy.potionDirectives must not be null.");
+        if (policy.PotionHpThresholdOverrides is null)
+            throw new InvalidDataException("RustKernel policy.potionHpThresholdOverrides must not be null.");
+        if (policy.RelicCounterRules is null)
+            throw new InvalidDataException("RustKernel policy.relicCounterRules must not be null.");
+        if (policy.GrowthBudgets is null)
+            throw new InvalidDataException("RustKernel policy.growthBudgets must not be null.");
     }
 
     public static RustKernelProgressDto DeserializeAndValidateProgress(byte[] utf8)
