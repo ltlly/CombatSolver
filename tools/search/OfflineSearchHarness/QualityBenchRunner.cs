@@ -163,6 +163,8 @@ internal static class QualityBenchRunner
             SoftTimeBudgetMilliseconds = budgetMs,
         };
 
+        string? nativeLibraryPath = null;
+        string? nativeLibrarySha256 = null;
         if (backend == "rust")
         {
             if (!InCombatRustKernelBridge.HasInstalledBackendArtifact())
@@ -177,6 +179,12 @@ internal static class QualityBenchRunner
             {
                 throw new InvalidOperationException(
                     $"Rust combat kernel backend is not ready ({availability}): {activationError}");
+            }
+            nativeLibraryPath = ResolveNativeLibraryPath();
+            if (nativeLibraryPath is not null && File.Exists(nativeLibraryPath))
+            {
+                nativeLibrarySha256 = Convert.ToHexStringLower(
+                    System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(nativeLibraryPath)));
             }
         }
 
@@ -195,9 +203,12 @@ internal static class QualityBenchRunner
                 string statusTag = record.HardErrors > 0
                     ? $"ERR({record.HardError})"
                     : (record.Won ? "WIN" : "LOSS");
+                string nativeTag = record.NativeElapsedMs.HasValue
+                    ? $" native={record.NativeElapsedMs.Value,7:F1}ms |"
+                    : string.Empty;
                 Console.WriteLine(
                     $"[{record.Tier,-7}] {record.FightId,-28} | {statusTag,-5} | hp={record.HpLoss,3} | pot={record.PotionsUsed} | " +
-                    $"V={record.EconomicValueV,6:F2} | T={record.Turns,2} | {record.ElapsedMs,7:F1}ms | {record.Boundary,-10} | nodes={record.ExpandedNodes}");
+                    $"V={record.EconomicValueV,6:F2} | T={record.Turns,2} | {record.ElapsedMs,7:F1}ms |{nativeTag} {record.Boundary,-10} | nodes={record.ExpandedNodes}");
             }
         }
         finally
@@ -226,6 +237,9 @@ internal static class QualityBenchRunner
             Dop = dop,
             Seed = null,
             BudgetMs = budgetMs,
+            Backend = backend,
+            NativeLibraryPath = nativeLibraryPath,
+            NativeLibrarySha256 = nativeLibrarySha256,
             Summary = summary,
             Outcomes = outcomes.ToArray(),
         };
@@ -291,6 +305,7 @@ internal static class QualityBenchRunner
                 PotionPolicy = potionPolicy,
             };
 
+            Stopwatch sw = Stopwatch.StartNew();
             if (backend == "rust")
             {
                 var player = LocalContext.GetMe(combat)
@@ -345,10 +360,10 @@ internal static class QualityBenchRunner
                     InitialBrightestFlameMaxHpSpent: root.InitialBrightestFlameMaxHpSpent,
                     HasMurderousModifier: meta.HasMurderousModifier);
 
-                Stopwatch rustSw = Stopwatch.StartNew();
+                Stopwatch nativeSw = Stopwatch.StartNew();
                 RustKernelResponseDto response = InCombatRustKernelBridge.RunInCombatAsync(
                     request, null, CancellationToken.None).GetAwaiter().GetResult();
-                rustSw.Stop();
+                nativeSw.Stop();
 
                 if (response.Outcome != "Succeeded" || response.Result is null)
                 {
@@ -364,7 +379,7 @@ internal static class QualityBenchRunner
                         policy,
                         response.Result,
                         response.EffectiveDegreeOfParallelism,
-                        rustSw.Elapsed,
+                        sw.Elapsed,
                         out SolverResult? materialized,
                         out string? failCode,
                         out string? failDetail)
@@ -373,13 +388,13 @@ internal static class QualityBenchRunner
                     throw new InvalidOperationException(
                         $"RustKernel materialize failed code={failCode}: {failDetail}");
                 }
+                sw.Stop();
 
                 return BenchmarkOutcomeHelper.FromSolverResult(
                     entry.FightId, entry.Tier, entry.Group, characterId, encounterId,
-                    root, policy, materialized, rustSw.Elapsed.TotalMilliseconds);
+                    root, policy, materialized, sw.Elapsed.TotalMilliseconds, nativeSw.Elapsed.TotalMilliseconds);
             }
 
-            Stopwatch sw = Stopwatch.StartNew();
             SolverResult solved = searchMode == "Coordinator"
                 ? HotSearchCoordinator.Solve(root, names, damage, policy, CancellationToken.None, null)
                 : HotSearchCoordinator.SolveSingleBeam(root, names, damage, policy, CancellationToken.None);
@@ -510,6 +525,19 @@ internal static class QualityBenchRunner
         Console.WriteLine();
         Console.WriteLine($"peak_rss_mb={overall.PeakRssMb:F1} gc_gen2={overall.GcGen2} total_elapsed_s={overall.TotalElapsedMs / 1000.0:F2}s");
         Console.WriteLine($"outcomes_json={dumpOutcomesPath}");
+    }
+
+    private static string? ResolveNativeLibraryPath()
+    {
+        string? modDir = InCombatRustKernelBridge.ModDirectoryOverrideForTesting;
+        if (string.IsNullOrWhiteSpace(modDir))
+        {
+            string location = typeof(InCombatRustKernelBridge).Assembly.Location;
+            modDir = string.IsNullOrWhiteSpace(location) ? null : Path.GetDirectoryName(location);
+        }
+        return string.IsNullOrWhiteSpace(modDir)
+            ? null
+            : Path.GetFullPath(Path.Combine(modDir, "rust-kernel", InCombatRustKernelBridge.NativeLibraryFileName));
     }
 
     private static Exception Unwrap(Exception ex)

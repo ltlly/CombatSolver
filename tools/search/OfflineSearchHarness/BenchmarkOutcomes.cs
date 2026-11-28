@@ -97,6 +97,10 @@ internal sealed record FightOutcomeRecord
     [JsonPropertyName("elapsed_ms")]
     public double ElapsedMs { get; init; }
 
+    [JsonPropertyName("native_elapsed_ms")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? NativeElapsedMs { get; init; }
+
     [JsonPropertyName("solve_count")]
     public int SolveCount { get; init; } = 1;
 
@@ -208,6 +212,18 @@ internal sealed record BenchmarkOutcomeFile
     [JsonPropertyName("budget_ms")]
     public int BudgetMs { get; init; }
 
+    [JsonPropertyName("backend")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Backend { get; init; }
+
+    [JsonPropertyName("native_library_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? NativeLibraryPath { get; init; }
+
+    [JsonPropertyName("native_library_sha256")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? NativeLibrarySha256 { get; init; }
+
     [JsonPropertyName("summary")]
     public required BenchmarkSummaryRecord Summary { get; init; }
 
@@ -233,7 +249,8 @@ internal static class BenchmarkOutcomeHelper
         CombatRootSnapshot root,
         SearchPolicySnapshot policy,
         SolverResult result,
-        double elapsedMs)
+        double elapsedMs,
+        double? nativeElapsedMs = null)
     {
         HotRootBundle rootBundle = root.HotRoot;
         CombatHotState rootState = rootBundle.RootState;
@@ -316,6 +333,7 @@ internal static class BenchmarkOutcomeHelper
             Turns = turns,
             EnemyHpRemaining = quality.EnemyHp,
             ElapsedMs = Math.Round(elapsedMs, 2),
+            NativeElapsedMs = nativeElapsedMs.HasValue ? Math.Round(nativeElapsedMs.Value, 2) : null,
             SolveCount = 1,
             Boundary = result.BoundaryReason.ToString(),
             ExpandedNodes = expandedNodes,
