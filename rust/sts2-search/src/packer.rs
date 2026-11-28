@@ -488,14 +488,6 @@ impl<'a> ByteWriter<'a> {
         }
     }
 
-    fn field_map(&mut self, map: &FieldMap) {
-        self.var_u32(map.len() as u32);
-        for (k, v) in map {
-            self.sym_str(k);
-            self.field_value(v);
-        }
-    }
-
     #[inline(always)]
     fn cow_field_map(&mut self, map: &FieldMap) {
         if map.is_empty() {
@@ -2668,9 +2660,9 @@ pub fn pack_state(state: &BattleState, out: &mut Vec<u8>) {
         }
     }
 
-    // PlayerInst fixed scalars (51 bytes) + PlayerCounters (26 fields bitmask-packed)
+    // PlayerInst fixed scalars (60 bytes) + PlayerCounters (26 fields bitmask-packed)
     let p = &state.player;
-    w.ensure(51);
+    w.ensure(60);
     unsafe {
         w.u32_unchecked(p.creature_handle.0);
         w.i32_unchecked(p.current_hp);
@@ -2687,6 +2679,9 @@ pub fn pack_state(state: &BattleState, out: &mut Vec<u8>) {
         w.u8_unchecked(p.phase as u8);
         w.i32_unchecked(p.turn_number);
         w.i32_unchecked(p.card_or_potion_effect_depth);
+        w.u8_unchecked(p.death_save_use_count);
+        w.i32_unchecked(p.death_save_relic_hp_restored);
+        w.i32_unchecked(p.death_save_potion_hp_restored);
     }
 
     write_player_counters(&mut w, &p.counters);
@@ -3994,7 +3989,7 @@ fn unpack_state_inner(
     }
 
     // PlayerInst
-    let p_raw = r.take(55)?;
+    let p_raw = r.take(64)?;
     let p = &mut out.player;
     p.creature_handle = CreatureHandle(slice_u32(p_raw, 0));
     p.current_hp = slice_i32(p_raw, 4);
@@ -4011,8 +4006,11 @@ fn unpack_state_inner(
     p.phase = decode_player_turn_phase(p_raw[42])?;
     p.turn_number = slice_i32(p_raw, 43);
     p.card_or_potion_effect_depth = slice_i32(p_raw, 47);
+    p.death_save_use_count = p_raw[51];
+    p.death_save_relic_hp_restored = slice_i32(p_raw, 52);
+    p.death_save_potion_hp_restored = slice_i32(p_raw, 56);
 
-    let c_mask = slice_u32(p_raw, 51);
+    let c_mask = slice_u32(p_raw, 60);
     if c_mask == 0 {
         p.counters = PlayerCounters::default();
     } else {
@@ -5556,6 +5554,9 @@ pub fn empty_scratch_state(static_ctx: Arc<RootStaticContext>) -> BattleState {
             arrows: Vec::new(),
             relics: Vec::new(),
             card_or_potion_effect_depth: 0,
+            death_save_use_count: 0,
+            death_save_relic_hp_restored: 0,
+            death_save_potion_hp_restored: 0,
         },
         cards: Vec::with_capacity(64),
         card_extensions: Vec::new(),
@@ -5583,13 +5584,195 @@ pub fn empty_scratch_state(static_ctx: Arc<RootStaticContext>) -> BattleState {
     }
 }
 
-#[inline]
-fn write_canonical_card(w: &mut ByteWriter<'_>, state: &BattleState, h: CardHandle) {
-    let Some(card) = state.card(h) else {
-        w.u8(0);
-        return;
+const CANON_REF_DEPTH_LIMIT: u8 = 4;
+
+enum CanonicalCardRef<'a> {
+    Invalid(i32),
+    PilePos(u8, u32),
+    Detached(&'a CardInst),
+    Missing,
+}
+
+#[inline(always)]
+fn resolve_canonical_card_ref<'a>(state: &'a BattleState, raw_h: i32) -> CanonicalCardRef<'a> {
+    let Ok(h_u32) = u32::try_from(raw_h) else {
+        return CanonicalCardRef::Invalid(raw_h);
     };
-    let ext_opt = state.card_ext(card.ext_index);
+    if h_u32 == 0 {
+        return CanonicalCardRef::Invalid(0);
+    }
+    let ch = CardHandle(h_u32);
+    let p = &state.player;
+    for (pile_tag, pile) in [
+        (1u8, &p.hand[..]),
+        (2u8, &p.draw[..]),
+        (3u8, &p.discard[..]),
+        (4u8, &p.exhaust[..]),
+        (5u8, &p.play[..]),
+        (6u8, &p.deck[..]),
+    ] {
+        if let Some(pos) = pile.iter().position(|&x| x == ch) {
+            return CanonicalCardRef::PilePos(pile_tag, pos as u32);
+        }
+    }
+    match state.card(ch) {
+        Some(card) => CanonicalCardRef::Detached(card),
+        None => CanonicalCardRef::Missing,
+    }
+}
+
+#[inline(always)]
+fn resolve_canonical_creature_ref(state: &BattleState, raw_h: i32) -> (u8, u32) {
+    let Ok(h_u32) = u32::try_from(raw_h) else {
+        return (0, raw_h as u32);
+    };
+    if h_u32 == 0 {
+        return (0, 0);
+    }
+    match state.creature_index(CreatureHandle(h_u32)) {
+        Some(idx) => (1, idx as u32),
+        None => (2, 0),
+    }
+}
+
+#[inline(always)]
+fn write_canonical_turn_key(w: &mut ByteWriter<'_>, tk: &TurnKey) {
+    w.i32(tk.round_number);
+    w.u8(tk.side as u8);
+    w.u8(tk.player_turn_numbers.len() as u8);
+    for item in &tk.player_turn_numbers {
+        w.opt_i32(item);
+    }
+}
+
+fn write_canonical_card_ref(w: &mut ByteWriter<'_>, state: &BattleState, raw_h: i32, depth: u8) {
+    match resolve_canonical_card_ref(state, raw_h) {
+        CanonicalCardRef::Invalid(v) => {
+            w.u8(0);
+            w.i32(v);
+        }
+        CanonicalCardRef::PilePos(pile_tag, pos) => {
+            w.u8(pile_tag);
+            w.u32(pos);
+        }
+        CanonicalCardRef::Detached(card) if depth < CANON_REF_DEPTH_LIMIT => {
+            w.u8(7);
+            write_canonical_card_content(w, state, card, depth + 1);
+        }
+        CanonicalCardRef::Detached(_) | CanonicalCardRef::Missing => {
+            w.u8(8);
+        }
+    }
+}
+
+#[inline(always)]
+fn write_canonical_creature_ref(w: &mut ByteWriter<'_>, state: &BattleState, raw_h: i32) {
+    let (tag, val) = resolve_canonical_creature_ref(state, raw_h);
+    w.u8(tag);
+    if tag != 2 {
+        w.u32(val);
+    }
+}
+
+fn write_canonical_field_map(
+    w: &mut ByteWriter<'_>,
+    state: &BattleState,
+    map: &FieldMap,
+    depth: u8,
+) {
+    w.var_u32(map.len() as u32);
+    for (k, v) in map {
+        w.sym_str(k);
+        match v {
+            FieldValue::Int(x) => {
+                w.u8(0);
+                w.i32(*x);
+            }
+            FieldValue::Decimal(d) => {
+                w.u8(1);
+                w.dec(*d);
+            }
+            FieldValue::Bool(b) => {
+                w.u8(2);
+                w.bool(*b);
+            }
+            FieldValue::String(s) => {
+                w.u8(3);
+                w.str(s);
+            }
+            FieldValue::NullableInt(x) => {
+                w.u8(4);
+                w.opt_i32(*x);
+            }
+            FieldValue::CardHandle(h) => {
+                w.u8(5);
+                write_canonical_card_ref(w, state, *h, depth);
+            }
+            FieldValue::CreatureHandle(h) => {
+                w.u8(6);
+                write_canonical_creature_ref(w, state, *h);
+            }
+            FieldValue::IntArray(arr) => {
+                w.u8(7);
+                w.var_u32(arr.len() as u32);
+                for &x in arr {
+                    w.i32(x);
+                }
+            }
+            FieldValue::CardHandleArray(arr) => {
+                w.u8(8);
+                w.var_u32(arr.len() as u32);
+                for &x in arr {
+                    write_canonical_card_ref(w, state, x, depth);
+                }
+            }
+            FieldValue::CreatureHandleArray(arr) => {
+                w.u8(9);
+                w.var_u32(arr.len() as u32);
+                for &x in arr {
+                    write_canonical_creature_ref(w, state, x);
+                }
+            }
+            FieldValue::CardIntMap(arr) => {
+                w.u8(10);
+                w.var_u32(arr.len() as u32);
+                for &(a, b) in arr {
+                    write_canonical_card_ref(w, state, a, depth);
+                    w.i32(b);
+                }
+            }
+            FieldValue::CreatureDecimalMap(arr) => {
+                w.u8(11);
+                w.var_u32(arr.len() as u32);
+                for &(a, d) in arr {
+                    write_canonical_creature_ref(w, state, a);
+                    w.dec(d);
+                }
+            }
+            FieldValue::CardPairArray(arr) => {
+                w.u8(12);
+                w.var_u32(arr.len() as u32);
+                for &(a, b) in arr {
+                    write_canonical_card_ref(w, state, a, depth);
+                    write_canonical_card_ref(w, state, b, depth);
+                }
+            }
+        }
+    }
+}
+
+#[inline]
+fn write_canonical_card_content(
+    w: &mut ByteWriter<'_>,
+    state: &BattleState,
+    card: &CardInst,
+    depth: u8,
+) {
+    let ext_opt = if depth < CANON_REF_DEPTH_LIMIT {
+        state.card_ext(card.ext_index)
+    } else {
+        None
+    };
     let opt_mask = u16::from(card.temp_star_cost_override_this_turn.is_some())
         | (u16::from(card.temp_cost_override_this_turn.is_some()) << 1)
         | (u16::from(card.temp_cost_override_this_turn_or_until_played.is_some()) << 2)
@@ -5640,12 +5823,21 @@ fn write_canonical_card(w: &mut ByteWriter<'_>, state: &BattleState, h: CardHand
                 w.u16(e.id as u16);
                 w.i32(e.amount);
                 w.u8(e.status as u8);
-                w.field_map(&e.private_fields);
+                write_canonical_field_map(w, state, &e.private_fields, depth + 1);
             }
             None => w.u8(0),
         }
-        w.field_map(&ext.private_fields);
+        write_canonical_field_map(w, state, &ext.private_fields, depth + 1);
     }
+}
+
+#[inline]
+fn write_canonical_card(w: &mut ByteWriter<'_>, state: &BattleState, h: CardHandle) {
+    let Some(card) = state.card(h) else {
+        w.u8(0);
+        return;
+    };
+    write_canonical_card_content(w, state, card, 0);
 }
 
 #[inline]
@@ -5753,11 +5945,13 @@ pub fn pack_canonical_key(state: &BattleState, out: &mut Vec<u8>) {
     w.bool(state.battleworn_dummy_timed_out);
     w.bool(state.end_player_turn_requested);
 
-    // 9 combat RNG streams + shuffle + non-combat generation
+    // 12 run RNG streams + 4 player RNG streams
     for stream in &state.run_rngs.streams {
         w.rng(stream);
     }
-    w.rng(&state.player_rngs.streams[3]); // NonCombatGeneration
+    for stream in &state.player_rngs.streams {
+        w.rng(stream);
+    }
 
     let p = &state.player;
     w.i32(p.current_hp);
@@ -5768,13 +5962,18 @@ pub fn pack_canonical_key(state: &BattleState, out: &mut Vec<u8>) {
     w.i32(p.max_energy);
     w.i32(p.energy);
     w.i32(p.stars);
+    w.i32(p.death_save_relic_hp_restored);
+    w.i32(p.death_save_potion_hp_restored);
+    w.u8(p.death_save_use_count);
+    w.bool(p.is_active_for_hooks);
+    w.bool(p.can_use_or_remove_potions);
     w.u8(p.phase as u8);
     w.i32(p.turn_number);
     w.i32(p.orb_capacity);
 
     write_player_counters(&mut w, &p.counters);
 
-    for pile in [&p.hand[..], &p.draw[..], &p.discard[..], &p.exhaust[..], &p.play[..]] {
+    for pile in [&p.hand[..], &p.draw[..], &p.discard[..], &p.exhaust[..], &p.play[..], &p.deck[..]] {
         w.var_u32(pile.len() as u32);
         for &h in pile {
             write_canonical_card(&mut w, state, h);
@@ -5811,7 +6010,7 @@ pub fn pack_canonical_key(state: &BattleState, out: &mut Vec<u8>) {
         w.bool(relic.is_wax);
         w.bool(relic.is_melted);
         w.i32(relic.stack_count);
-        w.field_map(&relic.private_fields);
+        write_canonical_field_map(&mut w, state, &relic.private_fields, 0);
     }
 
     // Creatures (allies, enemies, pets, escaped)
@@ -5841,7 +6040,8 @@ pub fn pack_canonical_key(state: &BattleState, out: &mut Vec<u8>) {
                     w.str(s);
                 }
                 w.opt_str(m.transient_move_follow_up_state_id.as_deref());
-                w.field_map(&m.private_fields);
+                write_canonical_field_map(&mut w, state, &m.setup_fields, 0);
+                write_canonical_field_map(&mut w, state, &m.private_fields, 0);
             }
             None => w.u8(0),
         }
@@ -5854,7 +6054,7 @@ pub fn pack_canonical_key(state: &BattleState, out: &mut Vec<u8>) {
             if let Some(ext_idx) = pw.ext_index {
                 if let Some(pe) = state.power_extensions.get(ext_idx as usize) {
                     w.u8(1);
-                    w.field_map(&pe.private_fields);
+                    write_canonical_field_map(&mut w, state, &pe.private_fields, 0);
                     w.i32(pe.hit_counter);
                     w.var_u32(pe.impaled_arrows.len() as u32);
                     for &ia in &pe.impaled_arrows {
@@ -5868,8 +6068,41 @@ pub fn pack_canonical_key(state: &BattleState, out: &mut Vec<u8>) {
             }
         }
     }
+    w.var_u32(state.escaped_handles.len() as u32);
+    for &eh in &state.escaped_handles {
+        write_canonical_creature_ref(&mut w, state, eh.0 as i32);
+    }
 
-    let gr = &state.semantic_history.growth_rewards;
+    w.var_u32(state.damage_history.len() as u32);
+    for e in &state.damage_history {
+        write_canonical_creature_ref(&mut w, state, e.receiver_creature_handle.0 as i32);
+        w.bool(e.dealer_creature_handle.is_some());
+        if let Some(d) = e.dealer_creature_handle {
+            write_canonical_creature_ref(&mut w, state, d.0 as i32);
+        }
+        write_canonical_creature_ref(&mut w, state, e.original_target_creature_handle.0 as i32);
+        w.u8(e.props.bits());
+        w.i32(e.intended_hp_loss);
+        w.i32(e.blocked_damage);
+        w.i32(e.unblocked_damage);
+        w.i32(e.overkill_damage);
+        w.bool(e.was_target_killed);
+        w.bool(e.was_block_broken);
+        w.bool(e.was_fully_blocked);
+        w.bool(e.card_source_handle.is_some());
+        if let Some(cs) = e.card_source_handle {
+            write_canonical_card_ref(&mut w, state, cs.0 as i32, 0);
+        }
+        w.i32(e.round_number);
+        w.u8(e.current_side as u8);
+        w.u8(e.player_turn_numbers.len() as u8);
+        for &tn in e.player_turn_numbers.as_slice() {
+            w.i32(tn);
+        }
+    }
+
+    let sh = &state.semantic_history;
+    let gr = &sh.growth_rewards;
     let g_mask: u16 = u16::from(gr.hand_of_greed != 0)
         | (u16::from(gr.the_hunt != 0) << 1)
         | (u16::from(gr.feed != 0) << 2)
@@ -5893,10 +6126,46 @@ pub fn pack_canonical_key(state: &BattleState, out: &mut Vec<u8>) {
         if (g_mask & (1 << 8)) != 0 { w.i32(gr.forbidden_grimoire); }
         if (g_mask & (1 << 9)) != 0 { w.i32(gr.mad_science); }
     }
-    w.i32(state.semantic_history.brightest_flame_max_hp_spent);
-    w.i32(state.semantic_history.prior_player_unblocked_hits);
-    w.i32(state.semantic_history.prior_player_damaged_turn);
-    w.i32(state.semantic_history.prior_exhaust_count);
+    w.i32(sh.brightest_flame_max_hp_spent);
+    w.i32(sh.prior_player_unblocked_hits);
+    w.i32(sh.prior_player_damaged_turn);
+    w.i32(sh.prior_exhaust_count);
+    w.var_u32(sh.exhausts.len() as u32);
+    for (tk, idx) in &sh.exhausts {
+        write_canonical_turn_key(&mut w, tk);
+        w.u32(*idx as u32);
+    }
+    w.var_u32(sh.card_block_gains.len() as u32);
+    for (tk, idx, ord) in &sh.card_block_gains {
+        write_canonical_turn_key(&mut w, tk);
+        w.u32(*idx as u32);
+        w.i32(*ord);
+    }
+    w.var_u32(sh.orb_channels.len() as u32);
+    for (tk, idx, oid) in &sh.orb_channels {
+        write_canonical_turn_key(&mut w, tk);
+        w.u32(*idx as u32);
+        w.u8(*oid as u8);
+    }
+    w.var_u32(sh.energy_spent.len() as u32);
+    for (tk, idx, amt) in &sh.energy_spent {
+        write_canonical_turn_key(&mut w, tk);
+        w.u32(*idx as u32);
+        w.i32(*amt);
+    }
+    w.var_u32(sh.card_drawn.len() as u32);
+    for (tk, idx, ctype, fh) in &sh.card_drawn {
+        write_canonical_turn_key(&mut w, tk);
+        w.u32(*idx as u32);
+        w.u8(*ctype as u8);
+        w.bool(*fh);
+    }
+    w.var_u32(sh.actor_events.len() as u32);
+    for (k, tk, idx) in &sh.actor_events {
+        w.str(k);
+        write_canonical_turn_key(&mut w, tk);
+        w.u32(*idx as u32);
+    }
 
     w.bool(state.pending.is_some());
 }
@@ -5936,16 +6205,42 @@ fn hash_dec(h: &mut WordHasher128, v: Dec) {
 }
 
 #[inline(always)]
-fn hash_field_map(h: &mut WordHasher128, map: &FieldMap) {
+fn splitmix64(mut x: u64) -> u64 {
+    x = x.wrapping_add(0x9E37_79B9_7F4A_7C15);
+    x = (x ^ (x >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    x = (x ^ (x >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    x ^ (x >> 31)
+}
+
+#[inline(always)]
+fn hash_canonical_creature_ref(h: &mut WordHasher128, state: &BattleState, raw_h: i32) {
+    let (tag, val) = resolve_canonical_creature_ref(state, raw_h);
+    h.mix_u64((tag as u64) | ((val as u64) << 8));
+}
+
+fn hash_canonical_card_ref(h: &mut WordHasher128, state: &BattleState, raw_h: i32, depth: u8) {
+    match resolve_canonical_card_ref(state, raw_h) {
+        CanonicalCardRef::Invalid(v) => h.mix_u64x2(0, v as u32 as u64),
+        CanonicalCardRef::PilePos(pile_tag, pos) => h.mix_u64x2(pile_tag as u64, pos as u64),
+        CanonicalCardRef::Detached(card) if depth < CANON_REF_DEPTH_LIMIT => {
+            h.mix_u64(7);
+            hash_canonical_card_content(h, state, card, depth + 1);
+        }
+        CanonicalCardRef::Detached(_) | CanonicalCardRef::Missing => h.mix_u64(8),
+    }
+}
+
+#[inline(always)]
+fn hash_field_map(h: &mut WordHasher128, state: &BattleState, map: &FieldMap, depth: u8) {
     if map.is_empty() {
         h.mix_u32(0);
     } else {
-        hash_field_map_nonempty(h, map);
+        hash_field_map_nonempty(h, state, map, depth);
     }
 }
 
 #[inline(never)]
-fn hash_field_map_nonempty(h: &mut WordHasher128, map: &FieldMap) {
+fn hash_field_map_nonempty(h: &mut WordHasher128, state: &BattleState, map: &FieldMap, depth: u8) {
     h.mix_u32(map.len() as u32);
     for (k, v) in map {
         h.mix_u32(k.len() as u32);
@@ -5966,8 +6261,14 @@ fn hash_field_map_nonempty(h: &mut WordHasher128, map: &FieldMap) {
                 h.mix_u32(4);
                 hash_opt_i32(h, *x);
             }
-            FieldValue::CardHandle(ch) => h.mix_u64x2(5, *ch as u32 as u64),
-            FieldValue::CreatureHandle(ch) => h.mix_u64x2(6, *ch as u32 as u64),
+            FieldValue::CardHandle(ch) => {
+                h.mix_u32(5);
+                hash_canonical_card_ref(h, state, *ch, depth);
+            }
+            FieldValue::CreatureHandle(ch) => {
+                h.mix_u32(6);
+                hash_canonical_creature_ref(h, state, *ch);
+            }
             FieldValue::IntArray(arr) => {
                 h.mix_u64x2(7, arr.len() as u64);
                 for &x in arr {
@@ -5977,32 +6278,34 @@ fn hash_field_map_nonempty(h: &mut WordHasher128, map: &FieldMap) {
             FieldValue::CardHandleArray(arr) => {
                 h.mix_u64x2(8, arr.len() as u64);
                 for &x in arr {
-                    h.mix_i32(x);
+                    hash_canonical_card_ref(h, state, x, depth);
                 }
             }
             FieldValue::CreatureHandleArray(arr) => {
                 h.mix_u64x2(9, arr.len() as u64);
                 for &x in arr {
-                    h.mix_i32(x);
+                    hash_canonical_creature_ref(h, state, x);
                 }
             }
             FieldValue::CardIntMap(arr) => {
                 h.mix_u64x2(10, arr.len() as u64);
                 for &(a, b) in arr {
-                    h.mix_u64x2(a as u32 as u64, b as u32 as u64);
+                    hash_canonical_card_ref(h, state, a, depth);
+                    h.mix_i32(b);
                 }
             }
             FieldValue::CreatureDecimalMap(arr) => {
                 h.mix_u64x2(11, arr.len() as u64);
                 for &(a, d) in arr {
-                    h.mix_i32(a);
+                    hash_canonical_creature_ref(h, state, a);
                     hash_dec(h, d);
                 }
             }
             FieldValue::CardPairArray(arr) => {
                 h.mix_u64x2(12, arr.len() as u64);
                 for &(a, b) in arr {
-                    h.mix_u64x2(a as u32 as u64, b as u32 as u64);
+                    hash_canonical_card_ref(h, state, a, depth);
+                    hash_canonical_card_ref(h, state, b, depth);
                 }
             }
         }
@@ -6034,15 +6337,42 @@ fn flush_pending_fast_cards(
 }
 
 #[inline(never)]
+fn hash_canonical_card_content(
+    h: &mut WordHasher128,
+    state: &BattleState,
+    card: &CardInst,
+    depth: u8,
+) {
+    let mut pb = [0u64; 4];
+    let mut pl = 0usize;
+    hash_canonical_card_slow_inner(h, state, card, depth, &mut pb, &mut pl);
+    flush_pending_fast_cards(h, &mut pb, &mut pl);
+}
+
+#[inline(never)]
 fn hash_canonical_card_slow(
     h: &mut WordHasher128,
-    card_extensions: &[CardExtension],
+    state: &BattleState,
     card: &CardInst,
     pending_buf: &mut [u64; 4],
     pending_len: &mut usize,
 ) {
+    hash_canonical_card_slow_inner(h, state, card, 0, pending_buf, pending_len);
+}
+
+#[inline(never)]
+fn hash_canonical_card_slow_inner(
+    h: &mut WordHasher128,
+    state: &BattleState,
+    card: &CardInst,
+    depth: u8,
+    pending_buf: &mut [u64; 4],
+    pending_len: &mut usize,
+) {
+    let card_extensions = &state.card_extensions;
+    let allow_ext = depth < CANON_REF_DEPTH_LIMIT;
     if card.is_rare_clean() && card.transform_into_after_play.is_none() {
-        if card.ext_index.is_none() {
+        if card.ext_index.is_none() || !allow_ext {
             if let Some(a) = card.affliction {
                 flush_pending_fast_cards(h, pending_buf, pending_len);
                 let slow_tag = (1u64 << 14)
@@ -6081,17 +6411,17 @@ fn hash_canonical_card_slow(
                                     | ((e.status as u64) << 24)
                                     | ((e.amount as u32 as u64) << 32),
                             );
-                            hash_field_map(h, &e.private_fields);
+                            hash_field_map(h, state, &e.private_fields, depth + 1);
                         }
                         None => h.mix_u64(0),
                     }
-                    hash_field_map(h, &ext.private_fields);
+                    hash_field_map(h, state, &ext.private_fields, depth + 1);
                     return;
                 }
             }
         }
     }
-    if card.ext_index.is_none()
+    if (!allow_ext || card.ext_index.is_none())
         && card.affliction.is_none()
         && card.transform_into_after_play.is_none()
     {
@@ -6130,9 +6460,10 @@ fn hash_canonical_card_slow(
             }
         }
     }
-    let has_ext = card
-        .ext_index
-        .is_some_and(|i| (i as usize) < card_extensions.len());
+    let has_ext = allow_ext
+        && card
+            .ext_index
+            .is_some_and(|i| (i as usize) < card_extensions.len());
     let rare_mask = u16::from(card.temp_star_cost_override_this_turn.is_some())
         | (u16::from(card.temp_cost_override_this_turn.is_some()) << 1)
         | (u16::from(card.temp_cost_override_this_turn_or_until_played.is_some()) << 2)
@@ -6224,11 +6555,11 @@ fn hash_canonical_card_slow(
                         | ((e.status as u64) << 24)
                         | ((e.amount as u32 as u64) << 32),
                 );
-                hash_field_map(h, &e.private_fields);
+                hash_field_map(h, state, &e.private_fields, depth + 1);
             }
             None => h.mix_u64(0),
         }
-        hash_field_map(h, &ext.private_fields);
+        hash_field_map(h, state, &ext.private_fields, depth + 1);
     }
 }
 
@@ -6241,8 +6572,8 @@ fn find_card_hash_cold(cards: &[CardInst], ch: CardHandle) -> Option<&CardInst> 
 #[inline(always)]
 fn hash_canonical_card(
     h: &mut WordHasher128,
+    state: &BattleState,
     cards: &[CardInst],
-    card_extensions: &[CardExtension],
     ch: CardHandle,
     pending_buf: &mut [u64; 4],
     pending_len: &mut usize,
@@ -6282,7 +6613,7 @@ fn hash_canonical_card(
         return;
     }
 
-    hash_canonical_card_slow(h, card_extensions, card, pending_buf, pending_len);
+    hash_canonical_card_slow(h, state, card, pending_buf, pending_len);
 }
 
 #[inline(always)]
@@ -6381,7 +6712,7 @@ fn resolve_fast_hash_at(
 #[inline(always)]
 fn push_fast_hash_word_or_slow(
     h: &mut WordHasher128,
-    card_extensions: &[CardExtension],
+    state: &BattleState,
     card: &CardInst,
     w: u64,
     pending_buf: &mut [u64; 4],
@@ -6400,7 +6731,7 @@ fn push_fast_hash_word_or_slow(
             *pending_len = 0;
         }
     } else {
-        hash_canonical_card_slow(h, card_extensions, card, pending_buf, pending_len);
+        hash_canonical_card_slow(h, state, card, pending_buf, pending_len);
     }
 }
 
@@ -6408,8 +6739,8 @@ fn push_fast_hash_word_or_slow(
 #[allow(clippy::too_many_arguments)]
 fn hash_canonical_pile(
     h: &mut WordHasher128,
+    state: &BattleState,
     cards_slice: &[CardInst],
-    card_extensions: &[CardExtension],
     cards_contiguous: bool,
     delta_len: usize,
     any_card_meta_dirty: bool,
@@ -6479,10 +6810,10 @@ fn hash_canonical_pile(
                         let c1 = unsafe { cards_slice.get_unchecked(i1) };
                         let c2 = unsafe { cards_slice.get_unchecked(i2) };
                         let c3 = unsafe { cards_slice.get_unchecked(i3) };
-                        push_fast_hash_word_or_slow(h, card_extensions, c0, w0, &mut pending_buf, &mut pending_len);
-                        push_fast_hash_word_or_slow(h, card_extensions, c1, w1, &mut pending_buf, &mut pending_len);
-                        push_fast_hash_word_or_slow(h, card_extensions, c2, w2, &mut pending_buf, &mut pending_len);
-                        push_fast_hash_word_or_slow(h, card_extensions, c3, w3, &mut pending_buf, &mut pending_len);
+                        push_fast_hash_word_or_slow(h, state, c0, w0, &mut pending_buf, &mut pending_len);
+                        push_fast_hash_word_or_slow(h, state, c1, w1, &mut pending_buf, &mut pending_len);
+                        push_fast_hash_word_or_slow(h, state, c2, w2, &mut pending_buf, &mut pending_len);
+                        push_fast_hash_word_or_slow(h, state, c3, w3, &mut pending_buf, &mut pending_len);
                     }
                     i += 4;
                     continue;
@@ -6530,10 +6861,10 @@ fn hash_canonical_pile(
                     if ((w0 | w1 | w2 | w3) & sts2_kernel::state::ROOT_CARD_FAST_HASH_SLOW) == 0 {
                         h.mix_u64x4(w0, w1, w2, w3);
                     } else {
-                        push_fast_hash_word_or_slow(h, card_extensions, c0, w0, &mut pending_buf, &mut pending_len);
-                        push_fast_hash_word_or_slow(h, card_extensions, c1, w1, &mut pending_buf, &mut pending_len);
-                        push_fast_hash_word_or_slow(h, card_extensions, c2, w2, &mut pending_buf, &mut pending_len);
-                        push_fast_hash_word_or_slow(h, card_extensions, c3, w3, &mut pending_buf, &mut pending_len);
+                        push_fast_hash_word_or_slow(h, state, c0, w0, &mut pending_buf, &mut pending_len);
+                        push_fast_hash_word_or_slow(h, state, c1, w1, &mut pending_buf, &mut pending_len);
+                        push_fast_hash_word_or_slow(h, state, c2, w2, &mut pending_buf, &mut pending_len);
+                        push_fast_hash_word_or_slow(h, state, c3, w3, &mut pending_buf, &mut pending_len);
                     }
                     i += 4;
                     continue;
@@ -6551,7 +6882,7 @@ fn hash_canonical_pile(
                     root_fast_hash,
                     dirty_words,
                 );
-                push_fast_hash_word_or_slow(h, card_extensions, card, w, &mut pending_buf, &mut pending_len);
+                push_fast_hash_word_or_slow(h, state, card, w, &mut pending_buf, &mut pending_len);
             } else {
                 flush_pending_fast_cards(h, &mut pending_buf, &mut pending_len);
                 h.mix_u64(1u64 << 15);
@@ -6576,8 +6907,8 @@ fn hash_canonical_pile(
         }
         hash_canonical_card(
             h,
+            state,
             cards_slice,
-            card_extensions,
             pile[i],
             &mut pending_buf,
             &mut pending_len,
@@ -6592,7 +6923,8 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
     let mut h = WordHasher128::new();
     let sctx: &RootStaticContext = &state.static_ctx;
     let rs = &state.run_rngs.streams;
-    let p3 = &state.player_rngs.streams[3];
+    let ps = &state.player_rngs.streams;
+    let p = &state.player;
     let rng_delta_mask: u16 = if sctx.has_root_rngs {
         let mut m = 0u16;
         for i in 0..12 {
@@ -6606,18 +6938,20 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
                 );
             }
         }
-        if p3.counter != sctx.root_player_rng_counters[3] {
-            m |= 1u16 << 12;
-        } else {
-            #[cfg(debug_assertions)]
-            debug_assert_eq!(
-                *p3, sctx.root_player_rngs[3],
-                "player_rng[3] diverged without counter advance"
-            );
+        for i in 0..4 {
+            if ps[i].counter != sctx.root_player_rng_counters[i] {
+                m |= 1u16 << (12 + i);
+            } else {
+                #[cfg(debug_assertions)]
+                debug_assert_eq!(
+                    ps[i], sctx.root_player_rngs[i],
+                    "player_rng[{i}] diverged without counter advance"
+                );
+            }
         }
         m
     } else {
-        0x1FFF
+        0xFFFF
     };
 
     let gflags = (state.current_side as u64)
@@ -6627,10 +6961,18 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
         | (u64::from(state.gold_was_stolen) << 11)
         | (u64::from(state.end_player_turn_requested) << 12)
         | (u64::from(state.battleworn_dummy_timed_out) << 13)
-        | ((rng_delta_mask as u64) << 16)
-        | (u64::from(sctx.has_root_rngs) << 29)
+        | (u64::from(sctx.has_root_rngs) << 14)
+        | (u64::from(p.is_active_for_hooks) << 15)
+        | (u64::from(p.can_use_or_remove_potions) << 16)
+        | ((p.death_save_use_count as u64) << 24)
         | ((state.round_number as u32 as u64) << 32);
-    h.mix_u64(gflags);
+    let g_extra = (rng_delta_mask as u64)
+        | ((p.death_save_relic_hp_restored as u32 as u64) << 16)
+        | ((p.death_save_potion_hp_restored as u32 as u64) << 48);
+    h.mix_u64x2(gflags, g_extra);
+    if p.death_save_potion_hp_restored != 0 {
+        h.mix_i32(p.death_save_potion_hp_restored);
+    }
 
     let mut rem = rng_delta_mask & 0x0FFF;
     while rem != 0 {
@@ -6638,11 +6980,13 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
         rem &= rem - 1;
         hash_rng(&mut h, &rs[i]);
     }
-    if (rng_delta_mask & (1 << 12)) != 0 {
-        hash_rng(&mut h, p3);
+    let mut prem = rng_delta_mask >> 12;
+    while prem != 0 {
+        let i = prem.trailing_zeros() as usize;
+        prem &= prem - 1;
+        hash_rng(&mut h, &ps[i]);
     }
 
-    let p = &state.player;
     h.mix_u64x4(
         (p.current_hp as u32 as u64) | ((p.max_hp as u32 as u64) << 32),
         (p.block as u32 as u64) | ((p.cumulative_hp_lost as u32 as u64) << 32),
@@ -6657,7 +7001,6 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
     hash_player_counters(&mut h, &p.counters);
 
     let cards_slice = state.cards.as_slice();
-    let card_extensions = &state.card_extensions;
     let cards_contiguous = state.handle_layout.cards;
     let delta_len = if cards_contiguous
         && !state.deck_dirty.0
@@ -6681,8 +7024,8 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
         != 0;
     hash_canonical_pile(
         &mut h,
+        state,
         cards_slice,
-        card_extensions,
         cards_contiguous,
         delta_len,
         any_card_meta_dirty,
@@ -6692,8 +7035,8 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
     );
     hash_canonical_pile(
         &mut h,
+        state,
         cards_slice,
-        card_extensions,
         cards_contiguous,
         delta_len,
         any_card_meta_dirty,
@@ -6703,8 +7046,8 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
     );
     hash_canonical_pile(
         &mut h,
+        state,
         cards_slice,
-        card_extensions,
         cards_contiguous,
         delta_len,
         any_card_meta_dirty,
@@ -6714,8 +7057,8 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
     );
     hash_canonical_pile(
         &mut h,
+        state,
         cards_slice,
-        card_extensions,
         cards_contiguous,
         delta_len,
         any_card_meta_dirty,
@@ -6725,8 +7068,8 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
     );
     hash_canonical_pile(
         &mut h,
+        state,
         cards_slice,
-        card_extensions,
         cards_contiguous,
         delta_len,
         any_card_meta_dirty,
@@ -6734,6 +7077,24 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
         dirty_words,
         &p.play,
     );
+    if !state.deck_dirty.0
+        && sctx.root_deck_prefix_len > 0
+        && cards_slice.len() >= sctx.root_deck_prefix_len
+    {
+        h.mix_u64(u64::MAX ^ (p.deck.len() as u64));
+    } else {
+        hash_canonical_pile(
+            &mut h,
+            state,
+            cards_slice,
+            cards_contiguous,
+            delta_len,
+            any_card_meta_dirty,
+            root_fast_hash,
+            dirty_words,
+            &p.deck,
+        );
+    }
 
     h.mix_u64((p.combat_generated_potion_mask as u64) | ((p.potion_slots.len() as u64) << 16));
     for &slot in &p.potion_slots {
@@ -6763,7 +7124,7 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
                 | (u64::from(relic.is_melted) << 17),
             relic.stack_count as u32 as u64,
         );
-        hash_field_map(&mut h, &relic.private_fields);
+        hash_field_map(&mut h, state, &relic.private_fields, 0);
     }
 
     let (in_combat_bits, in_combat_ovf) =
@@ -6839,7 +7200,8 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
                     h.mix_bytes(sb);
                 }
                 hash_opt_str(&mut h, m.transient_move_follow_up_state_id.as_deref());
-                hash_field_map(&mut h, &m.private_fields);
+                hash_field_map(&mut h, state, &m.setup_fields, 0);
+                hash_field_map(&mut h, state, &m.private_fields, 0);
             }
             None => h.mix_u64(0),
         }
@@ -6857,7 +7219,7 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
                         1 | ((pe.hit_counter as u32 as u64) << 16)
                             | ((pe.impaled_arrows.len() as u64) << 48),
                     );
-                    hash_field_map(&mut h, &pe.private_fields);
+                    hash_field_map(&mut h, state, &pe.private_fields, 0);
                     for &ia in &pe.impaled_arrows {
                         h.mix_u32(ia as u32);
                     }
@@ -6867,6 +7229,12 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
             } else {
                 h.mix_u64(0);
             }
+        }
+    }
+    if !state.escaped_handles.is_empty() {
+        h.mix_u32(state.escaped_handles.len() as u32);
+        for &eh in &state.escaped_handles {
+            hash_canonical_creature_ref(&mut h, state, eh.0 as i32);
         }
     }
 
@@ -7037,17 +7405,74 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
             (oc_cur as u64) | ((cur_energy_spent as u32 as u64) << 32),
             (cd_cur as u64) | ((sh.actor_events.len() as u64) << 32),
         );
-        for (kind, _, idx) in &sh.actor_events[ae_start..] {
-            let kb = kind.as_bytes();
-            h.mix_u32(kb.len() as u32);
-            h.mix_bytes(kb);
-            h.mix_u32(*idx as u32);
+        if !sh.orb_channels.is_empty() {
+            let mut orb_totals = [0u16; 8];
+            let mut orb_cur = [0u16; 8];
+            let cur_start = sh.orb_channels.len().saturating_sub(oc_cur);
+            for (idx, &(_, _, oid)) in sh.orb_channels.iter().enumerate() {
+                let slot = (oid as usize) & 7;
+                orb_totals[slot] = orb_totals[slot].saturating_add(1);
+                if idx >= cur_start {
+                    orb_cur[slot] = orb_cur[slot].saturating_add(1);
+                }
+            }
+            let ot_lo = (orb_totals[0] as u64)
+                | ((orb_totals[1] as u64) << 16)
+                | ((orb_totals[2] as u64) << 32)
+                | ((orb_totals[3] as u64) << 48);
+            let ot_hi = (orb_totals[4] as u64)
+                | ((orb_totals[5] as u64) << 16)
+                | ((orb_totals[6] as u64) << 32)
+                | ((orb_totals[7] as u64) << 48);
+            let oc_lo = (orb_cur[0] as u64)
+                | ((orb_cur[1] as u64) << 16)
+                | ((orb_cur[2] as u64) << 32)
+                | ((orb_cur[3] as u64) << 48);
+            let oc_hi = (orb_cur[4] as u64)
+                | ((orb_cur[5] as u64) << 16)
+                | ((orb_cur[6] as u64) << 32)
+                | ((orb_cur[7] as u64) << 48);
+            h.mix_u64x4(ot_lo, ot_hi, oc_lo, oc_hi);
+        }
+        if cd_cur > 0 {
+            let mut draw_counts = [0u16; 12];
+            let cur_start = sh.card_drawn.len().saturating_sub(cd_cur);
+            for &(_, _, ctype, fh) in &sh.card_drawn[cur_start..] {
+                let slot = ((ctype as usize).min(5) * 2) + usize::from(fh);
+                draw_counts[slot] = draw_counts[slot].saturating_add(1);
+            }
+            let d0 = (draw_counts[0] as u64)
+                | ((draw_counts[1] as u64) << 16)
+                | ((draw_counts[2] as u64) << 32)
+                | ((draw_counts[3] as u64) << 48);
+            let d1 = (draw_counts[4] as u64)
+                | ((draw_counts[5] as u64) << 16)
+                | ((draw_counts[6] as u64) << 32)
+                | ((draw_counts[7] as u64) << 48);
+            let d2 = (draw_counts[8] as u64)
+                | ((draw_counts[9] as u64) << 16)
+                | ((draw_counts[10] as u64) << 32)
+                | ((draw_counts[11] as u64) << 48);
+            h.mix_u64x2(d0, d1);
+            h.mix_u64(d2);
+        }
+        if ae_start < sh.actor_events.len() {
+            let mut ae_sum = 0u64;
+            let mut ae_xor = 0u64;
+            for (kind, _, idx) in &sh.actor_events[ae_start..] {
+                let kh = xxhash_rust::xxh64::xxh64(kind.as_bytes(), (*idx as u64) ^ 0xAE01_5EED);
+                ae_sum = ae_sum.wrapping_add(kh);
+                ae_xor ^= kh;
+            }
+            h.mix_u64x2(ae_sum, ae_xor);
         }
     }
 
     let dh = &state.damage_history;
     let prev_turn = state.player.turn_number - 1;
     let mut prev_turn_player_damaged = sh.prior_player_damaged_turn == prev_turn;
+    let mut dh_sum = 0u64;
+    let mut dh_xor = 0u64;
     let (cur_player_unblocked_hits, player_turn_damage_count) = if dh.is_empty() {
         (0u32, 0u32)
     } else {
@@ -7066,6 +7491,34 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
             if e.round_number == state.round_number && e.current_side == state.current_side {
                 turn_dmg += 1;
             }
+            let (rt, rv) = resolve_canonical_creature_ref(state, e.receiver_creature_handle.0 as i32);
+            let (dt, dv) = match e.dealer_creature_handle {
+                None => (255u8, 0u32),
+                Some(d) => resolve_canonical_creature_ref(state, d.0 as i32),
+            };
+            let (ot, ov) =
+                resolve_canonical_creature_ref(state, e.original_target_creature_handle.0 as i32);
+            let w0 = ((rv as u64) & 0xFFFF)
+                | (((dv as u64) & 0xFFFF) << 16)
+                | (((ov as u64) & 0xFFFF) << 32)
+                | ((u64::from(rt) & 3) << 48)
+                | ((u64::from(dt) & 3) << 50)
+                | ((u64::from(ot) & 3) << 52)
+                | (u64::from(dt == 255) << 54)
+                | (u64::from(e.was_target_killed) << 55)
+                | (u64::from(e.was_block_broken) << 56)
+                | (u64::from(e.was_fully_blocked) << 57)
+                | (u64::from(
+                    e.current_side == state.current_side && e.round_number == state.round_number,
+                ) << 58)
+                | (u64::from(e.props.bits()) << 59);
+            let w1 = ((e.intended_hp_loss as u32 as u64) & 0xFFFF)
+                | (((e.unblocked_damage as u32 as u64) & 0xFFFF) << 16)
+                | (((e.blocked_damage as u32 as u64) & 0xFFFF) << 32)
+                | (((e.round_number as u32 as u64) & 0xFFFF) << 48);
+            let tok = splitmix64(w0) ^ splitmix64(w1.rotate_left(17));
+            dh_sum = dh_sum.wrapping_add(tok);
+            dh_xor ^= tok;
         }
         (hits, turn_dmg)
     };
@@ -7077,6 +7530,9 @@ pub fn hash_canonical_key(state: &BattleState) -> crate::hash::StateHash {
             | (u64::from(state.pending.is_some()) << 8)
             | ((sh.prior_player_damaged_turn as u32 as u64) << 32),
     );
+    if !dh.is_empty() {
+        h.mix_u64x2(dh_sum, dh_xor);
+    }
     h.finish()
 }
 
@@ -7975,7 +8431,7 @@ mod tests {
             let mut h_fast = WordHasher128::new();
             let mut pb = [0u64; 4];
             let mut pl = 0usize;
-            hash_canonical_card_slow(&mut h_fast, &s.card_extensions, &c, &mut pb, &mut pl);
+            hash_canonical_card_slow(&mut h_fast, &s, &c, &mut pb, &mut pl);
             flush_pending_fast_cards(&mut h_fast, &mut pb, &mut pl);
 
             let mut h_ref = WordHasher128::new();
@@ -8048,13 +8504,13 @@ mod tests {
             let mut h_fast = WordHasher128::new();
             let mut pb_fast = [0u64; 4];
             let mut pl_fast = 0usize;
-            hash_canonical_card(&mut h_fast, &cards, &s.card_extensions, card.handle, &mut pb_fast, &mut pl_fast);
+            hash_canonical_card(&mut h_fast, &s, &cards, card.handle, &mut pb_fast, &mut pl_fast);
             flush_pending_fast_cards(&mut h_fast, &mut pb_fast, &mut pl_fast);
 
             let mut h_slow = WordHasher128::new();
             let mut pb_slow = [0u64; 4];
             let mut pl_slow = 0usize;
-            hash_canonical_card_slow(&mut h_slow, &s.card_extensions, card, &mut pb_slow, &mut pl_slow);
+            hash_canonical_card_slow(&mut h_slow, &s, card, &mut pb_slow, &mut pl_slow);
             flush_pending_fast_cards(&mut h_slow, &mut pb_slow, &mut pl_slow);
 
             assert_eq!(h_fast.finish(), h_slow.finish());
@@ -8133,5 +8589,245 @@ mod tests {
                 assert_eq!(pending.frames[0], frame);
             }
         }
+    }
+
+    #[test]
+    fn canonical_hash_and_key_cover_player_rngs_death_save_deck_histories_and_field_maps() {
+        let mut base = empty_scratch_state(dummy_ctx());
+        base.run_rngs = RunRngSet::from_string_seed("CANON_AUDIT");
+        base.player_rngs = PlayerRngSet::from_seed(987654);
+        base.creatures.push(CreatureInst {
+            handle: CreatureHandle(1),
+            combat_id: Some(1),
+            side: CombatSide::Player,
+            slot_name: None,
+            is_player: true,
+            pet_owner_player_index: None,
+            monster_id: None,
+            current_hp: 60,
+            max_hp: 80,
+            block: 0,
+            cumulative_hp_lost: 0,
+            is_detached: false,
+            has_minion_power: false,
+            monster: None,
+            powers: Vec::new(),
+        });
+        base.ally_handles.push(CreatureHandle(1));
+        base.player.creature_handle = CreatureHandle(1);
+        base.creatures.push(CreatureInst {
+            handle: CreatureHandle(2),
+            combat_id: Some(2),
+            side: CombatSide::Enemy,
+            slot_name: None,
+            is_player: false,
+            pet_owner_player_index: None,
+            monster_id: Some(MonsterId::CorpseSlug),
+            current_hp: 40,
+            max_hp: 40,
+            block: 0,
+            cumulative_hp_lost: 0,
+            is_detached: false,
+            has_minion_power: false,
+            monster: None,
+            powers: Vec::new(),
+        });
+        base.enemy_handles.push(CreatureHandle(2));
+
+        let mk_card = |h: u32, id: CardId, pile: PileType, dh: OptCardHandle| CardInst {
+            handle: CardHandle(h),
+            id,
+            upgrade_level: 0,
+            canonical_base_energy_cost: 1,
+            base_energy_cost: 1,
+            captured_energy_x_value: 0,
+            base_replay_count: 0,
+            floor_added_to_deck: OptI16::NONE,
+            deck_card_handle: dh,
+            clone_of_handle: OptCardHandle::NONE,
+            temp_star_cost_override_this_turn: OptI16::NONE,
+            temp_cost_override_this_turn: OptI16::NONE,
+            temp_cost_override_this_turn_or_until_played: OptI16::NONE,
+            temp_cost_override_this_combat: OptI16::NONE,
+            local_keywords: CardKeywords::empty(),
+            keywords_added_from_outside: CardKeywords::empty(),
+            keywords_removed_from_outside: CardKeywords::empty(),
+            temp_flags: CardTempFlags::empty(),
+            affliction: None,
+            ext_index: None,
+            pile,
+            removed_from_state: false,
+            transform_into_after_play: None,
+        };
+        let c1 = mk_card(1, CardId::StrikeIronclad, PileType::Hand, OptCardHandle::some(CardHandle(1)));
+        let c2 = mk_card(2, CardId::DefendIronclad, PileType::Deck, OptCardHandle::some(CardHandle(2)));
+        base.cards.extend([c1, c2]);
+        base.player.hand.push(CardHandle(1));
+        base.player.deck.push(CardHandle(2));
+        base.recompute_handle_layout();
+
+        let (mut k_base, mut k_other) = (Vec::new(), Vec::new());
+        pack_canonical_key(&base, &mut k_base);
+        let h_base = hash_canonical_key(&base);
+
+        // 1. All 4 player_rngs streams affect both key and hash
+        for stream_idx in 0..4usize {
+            let mut s = base.clone();
+            let _ = s.player_rngs.streams[stream_idx].next_int(100);
+            pack_canonical_key(&s, &mut k_other);
+            assert_ne!(k_base, k_other, "pack_canonical_key ignored player_rng[{stream_idx}]");
+            assert_ne!(h_base, hash_canonical_key(&s), "hash_canonical_key ignored player_rng[{stream_idx}]");
+        }
+
+        // 2. death_save_* fields roundtrip and affect both key and hash
+        let mut s_ds = base.clone();
+        s_ds.player.death_save_use_count = 1;
+        s_ds.player.death_save_relic_hp_restored = 15;
+        s_ds.player.death_save_potion_hp_restored = 8;
+        let mut buf = Vec::new();
+        pack_state(&s_ds, &mut buf);
+        let mut scratch = empty_scratch_state(base.static_ctx.clone());
+        unsafe { unpack_state(&buf, &base.static_ctx, &mut scratch) }.unwrap();
+        assert_eq!(scratch, s_ds);
+        pack_canonical_key(&s_ds, &mut k_other);
+        assert_ne!(k_base, k_other);
+        assert_ne!(h_base, hash_canonical_key(&s_ds));
+
+        // 3. player.deck mutations affect both key and hash even when root_deck_prefix_len > 0 + deck_dirty
+        let mut s_deck_root = base.clone();
+        let mut ctx_val = (*base.static_ctx).clone();
+        ctx_val.root_deck_prefix_len = 2;
+        ctx_val.root_deck_cards = base.cards.clone();
+        ctx_val.root_deck_handles = base.player.deck.clone();
+        s_deck_root.static_ctx = Arc::new(ctx_val);
+        s_deck_root.deck_dirty.0 = false;
+        let h_clean_deck = hash_canonical_key(&s_deck_root);
+        pack_canonical_key(&s_deck_root, &mut k_base);
+
+        let mut s_deck_mut = s_deck_root.clone();
+        s_deck_mut.cards[1].upgrade_level = 1;
+        s_deck_mut.deck_dirty.0 = true;
+        pack_canonical_key(&s_deck_mut, &mut k_other);
+        assert_ne!(k_base, k_other);
+        assert_ne!(h_clean_deck, hash_canonical_key(&s_deck_mut));
+
+        // 4. damage_history details & canonical handle invariance
+        let mut s_dmg_1 = base.clone();
+        let tk = base.current_turn_key();
+        s_dmg_1.damage_history.push(DamageHistoryEntry {
+            receiver_creature_handle: CreatureHandle(2),
+            dealer_creature_handle: Some(CreatureHandle(1)),
+            original_target_creature_handle: CreatureHandle(2),
+            props: ValueProp::MOVE,
+            intended_hp_loss: 6,
+            blocked_damage: 0,
+            unblocked_damage: 6,
+            overkill_damage: 0,
+            was_target_killed: false,
+            was_block_broken: false,
+            was_fully_blocked: false,
+            card_source_handle: Some(CardHandle(1)),
+            round_number: tk.round_number,
+            current_side: tk.side,
+            player_turn_numbers: InlineI32Vec4::one(1),
+        });
+        let mut s_dmg_diff_dealer = s_dmg_1.clone();
+        s_dmg_diff_dealer.damage_history[0].dealer_creature_handle = Some(CreatureHandle(2));
+        pack_canonical_key(&s_dmg_1, &mut k_base);
+        pack_canonical_key(&s_dmg_diff_dealer, &mut k_other);
+        assert_ne!(k_base, k_other);
+        assert_ne!(hash_canonical_key(&s_dmg_1), hash_canonical_key(&s_dmg_diff_dealer));
+
+        // Commuting order of damage_history / energy_spent / card_block_gains must keep hash_canonical_key invariant.
+        let mut s_comm_a = s_dmg_1.clone();
+        s_comm_a.damage_history.push(DamageHistoryEntry {
+            receiver_creature_handle: CreatureHandle(1),
+            dealer_creature_handle: Some(CreatureHandle(2)),
+            original_target_creature_handle: CreatureHandle(1),
+            props: ValueProp::MOVE,
+            intended_hp_loss: 4,
+            blocked_damage: 4,
+            unblocked_damage: 0,
+            overkill_damage: 0,
+            was_target_killed: false,
+            was_block_broken: false,
+            was_fully_blocked: true,
+            card_source_handle: None,
+            round_number: tk.round_number,
+            current_side: tk.side,
+            player_turn_numbers: InlineI32Vec4::one(1),
+        });
+        s_comm_a.semantic_history.energy_spent = vec![(tk, 0, 1), (tk, 1, 2)];
+        s_comm_a.semantic_history.card_block_gains = vec![(tk, 0, 5), (tk, 1, 8)];
+        let mut s_comm_b = s_comm_a.clone();
+        s_comm_b.damage_history.reverse();
+        s_comm_b.semantic_history.energy_spent.reverse();
+        s_comm_b.semantic_history.card_block_gains.reverse();
+        assert_eq!(hash_canonical_key(&s_comm_a), hash_canonical_key(&s_comm_b));
+
+        // 5. semantic_history vectors (Voltaic orb channel & IterationPower drawn card type)
+        let mut s_orb_light = base.clone();
+        s_orb_light.semantic_history.orb_channels.push((tk, 0, OrbId::LightningOrb));
+        let mut s_orb_frost = base.clone();
+        s_orb_frost.semantic_history.orb_channels.push((tk, 0, OrbId::FrostOrb));
+        pack_canonical_key(&s_orb_light, &mut k_base);
+        pack_canonical_key(&s_orb_frost, &mut k_other);
+        assert_ne!(k_base, k_other);
+        assert_ne!(hash_canonical_key(&s_orb_light), hash_canonical_key(&s_orb_frost));
+
+        let mut s_draw_atk = base.clone();
+        s_draw_atk.semantic_history.card_drawn.push((tk, 0, CardType::Attack, true));
+        let mut s_draw_skl = base.clone();
+        s_draw_skl.semantic_history.card_drawn.push((tk, 0, CardType::Skill, true));
+        pack_canonical_key(&s_draw_atk, &mut k_base);
+        pack_canonical_key(&s_draw_skl, &mut k_other);
+        assert_ne!(k_base, k_other);
+        assert_ne!(hash_canonical_key(&s_draw_atk), hash_canonical_key(&s_draw_skl));
+
+        // 6. FieldMap handle remapping (CardHandle, CreatureHandle, CardIntMap, CreatureDecimalMap, CardPairArray)
+        let mut s_fm = s_dmg_1;
+        s_fm.player.relics.push(RelicInst {
+            id: RelicId::Toolbox,
+            is_wax: false,
+            is_melted: false,
+            stack_count: 1,
+            floor_added_to_deck: None,
+            private_fields: FieldMap::from([
+                (Cow::Borrowed("F.ch"), FieldValue::CardHandle(1)),
+                (Cow::Borrowed("F.cr"), FieldValue::CreatureHandle(2)),
+                (Cow::Borrowed("F.cmap"), FieldValue::CardIntMap(vec![(1, 7)])),
+                (Cow::Borrowed("F.cdmap"), FieldValue::CreatureDecimalMap(vec![(2, Dec::HALF)])),
+                (Cow::Borrowed("F.cpair"), FieldValue::CardPairArray(vec![(1, 2)])),
+            ]),
+        });
+        let mut s_fm_renum = s_fm.clone();
+        s_fm_renum.cards[0].handle = CardHandle(501);
+        s_fm_renum.cards[0].deck_card_handle = OptCardHandle::some(CardHandle(501));
+        s_fm_renum.cards[1].handle = CardHandle(502);
+        s_fm_renum.cards[1].deck_card_handle = OptCardHandle::some(CardHandle(502));
+        s_fm_renum.player.hand[0] = CardHandle(501);
+        s_fm_renum.player.deck[0] = CardHandle(502);
+        s_fm_renum.creatures[0].handle = CreatureHandle(301);
+        s_fm_renum.creatures[1].handle = CreatureHandle(302);
+        s_fm_renum.ally_handles[0] = CreatureHandle(301);
+        s_fm_renum.enemy_handles[0] = CreatureHandle(302);
+        s_fm_renum.player.creature_handle = CreatureHandle(301);
+        s_fm_renum.damage_history[0].receiver_creature_handle = CreatureHandle(302);
+        s_fm_renum.damage_history[0].dealer_creature_handle = Some(CreatureHandle(301));
+        s_fm_renum.damage_history[0].original_target_creature_handle = CreatureHandle(302);
+        s_fm_renum.damage_history[0].card_source_handle = Some(CardHandle(501));
+        s_fm_renum.player.relics[0].private_fields = FieldMap::from([
+            (Cow::Borrowed("F.ch"), FieldValue::CardHandle(501)),
+            (Cow::Borrowed("F.cr"), FieldValue::CreatureHandle(302)),
+            (Cow::Borrowed("F.cmap"), FieldValue::CardIntMap(vec![(501, 7)])),
+            (Cow::Borrowed("F.cdmap"), FieldValue::CreatureDecimalMap(vec![(302, Dec::HALF)])),
+            (Cow::Borrowed("F.cpair"), FieldValue::CardPairArray(vec![(501, 502)])),
+        ]);
+        s_fm.recompute_handle_layout();
+        s_fm_renum.recompute_handle_layout();
+        pack_canonical_key(&s_fm, &mut k_base);
+        pack_canonical_key(&s_fm_renum, &mut k_other);
+        assert_eq!(k_base, k_other, "pack_canonical_key must remain invariant across consistent handle renumbering");
+        assert_eq!(hash_canonical_key(&s_fm), hash_canonical_key(&s_fm_renum), "hash_canonical_key must remain invariant across consistent handle renumbering");
     }
 }

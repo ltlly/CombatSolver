@@ -187,6 +187,9 @@ fn build_combat(
             })
             .collect(),
         card_or_potion_effect_depth: 0,
+        death_save_use_count: 0,
+        death_save_relic_hp_restored: 0,
+        death_save_potion_hp_restored: 0,
     };
 
     let mut state = BattleState {
@@ -2361,32 +2364,29 @@ fn can_any_paid_potion_improve_on_sound_bounds() {
             ..Default::default()
         },
     );
+    use sts2_search::eval::PaidPotionImproveInput;
     assert!(
         !PotionUsePolicy::can_any_paid_potion_improve_on(
-            true,
-            true,
-            0,
-            root_fire.player.current_hp,
-            root_fire.player.max_hp,
-            0,
-            0,
-            false,
-            false,
+            PaidPotionImproveInput {
+                won: true,
+                survives: true,
+                end_player_hp: root_fire.player.current_hp,
+                end_player_max_hp: root_fire.player.max_hp,
+                ..Default::default()
+            },
             &rb_fire,
         ),
         "lossless win with non-heal/non-FruitJuice FirePotion has zero HP gain headroom"
     );
     assert!(
         PotionUsePolicy::can_any_paid_potion_improve_on(
-            true,
-            true,
-            0,
-            root_fire.player.current_hp - 12,
-            root_fire.player.max_hp,
-            0,
-            0,
-            false,
-            false,
+            PaidPotionImproveInput {
+                won: true,
+                survives: true,
+                end_player_hp: root_fire.player.current_hp - 12,
+                end_player_max_hp: root_fire.player.max_hp,
+                ..Default::default()
+            },
             &rb_fire,
         ),
         "losing 12 HP >= FirePotion cost 9 must allow paid-potion improvement"
@@ -2411,15 +2411,13 @@ fn can_any_paid_potion_improve_on_sound_bounds() {
     );
     assert!(
         PotionUsePolicy::can_any_paid_potion_improve_on(
-            true,
-            true,
-            0,
-            root_fruit.player.current_hp,
-            root_fruit.player.max_hp,
-            0,
-            0,
-            false,
-            false,
+            PaidPotionImproveInput {
+                won: true,
+                survives: true,
+                end_player_hp: root_fruit.player.current_hp,
+                end_player_max_hp: root_fruit.player.max_hp,
+                ..Default::default()
+            },
             &rb_fruit,
         ),
         "remaining FruitJuice adds +5 HP + +5*2 MaxHP headroom even at 0 damage taken"
@@ -2454,13 +2452,13 @@ fn frozen_incumbent_bound_prunes_strictly_worse_and_preserves_v_tie_higher_hp() 
 
     let mut inc = FrozenIncumbentBound::default();
     // Clean 0-potion victory at 60 HP (-10 HP delta -> -1000 centi-HP), turn 3.
-    assert!(inc.tighten(&rb, true, 0, -1000, 0, 0, 0, 3, 0, false, false));
+    assert!(inc.tighten(&rb, true, 0, -1000, 0, 10, 0, 0, 0, 3, 0, false, false));
 
     // Strictly worse V (-1100 centi-HP at turn 2) must be pruned.
-    assert!(inc.is_pruned(&cert, &rb, 59, 80, 0, 0, 0, false, false, 2, 0, 0, 0, false));
+    assert!(inc.is_pruned(&cert, &rb, 59, 80, 0, 0, 0, false, false, 2, 11, 0, 0, 0, 0, false));
 
     // Tying V = -1000 centi-HP with HIGHER ending HP (-100 HP delta - 900 potion cost = -1000, -100 > -1000) must NOT be pruned.
-    assert!(!inc.is_pruned(&cert, &rb, 69, 80, 0, 0, 0, false, false, 4, 1, 1, 900, false));
+    assert!(!inc.is_pruned(&cert, &rb, 69, 80, 0, 0, 0, false, false, 4, 1, 1, 1, 1, 900, false));
 
     // v0.114 / hot search parity checks: persistent_hp_scale (35/20), BloodPotion root cost, Feed exclusion, no-op potions.
     assert_eq!(sts2_search::eval::ActEndingBossPolicy::persistent_hp_scale(BossHpRelief::ActClearHeal), 35);
@@ -3048,5 +3046,568 @@ fn unsupported_branch_error_during_expansion_propagates_instead_of_pruning() {
             kind: "PotionAutoplayChoice",
             ..
         }
+    ));
+}
+
+#[test]
+fn death_save_lizard_tail_and_fairy_accounted_across_packer_eval_and_select_final_plan() {
+    use sts2_kernel::commands::damage;
+    use sts2_search::arena::NODE_FLAG_IS_TERMINAL;
+    use sts2_search::eval::{
+        evaluate_fast, select_final_plan, FAST_FLAG_ALL_ENEMIES_DEAD, FAST_FLAG_WON,
+    };
+    use sts2_types::{Dec, ValueProp};
+
+    let content = Sts2Content;
+    let deck = vec![CardId::StrikeIronclad; 5];
+    let mut state = build_combat(
+        CharacterId::Ironclad,
+        &deck,
+        &[RelicId::LizardTail],
+        &[PotionId::FairyInABottle],
+        &[(MonsterId::Nibbit, 50)],
+        RoomType::Monster,
+        "DEATH_SAVE_PARITY",
+    );
+    let pc = state.player.creature_handle;
+    let enemy = state.enemy_handles[0];
+    let baseline = RootEvalBaseline::from_state_with_policy(&state, &content, &SearchPolicy::default());
+
+    // First lethal hit triggers FairyInABottle (ShouldDie runs before ShouldDieLate; heals 30% of 80 = 24 HP).
+    damage::damage_targets(
+        &mut state,
+        &content,
+        &[pc],
+        Dec::from_i32(200),
+        ValueProp::UNBLOCKABLE | ValueProp::UNPOWERED,
+        Some(enemy),
+        None,
+        None,
+    )
+    .unwrap();
+    assert_eq!(state.player.death_save_use_count, 1);
+    assert_eq!(state.player.death_save_relic_hp_restored, 0);
+    assert_eq!(state.player.death_save_potion_hp_restored, 24);
+
+    let mut buf = Vec::new();
+    pack_state(&state, &mut buf);
+    let mut unpacked = empty_scratch_state(state.static_ctx.clone());
+    unsafe { unpack_state(&buf, &state.static_ctx, &mut unpacked) }.unwrap();
+    assert_eq!(unpacked.player.death_save_use_count, 1);
+    assert_eq!(unpacked.player.death_save_potion_hp_restored, 24);
+    let fast1 = evaluate_fast(&unpacked, &content, &baseline, None);
+    assert_eq!(fast1.death_save_use_count, 1);
+    assert_eq!(fast1.death_save_hp_restored, 24);
+
+    // Second lethal hit triggers LizardTail (ShouldDieLate; heals 50% of 80 = 40 HP).
+    damage::damage_targets(
+        &mut state,
+        &content,
+        &[pc],
+        Dec::from_i32(200),
+        ValueProp::UNBLOCKABLE | ValueProp::UNPOWERED,
+        Some(enemy),
+        None,
+        None,
+    )
+    .unwrap();
+    assert_eq!(state.player.death_save_use_count, 2);
+    assert_eq!(state.player.death_save_relic_hp_restored, 40);
+    assert_eq!(state.player.death_save_potion_hp_restored, 24);
+
+    pack_state(&state, &mut buf);
+    unsafe { unpack_state(&buf, &state.static_ctx, &mut unpacked) }.unwrap();
+    let fast2 = evaluate_fast(&unpacked, &content, &baseline, None);
+    assert_eq!(fast2.death_save_use_count, 2);
+    assert_eq!(fast2.death_save_hp_restored, 64);
+
+    let mut arena = NodeArena::default();
+    let n_saved = arena.push_node(SearchNode {
+        state_hash: StateHash(1),
+        beam_rank_score: 9_000_000_000.0,
+        turn: 2,
+        action_count: 3,
+        node_flags: NODE_FLAG_IS_TERMINAL,
+        fast_eval: StoredFastEval {
+            player_hp: 70,
+            player_max_hp: 80,
+            projected_player_hp: 70,
+            cumulative_hp_lost: 10,
+            death_save_use_count: 1,
+            death_save_hp_restored: 40,
+            flags: FAST_FLAG_ALL_ENEMIES_DEAD | FAST_FLAG_WON,
+            combat_ended_turn_encoded: 2,
+            ..Default::default()
+        },
+        ..Default::default()
+    });
+    let n_clean = arena.push_node(SearchNode {
+        state_hash: StateHash(2),
+        beam_rank_score: 9_000_000_000.0,
+        turn: 4,
+        action_count: 6,
+        node_flags: NODE_FLAG_IS_TERMINAL,
+        fast_eval: StoredFastEval {
+            player_hp: 65,
+            player_max_hp: 80,
+            projected_player_hp: 65,
+            cumulative_hp_lost: 15,
+            death_save_use_count: 0,
+            death_save_hp_restored: 0,
+            flags: FAST_FLAG_ALL_ENEMIES_DEAD | FAST_FLAG_WON,
+            combat_ended_turn_encoded: 4,
+            ..Default::default()
+        },
+        ..Default::default()
+    });
+    let sel = select_final_plan(
+        &arena,
+        &[n_saved, n_clean],
+        &baseline,
+        SolverPotionPolicy::Smart,
+        None,
+        0,
+        1,
+    )
+    .unwrap();
+    assert_eq!(sel.node_id, n_clean);
+}
+
+#[test]
+fn select_final_plan_prefers_lower_hp_loss_over_earlier_turn_when_v_ties() {
+    use sts2_search::arena::NODE_FLAG_IS_TERMINAL;
+    use sts2_search::eval::{select_final_plan, FAST_FLAG_ALL_ENEMIES_DEAD, FAST_FLAG_WON};
+
+    let content = Sts2Content;
+    let deck = vec![CardId::StrikeIronclad; 5];
+    let mut root = build_combat(
+        CharacterId::Ironclad,
+        &deck,
+        &[RelicId::BurningBlood],
+        &[],
+        &[(MonsterId::Nibbit, 30)],
+        RoomType::Monster,
+        "HPLOSS_OVER_TURN_PARITY",
+    );
+    root.player.current_hp = 74;
+    root.creatures[0].current_hp = 74;
+    let baseline = RootEvalBaseline::from_state_with_policy(&root, &content, &SearchPolicy::default());
+
+    let mut arena = NodeArena::default();
+    let n_early_damaged = arena.push_node(SearchNode {
+        state_hash: StateHash(10),
+        beam_rank_score: 10_000_000_000.0,
+        turn: 2,
+        action_count: 4,
+        node_flags: NODE_FLAG_IS_TERMINAL,
+        fast_eval: StoredFastEval {
+            player_hp: 74,
+            player_max_hp: 80,
+            projected_player_hp: 74,
+            cumulative_hp_lost: 6,
+            recovered_hp: 6,
+            flags: FAST_FLAG_ALL_ENEMIES_DEAD | FAST_FLAG_WON,
+            combat_ended_turn_encoded: 2,
+            ..Default::default()
+        },
+        ..Default::default()
+    });
+    let n_slower_lossless = arena.push_node(SearchNode {
+        state_hash: StateHash(11),
+        beam_rank_score: 10_000_000_000.0,
+        turn: 4,
+        action_count: 8,
+        node_flags: NODE_FLAG_IS_TERMINAL,
+        fast_eval: StoredFastEval {
+            player_hp: 74,
+            player_max_hp: 80,
+            projected_player_hp: 74,
+            cumulative_hp_lost: 0,
+            recovered_hp: 0,
+            flags: FAST_FLAG_ALL_ENEMIES_DEAD | FAST_FLAG_WON,
+            combat_ended_turn_encoded: 4,
+            ..Default::default()
+        },
+        ..Default::default()
+    });
+    let selected = select_final_plan(
+        &arena,
+        &[n_early_damaged, n_slower_lossless],
+        &baseline,
+        SolverPotionPolicy::Smart,
+        None,
+        0,
+        1,
+    )
+    .unwrap();
+    assert_eq!(selected.node_id, n_slower_lossless);
+    assert_eq!(selected.hp_lost, 0);
+}
+
+#[test]
+fn desperate_rescue_eval_mode_and_allow_death_save_rescue_retention() {
+    use sts2_search::eval::{compute_beam_rank_score_with_centi, evaluate_fast, evaluate_full, EvalMode};
+    use sts2_search::pruning::PruneScratch;
+
+    let content = Sts2Content;
+    let deck = vec![CardId::StrikeIronclad; 5];
+    let mut state = build_combat(
+        CharacterId::Ironclad,
+        &deck,
+        &[],
+        &[],
+        &[(MonsterId::Nibbit, 40)],
+        RoomType::Monster,
+        "DESPERATE_RESCUE_TEST",
+    );
+    state.player.current_hp = 35;
+    state.creatures[0].current_hp = 35;
+    let root = RootEvalBaseline::from_state_with_policy(&state, &content, &SearchPolicy::default());
+    state.player.death_save_use_count = 1;
+    state.player.death_save_relic_hp_restored = 35;
+    let fast = evaluate_fast(&state, &content, &root, None);
+    let full = evaluate_full(&state, &content, &fast, &root);
+
+    let s_bal = compute_beam_rank_score_with_centi(
+        &fast,
+        &full,
+        &root,
+        false,
+        false,
+        None,
+        EvalMode::Balanced,
+        0,
+        1,
+    );
+    let s_rescue = compute_beam_rank_score_with_centi(
+        &fast,
+        &full,
+        &root,
+        false,
+        false,
+        None,
+        EvalMode::DesperateRescue,
+        0,
+        1,
+    );
+    assert!(s_rescue > s_bal + 400_000_000.0);
+
+    let mut arena = NodeArena::default();
+    let rescue_hi_hp = arena.push_node(SearchNode {
+        state_hash: StateHash(1),
+        beam_rank_score: 100.0,
+        turn: 1,
+        action_count: 1,
+        fast_eval: StoredFastEval {
+            player_hp: 45,
+            player_max_hp: 80,
+            projected_player_hp: 45,
+            death_save_use_count: 1,
+            death_save_hp_restored: 40,
+            enemy_hp: 30,
+            alive_enemy_count: 1,
+            ..Default::default()
+        },
+        ..Default::default()
+    });
+    let no_ds_low_hp = arena.push_node(SearchNode {
+        state_hash: StateHash(2),
+        beam_rank_score: 500.0,
+        turn: 1,
+        action_count: 1,
+        fast_eval: StoredFastEval {
+            player_hp: 1,
+            player_max_hp: 80,
+            projected_player_hp: 1,
+            death_save_use_count: 0,
+            enemy_hp: 30,
+            alive_enemy_count: 1,
+            ..Default::default()
+        },
+        ..Default::default()
+    });
+    let mut out = Vec::new();
+    let mut scratch = PruneScratch::default();
+    scratch.allow_death_save_rescue = true;
+    BeamRetentionPolicy::prune_wave_with_rollout_into(
+        &arena,
+        &[rescue_hi_hp, no_ds_low_hp],
+        1,
+        None,
+        None,
+        &root,
+        false,
+        false,
+        false,
+        false,
+        None,
+        &mut out,
+        &mut scratch,
+    );
+    assert_eq!(out, vec![no_ds_low_hp]);
+
+    let mut out_two = Vec::new();
+    BeamRetentionPolicy::prune_wave_with_rollout_into(
+        &arena,
+        &[rescue_hi_hp, no_ds_low_hp],
+        2,
+        None,
+        None,
+        &root,
+        false,
+        false,
+        false,
+        false,
+        None,
+        &mut out_two,
+        &mut scratch,
+    );
+    assert!(out_two.contains(&rescue_hi_hp));
+    assert!(out_two.contains(&no_ds_low_hp));
+}
+
+#[test]
+fn tactical_sig_clone_capping_limits_clones_per_turn_layer() {
+    let mut arena = NodeArena::default();
+    let baseline = RootEvalBaseline::default();
+    let mut nodes = Vec::new();
+    let dup_sig = 0xDEAD_BEEF_1234_5678u64;
+
+    for i in 0..8u64 {
+        let full = FullEvalDetails {
+            beam_rank_score: 1_000.0 + (i as f64) * 10.0,
+            tactical_sig: dup_sig,
+            ..Default::default()
+        }
+        .to_stored();
+        let mut node = SearchNode {
+            state_hash: StateHash((i + 1).into()),
+            tactical_sig: dup_sig,
+            beam_rank_score: full.beam_rank_score,
+            turn: 1,
+            action_count: 1,
+            fast_eval: StoredFastEval {
+                player_hp: 60,
+                player_max_hp: 80,
+                projected_player_hp: 60,
+                enemy_hp: 50,
+                alive_enemy_count: 1,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        node.set_full_eval(&full);
+        nodes.push(arena.push_node(node));
+    }
+    for j in 0..2u64 {
+        let div_sig = 0xCAFE_0000_0000_0001u64 + j;
+        let full = FullEvalDetails {
+            beam_rank_score: 50.0 - (j as f64) * 5.0,
+            tactical_sig: div_sig,
+            ..Default::default()
+        }
+        .to_stored();
+        let mut node = SearchNode {
+            state_hash: StateHash((100 + j).into()),
+            tactical_sig: div_sig,
+            beam_rank_score: full.beam_rank_score,
+            turn: 1,
+            action_count: 1,
+            fast_eval: StoredFastEval {
+                player_hp: 55,
+                player_max_hp: 80,
+                projected_player_hp: 55,
+                enemy_hp: 40,
+                alive_enemy_count: 1,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        node.set_full_eval(&full);
+        nodes.push(arena.push_node(node));
+    }
+
+    let kept_boundary = BeamRetentionPolicy::prune_wave_full(
+        &mut arena,
+        &nodes,
+        4,
+        None,
+        None,
+        &baseline,
+        false,
+        false,
+        false,
+        true,
+        false,
+    );
+    let dup_boundary = kept_boundary
+        .iter()
+        .filter(|&&id| arena.get(id).tactical_sig == dup_sig)
+        .count();
+    assert_eq!(dup_boundary, 2);
+    assert_eq!(kept_boundary.len(), 4);
+
+    let kept_mid = BeamRetentionPolicy::prune_wave_full(
+        &mut arena,
+        &nodes,
+        4,
+        None,
+        None,
+        &baseline,
+        false,
+        false,
+        false,
+        false,
+        false,
+    );
+    let dup_mid = kept_mid
+        .iter()
+        .filter(|&&id| arena.get(id).tactical_sig == dup_sig)
+        .count();
+    assert_eq!(dup_mid, 3);
+    assert_eq!(kept_mid.len(), 4);
+}
+
+#[test]
+fn dynamic_mid_combat_por_detects_juggernaut_gained_after_root() {
+    use sts2_kernel::commands::power;
+    use sts2_search::por::CombatOrderSensitivity;
+    use sts2_types::{Dec, PowerId};
+
+    let content = Sts2Content;
+    let deck = vec![CardId::DefendIronclad, CardId::StrikeIronclad];
+    let mut state = build_combat(
+        CharacterId::Ironclad,
+        &deck,
+        &[],
+        &[],
+        &[(MonsterId::Nibbit, 40)],
+        RoomType::Monster,
+        "DYNAMIC_POR_JUGGERNAUT",
+    );
+    assert!(
+        CombatOrderSensitivity::analyze_live(&mut state, &content).por_safe,
+        "clean Strike/Defend root without trigger hooks must allow POR"
+    );
+
+    let pc = state.player.creature_handle;
+    power::apply(
+        &mut state,
+        &content,
+        PowerId::JuggernautPower,
+        pc,
+        Dec::from_i32(5),
+        Some(pc),
+        None,
+    )
+    .unwrap();
+    assert!(
+        !CombatOrderSensitivity::analyze_live(&mut state, &content).por_safe,
+        "gaining JuggernautPower mid-combat must immediately disable static POR commutation"
+    );
+}
+
+#[test]
+fn frozen_incumbent_bound_guards_enforce_hp_loss_and_potion_count_above_best_turn() {
+    use sts2_search::pruning::{ClosureCertificate, FrozenIncumbentBound};
+
+    let deck = vec![CardId::StrikeIronclad, CardId::DefendIronclad];
+    let root = build_combat(
+        CharacterId::Ironclad,
+        &deck,
+        &[],
+        &[PotionId::FirePotion],
+        &[(MonsterId::Nibbit, 20)],
+        RoomType::Monster,
+        "FROZEN_GUARD_TURN",
+    );
+    let rb = RootEvalBaseline::from_state_with_policy(
+        &root,
+        &Sts2Content,
+        &SearchPolicy {
+            potion_policy: SolverPotionPolicy::Smart,
+            ..Default::default()
+        },
+    );
+    let cert = ClosureCertificate {
+        healing_certified: true,
+        growth_certified_zero: true,
+        ..Default::default()
+    };
+
+    let mut inc = FrozenIncumbentBound::default();
+    assert!(inc.tighten(
+        &rb,
+        true,
+        0,
+        -1000,
+        900,
+        10,
+        1,
+        1,
+        1,
+        3,
+        0,
+        false,
+        false,
+    ));
+
+    // At turn = 4 > 3 tying V = -1900 and net_hp = -1000:
+    // strictly lower battle_hp_lost (9 < 10) must NOT be pruned.
+    assert!(!inc.is_pruned(
+        &cert,
+        &rb,
+        70,
+        80,
+        0,
+        0,
+        0,
+        false,
+        false,
+        4,
+        9,
+        1,
+        1,
+        1,
+        900,
+        false,
+    ));
+    // Lower potion_count (0 < 1) must NOT be pruned either.
+    assert!(!inc.is_pruned(
+        &cert,
+        &rb,
+        70,
+        80,
+        0,
+        0,
+        0,
+        false,
+        false,
+        4,
+        10,
+        0,
+        1,
+        1,
+        900,
+        false,
+    ));
+    // Equal or worse battle_hp_lost (10 >= 10) AND potion_count (1 >= 1) at turn = 4 > 3 MUST be pruned.
+    assert!(inc.is_pruned(
+        &cert,
+        &rb,
+        70,
+        80,
+        0,
+        0,
+        0,
+        false,
+        false,
+        4,
+        10,
+        1,
+        1,
+        1,
+        900,
+        false,
     ));
 }

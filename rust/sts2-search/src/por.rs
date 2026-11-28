@@ -25,8 +25,11 @@ const ORDER_SENSITIVE_HOOKS: HookMask = HookMask::EMPTY
     .with(HookSlot::AfterCardExhausted)
     .with(HookSlot::AfterHandEmptied)
     .with(HookSlot::AfterBlockGained)
+    .with(HookSlot::AfterBlockBroken)
+    .with(HookSlot::BeforeDamageReceived)
     .with(HookSlot::AfterDamageReceived)
     .with(HookSlot::AfterDamageGiven)
+    .with(HookSlot::ModifyDamageCap)
     .with(HookSlot::BeforeDeath)
     .with(HookSlot::AfterDeath)
     .with(HookSlot::AfterAttack)
@@ -56,11 +59,26 @@ impl CombatOrderSensitivity {
         let mut active_mask = HookMask::EMPTY;
         let mut order_sensitive_listener = false;
 
-        let listeners = collect_combat_hook_listeners(state);
-        for l in listeners {
-            if let Ok(m) = content.listener_hook_mask(state, l) {
-                active_mask = active_mask.union(m);
+        if state.hook_cache.dirty_mask == 0 && state.hook_cache.cached_tables.is_some() {
+            if state.is_in_progress || state.is_starting {
+                active_mask = state.hook_cache.masks.combat_combined;
             }
+        } else {
+            let listeners = collect_combat_hook_listeners(state);
+            for l in listeners {
+                if let Ok(m) = content.listener_hook_mask(state, l) {
+                    active_mask = active_mask.union(m);
+                }
+            }
+        }
+
+        let any_heal_hook = active_mask.contains(HookSlot::AfterCurrentHpChanged);
+        if active_mask.intersects(ORDER_SENSITIVE_HOOKS) {
+            return Self {
+                active_mask,
+                por_safe: false,
+                any_heal_hook,
+            };
         }
 
         for r in &state.player.relics {
@@ -70,35 +88,79 @@ impl CombatOrderSensitivity {
             if let Ok(meta) = content.relic_meta(r.id) {
                 if meta.flags.contains(RelicStaticFlags::ORDER_SENSITIVE) {
                     order_sensitive_listener = true;
+                    break;
                 }
             }
         }
-        for cr in &state.creatures {
-            for pw in &cr.powers {
-                if let Ok(meta) = content.power_meta(pw.id) {
-                    if meta.flags.contains(PowerStaticFlags::ORDER_SENSITIVE) {
-                        order_sensitive_listener = true;
+        if !order_sensitive_listener {
+            for cr in &state.creatures {
+                if cr.is_detached {
+                    continue;
+                }
+                for pw in &cr.powers {
+                    if let Ok(meta) = content.power_meta(pw.id) {
+                        if meta.flags.contains(PowerStaticFlags::ORDER_SENSITIVE) {
+                            order_sensitive_listener = true;
+                            break;
+                        }
                     }
                 }
+                if order_sensitive_listener {
+                    break;
+                }
             }
         }
-        // Cards whose damage/effect depends on current block, prior plays this turn, or card types played.
-        for c in &state.cards {
-            if matches!(
-                c.id,
-                CardId::BodySlam | CardId::Finisher | CardId::Flechettes | CardId::Clash
-            ) {
-                order_sensitive_listener = true;
+        if !order_sensitive_listener {
+            // Cards whose damage/effect depends on current block, prior plays this turn, or card types played.
+            let card_start = if !state.deck_dirty.0 {
+                state.static_ctx.root_deck_prefix_len.min(state.cards.len())
+            } else {
+                0
+            };
+            for c in &state.cards[card_start..] {
+                if c.removed_from_state || c.pile == PileType::Deck {
+                    continue;
+                }
+                if matches!(
+                    c.id,
+                    CardId::BodySlam | CardId::Finisher | CardId::Flechettes | CardId::Clash
+                ) {
+                    order_sensitive_listener = true;
+                    break;
+                }
             }
         }
 
         let por_safe =
             !order_sensitive_listener && !active_mask.intersects(ORDER_SENSITIVE_HOOKS);
-        let any_heal_hook = active_mask.contains(HookSlot::AfterCurrentHpChanged);
         Self {
             active_mask,
             por_safe,
             any_heal_hook,
+        }
+    }
+
+    /// Recomputes live per-parent sensitivity using `ActiveHookCache` so mid-combat gained
+    /// powers, relics, or created cards immediately disable unsafe POR windows.
+    #[inline]
+    pub fn analyze_live(state: &mut BattleState, content: &dyn ContentDispatcher) -> Self {
+        let _ = state.ensure_hook_cache(content);
+        Self::analyze(state, content)
+    }
+
+    /// Fast O(1) live check for `AfterCurrentHpChanged` hooks when `ActiveHookCache` is populated.
+    #[inline]
+    pub fn has_live_heal_hook(state: &mut BattleState, content: &dyn ContentDispatcher) -> bool {
+        let _ = state.ensure_hook_cache(content);
+        if state.hook_cache.dirty_mask == 0 && state.hook_cache.cached_tables.is_some() {
+            (state.is_in_progress || state.is_starting)
+                && state
+                    .hook_cache
+                    .masks
+                    .combat_combined
+                    .contains(HookSlot::AfterCurrentHpChanged)
+        } else {
+            Self::analyze(state, content).any_heal_hook
         }
     }
 }
@@ -240,17 +302,57 @@ pub fn card_equiv_key_with_costs(
     let affliction_bits = card
         .affliction
         .map_or(0, |a| ((a.id as u64) << 32) | (a.amount as u64 & 0xffff_ffff));
-    let ext_hash = if let Some(ext) = state.card_ext(card.ext_index) {
-        let mut words: SmallVec<[u64; 8]> = SmallVec::new();
-        for m in &ext.local_energy_modifiers {
-            words.push(((m.kind as u64) << 33) | ((m.amount as u64) << 1) | u64::from(m.is_reduce_only));
+    let has_extra_card_state = card.base_replay_count != 0
+        || card.captured_energy_x_value != 0
+        || card.deck_card_handle.is_some()
+        || card.transform_into_after_play.is_some()
+        || card.temp_star_cost_override_this_turn.is_some()
+        || card.temp_cost_override_this_turn.is_some()
+        || card.temp_cost_override_this_turn_or_until_played.is_some()
+        || card.temp_cost_override_this_combat.is_some();
+    let ext_hash = if card.ext_index.is_some() || has_extra_card_state {
+        let mut words: SmallVec<[u64; 12]> = SmallVec::new();
+        if let Some(ext) = state.card_ext(card.ext_index) {
+            for m in &ext.local_energy_modifiers {
+                words.push(
+                    ((m.kind as u64) << 33)
+                        | ((m.amount as u64) << 1)
+                        | u64::from(m.is_reduce_only),
+                );
+            }
+            if let Some(e) = &ext.enchantment {
+                words.push(
+                    ((e.id as u64) << 34)
+                        | ((e.status as u64) << 32)
+                        | (e.amount as u64 & 0xffff_ffff),
+                );
+            }
+            for (k, v) in &ext.private_fields {
+                words.push(xxhash_rust::xxh64::xxh64(k.as_bytes(), 0x99));
+                words.push(hash_field_value(v));
+            }
         }
-        if let Some(e) = &ext.enchantment {
-            words.push(((e.id as u64) << 34) | ((e.status as u64) << 32) | (e.amount as u64 & 0xffff_ffff));
-        }
-        for (k, v) in &ext.private_fields {
-            words.push(xxhash_rust::xxh64::xxh64(k.as_bytes(), 0x99));
-            words.push(hash_field_value(v));
+        if has_extra_card_state {
+            words.push(
+                0xA100_0000_0000_0000u64
+                    | ((card.base_replay_count as u64 & 0xffff) << 32)
+                    | ((card.captured_energy_x_value as u64 & 0xffff) << 16)
+                    | u64::from(card.deck_card_handle.is_some()),
+            );
+            if let Some(tr) = card.transform_into_after_play {
+                words.push(0xA200_0000_0000_0000u64 | (tr as u64));
+            }
+            let opt_enc = |o: sts2_kernel::OptI16| o.get().map_or(u64::MAX, |v| v as i64 as u64);
+            if card.temp_star_cost_override_this_turn.is_some()
+                || card.temp_cost_override_this_turn.is_some()
+                || card.temp_cost_override_this_turn_or_until_played.is_some()
+                || card.temp_cost_override_this_combat.is_some()
+            {
+                words.push(opt_enc(card.temp_star_cost_override_this_turn));
+                words.push(opt_enc(card.temp_cost_override_this_turn));
+                words.push(opt_enc(card.temp_cost_override_this_turn_or_until_played));
+                words.push(opt_enc(card.temp_cost_override_this_combat));
+            }
         }
         hash_u64_slice(&words)
     } else {
@@ -1157,5 +1259,139 @@ mod tests {
             7,
             "dropped valid interleaved multiset combinations: {results:?}"
         );
+    }
+
+    #[test]
+    fn live_combat_order_sensitivity_detects_mid_combat_powers_relics_and_cards() {
+        use sts2_kernel::state::{CreatureInst, PowerInst, RelicInst};
+        use sts2_types::{CombatSide, MonsterId, PowerId, RelicId};
+
+        let mut base = empty_scratch_state(Arc::new(RootStaticContext::default()));
+        base.is_in_progress = true;
+        let pc = CreatureHandle(1);
+        let ec = CreatureHandle(2);
+        base.player.creature_handle = pc;
+        base.player.is_active_for_hooks = true;
+        base.ally_handles.push(pc);
+        base.enemy_handles.push(ec);
+        base.creatures.push(CreatureInst {
+            handle: pc,
+            combat_id: Some(0),
+            side: CombatSide::Player,
+            slot_name: None,
+            is_player: true,
+            pet_owner_player_index: None,
+            monster_id: None,
+            current_hp: 70,
+            max_hp: 80,
+            block: 0,
+            cumulative_hp_lost: 0,
+            is_detached: false,
+            monster: None,
+            has_minion_power: false,
+            powers: Vec::new(),
+        });
+        base.creatures.push(CreatureInst {
+            handle: ec,
+            combat_id: Some(1),
+            side: CombatSide::Enemy,
+            slot_name: None,
+            is_player: false,
+            pet_owner_player_index: None,
+            monster_id: Some(MonsterId::Nibbit),
+            current_hp: 30,
+            max_hp: 30,
+            block: 0,
+            cumulative_hp_lost: 0,
+            is_detached: false,
+            monster: None,
+            has_minion_power: false,
+            powers: Vec::new(),
+        });
+        let strike = make_card(1, CardId::StrikeIronclad, 1);
+        let defend = make_card(2, CardId::DefendIronclad, 1);
+        base.cards.push(strike);
+        base.cards.push(defend);
+        base.player.hand = vec![CardHandle(1), CardHandle(2)];
+
+        let root_sens = CombatOrderSensitivity::analyze_live(&mut base, &Sts2Content);
+        assert!(root_sens.por_safe, "plain root should allow POR");
+        let strike_cls = classify_card_for_por(&base, &Sts2Content, CardHandle(1), Some(ec));
+        let defend_cls = classify_card_for_por(&base, &Sts2Content, CardHandle(2), None);
+        assert!(por_should_skip(root_sens.por_safe, 1, 1, strike_cls, defend_cls));
+
+        // Gaining Juggernaut / FeelNoPain / Afterimage / DarkEmbrace mid-combat must disable POR.
+        for pid in [
+            PowerId::JuggernautPower,
+            PowerId::FeelNoPainPower,
+            PowerId::AfterimagePower,
+            PowerId::DarkEmbracePower,
+        ] {
+            let mut s = base.clone();
+            s.creatures[0].powers.push(PowerInst {
+                handle: 100,
+                id: pid,
+                amount: 3,
+                amount_on_turn_start: 0,
+                skip_next_duration_tick: false,
+                applier_handle: Some(pc),
+                ext_index: None,
+            });
+            s.invalidate_hook_cache();
+            let live = CombatOrderSensitivity::analyze_live(&mut s, &Sts2Content);
+            assert!(
+                !live.por_safe,
+                "mid-combat {pid:?} must disable POR even when root was por_safe"
+            );
+            assert!(!por_should_skip(live.por_safe, 1, 1, strike_cls, defend_cls));
+        }
+
+        // Enemy gaining Thorns mid-combat must disable POR and classify Strike as Barrier.
+        {
+            let mut s = base.clone();
+            s.creatures[1].powers.push(PowerInst {
+                handle: 101,
+                id: PowerId::ThornsPower,
+                amount: 2,
+                amount_on_turn_start: 0,
+                skip_next_duration_tick: false,
+                applier_handle: Some(ec),
+                ext_index: None,
+            });
+            s.invalidate_hook_cache();
+            let live = CombatOrderSensitivity::analyze_live(&mut s, &Sts2Content);
+            assert!(!live.por_safe, "ThornsPower must disable POR");
+            assert_eq!(
+                classify_card_for_por(&s, &Sts2Content, CardHandle(1), Some(ec)),
+                PorActionClass::Barrier
+            );
+        }
+
+        // Gaining PenNib / Nunchaku relic mid-combat must disable POR.
+        for rid in [RelicId::PenNib, RelicId::Nunchaku] {
+            let mut s = base.clone();
+            s.player.relics.push(RelicInst {
+                id: rid,
+                is_wax: false,
+                is_melted: false,
+                stack_count: 1,
+                floor_added_to_deck: None,
+                private_fields: Default::default(),
+            });
+            s.invalidate_hook_cache();
+            let live = CombatOrderSensitivity::analyze_live(&mut s, &Sts2Content);
+            assert!(!live.por_safe, "relic {rid:?} must disable POR");
+        }
+
+        // Creating BodySlam mid-combat must disable POR.
+        {
+            let mut s = base.clone();
+            let bs = make_card(3, CardId::BodySlam, 1);
+            s.cards.push(bs);
+            s.player.hand.push(CardHandle(3));
+            s.invalidate_hook_cache();
+            let live = CombatOrderSensitivity::analyze_live(&mut s, &Sts2Content);
+            assert!(!live.por_safe, "created BodySlam must disable POR");
+        }
     }
 }

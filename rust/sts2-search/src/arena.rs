@@ -4,7 +4,7 @@ use crate::por::PorActionClass;
 use crate::PlannedAction;
 use sts2_types::PotionId;
 
-pub const DEFAULT_SLAB_BYTES: usize = 1024 * 1024;
+pub const DEFAULT_SLAB_BYTES: usize = 256 * 1024;
 const NODE_CHUNK_SHIFT: usize = 13;
 const NODE_CHUNK_SIZE: usize = 1 << NODE_CHUNK_SHIFT; // 8,192 elements per chunk
 const NODE_CHUNK_MASK: usize = NODE_CHUNK_SIZE - 1;
@@ -63,6 +63,12 @@ impl LocalStateSlab {
             self.slabs.truncate(64);
         }
         self.active_slab = 0;
+    }
+
+    pub fn trim_for_idle(&mut self) {
+        self.clear();
+        self.slabs.truncate(2);
+        self.slabs.shrink_to(2);
     }
 
     #[inline]
@@ -177,6 +183,12 @@ impl MainStateArena {
             self.slabs.truncate(64);
         }
         self.active_slab = 0;
+    }
+
+    pub fn trim_for_idle(&mut self) {
+        self.clear();
+        self.slabs.truncate(4);
+        self.slabs.shrink_to(4);
     }
 
     #[inline]
@@ -460,11 +472,12 @@ impl ChoiceArena {
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct NodeId(pub u32);
 
-/// Flat 160-byte search node with inline `StoredFastEval` stored contiguously in `NodeArena`.
+/// Flat 168-byte search node with inline `StoredFastEval` stored contiguously in `NodeArena`.
 #[derive(Clone, Debug)]
 pub struct SearchNode {
     pub state_hash: StateHash,
     pub forced_used_mask: u64,
+    pub tactical_sig: u64,
     pub beam_rank_score: f64,
     pub rollout_score: f64,
     pub por_key: u64,
@@ -499,7 +512,7 @@ pub struct SearchNode {
     pub node_flags: u8,
 }
 
-const _: () = assert!(std::mem::size_of::<SearchNode>() <= 160);
+const _: () = assert!(std::mem::size_of::<SearchNode>() <= 176);
 
 impl Default for SearchNode {
     #[inline]
@@ -507,6 +520,7 @@ impl Default for SearchNode {
         Self {
             state_hash: StateHash::default(),
             forced_used_mask: 0,
+            tactical_sig: 0,
             beam_rank_score: 0.0,
             rollout_score: 0.0,
             por_key: 0,
@@ -626,6 +640,7 @@ impl SearchNode {
 
     #[inline]
     pub fn set_full_eval(&mut self, eval: &StoredNodeEval) {
+        self.tactical_sig = eval.tactical_sig;
         self.beam_rank_score = eval.beam_rank_score;
         self.effective_defense = eval
             .effective_defense
@@ -716,6 +731,13 @@ impl NodeArena {
         self.node_len = 0;
         self.choices.clear();
         self.rare_evals.clear();
+    }
+
+    pub fn trim_for_idle(&mut self) {
+        self.clear();
+        self.node_chunks.truncate(4);
+        self.node_chunks.shrink_to(4);
+        self.rare_evals.shrink_to(1024);
     }
 
     #[inline]

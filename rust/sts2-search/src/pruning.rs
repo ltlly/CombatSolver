@@ -1,12 +1,12 @@
 use crate::arena::{NodeArena, NodeId};
 use crate::eval::{
-    ActEndingBossPolicy, BossHpRelief, PostCombatRelicHealProfile, RelicCounterId, RootEvalBaseline,
+    weights, ActEndingBossPolicy, BossHpRelief, PostCombatRelicHealProfile, RelicCounterId,
+    RootEvalBaseline, SolverPotionPolicy, SolverTheftPolicy, FAST_FLAG_FORFEITS_GOLD,
 };
 use crate::portfolio::BeamWidthPortfolio;
 use hashbrown::HashMap;
 use parking_lot::RwLock;
-use smallvec::SmallVec;
-use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
+use std::sync::atomic::{AtomicI32, Ordering};
 use sts2_kernel::state::BattleState;
 use sts2_kernel::ContentDispatcher;
 use sts2_types::{
@@ -14,39 +14,259 @@ use sts2_types::{
 };
 
 const PER_NICHE_PARETO_TOP_K: usize = 32;
-const NICHE_SLOT_COUNT: usize = 6; // 0=Primary, 1=Survival, 2=Tempo, 3=BoardInvestment, 4=Optionality, 5=PureRollout
+const NICHE_SLOT_COUNT: usize = 7; // 0=Primary, 1=Survival, 2=Tempo, 3=BoardInvestment, 4=Optionality, 5=PureRollout, 6=Strategy
+const MAX_DISTINCT_POTION_SIGNATURES: usize = 16;
 
 #[derive(Clone, Copy, Debug, Default)]
-struct ParetoRow {
-    loss: i32,
-    enemy_hp: i32,
-    rem: i32,
-    board: i32,
-    opt: i32,
-    potion_cost: i32,
-    primary: f64,
+pub(crate) struct ExtendedPruneEntry {
+    pub effective_net_hp_loss_centi: i32,
+    pub tactical_sig: u64,
+    pub node_id: NodeId,
+    pub primary: f64,
+    pub aux_score: f64,
+    pub forced_used_mask: u64,
+    pub relic_satisfied_mask: u64,
+    pub best_hp: i32,
+    pub effective_defense: i32,
+    pub enemy_hp: i32,
+    pub rem_enemies: i32,
+    pub board_investment: i32,
+    pub setup_score: i32,
+    pub max_dark_evoke: i32,
+    pub total_poison_and_doom: i32,
+    pub optionality_score: i32,
+    pub strategy_goal_hp_credit: i32,
+    pub relic_distance: i32,
+    pub relic_hp_credit: i32,
+    pub relic_healing_hp_credit: i32,
+    pub relic_satisfied_priority: i32,
+    pub growth_hp_credit: i32,
+    pub growth_reward_count: i32,
+    pub used_potion_slot_mask: u16,
+    pub potion_cost: i16,
+    pub strategic_hp_credit: i16,
+    pub energy: i16,
+    pub outstanding_stolen: i16,
+    pub playable_hand_count: u8,
+    pub optional_paid_potion_count: u8,
+    pub explicit_potion_count: u8,
+    pub death_save_use_count: u8,
+    pub strategy_goal_count: u8,
+    pub forfeits_gold: bool,
+    pub has_rollout_score: bool,
+    pub has_choice_lookahead: bool,
 }
 
 #[inline(always)]
-fn pareto_row_dominates(other: &ParetoRow, cand: &ParetoRow) -> bool {
-    let worse = u8::from(other.loss > cand.loss)
-        | u8::from(other.enemy_hp > cand.enemy_hp)
-        | u8::from(other.rem > cand.rem)
-        | u8::from(other.board < cand.board)
-        | u8::from(other.opt < cand.opt)
-        | u8::from(other.potion_cost > cand.potion_cost)
-        | u8::from(other.primary < cand.primary);
-    if worse != 0 {
-        return false;
+const fn splitmix64(mut x: u64) -> u64 {
+    x = x.wrapping_add(0x9E37_79B9_7F4A_7C15);
+    x = (x ^ (x >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    x = (x ^ (x >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    x ^ (x >> 31)
+}
+
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub(crate) fn compute_effective_net_hp_loss_centi(
+    root: &RootEvalBaseline,
+    has_meat_on_the_bone_target: bool,
+    player_hp: i32,
+    player_max_hp: i32,
+    projected_player_hp: i32,
+    cumulative_hp_lost: i32,
+    recovered_hp: i32,
+    death_save_hp_restored: i32,
+    death_save_use_count: u8,
+    feed_count: u8,
+    won: bool,
+) -> i32 {
+    let hp_scale = ActEndingBossPolicy::persistent_hp_scale(root.boss_hp_relief);
+    let death_save_hp = death_save_hp_restored.max(0);
+    let max_hp_delta = if root.initial_player_max_hp > 0 {
+        root.initial_player_max_hp - player_max_hp
+    } else {
+        0
+    };
+    let raw_hp_loss = if root.initial_player_max_hp > 0 {
+        let end_max_hp = (root.initial_player_max_hp - max_hp_delta).max(1);
+        let mut projected_heal = 0i32;
+        if player_hp > 0
+            && (root.post_combat_relic_heal.unconditional_heal > 0
+                || root.post_combat_relic_heal.wounded_heal > 0)
+        {
+            if won {
+                projected_heal = root
+                    .post_combat_relic_heal
+                    .monotone_heal_for(player_hp, end_max_hp);
+            } else if has_meat_on_the_bone_target
+                && death_save_use_count == 0
+                && projected_player_hp >= player_hp
+            {
+                let safe_floor = (end_max_hp / 4).min(12).max(4);
+                if player_hp >= safe_floor {
+                    let wounded_bonus = root.post_combat_relic_heal.heal_for(player_hp, end_max_hp)
+                        - root
+                            .post_combat_relic_heal
+                            .monotone_heal_for(player_hp, end_max_hp);
+                    if wounded_bonus > 0 {
+                        projected_heal = wounded_bonus;
+                    }
+                }
+            }
+            let max_cap = (end_max_hp - player_hp).max(0);
+            if projected_heal > max_cap {
+                projected_heal = max_cap;
+            }
+        }
+        (root.initial_player_hp - player_hp) + death_save_hp - projected_heal
+    } else {
+        cumulative_hp_lost - recovered_hp + death_save_hp
+    };
+
+    let max_hp_term_centi = if max_hp_delta >= 0 {
+        if root.boss_hp_relief != BossHpRelief::RunEnding {
+            max_hp_delta * weights::MAX_HP_LOSS_WEIGHT_CENTI
+        } else {
+            0
+        }
+    } else {
+        let max_hp_gain = -max_hp_delta;
+        let feed_excluded = i32::from(feed_count) * root.feed_max_hp_per_kill;
+        let credited_gain = (max_hp_gain - feed_excluded).max(0);
+        -(credited_gain * weights::MAX_HP_GAIN_WEIGHT_CENTI)
+    };
+
+    raw_hp_loss * hp_scale + max_hp_term_centi
+}
+
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub(crate) fn compute_tactical_signature(
+    turn: i16,
+    used_potion_slot_mask: u16,
+    potion_count: u8,
+    death_save_use_count: u8,
+    alive_enemy_count: u8,
+    reviving_enemy_count: u8,
+    energy: i16,
+    cumulative_hp_lost: i32,
+    recovered_hp: i32,
+    best_hp: i32,
+    enemy_hp: i32,
+    player_max_hp_delta: i16,
+    effective_defense: i32,
+    optionality_score: i32,
+    playable_hand_count: u8,
+    setup_score: i32,
+    board_investment: i32,
+    max_dark_evoke: i32,
+    total_poison_and_doom: i32,
+    has_pure_growth_targets: bool,
+    growth_hp_credit: i32,
+    growth_reward_count: i32,
+    alchemize_count: u8,
+    feed_count: u8,
+    has_relic_targets: bool,
+    relic_satisfied_mask: u64,
+    relic_distance: i32,
+    relic_satisfied_priority: i32,
+    relic_hp_credit: i32,
+    preserve_theft: bool,
+    outstanding_stolen: i16,
+    forfeits_gold: bool,
+) -> u64 {
+    let energy_u8 = energy.clamp(0, u8::MAX as i16) as u8;
+    let w0 = ((turn.clamp(0, u8::MAX as i16) as u8) as u64)
+        | ((used_potion_slot_mask as u64) << 8)
+        | ((potion_count as u64) << 24)
+        | ((death_save_use_count as u64) << 32)
+        | ((alive_enemy_count as u64) << 40)
+        | ((reviving_enemy_count as u64) << 48)
+        | ((energy_u8 as u64) << 56);
+    let w1 = ((cumulative_hp_lost as u32) as u64) | (((recovered_hp as u32) as u64) << 32);
+    let w2 = ((best_hp as u32) as u64) | (((enemy_hp as u32) as u64) << 32);
+    let w3 = ((player_max_hp_delta as u16) as u64)
+        | ((((effective_defense.clamp(i16::MIN as i32, i16::MAX as i32) as i16) as u16) as u64)
+            << 16)
+        | ((((optionality_score.clamp(i16::MIN as i32, i16::MAX as i32) as i16) as u16) as u64)
+            << 32)
+        | ((playable_hand_count as u64) << 48);
+    let w4 = ((setup_score as u32) as u64) | (((board_investment as u32) as u64) << 32);
+    let w5 = ((max_dark_evoke as u32) as u64) | (((total_poison_and_doom as u32) as u64) << 32);
+
+    let mut h = 0xD1B5_4A32_D192_ED03u64;
+    h = splitmix64(h ^ w0);
+    h = splitmix64(h ^ w1);
+    h = splitmix64(h ^ w2);
+    h = splitmix64(h ^ w3);
+    h = splitmix64(h ^ w4);
+    h = splitmix64(h ^ w5);
+    if preserve_theft {
+        let w_theft = ((outstanding_stolen as u16) as u64)
+            | if forfeits_gold { 1u64 << 16 } else { 0u64 };
+        h = splitmix64(h ^ w_theft);
     }
-    (u8::from(other.loss < cand.loss)
-        | u8::from(other.enemy_hp < cand.enemy_hp)
-        | u8::from(other.rem < cand.rem)
-        | u8::from(other.board > cand.board)
-        | u8::from(other.opt > cand.opt)
-        | u8::from(other.potion_cost < cand.potion_cost)
-        | u8::from(other.primary > cand.primary))
-        != 0
+    if has_pure_growth_targets {
+        let w_growth = (((growth_hp_credit.clamp(i16::MIN as i32, i16::MAX as i32) as i16) as u16)
+            as u64)
+            | (((growth_reward_count.clamp(0, u16::MAX as i32) as u16) as u64) << 16)
+            | ((alchemize_count as u64) << 32)
+            | ((feed_count as u64) << 40);
+        h = splitmix64(h ^ w_growth);
+    }
+    if has_relic_targets {
+        let w_relic = ((relic_satisfied_mask as u16) as u64)
+            | (((relic_distance.clamp(0, u16::MAX as i32) as u16) as u64) << 16)
+            | ((((relic_satisfied_priority.clamp(i16::MIN as i32, i16::MAX as i32) as i16) as u16)
+                as u64)
+                << 32)
+            | ((((relic_hp_credit.clamp(i16::MIN as i32, i16::MAX as i32) as i16) as u16) as u64)
+                << 48);
+        h = splitmix64(h ^ w_relic);
+    }
+    if h == 0 {
+        1
+    } else {
+        h
+    }
+}
+
+#[inline(always)]
+fn compute_potion_bucket(
+    potion_count: u8,
+    explicit_potion_count: u8,
+    optional_paid_potion_count: u8,
+    forced_used_mask: u64,
+    root: &RootEvalBaseline,
+    force_explicit_nonzero_bucket: bool,
+) -> usize {
+    let mut count = if root.initial_player_max_hp <= 0 {
+        if optional_paid_potion_count > 0 {
+            optional_paid_potion_count as usize
+        } else {
+            potion_count as usize
+        }
+    } else {
+        let mut c = optional_paid_potion_count as usize;
+        if root.forced_directive_count > 0 || root.all_forced_potion_mask != 0 {
+            c += (forced_used_mask & root.all_forced_potion_mask).count_ones() as usize;
+        }
+        if c == 0
+            && root.effective_potion_policy == SolverPotionPolicy::RequireAtLeastOne
+            && explicit_potion_count > 0
+        {
+            c = 1;
+        }
+        c
+    };
+    if force_explicit_nonzero_bucket {
+        if explicit_potion_count == 0 {
+            count = 0;
+        } else if count == 0 {
+            count = 1;
+        }
+    }
+    count.min(3)
 }
 
 const PRUNE_FLAG_HAS_ROLLOUT: u8 = 1 << 0;
@@ -85,18 +305,13 @@ const _: () = {
 
 impl PruneKey {
     #[inline(always)]
-    const fn has_rollout_score(&self) -> bool {
+    pub(crate) const fn has_rollout_score(&self) -> bool {
         (self.flags & PRUNE_FLAG_HAS_ROLLOUT) != 0
     }
 
     #[inline(always)]
-    const fn has_choice_lookahead(&self) -> bool {
+    pub(crate) const fn has_choice_lookahead(&self) -> bool {
         (self.flags & PRUNE_FLAG_HAS_CHOICE_LA) != 0
-    }
-
-    #[inline(always)]
-    const fn fast_keys_exact(&self) -> bool {
-        (self.flags & PRUNE_FLAG_FAST_EXACT) != 0
     }
 
     #[inline(always)]
@@ -318,19 +533,6 @@ impl PruneKey {
         );
         (k, s, t, su, o, a, n.state_hash)
     }
-
-    #[inline]
-    fn pareto_row(&self) -> ParetoRow {
-        ParetoRow {
-            loss: self.effective_hp_loss,
-            enemy_hp: self.enemy_hp,
-            rem: self.rem_enemies as i32,
-            board: self.board_investment as i32,
-            opt: self.optionality_score,
-            potion_cost: self.potion_cost as i32,
-            primary: self.primary,
-        }
-    }
 }
 
 pub(crate) trait PruneSource: Sync {
@@ -344,6 +546,108 @@ pub(crate) trait PruneSource: Sync {
     fn explicit_potion_count(&self, id: NodeId) -> u8;
     fn beam_score(&self, id: NodeId, use_rollout_scores: bool) -> f64;
     fn tie_break_fields(&self, id: NodeId) -> (i16, i32, bool, f64, crate::hash::StateHash);
+
+    #[inline(always)]
+    fn optional_paid_potion_count(&self, id: NodeId) -> u8 {
+        self.potion_count(id)
+    }
+
+    #[inline(always)]
+    fn forced_used_mask(&self, _id: NodeId) -> u64 {
+        0
+    }
+
+    #[inline(always)]
+    fn node_turn(&self, _id: NodeId) -> i32 {
+        0
+    }
+
+    #[inline]
+    fn build_extended_prune_entry(
+        &self,
+        id: NodeId,
+        k: &PruneKey,
+        root: &RootEvalBaseline,
+        _use_rollout_scores: bool,
+    ) -> ExtendedPruneEntry {
+        let eff_def = k.total_defense_hp - (k.best_hp as i32);
+        let eff_loss = k.effective_hp_loss * weights::HP_FIXED_SCALE;
+        let has_pure_growth = !root.ignore_long_term_rewards && root.effective_has_growth_targets;
+        let has_relic = !root.active_relic_targets.is_empty();
+        let preserve_theft = root.theft_policy == SolverTheftPolicy::PreserveResources;
+        let sig = compute_tactical_signature(
+            0,
+            k.used_potion_slot_mask,
+            self.potion_count(id),
+            k.death_save_use_count,
+            k.rem_enemies,
+            0,
+            0,
+            k.cumulative_hp_lost as i32,
+            0,
+            k.best_hp as i32,
+            k.enemy_hp,
+            0,
+            eff_def,
+            k.optionality_score,
+            0,
+            k.setup_score as i32,
+            k.board_investment as i32,
+            0,
+            0,
+            has_pure_growth,
+            0,
+            0,
+            0,
+            0,
+            has_relic,
+            0,
+            0,
+            0,
+            0,
+            preserve_theft,
+            0,
+            false,
+        );
+        ExtendedPruneEntry {
+            effective_net_hp_loss_centi: eff_loss,
+            tactical_sig: sig,
+            node_id: id,
+            primary: k.primary,
+            aux_score: k.aux_score,
+            forced_used_mask: k.forced_used_mask,
+            relic_satisfied_mask: 0,
+            best_hp: k.best_hp as i32,
+            effective_defense: eff_def,
+            enemy_hp: k.enemy_hp,
+            rem_enemies: k.rem_enemies as i32,
+            board_investment: k.board_investment as i32,
+            setup_score: k.setup_score as i32,
+            max_dark_evoke: 0,
+            total_poison_and_doom: 0,
+            optionality_score: k.optionality_score,
+            strategy_goal_hp_credit: k.strategic_hp_credit as i32,
+            relic_distance: 0,
+            relic_hp_credit: 0,
+            relic_healing_hp_credit: 0,
+            relic_satisfied_priority: 0,
+            growth_hp_credit: 0,
+            growth_reward_count: 0,
+            used_potion_slot_mask: k.used_potion_slot_mask,
+            potion_cost: k.potion_cost,
+            strategic_hp_credit: k.strategic_hp_credit,
+            energy: 0,
+            outstanding_stolen: 0,
+            playable_hand_count: 0,
+            optional_paid_potion_count: self.optional_paid_potion_count(id),
+            explicit_potion_count: k.explicit_potion_count,
+            death_save_use_count: k.death_save_use_count,
+            strategy_goal_count: k.strategy_goal_count,
+            forfeits_gold: false,
+            has_rollout_score: k.has_rollout_score(),
+            has_choice_lookahead: k.has_choice_lookahead(),
+        }
+    }
 }
 
 impl PruneSource for NodeArena {
@@ -368,6 +672,21 @@ impl PruneSource for NodeArena {
     }
 
     #[inline(always)]
+    fn optional_paid_potion_count(&self, id: NodeId) -> u8 {
+        self.get(id).optional_paid_potion_count
+    }
+
+    #[inline(always)]
+    fn forced_used_mask(&self, id: NodeId) -> u64 {
+        self.get(id).forced_used_mask
+    }
+
+    #[inline(always)]
+    fn node_turn(&self, id: NodeId) -> i32 {
+        self.get(id).turn as i32
+    }
+
+    #[inline(always)]
     fn beam_score(&self, id: NodeId, use_rollout_scores: bool) -> f64 {
         let n = self.get(id);
         if use_rollout_scores {
@@ -388,6 +707,131 @@ impl PruneSource for NodeArena {
             n.state_hash,
         )
     }
+
+    #[inline]
+    fn build_extended_prune_entry(
+        &self,
+        id: NodeId,
+        k: &PruneKey,
+        root: &RootEvalBaseline,
+        _use_rollout_scores: bool,
+    ) -> ExtendedPruneEntry {
+        let n = self.get(id);
+        let f = &n.fast_eval;
+        let rare = self.rare_eval(id);
+        let has_meat = root
+            .active_relic_targets
+            .iter()
+            .any(|t| t.id == RelicCounterId::MeatOnTheBone);
+        let won = f.won();
+        let eff_net_loss_centi = compute_effective_net_hp_loss_centi(
+            root,
+            has_meat,
+            f.player_hp as i32,
+            f.player_max_hp as i32,
+            f.projected_player_hp as i32,
+            f.cumulative_hp_lost as i32,
+            f.recovered_hp as i32,
+            f.death_save_hp_restored as i32,
+            f.death_save_use_count,
+            f.feed_count,
+            won,
+        );
+        let eff_def = if n.has_full_eval() {
+            n.effective_defense as i32
+        } else {
+            f.player_block as i32
+        };
+        let has_pure_growth = !root.ignore_long_term_rewards && root.effective_has_growth_targets;
+        let has_relic = !root.active_relic_targets.is_empty();
+        let preserve_theft = root.theft_policy == SolverTheftPolicy::PreserveResources;
+        let growth_hp_credit = (f.strategy_goal_hp_credit as i32) - rare.relic_eval.hp_credit;
+        let growth_reward_count =
+            (f.strategy_goal_count as i32) - rare.relic_eval.satisfied_priority;
+        let forfeits_gold = (f.flags & FAST_FLAG_FORFEITS_GOLD) != 0;
+        let max_hp_delta = if root.initial_player_max_hp > 0 {
+            (root.initial_player_max_hp - (f.player_max_hp as i32))
+                .clamp(i16::MIN as i32, i16::MAX as i32) as i16
+        } else {
+            0
+        };
+        let sig = if n.tactical_sig != 0 {
+            n.tactical_sig
+        } else {
+            compute_tactical_signature(
+                n.turn,
+                n.used_potion_slot_mask,
+                n.potion_count,
+                f.death_save_use_count,
+                f.alive_enemy_count,
+                f.reviving_enemy_count,
+                f.energy,
+                f.cumulative_hp_lost as i32,
+                f.recovered_hp as i32,
+                k.best_hp as i32,
+                f.enemy_hp,
+                max_hp_delta,
+                eff_def,
+                k.optionality_score,
+                f.playable_hand_count,
+                k.setup_score as i32,
+                k.board_investment as i32,
+                n.max_dark_evoke as i32,
+                n.total_poison_and_doom as i32,
+                has_pure_growth,
+                growth_hp_credit,
+                growth_reward_count,
+                f.alchemize_count,
+                f.feed_count,
+                has_relic,
+                rare.relic_eval.satisfied_mask,
+                rare.relic_eval.distance,
+                rare.relic_eval.satisfied_priority,
+                rare.relic_eval.hp_credit,
+                preserve_theft,
+                f.outstanding_stolen,
+                forfeits_gold,
+            )
+        };
+        ExtendedPruneEntry {
+            effective_net_hp_loss_centi: eff_net_loss_centi,
+            tactical_sig: sig,
+            node_id: id,
+            primary: k.primary,
+            aux_score: k.aux_score,
+            forced_used_mask: n.forced_used_mask,
+            relic_satisfied_mask: rare.relic_eval.satisfied_mask,
+            best_hp: k.best_hp as i32,
+            effective_defense: eff_def,
+            enemy_hp: f.enemy_hp,
+            rem_enemies: k.rem_enemies as i32,
+            board_investment: k.board_investment as i32,
+            setup_score: k.setup_score as i32,
+            max_dark_evoke: n.max_dark_evoke as i32,
+            total_poison_and_doom: n.total_poison_and_doom as i32,
+            optionality_score: k.optionality_score,
+            strategy_goal_hp_credit: f.strategy_goal_hp_credit as i32,
+            relic_distance: rare.relic_eval.distance,
+            relic_hp_credit: rare.relic_eval.hp_credit,
+            relic_healing_hp_credit: rare.relic_eval.healing_hp_credit,
+            relic_satisfied_priority: rare.relic_eval.satisfied_priority,
+            growth_hp_credit,
+            growth_reward_count,
+            used_potion_slot_mask: n.used_potion_slot_mask,
+            potion_cost: n.potion_strategic_cost,
+            strategic_hp_credit: f.strategic_hp_credit,
+            energy: f.energy,
+            outstanding_stolen: f.outstanding_stolen,
+            playable_hand_count: f.playable_hand_count,
+            optional_paid_potion_count: n.optional_paid_potion_count,
+            explicit_potion_count: n.explicit_potion_count,
+            death_save_use_count: f.death_save_use_count,
+            strategy_goal_count: f.strategy_goal_count,
+            forfeits_gold,
+            has_rollout_score: k.has_rollout_score(),
+            has_choice_lookahead: k.has_choice_lookahead(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -397,24 +841,27 @@ struct BucketPruneScratch {
     marks: Vec<u8>,
     unmarked: Vec<usize>,
     heap: Vec<usize>,
-    heap_fast: Vec<(i64, f64, u32)>,
-    heap_f64: Vec<(f64, u32)>,
-    selected_rows: Vec<ParetoRow>,
     keys: Vec<PruneKey>,
+    entries: Vec<ExtendedPruneEntry>,
     state_hashes: Vec<crate::hash::StateHash>,
-    survival_keys: Vec<i64>,
-    tempo_keys: Vec<i64>,
-    setup_keys: Vec<i64>,
-    optionality_keys: Vec<i64>,
-    aux_scores: Vec<f64>,
+    node_sigs: Vec<u64>,
+    sig_keys: Vec<u64>,
+    sig_counts: Vec<u8>,
+    heap_sig_keys: Vec<u64>,
+    heap_sig_counts: Vec<u8>,
+    heap_sig_worst_idx: Vec<i32>,
+    selected_indices: Vec<usize>,
     order: Vec<(f64, u32)>,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct PruneScratch {
     buckets: [BucketPruneScratch; 4],
-    ranked: Vec<NodeId>,
     merged: Vec<(f64, NodeId)>,
+    pub allow_death_save_rescue: bool,
+    pub relax_zero_potion_reserve: bool,
+    pub min_zero_potion_reserve_percent: i32,
+    pub turn_layer: i32,
 }
 
 /// Compile-time full-catalog healing/growth closure certification computed in `< 1 µs` from static metadata.
@@ -638,10 +1085,13 @@ impl PrimaryIncumbentTable {
 pub struct FrozenIncumbentBound {
     pub has_certified_zero_potion_bound: bool,
     pub best_zero_potion_hp_delta_centi: i32,
+    pub best_zero_potion_battle_hp_lost: i32,
     pub best_zero_potion_end_turn: i32,
     pub has_certified_overall_bound: bool,
     pub best_overall_value_centi: i64,
     pub best_overall_hp_delta_centi: i32,
+    pub best_overall_battle_hp_lost: i32,
+    pub best_overall_potion_count: usize,
     pub best_overall_end_turn: i32,
 }
 
@@ -655,11 +1105,13 @@ impl FrozenIncumbentBound {
         death_save_use_count: i32,
         net_hp_delta_centi: i32,
         net_potion_cost_centi: i32,
+        battle_hp_lost: i32,
+        potion_count: usize,
         optional_paid_count: usize,
         explicit_potion_count: usize,
         end_turn: i32,
-        outstanding_stolen: i32,
-        forfeits_gold: bool,
+        _outstanding_stolen: i32,
+        _forfeits_gold: bool,
         theft_preserve_resources: bool,
     ) -> bool {
         if !won
@@ -668,7 +1120,7 @@ impl FrozenIncumbentBound {
             || !root.effective_growth_budgets.is_zero()
             || !root.active_relic_targets.is_empty()
             || root.all_forced_potion_mask != 0
-            || (theft_preserve_resources && (outstanding_stolen > 0 || forfeits_gold))
+            || theft_preserve_resources
             || death_save_use_count > 0
         {
             return false;
@@ -678,10 +1130,13 @@ impl FrozenIncumbentBound {
             if !self.has_certified_zero_potion_bound
                 || net_hp_delta_centi > self.best_zero_potion_hp_delta_centi
                 || (net_hp_delta_centi == self.best_zero_potion_hp_delta_centi
-                    && end_turn < self.best_zero_potion_end_turn)
+                    && (battle_hp_lost < self.best_zero_potion_battle_hp_lost
+                        || (battle_hp_lost == self.best_zero_potion_battle_hp_lost
+                            && end_turn < self.best_zero_potion_end_turn)))
             {
                 self.has_certified_zero_potion_bound = true;
                 self.best_zero_potion_hp_delta_centi = net_hp_delta_centi;
+                self.best_zero_potion_battle_hp_lost = battle_hp_lost;
                 self.best_zero_potion_end_turn = end_turn;
                 changed = true;
             }
@@ -693,11 +1148,17 @@ impl FrozenIncumbentBound {
                 && net_hp_delta_centi > self.best_overall_hp_delta_centi)
             || (v_centi == self.best_overall_value_centi
                 && net_hp_delta_centi == self.best_overall_hp_delta_centi
-                && end_turn < self.best_overall_end_turn)
+                && (battle_hp_lost < self.best_overall_battle_hp_lost
+                    || (battle_hp_lost == self.best_overall_battle_hp_lost
+                        && (potion_count < self.best_overall_potion_count
+                            || (potion_count == self.best_overall_potion_count
+                                && end_turn < self.best_overall_end_turn)))))
         {
             self.has_certified_overall_bound = true;
             self.best_overall_value_centi = v_centi;
             self.best_overall_hp_delta_centi = net_hp_delta_centi;
+            self.best_overall_battle_hp_lost = battle_hp_lost;
+            self.best_overall_potion_count = potion_count;
             self.best_overall_end_turn = end_turn;
             changed = true;
         }
@@ -718,6 +1179,8 @@ impl FrozenIncumbentBound {
         won: bool,
         player_dead: bool,
         turn: i32,
+        battle_hp_lost: i32,
+        potion_count: usize,
         optional_paid_count: usize,
         explicit_potion_count: usize,
         net_potion_cost_centi: i32,
@@ -763,6 +1226,7 @@ impl FrozenIncumbentBound {
             }
             if upper_bound_hp_delta_centi == self.best_zero_potion_hp_delta_centi
                 && !won
+                && battle_hp_lost >= self.best_zero_potion_battle_hp_lost
                 && turn > self.best_zero_potion_end_turn
             {
                 return true;
@@ -784,7 +1248,11 @@ impl FrozenIncumbentBound {
                 }
                 if upper_bound_hp_delta_centi == self.best_overall_hp_delta_centi
                     && !won
-                    && turn > self.best_overall_end_turn
+                    && battle_hp_lost >= self.best_overall_battle_hp_lost
+                    && (battle_hp_lost > self.best_overall_battle_hp_lost
+                        || potion_count > self.best_overall_potion_count
+                        || (potion_count == self.best_overall_potion_count
+                            && turn > self.best_overall_end_turn))
                 {
                     return true;
                 }
@@ -1126,51 +1594,75 @@ impl BeamRetentionPolicy {
             return;
         }
 
+        let effective_turn_layer = if scratch.turn_layer > 0 {
+            scratch.turn_layer
+        } else if root.start_turn_number > 0 {
+            let mut max_t = 0i32;
+            for &nid in candidates {
+                max_t = max_t.max(source.node_turn(nid));
+            }
+            if is_turn_boundary {
+                (max_t - root.start_turn_number - 1).max(0)
+            } else {
+                (max_t - root.start_turn_number).max(0)
+            }
+        } else {
+            0
+        };
+
         let PruneScratch {
             buckets,
-            ranked,
             merged,
+            allow_death_save_rescue,
+            relax_zero_potion_reserve,
+            min_zero_potion_reserve_percent,
+            turn_layer: _,
         } = scratch;
+        let allow_death_save_rescue = *allow_death_save_rescue;
 
-        if has_explicit_split {
-            ranked.clear();
-            ranked.extend_from_slice(candidates);
-            ranked.sort_unstable_by(|&a, &b| cmp_primary_desc(source, a, b, use_rollout_scores));
-            let free_quota = potion_free_beam_width.unwrap_or(beam_width).min(beam_width);
-            let used_quota = potion_beam_width.unwrap_or(beam_width).min(beam_width);
-            selected.reserve(beam_width);
-            let mut free_taken = 0usize;
-            let mut used_taken = 0usize;
-            for &nid in ranked.iter() {
-                if selected.len() >= beam_width {
-                    break;
-                }
-                if source.explicit_potion_count(nid) == 0 {
-                    if free_taken < free_quota {
-                        selected.push(nid);
-                        free_taken += 1;
-                    }
-                } else if used_taken < used_quota {
-                    selected.push(nid);
-                    used_taken += 1;
-                }
-            }
-            return;
-        }
-
-        // Single-pass 4-bucket partitioning by potion count BEFORE per-bucket sorting.
+        // Single-pass 4-bucket partitioning by policy-aware optional paid + forced potion count.
         let mut counts = [0usize; 4];
         for b in 0..4 {
             buckets[b].nodes.clear();
             buckets[b].out.clear();
         }
         for &nid in candidates {
-            let b = (source.potion_count(nid) as usize).min(3);
+            let b = compute_potion_bucket(
+                source.potion_count(nid),
+                source.explicit_potion_count(nid),
+                source.optional_paid_potion_count(nid),
+                source.forced_used_mask(nid),
+                root,
+                has_explicit_split,
+            );
             counts[b] += 1;
             buckets[b].nodes.push(nid);
         }
-        let bucket_quotas =
-            allocate_potion_bucket_quotas(counts, beam_width, prefer_potion_buckets);
+        let has_forced_directives =
+            root.forced_directive_count > 0 || root.all_forced_potion_mask != 0;
+        let bucket_quotas = if has_explicit_split {
+            allocate_explicit_split_quotas(
+                counts,
+                beam_width,
+                potion_free_beam_width,
+                potion_beam_width,
+                prefer_potion_buckets,
+                *relax_zero_potion_reserve,
+                *min_zero_potion_reserve_percent,
+                has_forced_directives,
+                effective_turn_layer,
+            )
+        } else {
+            allocate_potion_bucket_quotas(
+                counts,
+                beam_width,
+                prefer_potion_buckets,
+                *relax_zero_potion_reserve,
+                *min_zero_potion_reserve_percent,
+                has_forced_directives,
+                effective_turn_layer,
+            )
+        };
         let active_buckets = (0..4)
             .filter(|&b| !buckets[b].nodes.is_empty() && bucket_quotas[b] > 0)
             .count();
@@ -1203,6 +1695,7 @@ impl BeamRetentionPolicy {
                             prefer_potion_buckets,
                             is_turn_boundary,
                             use_rollout_scores,
+                            allow_death_save_rescue,
                             Some(pool),
                         );
                     });
@@ -1219,6 +1712,7 @@ impl BeamRetentionPolicy {
                         prefer_potion_buckets,
                         is_turn_boundary,
                         use_rollout_scores,
+                        allow_death_save_rescue,
                         Some(pool),
                     );
                 }
@@ -1241,6 +1735,7 @@ impl BeamRetentionPolicy {
                     prefer_potion_buckets,
                     is_turn_boundary,
                     use_rollout_scores,
+                    allow_death_save_rescue,
                     single_pool,
                 );
             }
@@ -1320,6 +1815,7 @@ fn cmp_key_tie_break(
         .then_with(|| a.node_id.0.cmp(&b.node_id.0))
 }
 
+#[cfg(test)]
 #[inline(always)]
 fn cmp_key_primary_desc(
     keys: &[PruneKey],
@@ -1331,19 +1827,6 @@ fn cmp_key_primary_desc(
         .primary
         .total_cmp(&keys[ia].primary)
         .then_with(|| cmp_key_tie_break(keys, state_hashes, ia, ib))
-}
-
-#[inline(always)]
-fn cmp_key_primary_max(
-    keys: &[PruneKey],
-    state_hashes: &[crate::hash::StateHash],
-    ia: usize,
-    ib: usize,
-) -> std::cmp::Ordering {
-    keys[ia]
-        .primary
-        .total_cmp(&keys[ib].primary)
-        .then_with(|| cmp_key_tie_break(keys, state_hashes, ib, ia))
 }
 
 #[inline]
@@ -1360,40 +1843,65 @@ fn compute_niche_quotas(
         4 => (1, 1, 1, 1, 0, 0),
         5 => (1, 1, 1, 1, 0, 1),
         _ => {
-            let survival = ((rem * 18 + 50) / 100).max(1);
-            let tempo = ((rem * 15 + 50) / 100).max(1);
-            let setup_pct = if aggressive_power_commitment { 24 } else { 18 };
-            let setup =
-                ((rem * setup_pct + 50) / 100).max(if aggressive_power_commitment { 2 } else { 1 });
-            let niche5_total = ((rem * 14 + 50) / 100).max(1);
-            let optionality = if niche5_total >= 2 {
-                if is_turn_boundary {
+            if is_turn_boundary {
+                let survival = ((rem * 16) / 100).max(1);
+                let tempo = ((rem * 13) / 100).max(1);
+                let inv_pct = if aggressive_power_commitment { 22 } else { 16 };
+                let investment = ((rem * inv_pct) / 100)
+                    .max(if aggressive_power_commitment { 2 } else { 1 });
+                let niche5_total = ((rem * 12) / 100).max(1);
+                let optionality = if niche5_total >= 2 {
                     ((niche5_total * 35 + 50) / 100).max(1)
                 } else {
-                    (niche5_total / 2).max(1)
+                    0
+                };
+                let pareto = niche5_total.saturating_sub(optionality);
+                let used = survival + tempo + investment + niche5_total;
+                if used < rem {
+                    (rem - used, survival, tempo, investment, optionality, pareto)
+                } else {
+                    let primary = 1;
+                    let mut rest = rem - 1;
+                    let s = rest.min(survival).max(usize::from(rest > 0));
+                    rest -= s;
+                    let inv = rest.min(investment);
+                    rest -= inv;
+                    let t = rest.min(tempo);
+                    rest -= t;
+                    let o = rest.min(optionality);
+                    rest -= o;
+                    let pa = rest.min(pareto);
+                    (primary, s, t, inv, o, pa)
                 }
-            } else if is_turn_boundary {
-                0
             } else {
-                1
-            };
-            let pareto = niche5_total.saturating_sub(optionality);
-            let non_primary = survival + tempo + setup + niche5_total;
-            if non_primary < rem {
-                (rem - non_primary, survival, tempo, setup, optionality, pareto)
-            } else {
-                let p = 1;
-                let mut rest = rem - 1;
-                let s = rest.min(survival).max(usize::from(rest > 0));
-                rest -= s;
-                let su = rest.min(setup);
-                rest -= su;
-                let t = rest.min(tempo);
-                rest -= t;
-                let o = rest.min(optionality);
-                rest -= o;
-                let pa = rest.min(pareto);
-                (p, s, t, su, o, pa)
+                let survival = ((rem * 14) / 100).max(1);
+                let tempo = ((rem * 11) / 100).max(1);
+                let inv_pct = if aggressive_power_commitment { 20 } else { 14 };
+                let investment = ((rem * inv_pct) / 100)
+                    .max(if aggressive_power_commitment { 2 } else { 1 });
+                let optionality = ((rem * 10 + 99) / 100).max((rem * 12) / 100);
+                let pareto = if rem >= 10 {
+                    ((rem * 7) / 100).max(1)
+                } else {
+                    0
+                };
+                let used = survival + tempo + investment + optionality + pareto;
+                if used < rem {
+                    (rem - used, survival, tempo, investment, optionality, pareto)
+                } else {
+                    let primary = 1;
+                    let mut rest = rem - 1;
+                    let s = rest.min(survival).max(usize::from(rest > 0));
+                    rest -= s;
+                    let inv = rest.min(investment);
+                    rest -= inv;
+                    let t = rest.min(tempo);
+                    rest -= t;
+                    let o = rest.min(optionality);
+                    rest -= o;
+                    let pa = rest.min(pareto);
+                    (primary, s, t, inv, o, pa)
+                }
             }
         }
     }
@@ -1412,10 +1920,15 @@ fn cmp_primary_desc<S: PruneSource>(
         .then_with(|| tie_break_deterministic(source, a, b))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn allocate_potion_bucket_quotas(
     counts: [usize; 4],
     total_quota: usize,
     prefer_potion_buckets: bool,
+    relax_zero_potion_reserve: bool,
+    min_zero_potion_reserve_percent: i32,
+    has_forced_directives: bool,
+    turn_layer: i32,
 ) -> [usize; 4] {
     let mut quotas = [0usize; 4];
     let active_buckets = counts.iter().filter(|&&c| c > 0).count();
@@ -1433,8 +1946,41 @@ fn allocate_potion_bucket_quotas(
 
     let mut remaining = total_quota;
     if counts[0] > 0 {
-        let zero_pct = if prefer_potion_buckets { 35 } else { 60 };
-        let zero_target = ((total_quota * zero_pct) / 100).max(1);
+        let mut enforce_ceil_floor = false;
+        let zero_pct: usize = if has_forced_directives {
+            if !prefer_potion_buckets {
+                if turn_layer <= 1 { 25 } else { 15 }
+            } else if turn_layer <= 1 {
+                20
+            } else {
+                12
+            }
+        } else if !prefer_potion_buckets {
+            60
+        } else {
+            let mut pct = if turn_layer <= 1 {
+                if relax_zero_potion_reserve { 25 } else { 30 }
+            } else if relax_zero_potion_reserve {
+                25
+            } else {
+                26
+            };
+            let floor_pct = min_zero_potion_reserve_percent.max(25).clamp(25, 60);
+            if pct < floor_pct {
+                pct = floor_pct;
+            }
+            enforce_ceil_floor = true;
+            pct as usize
+        };
+        let mut zero_target = if enforce_ceil_floor {
+            ((total_quota * zero_pct + 99) / 100).max(1)
+        } else {
+            ((total_quota * zero_pct) / 100).max(1)
+        };
+        if enforce_ceil_floor && total_quota > 1 && active_buckets > 1 && zero_target >= total_quota
+        {
+            zero_target = total_quota - 1;
+        }
         let take0 = counts[0].min(zero_target);
         quotas[0] = take0;
         remaining -= take0;
@@ -1442,27 +1988,64 @@ fn allocate_potion_bucket_quotas(
 
     let mut other_buckets = counts[1..4].iter().filter(|&&c| c > 0).count();
     if other_buckets > 0 && remaining > 0 {
-        if prefer_potion_buckets && counts[1] > 0 && other_buckets > 1 {
-            let one_target = ((remaining * 55) / 100).max(1);
-            let take1 = counts[1].min(one_target);
-            quotas[1] = take1;
-            remaining -= take1;
-            other_buckets -= 1;
-        }
-        if other_buckets > 0 && remaining > 0 {
-            let share = (remaining / other_buckets).max(1);
+        if !prefer_potion_buckets {
+            const PHASE_A_WEIGHTS: [usize; 4] = [0, 55, 30, 15];
+            let weight_sum: usize = (1..4)
+                .filter(|&b| counts[b] > 0)
+                .map(|b| PHASE_A_WEIGHTS[b])
+                .sum();
+            let budget_for_other = remaining;
             for b in 1..4 {
-                if counts[b] == 0 || quotas[b] > 0 || remaining == 0 {
+                if remaining == 0 {
+                    break;
+                }
+                if counts[b] == 0 {
                     continue;
                 }
-                let take = counts[b].min(share.min(remaining));
+                let target = if other_buckets == 1 {
+                    remaining
+                } else {
+                    ((budget_for_other * PHASE_A_WEIGHTS[b]) / weight_sum).max(1)
+                };
+                let take = counts[b].min(target.min(remaining));
                 quotas[b] = take;
                 remaining -= take;
+            }
+        } else {
+            if counts[1] > 0 && other_buckets > 1 {
+                let one_pot_pct = if turn_layer <= 1 && counts[2] > 0 {
+                    45
+                } else {
+                    55
+                };
+                let one_target = ((remaining * one_pot_pct) / 100).max(1);
+                let take1 = counts[1].min(one_target);
+                quotas[1] = take1;
+                remaining -= take1;
+                other_buckets -= 1;
+            }
+            if other_buckets > 0 && remaining > 0 {
+                let share = (remaining / other_buckets).max(1);
+                for b in 1..4 {
+                    if remaining == 0 {
+                        break;
+                    }
+                    if counts[b] == 0 || quotas[b] > 0 {
+                        continue;
+                    }
+                    let take = counts[b].min(share.min(remaining));
+                    quotas[b] = take;
+                    remaining -= take;
+                }
             }
         }
     }
 
-    let start = if prefer_potion_buckets { 1 } else { 0 };
+    let start = if prefer_potion_buckets || has_forced_directives {
+        1
+    } else {
+        0
+    };
     while remaining > 0 {
         let mut progressed = false;
         for step in 0..4 {
@@ -1484,6 +2067,1085 @@ fn allocate_potion_bucket_quotas(
 }
 
 #[allow(clippy::too_many_arguments)]
+fn allocate_explicit_split_quotas(
+    counts: [usize; 4],
+    beam_width: usize,
+    potion_free_beam_width: Option<usize>,
+    potion_beam_width: Option<usize>,
+    prefer_potion_buckets: bool,
+    relax_zero_potion_reserve: bool,
+    min_zero_potion_reserve_percent: i32,
+    has_forced_directives: bool,
+    turn_layer: i32,
+) -> [usize; 4] {
+    let max_free = potion_free_beam_width
+        .unwrap_or(beam_width)
+        .min(beam_width)
+        .min(counts[0]);
+    let used_avail: usize = counts[1..4].iter().sum();
+    let max_used = potion_beam_width
+        .unwrap_or(beam_width)
+        .min(beam_width)
+        .min(used_avail);
+
+    let (q0, q_used) = match (potion_free_beam_width, potion_beam_width) {
+        (Some(_), Some(_)) if max_free + max_used <= beam_width => (max_free, max_used),
+        (Some(fw), Some(uw)) => {
+            let denom = (fw + uw).max(1);
+            let mut f = ((beam_width * fw) / denom).min(max_free);
+            let mut u = (beam_width - f).min(max_used);
+            let mut rem = beam_width.saturating_sub(f + u);
+            let add_f = rem.min(max_free.saturating_sub(f));
+            f += add_f;
+            rem -= add_f;
+            let add_u = rem.min(max_used.saturating_sub(u));
+            u += add_u;
+            (f, u)
+        }
+        (Some(_), None) => (max_free, (beam_width.saturating_sub(max_free)).min(max_used)),
+        (None, Some(_)) => ((beam_width.saturating_sub(max_used)).min(max_free), max_used),
+        (None, None) => unreachable!(),
+    };
+
+    let mut quotas = allocate_potion_bucket_quotas(
+        [0, counts[1], counts[2], counts[3]],
+        q_used,
+        prefer_potion_buckets,
+        relax_zero_potion_reserve,
+        min_zero_potion_reserve_percent,
+        has_forced_directives,
+        turn_layer,
+    );
+    quotas[0] = q0;
+    quotas
+}
+
+// Fast O(N) SoA 2-phase bounded heap top-K selection (retained for unit tests).
+#[cfg(test)]
+#[inline]
+#[allow(clippy::too_many_arguments)]
+fn pick_top_k_niche_fast_impl(
+    keys: &[PruneKey],
+    state_hashes: &[crate::hash::StateHash],
+    fast_keys: &[i64],
+    marks: &mut [u8],
+    heap_fast: &mut Vec<(i64, f64, u32)>,
+    _scan_buf: &mut Vec<u32>,
+    take: usize,
+    pareto_extra: usize,
+    out: &mut Vec<(f64, NodeId)>,
+    pareto_out: &mut [usize; PER_NICHE_PARETO_TOP_K],
+    pareto_count_out: &mut usize,
+    _use_simd: bool,
+) -> usize {
+    *pareto_count_out = 0;
+    let total_k = take + pareto_extra;
+    if total_k == 0 {
+        return 0;
+    }
+    #[inline(always)]
+    fn cmp_fast_entry(
+        fa: i64,
+        pa: f64,
+        ia: u32,
+        fb: i64,
+        pb: f64,
+        ib: u32,
+        keys: &[PruneKey],
+        state_hashes: &[crate::hash::StateHash],
+    ) -> std::cmp::Ordering {
+        if fa != fb {
+            fb.cmp(&fa)
+        } else if pa > pb {
+            std::cmp::Ordering::Less
+        } else if pa < pb {
+            std::cmp::Ordering::Greater
+        } else {
+            cmp_key_primary_desc(keys, state_hashes, ia as usize, ib as usize)
+        }
+    }
+    #[inline(always)]
+    fn maybe_push_fast(
+        i: usize,
+        k_fast: i64,
+        keys: &[PruneKey],
+        state_hashes: &[crate::hash::StateHash],
+        heap_fast: &mut Vec<(i64, f64, u32)>,
+        w_fast: &mut i64,
+        w_primary: &mut f64,
+        w_idx: &mut u32,
+    ) {
+        let k_primary = keys[i].primary;
+        let reject = k_fast == *w_fast
+            && (k_primary < *w_primary
+                || (!(k_primary > *w_primary)
+                    && !cmp_key_primary_desc(keys, state_hashes, i, *w_idx as usize).is_lt()));
+        if !reject {
+            let i_u32 = i as u32;
+            let mut pos = 0;
+            let len = heap_fast.len();
+            loop {
+                let left = (pos << 1) + 1;
+                if left >= len {
+                    break;
+                }
+                let right = left + 1;
+                let (l_fast, l_primary, l_idx) = heap_fast[left];
+                let (worst_child, c_fast, c_primary, c_idx) = if right < len {
+                    let (r_fast, r_primary, r_idx) = heap_fast[right];
+                    if cmp_fast_entry(
+                        l_fast,
+                        l_primary,
+                        l_idx,
+                        r_fast,
+                        r_primary,
+                        r_idx,
+                        keys,
+                        state_hashes,
+                    )
+                    .is_lt()
+                    {
+                        (right, r_fast, r_primary, r_idx)
+                    } else {
+                        (left, l_fast, l_primary, l_idx)
+                    }
+                } else {
+                    (left, l_fast, l_primary, l_idx)
+                };
+                if cmp_fast_entry(
+                    k_fast,
+                    k_primary,
+                    i_u32,
+                    c_fast,
+                    c_primary,
+                    c_idx,
+                    keys,
+                    state_hashes,
+                )
+                .is_lt()
+                {
+                    heap_fast[pos] = (c_fast, c_primary, c_idx);
+                    pos = worst_child;
+                } else {
+                    break;
+                }
+            }
+            heap_fast[pos] = (k_fast, k_primary, i_u32);
+            (*w_fast, *w_primary, *w_idx) = heap_fast[0];
+        }
+    }
+    heap_fast.clear();
+    let n = keys.len().min(fast_keys.len());
+    let mut w_fast = 0i64;
+    let mut w_primary = 0.0f64;
+    let mut w_idx = 0u32;
+    let mut i = 0usize;
+    while i < n && heap_fast.len() < total_k {
+        if marks[i] == 0 {
+            let k_fast = fast_keys[i];
+            let k_primary = keys[i].primary;
+            let i_u32 = i as u32;
+            let mut pos = heap_fast.len();
+            heap_fast.push((k_fast, k_primary, i_u32));
+            while pos > 0 {
+                let parent = (pos - 1) >> 1;
+                let (p_fast, p_primary, p_idx) = heap_fast[parent];
+                if cmp_fast_entry(
+                    p_fast,
+                    p_primary,
+                    p_idx,
+                    k_fast,
+                    k_primary,
+                    i_u32,
+                    keys,
+                    state_hashes,
+                )
+                .is_lt()
+                {
+                    heap_fast[pos] = (p_fast, p_primary, p_idx);
+                    pos = parent;
+                } else {
+                    break;
+                }
+            }
+            heap_fast[pos] = (k_fast, k_primary, i_u32);
+            if heap_fast.len() == total_k {
+                (w_fast, w_primary, w_idx) = heap_fast[0];
+            }
+        }
+        i += 1;
+    }
+    while i < n {
+        let k_fast = fast_keys[i];
+        if k_fast >= w_fast && marks[i] == 0 {
+            maybe_push_fast(
+                i,
+                k_fast,
+                keys,
+                state_hashes,
+                heap_fast,
+                &mut w_fast,
+                &mut w_primary,
+                &mut w_idx,
+            );
+        }
+        i += 1;
+    }
+    if heap_fast.is_empty() {
+        return 0;
+    }
+    heap_fast.sort_unstable_by(|&(fa, pa, ia), &(fb, pb, ib)| {
+        cmp_fast_entry(fa, pa, ia, fb, pb, ib, keys, state_hashes)
+    });
+    let added = take.min(heap_fast.len());
+    let extra = pareto_extra.min(heap_fast.len().saturating_sub(added));
+    let mut iter = heap_fast.iter().map(|&(_, _, idx)| idx as usize);
+    for idx in iter.by_ref().take(added) {
+        if marks[idx] == 0 {
+            marks[idx] = 1;
+            out.push((keys[idx].primary, keys[idx].node_id));
+        }
+    }
+    let mut p_cnt = 0usize;
+    for idx in iter.take(extra) {
+        pareto_out[p_cnt] = idx;
+        p_cnt += 1;
+    }
+    *pareto_count_out = p_cnt;
+    added
+}
+
+#[inline(always)]
+const fn compute_sig_table_size(cap: usize) -> usize {
+    let target = (cap as u64).saturating_mul(4);
+    let target = if target < 64 { 64 } else { target };
+    let mut size = 64usize;
+    while (size as u64) < target && size < (1 << 30) {
+        size <<= 1;
+    }
+    size
+}
+
+#[inline(always)]
+fn get_sig_count(sig: u64, keys: &[u64], counts: &[u8], mask: usize) -> u8 {
+    let mut slot = (sig as usize) & mask;
+    loop {
+        let k = keys[slot];
+        if k == 0 {
+            return 0;
+        }
+        if k == sig {
+            return counts[slot];
+        }
+        slot = (slot + 1) & mask;
+    }
+}
+
+#[inline(always)]
+fn try_consume_sig(
+    sig: u64,
+    keys: &mut [u64],
+    counts: &mut [u8],
+    mask: usize,
+    max_clones: u8,
+) -> bool {
+    let mut slot = (sig as usize) & mask;
+    loop {
+        let k = keys[slot];
+        if k == 0 {
+            keys[slot] = sig;
+            counts[slot] = 1;
+            return true;
+        }
+        if k == sig {
+            let c = counts[slot];
+            if c >= max_clones {
+                return false;
+            }
+            counts[slot] = c + 1;
+            return true;
+        }
+        slot = (slot + 1) & mask;
+    }
+}
+
+#[inline(always)]
+fn compare_theft(a: &ExtendedPruneEntry, b: &ExtendedPruneEntry) -> std::cmp::Ordering {
+    a.outstanding_stolen
+        .cmp(&b.outstanding_stolen)
+        .then_with(|| a.forfeits_gold.cmp(&b.forfeits_gold))
+}
+
+#[inline(always)]
+fn cmp_entry_strategy(
+    a: &ExtendedPruneEntry,
+    b: &ExtendedPruneEntry,
+    allow_death_save_rescue: bool,
+    preserve_theft: bool,
+) -> std::cmp::Ordering {
+    let mut ord = if !allow_death_save_rescue {
+        a.death_save_use_count.cmp(&b.death_save_use_count)
+    } else {
+        std::cmp::Ordering::Equal
+    };
+    if ord.is_ne() {
+        return ord;
+    }
+    if preserve_theft {
+        ord = compare_theft(a, b);
+        if ord.is_ne() {
+            return ord;
+        }
+    }
+    b.strategy_goal_hp_credit
+        .cmp(&a.strategy_goal_hp_credit)
+        .then_with(|| b.strategy_goal_count.cmp(&a.strategy_goal_count))
+        .then_with(|| a.relic_distance.cmp(&b.relic_distance))
+        .then_with(|| {
+            a.effective_net_hp_loss_centi
+                .cmp(&b.effective_net_hp_loss_centi)
+        })
+        .then_with(|| b.primary.total_cmp(&a.primary))
+}
+
+#[inline(always)]
+fn cmp_entry_survival(
+    a: &ExtendedPruneEntry,
+    b: &ExtendedPruneEntry,
+    allow_death_save_rescue: bool,
+    preserve_theft: bool,
+    has_any_strategy: bool,
+) -> std::cmp::Ordering {
+    if !allow_death_save_rescue {
+        let ord = a.death_save_use_count.cmp(&b.death_save_use_count);
+        if ord.is_ne() {
+            return ord;
+        }
+    }
+    if preserve_theft {
+        let ord = compare_theft(a, b);
+        if ord.is_ne() {
+            return ord;
+        }
+    }
+    let mut a_loss = a.effective_net_hp_loss_centi;
+    let mut b_loss = b.effective_net_hp_loss_centi;
+    if has_any_strategy {
+        a_loss -= (a.strategic_hp_credit as i32) * weights::HP_FIXED_SCALE;
+        b_loss -= (b.strategic_hp_credit as i32) * weights::HP_FIXED_SCALE;
+    }
+    let ord = a_loss.cmp(&b_loss);
+    if ord.is_ne() {
+        return ord;
+    }
+    let a_buf = a.best_hp + a.effective_defense;
+    let b_buf = b.best_hp + b.effective_defense;
+    b_buf
+        .cmp(&a_buf)
+        .then_with(|| b.best_hp.cmp(&a.best_hp))
+        .then_with(|| {
+            if allow_death_save_rescue {
+                a.death_save_use_count.cmp(&b.death_save_use_count)
+            } else {
+                std::cmp::Ordering::Equal
+            }
+        })
+        .then_with(|| a.enemy_hp.cmp(&b.enemy_hp))
+        .then_with(|| b.primary.total_cmp(&a.primary))
+}
+
+#[inline(always)]
+fn cmp_entry_tempo(
+    a: &ExtendedPruneEntry,
+    b: &ExtendedPruneEntry,
+    allow_death_save_rescue: bool,
+    preserve_theft: bool,
+) -> std::cmp::Ordering {
+    if !allow_death_save_rescue {
+        let ord = a.death_save_use_count.cmp(&b.death_save_use_count);
+        if ord.is_ne() {
+            return ord;
+        }
+    }
+    if preserve_theft {
+        let ord = compare_theft(a, b);
+        if ord.is_ne() {
+            return ord;
+        }
+    }
+    a.rem_enemies
+        .cmp(&b.rem_enemies)
+        .then_with(|| a.enemy_hp.cmp(&b.enemy_hp))
+        .then_with(|| {
+            a.effective_net_hp_loss_centi
+                .cmp(&b.effective_net_hp_loss_centi)
+        })
+        .then_with(|| b.primary.total_cmp(&a.primary))
+}
+
+#[inline(always)]
+fn cmp_entry_board_investment(
+    a: &ExtendedPruneEntry,
+    b: &ExtendedPruneEntry,
+    allow_death_save_rescue: bool,
+    preserve_theft: bool,
+) -> std::cmp::Ordering {
+    if !allow_death_save_rescue {
+        let ord = a.death_save_use_count.cmp(&b.death_save_use_count);
+        if ord.is_ne() {
+            return ord;
+        }
+    }
+    if preserve_theft {
+        let ord = compare_theft(a, b);
+        if ord.is_ne() {
+            return ord;
+        }
+    }
+    let a_invest = (a.board_investment as i64) * 16_000 + (a.setup_score as i64) * 18_000;
+    let b_invest = (b.board_investment as i64) * 16_000 + (b.setup_score as i64) * 18_000;
+    b_invest
+        .cmp(&a_invest)
+        .then_with(|| {
+            a.effective_net_hp_loss_centi
+                .cmp(&b.effective_net_hp_loss_centi)
+        })
+        .then_with(|| b.setup_score.cmp(&a.setup_score))
+        .then_with(|| b.primary.total_cmp(&a.primary))
+}
+
+#[inline(always)]
+fn cmp_entry_optionality(
+    a: &ExtendedPruneEntry,
+    b: &ExtendedPruneEntry,
+    is_turn_boundary: bool,
+    allow_death_save_rescue: bool,
+    preserve_theft: bool,
+) -> std::cmp::Ordering {
+    if !allow_death_save_rescue {
+        let ord = a.death_save_use_count.cmp(&b.death_save_use_count);
+        if ord.is_ne() {
+            return ord;
+        }
+    }
+    if preserve_theft {
+        let ord = compare_theft(a, b);
+        if ord.is_ne() {
+            return ord;
+        }
+    }
+    if !is_turn_boundary {
+        let a_combo =
+            a.optionality_score + (a.playable_hand_count as i32) + (a.energy as i32).min(6);
+        let b_combo =
+            b.optionality_score + (b.playable_hand_count as i32) + (b.energy as i32).min(6);
+        let ord = b_combo.cmp(&a_combo);
+        if ord.is_ne() {
+            return ord;
+        }
+    }
+    let a_invest = (a.board_investment as i64) * 16_000 + (a.setup_score as i64) * 18_000;
+    let b_invest = (b.board_investment as i64) * 16_000 + (b.setup_score as i64) * 18_000;
+    b.optionality_score
+        .cmp(&a.optionality_score)
+        .then_with(|| b_invest.cmp(&a_invest))
+        .then_with(|| {
+            a.effective_net_hp_loss_centi
+                .cmp(&b.effective_net_hp_loss_centi)
+        })
+        .then_with(|| b.primary.total_cmp(&a.primary))
+}
+
+#[inline(always)]
+fn cmp_entry_pure_rollout(a: &ExtendedPruneEntry, b: &ExtendedPruneEntry) -> std::cmp::Ordering {
+    b.has_rollout_score
+        .cmp(&a.has_rollout_score)
+        .then_with(|| {
+            if a.has_rollout_score && b.has_rollout_score {
+                b.aux_score.total_cmp(&a.aux_score)
+            } else {
+                std::cmp::Ordering::Equal
+            }
+        })
+        .then_with(|| b.primary.total_cmp(&a.primary))
+}
+
+#[inline(always)]
+fn cmp_entry_choice_lookahead(
+    a: &ExtendedPruneEntry,
+    b: &ExtendedPruneEntry,
+) -> std::cmp::Ordering {
+    b.has_choice_lookahead
+        .cmp(&a.has_choice_lookahead)
+        .then_with(|| {
+            if a.has_choice_lookahead && b.has_choice_lookahead {
+                b.aux_score.total_cmp(&a.aux_score)
+            } else {
+                std::cmp::Ordering::Equal
+            }
+        })
+        .then_with(|| b.primary.total_cmp(&a.primary))
+}
+
+#[allow(clippy::too_many_arguments)]
+#[inline]
+fn dominates_candidate(
+    other: &ExtendedPruneEntry,
+    cand: &ExtendedPruneEntry,
+    allow_death_save_rescue: bool,
+    preserve_theft: bool,
+    forced_potion_mask: u64,
+    require_explicit_potion: bool,
+    has_pure_growth_targets: bool,
+    has_relic_targets: bool,
+) -> bool {
+    if allow_death_save_rescue {
+        if other.death_save_use_count != cand.death_save_use_count {
+            return false;
+        }
+    } else if other.death_save_use_count > cand.death_save_use_count {
+        return false;
+    }
+
+    let mut strictly_better_special = false;
+
+    if preserve_theft {
+        if other.outstanding_stolen > cand.outstanding_stolen
+            || (other.forfeits_gold && !cand.forfeits_gold)
+        {
+            return false;
+        }
+        if other.outstanding_stolen < cand.outstanding_stolen
+            || (!other.forfeits_gold && cand.forfeits_gold)
+        {
+            strictly_better_special = true;
+        }
+    }
+
+    if forced_potion_mask != 0 {
+        let other_forced = other.forced_used_mask & forced_potion_mask;
+        let cand_forced = cand.forced_used_mask & forced_potion_mask;
+        if (other_forced & cand_forced) != cand_forced {
+            return false;
+        }
+        if other_forced != cand_forced {
+            strictly_better_special = true;
+        }
+    }
+
+    if require_explicit_potion {
+        if cand.explicit_potion_count > 0 && other.explicit_potion_count == 0 {
+            return false;
+        }
+        if other.explicit_potion_count > 0 && cand.explicit_potion_count == 0 {
+            strictly_better_special = true;
+        }
+    }
+
+    if other.effective_net_hp_loss_centi > cand.effective_net_hp_loss_centi
+        || other.best_hp < cand.best_hp
+        || other.effective_defense < cand.effective_defense
+        || other.enemy_hp > cand.enemy_hp
+        || other.rem_enemies > cand.rem_enemies
+        || other.setup_score < cand.setup_score
+        || other.board_investment < cand.board_investment
+        || other.max_dark_evoke < cand.max_dark_evoke
+        || other.total_poison_and_doom < cand.total_poison_and_doom
+        || other.optionality_score < cand.optionality_score
+        || other.playable_hand_count < cand.playable_hand_count
+        || other.optional_paid_potion_count > cand.optional_paid_potion_count
+        || other.potion_cost > cand.potion_cost
+    {
+        return false;
+    }
+
+    if has_pure_growth_targets {
+        if other.growth_hp_credit < cand.growth_hp_credit
+            || other.growth_reward_count < cand.growth_reward_count
+        {
+            return false;
+        }
+        if other.growth_hp_credit > cand.growth_hp_credit
+            || other.growth_reward_count > cand.growth_reward_count
+        {
+            strictly_better_special = true;
+        }
+    }
+
+    if has_relic_targets {
+        if (other.relic_satisfied_mask & cand.relic_satisfied_mask) != cand.relic_satisfied_mask {
+            return false;
+        }
+        let other_relic_credit = other.relic_hp_credit + other.relic_healing_hp_credit;
+        let cand_relic_credit = cand.relic_hp_credit + cand.relic_healing_hp_credit;
+        if other_relic_credit < cand_relic_credit
+            || other.relic_satisfied_priority < cand.relic_satisfied_priority
+            || other.relic_distance > cand.relic_distance
+        {
+            return false;
+        }
+        if other.relic_satisfied_mask != cand.relic_satisfied_mask
+            || other_relic_credit > cand_relic_credit
+            || other.relic_satisfied_priority > cand.relic_satisfied_priority
+            || other.relic_distance < cand.relic_distance
+        {
+            strictly_better_special = true;
+        }
+    }
+
+    if other.primary < cand.primary {
+        return false;
+    }
+
+    strictly_better_special
+        || other.death_save_use_count < cand.death_save_use_count
+        || other.effective_net_hp_loss_centi < cand.effective_net_hp_loss_centi
+        || other.best_hp > cand.best_hp
+        || other.effective_defense > cand.effective_defense
+        || other.enemy_hp < cand.enemy_hp
+        || other.rem_enemies < cand.rem_enemies
+        || other.setup_score > cand.setup_score
+        || other.board_investment > cand.board_investment
+        || other.max_dark_evoke > cand.max_dark_evoke
+        || other.total_poison_and_doom > cand.total_poison_and_doom
+        || other.optionality_score > cand.optionality_score
+        || other.playable_hand_count > cand.playable_hand_count
+        || other.optional_paid_potion_count < cand.optional_paid_potion_count
+        || other.potion_cost < cand.potion_cost
+        || other.primary > cand.primary
+}
+
+#[allow(clippy::too_many_arguments)]
+#[inline]
+fn is_dominated_in_full_pool_pareto(
+    cand: &ExtendedPruneEntry,
+    entries: &[ExtendedPruneEntry],
+    marks: &[u8],
+    node_sigs: &[u64],
+    sig_keys: &[u64],
+    sig_counts: &[u8],
+    sig_mask: usize,
+    max_clones_per_sig: u8,
+    selected_indices: &[usize],
+    pareto_pool: &[usize],
+    cand_pool_pos: usize,
+    allow_death_save_rescue: bool,
+    preserve_theft: bool,
+    forced_potion_mask: u64,
+    require_explicit_potion: bool,
+    has_pure_growth_targets: bool,
+    has_relic_targets: bool,
+) -> bool {
+    for &sel_idx in selected_indices {
+        if dominates_candidate(
+            &entries[sel_idx],
+            cand,
+            allow_death_save_rescue,
+            preserve_theft,
+            forced_potion_mask,
+            require_explicit_potion,
+            has_pure_growth_targets,
+            has_relic_targets,
+        ) {
+            return true;
+        }
+    }
+    for (j, &other_idx) in pareto_pool.iter().enumerate() {
+        if j == cand_pool_pos || marks[other_idx] == 1 {
+            continue;
+        }
+        if get_sig_count(node_sigs[other_idx], sig_keys, sig_counts, sig_mask)
+            >= max_clones_per_sig
+        {
+            continue;
+        }
+        if dominates_candidate(
+            &entries[other_idx],
+            cand,
+            allow_death_save_rescue,
+            preserve_theft,
+            forced_potion_mask,
+            require_explicit_potion,
+            has_pure_growth_targets,
+            has_relic_targets,
+        ) {
+            return true;
+        }
+    }
+    false
+}
+
+#[inline(always)]
+fn is_better_entry<F>(
+    idx_a: usize,
+    idx_b: usize,
+    entries: &[ExtendedPruneEntry],
+    keys: &[PruneKey],
+    state_hashes: &[crate::hash::StateHash],
+    cmp_entry: &F,
+) -> bool
+where
+    F: Fn(&ExtendedPruneEntry, &ExtendedPruneEntry) -> std::cmp::Ordering,
+{
+    let ord = cmp_entry(&entries[idx_a], &entries[idx_b]);
+    if ord.is_lt() {
+        true
+    } else if ord.is_gt() {
+        false
+    } else {
+        cmp_key_tie_break(keys, state_hashes, idx_a, idx_b).is_lt()
+    }
+}
+
+#[inline(always)]
+fn sift_down_niche_heap<F>(
+    heap: &mut [usize],
+    start_pos: usize,
+    entries: &[ExtendedPruneEntry],
+    keys: &[PruneKey],
+    state_hashes: &[crate::hash::StateHash],
+    cmp_entry: &F,
+) where
+    F: Fn(&ExtendedPruneEntry, &ExtendedPruneEntry) -> std::cmp::Ordering,
+{
+    let len = heap.len();
+    let mut pos = start_pos;
+    loop {
+        let left = (pos << 1) + 1;
+        if left >= len {
+            break;
+        }
+        let mut worst = pos;
+        if is_better_entry(heap[worst], heap[left], entries, keys, state_hashes, cmp_entry) {
+            worst = left;
+        }
+        let right = left + 1;
+        if right < len
+            && is_better_entry(
+                heap[worst],
+                heap[right],
+                entries,
+                keys,
+                state_hashes,
+                cmp_entry,
+            )
+        {
+            worst = right;
+        }
+        if worst == pos {
+            break;
+        }
+        heap.swap(pos, worst);
+        pos = worst;
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+fn heap_sig_increment<F>(
+    sig: u64,
+    cand_idx: usize,
+    heap_keys: &mut [u64],
+    heap_counts: &mut [u8],
+    heap_worst_idx: &mut [i32],
+    mask: usize,
+    entries: &[ExtendedPruneEntry],
+    keys: &[PruneKey],
+    state_hashes: &[crate::hash::StateHash],
+    cmp_entry: &F,
+) where
+    F: Fn(&ExtendedPruneEntry, &ExtendedPruneEntry) -> std::cmp::Ordering,
+{
+    let mut slot = (sig as usize) & mask;
+    loop {
+        let k = heap_keys[slot];
+        if k == 0 {
+            heap_keys[slot] = sig;
+            heap_counts[slot] = 1;
+            heap_worst_idx[slot] = cand_idx as i32;
+            return;
+        }
+        if k == sig {
+            heap_counts[slot] = heap_counts[slot].saturating_add(1);
+            let prev_worst = heap_worst_idx[slot];
+            if prev_worst >= 0
+                && is_better_entry(
+                    prev_worst as usize,
+                    cand_idx,
+                    entries,
+                    keys,
+                    state_hashes,
+                    cmp_entry,
+                )
+            {
+                heap_worst_idx[slot] = cand_idx as i32;
+            }
+            return;
+        }
+        slot = (slot + 1) & mask;
+    }
+}
+
+#[inline]
+fn heap_sig_decrement(
+    sig: u64,
+    heap_keys: &mut [u64],
+    heap_counts: &mut [u8],
+    heap_worst_idx: &mut [i32],
+    mask: usize,
+) {
+    let mut slot = (sig as usize) & mask;
+    loop {
+        let k = heap_keys[slot];
+        if k == 0 {
+            return;
+        }
+        if k == sig {
+            break;
+        }
+        slot = (slot + 1) & mask;
+    }
+    let c = heap_counts[slot];
+    if c > 1 {
+        heap_counts[slot] = c - 1;
+        heap_worst_idx[slot] = -1;
+        return;
+    }
+    let mut hole = slot;
+    let mut cur = (hole + 1) & mask;
+    loop {
+        let k = heap_keys[cur];
+        if k == 0 {
+            heap_keys[hole] = 0;
+            heap_counts[hole] = 0;
+            heap_worst_idx[hole] = -1;
+            return;
+        }
+        let home = (k as usize) & mask;
+        if ((hole.wrapping_sub(home)) & mask) < ((cur.wrapping_sub(home)) & mask) {
+            heap_keys[hole] = k;
+            heap_counts[hole] = heap_counts[cur];
+            heap_worst_idx[hole] = heap_worst_idx[cur];
+            hole = cur;
+        }
+        cur = (cur + 1) & mask;
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn select_top_k_unmarked<F>(
+    entries: &[ExtendedPruneEntry],
+    keys: &[PruneKey],
+    state_hashes: &[crate::hash::StateHash],
+    node_sigs: &[u64],
+    marks: &mut [u8],
+    sig_keys: &mut [u64],
+    sig_counts: &mut [u8],
+    sig_mask: usize,
+    max_clones_per_sig: u8,
+    heap: &mut Vec<usize>,
+    heap_sig_keys: &mut Vec<u64>,
+    heap_sig_counts: &mut Vec<u8>,
+    heap_sig_worst_idx: &mut Vec<i32>,
+    selected_indices: &mut Vec<usize>,
+    take: usize,
+    pareto_extra: usize,
+    out: &mut Vec<(f64, NodeId)>,
+    pareto_out: &mut [usize; PER_NICHE_PARETO_TOP_K],
+    pareto_count_out: &mut usize,
+    cmp_entry: F,
+) -> usize
+where
+    F: Fn(&ExtendedPruneEntry, &ExtendedPruneEntry) -> std::cmp::Ordering,
+{
+    *pareto_count_out = 0;
+    let total_k = take + pareto_extra;
+    if total_k == 0 {
+        return 0;
+    }
+
+    let heap_sig_table_size = compute_sig_table_size(total_k);
+    let heap_sig_mask = heap_sig_table_size - 1;
+    heap_sig_keys.clear();
+    heap_sig_keys.resize(heap_sig_table_size, 0);
+    heap_sig_counts.clear();
+    heap_sig_counts.resize(heap_sig_table_size, 0);
+    heap_sig_worst_idx.clear();
+    heap_sig_worst_idx.resize(heap_sig_table_size, -1);
+
+    heap.clear();
+    for i in 0..entries.len() {
+        if marks[i] != 0 {
+            continue;
+        }
+        if heap.len() == total_k
+            && !is_better_entry(i, heap[0], entries, keys, state_hashes, &cmp_entry)
+        {
+            continue;
+        }
+
+        let sig = node_sigs[i];
+        let rem = (max_clones_per_sig as i32)
+            - (get_sig_count(sig, sig_keys, sig_counts, sig_mask) as i32);
+        if rem <= 0 {
+            continue;
+        }
+
+        let mut slot = (sig as usize) & heap_sig_mask;
+        let mut in_heap = 0i32;
+        loop {
+            let k = heap_sig_keys[slot];
+            if k == 0 {
+                break;
+            }
+            if k == sig {
+                in_heap = heap_sig_counts[slot] as i32;
+                break;
+            }
+            slot = (slot + 1) & heap_sig_mask;
+        }
+
+        if in_heap < rem {
+            if heap.len() < total_k {
+                let mut pos = heap.len();
+                heap.push(i);
+                while pos > 0 {
+                    let parent = (pos - 1) >> 1;
+                    if is_better_entry(
+                        heap[parent],
+                        heap[pos],
+                        entries,
+                        keys,
+                        state_hashes,
+                        &cmp_entry,
+                    ) {
+                        heap.swap(parent, pos);
+                        pos = parent;
+                    } else {
+                        break;
+                    }
+                }
+                if in_heap == 0 {
+                    heap_sig_keys[slot] = sig;
+                    heap_sig_counts[slot] = 1;
+                    heap_sig_worst_idx[slot] = i as i32;
+                } else {
+                    heap_sig_counts[slot] = (in_heap + 1) as u8;
+                    let prev_worst = heap_sig_worst_idx[slot];
+                    if prev_worst >= 0
+                        && is_better_entry(
+                            prev_worst as usize,
+                            i,
+                            entries,
+                            keys,
+                            state_hashes,
+                            &cmp_entry,
+                        )
+                    {
+                        heap_sig_worst_idx[slot] = i as i32;
+                    }
+                }
+            } else {
+                let evicted = heap[0];
+                let evicted_sig = node_sigs[evicted];
+                heap[0] = i;
+                sift_down_niche_heap(heap, 0, entries, keys, state_hashes, &cmp_entry);
+                if evicted_sig == sig {
+                    heap_sig_worst_idx[slot] = if in_heap == 1 { i as i32 } else { -1 };
+                } else {
+                    heap_sig_decrement(
+                        evicted_sig,
+                        heap_sig_keys,
+                        heap_sig_counts,
+                        heap_sig_worst_idx,
+                        heap_sig_mask,
+                    );
+                    heap_sig_increment(
+                        sig,
+                        i,
+                        heap_sig_keys,
+                        heap_sig_counts,
+                        heap_sig_worst_idx,
+                        heap_sig_mask,
+                        entries,
+                        keys,
+                        state_hashes,
+                        &cmp_entry,
+                    );
+                }
+            }
+        } else {
+            let cached_worst = heap_sig_worst_idx[slot];
+            if cached_worst >= 0
+                && !is_better_entry(
+                    i,
+                    cached_worst as usize,
+                    entries,
+                    keys,
+                    state_hashes,
+                    &cmp_entry,
+                )
+            {
+                continue;
+            }
+            let mut worst_pos = None;
+            for (h, &cand_h) in heap.iter().enumerate() {
+                if node_sigs[cand_h] != sig {
+                    continue;
+                }
+                if worst_pos.is_none_or(|wp| {
+                    is_better_entry(heap[wp], cand_h, entries, keys, state_hashes, &cmp_entry)
+                }) {
+                    worst_pos = Some(h);
+                }
+            }
+            let Some(wp) = worst_pos else {
+                continue;
+            };
+            if !is_better_entry(i, heap[wp], entries, keys, state_hashes, &cmp_entry) {
+                heap_sig_worst_idx[slot] = heap[wp] as i32;
+                continue;
+            }
+            heap[wp] = i;
+            sift_down_niche_heap(heap, wp, entries, keys, state_hashes, &cmp_entry);
+            heap_sig_worst_idx[slot] = if rem == 1 { i as i32 } else { -1 };
+        }
+    }
+
+    if heap.is_empty() {
+        return 0;
+    }
+
+    heap.sort_unstable_by(|&a, &b| {
+        cmp_entry(&entries[a], &entries[b])
+            .then_with(|| cmp_key_tie_break(keys, state_hashes, a, b))
+    });
+
+    let added = take.min(heap.len());
+    for &idx in heap.iter().take(added) {
+        marks[idx] = 1;
+        out.push((entries[idx].primary, entries[idx].node_id));
+        selected_indices.push(idx);
+        try_consume_sig(
+            node_sigs[idx],
+            sig_keys,
+            sig_counts,
+            sig_mask,
+            max_clones_per_sig,
+        );
+    }
+
+    let extra = pareto_extra
+        .min(heap.len().saturating_sub(added))
+        .min(PER_NICHE_PARETO_TOP_K);
+    for (p, &idx) in heap.iter().skip(added).take(extra).enumerate() {
+        pareto_out[p] = idx;
+    }
+    *pareto_count_out = extra;
+    added
+}
+
+#[allow(clippy::too_many_arguments)]
 fn select_from_potion_bucket_scratch<S: PruneSource>(
     source: &S,
     bucket: &mut BucketPruneScratch,
@@ -1495,6 +3157,7 @@ fn select_from_potion_bucket_scratch<S: PruneSource>(
     prefer_potion_buckets: bool,
     is_turn_boundary: bool,
     use_rollout_scores: bool,
+    allow_death_save_rescue: bool,
     pool: Option<&rayon::ThreadPool>,
 ) {
     let BucketPruneScratch {
@@ -1503,16 +3166,16 @@ fn select_from_potion_bucket_scratch<S: PruneSource>(
         marks,
         unmarked,
         heap,
-        heap_fast,
-        heap_f64,
-        selected_rows,
         keys,
+        entries,
         state_hashes,
-        survival_keys,
-        tempo_keys,
-        setup_keys,
-        optionality_keys,
-        aux_scores,
+        node_sigs,
+        sig_keys,
+        sig_counts,
+        heap_sig_keys,
+        heap_sig_counts,
+        heap_sig_worst_idx,
+        selected_indices,
         order,
     } = bucket;
     out.clear();
@@ -1525,344 +3188,190 @@ fn select_from_potion_bucket_scratch<S: PruneSource>(
         return;
     }
 
+    let has_pure_growth = !root.ignore_long_term_rewards && root.effective_has_growth_targets;
+    let has_relic = !root.active_relic_targets.is_empty();
+    let has_any_strategy = has_pure_growth || has_relic;
+    let preserve_theft = root.theft_policy == SolverTheftPolicy::PreserveResources;
+    let forced_potion_mask = root.all_forced_potion_mask;
+    let require_explicit_potion = root.initial_player_max_hp > 0
+        && root.effective_potion_policy == SolverPotionPolicy::RequireAtLeastOne;
+
     keys.clear();
+    entries.clear();
     state_hashes.clear();
-    survival_keys.clear();
-    tempo_keys.clear();
-    setup_keys.clear();
-    optionality_keys.clear();
-    aux_scores.clear();
+    node_sigs.clear();
     order.clear();
     keys.reserve(count);
+    entries.reserve(count);
     state_hashes.reserve(count);
-    survival_keys.reserve(count);
-    tempo_keys.reserve(count);
-    setup_keys.reserve(count);
-    optionality_keys.reserve(count);
-    aux_scores.reserve(count);
+    node_sigs.reserve(count);
     order.reserve(count);
 
-    let check_sig = bucket_index >= 1 && quota >= 6;
-    let sig0 = if check_sig {
-        let (k0, ..) = source.build_prune_entry(bucket_nodes[0], root, use_rollout_scores);
-        (
-            k0.used_potion_slot_mask,
-            k0.potion_cost,
-            k0.explicit_potion_count,
-            k0.forced_used_mask,
-        )
-    } else {
-        (0, 0, 0, 0)
-    };
-
-    let (all_fast_exact, all_same_sig) = if let Some(pool) = pool.filter(|_| count >= 1024) {
+    if let Some(pool) = pool.filter(|_| count >= 1024) {
         let k_uninit = &mut keys.spare_capacity_mut()[..count];
+        let e_uninit = &mut entries.spare_capacity_mut()[..count];
         let sh_uninit = &mut state_hashes.spare_capacity_mut()[..count];
-        let s_uninit = &mut survival_keys.spare_capacity_mut()[..count];
-        let t_uninit = &mut tempo_keys.spare_capacity_mut()[..count];
-        let su_uninit = &mut setup_keys.spare_capacity_mut()[..count];
-        let o_uninit = &mut optionality_keys.spare_capacity_mut()[..count];
-        let a_uninit = &mut aux_scores.spare_capacity_mut()[..count];
+        let sig_uninit = &mut node_sigs.spare_capacity_mut()[..count];
         let ord_uninit = &mut order.spare_capacity_mut()[..count];
-        let fast_exact_flag = AtomicBool::new(true);
-        let fast_exact_ref = &fast_exact_flag;
-        let same_sig_flag = AtomicBool::new(true);
-        let same_sig_ref = &same_sig_flag;
         let chunk_len = ((count + 15) / 16).max(64);
         let mut chunk_iter = k_uninit
             .chunks_mut(chunk_len)
+            .zip(e_uninit.chunks_mut(chunk_len))
             .zip(sh_uninit.chunks_mut(chunk_len))
-            .zip(
-                s_uninit
-                    .chunks_mut(chunk_len)
-                    .zip(t_uninit.chunks_mut(chunk_len)),
-            )
-            .zip(
-                su_uninit
-                    .chunks_mut(chunk_len)
-                    .zip(o_uninit.chunks_mut(chunk_len)),
-            )
-            .zip(
-                a_uninit
-                    .chunks_mut(chunk_len)
-                    .zip(ord_uninit.chunks_mut(chunk_len)),
-            )
+            .zip(sig_uninit.chunks_mut(chunk_len))
+            .zip(ord_uninit.chunks_mut(chunk_len))
             .zip(bucket_nodes.chunks(chunk_len));
         let chunk0 = chunk_iter.next();
         pool.scope(|scope| {
             let mut offset = chunk0.as_ref().map_or(0, |(_, n)| n.len());
-            for (
-                ((((k_chunk, sh_chunk), (s_chunk, t_chunk)), (su_chunk, o_chunk)), (a_chunk, ord_chunk)),
-                n_chunk,
-            ) in chunk_iter
-            {
+            for (((((k_chunk, e_chunk), sh_chunk), sig_chunk), ord_chunk), n_chunk) in chunk_iter {
                 let start = offset;
                 offset += k_chunk.len();
                 scope.spawn(move |_| {
-                    let mut local_fast = true;
-                    let mut local_same_sig = true;
                     for j in 0..k_chunk.len() {
-                        let (k, s, t, su, o, a, sh) =
-                            source.build_prune_entry(n_chunk[j], root, use_rollout_scores);
-                        local_fast &= (k.flags & PRUNE_FLAG_FAST_EXACT) != 0;
-                        if check_sig {
-                            let sig = (
-                                k.used_potion_slot_mask,
-                                k.potion_cost,
-                                k.explicit_potion_count,
-                                k.forced_used_mask,
-                            );
-                            local_same_sig &= sig == sig0;
-                        }
+                        let nid = n_chunk[j];
+                        let (k, _, _, _, _, _, sh) =
+                            source.build_prune_entry(nid, root, use_rollout_scores);
+                        let ext =
+                            source.build_extended_prune_entry(nid, &k, root, use_rollout_scores);
                         let ord_val = (k.primary, (start + j) as u32);
                         k_chunk[j].write(k);
+                        e_chunk[j].write(ext);
                         sh_chunk[j].write(sh);
-                        s_chunk[j].write(s);
-                        t_chunk[j].write(t);
-                        su_chunk[j].write(su);
-                        o_chunk[j].write(o);
-                        a_chunk[j].write(a);
+                        sig_chunk[j].write(ext.tactical_sig);
                         ord_chunk[j].write(ord_val);
-                    }
-                    if !local_fast {
-                        fast_exact_ref.store(false, Ordering::Relaxed);
-                    }
-                    if check_sig && !local_same_sig {
-                        same_sig_ref.store(false, Ordering::Relaxed);
                     }
                 });
             }
-            if let Some((
-                ((((k_chunk, sh_chunk), (s_chunk, t_chunk)), (su_chunk, o_chunk)), (a_chunk, ord_chunk)),
-                n_chunk,
-            )) = chunk0
+            if let Some((((((k_chunk, e_chunk), sh_chunk), sig_chunk), ord_chunk), n_chunk)) =
+                chunk0
             {
-                let mut local_fast = true;
-                let mut local_same_sig = true;
                 for j in 0..k_chunk.len() {
-                    let (k, s, t, su, o, a, sh) =
-                        source.build_prune_entry(n_chunk[j], root, use_rollout_scores);
-                    local_fast &= (k.flags & PRUNE_FLAG_FAST_EXACT) != 0;
-                    if check_sig {
-                        let sig = (
-                            k.used_potion_slot_mask,
-                            k.potion_cost,
-                            k.explicit_potion_count,
-                            k.forced_used_mask,
-                        );
-                        local_same_sig &= sig == sig0;
-                    }
+                    let nid = n_chunk[j];
+                    let (k, _, _, _, _, _, sh) =
+                        source.build_prune_entry(nid, root, use_rollout_scores);
+                    let ext =
+                        source.build_extended_prune_entry(nid, &k, root, use_rollout_scores);
                     let ord_val = (k.primary, j as u32);
                     k_chunk[j].write(k);
+                    e_chunk[j].write(ext);
                     sh_chunk[j].write(sh);
-                    s_chunk[j].write(s);
-                    t_chunk[j].write(t);
-                    su_chunk[j].write(su);
-                    o_chunk[j].write(o);
-                    a_chunk[j].write(a);
+                    sig_chunk[j].write(ext.tactical_sig);
                     ord_chunk[j].write(ord_val);
-                }
-                if !local_fast {
-                    fast_exact_ref.store(false, Ordering::Relaxed);
-                }
-                if check_sig && !local_same_sig {
-                    same_sig_ref.store(false, Ordering::Relaxed);
                 }
             }
         });
         // SAFETY: Disjoint chunks initialized all `0..count` elements inside `pool.scope`.
         unsafe {
             keys.set_len(count);
+            entries.set_len(count);
             state_hashes.set_len(count);
-            survival_keys.set_len(count);
-            tempo_keys.set_len(count);
-            setup_keys.set_len(count);
-            optionality_keys.set_len(count);
-            aux_scores.set_len(count);
+            node_sigs.set_len(count);
             order.set_len(count);
         }
-        (
-            fast_exact_flag.load(Ordering::Relaxed),
-            check_sig && same_sig_flag.load(Ordering::Relaxed),
-        )
     } else {
-        let mut all_fast = true;
-        let mut same_sig = check_sig;
         for (i, &nid) in bucket_nodes.iter().enumerate() {
-            let (k, s, t, su, o, a, sh) = source.build_prune_entry(nid, root, use_rollout_scores);
-            all_fast &= k.fast_keys_exact();
-            if same_sig {
-                let sig = (
-                    k.used_potion_slot_mask,
-                    k.potion_cost,
-                    k.explicit_potion_count,
-                    k.forced_used_mask,
-                );
-                same_sig &= sig == sig0;
-            }
+            let (k, _, _, _, _, _, sh) = source.build_prune_entry(nid, root, use_rollout_scores);
+            let ext = source.build_extended_prune_entry(nid, &k, root, use_rollout_scores);
             order.push((k.primary, i as u32));
             keys.push(k);
+            entries.push(ext);
             state_hashes.push(sh);
-            survival_keys.push(s);
-            tempo_keys.push(t);
-            setup_keys.push(su);
-            optionality_keys.push(o);
-            aux_scores.push(a);
+            node_sigs.push(ext.tactical_sig);
         }
-        (all_fast, same_sig)
-    };
-    #[inline(always)]
-    fn cmp_order_entry(
-        (pa, ia): (f64, u32),
-        (pb, ib): (f64, u32),
-        keys: &[PruneKey],
-        state_hashes: &[crate::hash::StateHash],
-    ) -> std::cmp::Ordering {
+    }
+
+    // Full canonical ranking so signature clone capping in Pass 1 + Pass 2 spillover stays exact.
+    order.sort_unstable_by(|&(pa, ia), &(pb, ib)| {
         pb.total_cmp(&pa)
             .then_with(|| cmp_key_tie_break(keys, state_hashes, ia as usize, ib as usize))
-    }
-    let fast_partial = (bucket_index == 0 || quota < 6 || all_same_sig)
-        && root.all_forced_potion_mask == 0
-        && (root.ignore_long_term_rewards
-            || (root.effective_growth_budgets.is_zero() && root.active_relic_targets.is_empty()))
-        && !second_rank_band;
-    let prefix_len =
-        (quota + PER_NICHE_PARETO_TOP_K + (quota / 8) + usize::from(check_sig)).min(count);
-    if fast_partial && count > prefix_len * 2 {
-        order.select_nth_unstable_by(prefix_len - 1, |&a, &b| {
-            cmp_order_entry(a, b, keys, state_hashes)
-        });
-        order[..prefix_len].sort_unstable_by(|&a, &b| cmp_order_entry(a, b, keys, state_hashes));
-    } else {
-        order.sort_unstable_by(|&a, &b| cmp_order_entry(a, b, keys, state_hashes));
-    }
+    });
+
+    let sig_table_size = compute_sig_table_size(quota);
+    let sig_mask = sig_table_size - 1;
+    sig_keys.clear();
+    sig_keys.resize(sig_table_size, 0);
+    sig_counts.clear();
+    sig_counts.resize(sig_table_size, 0);
+    let max_clones_per_sig: u8 = if is_turn_boundary { 2 } else { 3 };
 
     // 0 = unselected, 1 = selected into `out`, 2 = queued in full-pool Pareto candidate set
     marks.clear();
     marks.resize(count, 0);
+    selected_indices.clear();
     let mut selected_in_bucket = 0usize;
 
-    // 0a. Forced potion leader
-    if root.all_forced_potion_mask != 0 && selected_in_bucket < quota {
-        if let Some((_, &(_, idx_u32))) = order.iter().enumerate().max_by(|&(ra, &(_, ia_u32)), &(rb, &(_, ib_u32))| {
-            let ia = ia_u32 as usize;
-            let ib = ib_u32 as usize;
-            keys[ia]
-                .forced_match_count
-                .cmp(&keys[ib].forced_match_count)
-                .then_with(|| cmp_key_primary_max(keys, state_hashes, ia, ib))
-                .then_with(|| rb.cmp(&ra))
-        }) {
-            let idx = idx_u32 as usize;
-            marks[idx] = 1;
-            out.push((keys[idx].primary, keys[idx].node_id));
-            selected_in_bucket += 1;
-        }
-    }
-
-    // 0b. Long-term growth / relic strategy leader
-    if !root.ignore_long_term_rewards
-        && (!root.effective_growth_budgets.is_zero() || !root.active_relic_targets.is_empty())
-        && selected_in_bucket < quota
-    {
-        if let Some((_, &(_, idx_u32))) = order
-            .iter()
-            .enumerate()
-            .filter(|&(_, &(_, i_u32))| marks[i_u32 as usize] == 0)
-            .max_by(|&(ra, &(_, ia_u32)), &(rb, &(_, ib_u32))| {
-                let ia = ia_u32 as usize;
-                let ib = ib_u32 as usize;
-                keys[ia]
-                    .strategic_hp_credit
-                    .cmp(&keys[ib].strategic_hp_credit)
-                    .then_with(|| {
-                        keys[ia]
-                            .strategy_goal_count
-                            .cmp(&keys[ib].strategy_goal_count)
-                    })
-                    .then_with(|| cmp_key_primary_max(keys, state_hashes, ia, ib))
-                    .then_with(|| rb.cmp(&ra))
-            })
-        {
-            let idx = idx_u32 as usize;
-            marks[idx] = 1;
-            out.push((keys[idx].primary, keys[idx].node_id));
-            selected_in_bucket += 1;
-        }
-    }
-
-    // 0c. Non-starving potion-signature diversity inside potion buckets (b >= 1)
-    if check_sig && selected_in_bucket < quota {
-        if all_same_sig {
-            for &(_, i_u32) in order.iter() {
-                let i = i_u32 as usize;
-                if marks[i] == 0 {
-                    let k = &keys[i];
-                    marks[i] = 1;
-                    out.push((k.primary, k.node_id));
-                    selected_in_bucket += 1;
-                    break;
-                }
-            }
+    // 0. Non-starving potion-signature diversity inside potion buckets (b >= 1):
+    if bucket_index >= 1 && quota >= 6 {
+        let pct_cap = if prefer_potion_buckets {
+            (quota * 25) / 100
         } else {
-            let pct_cap = if prefer_potion_buckets {
-                (quota * 25) / 100
-            } else {
-                (quota * 15) / 100
-            };
-            let diversity_cap = 16usize
-                .min(pct_cap.min(quota.saturating_sub(5)).max(1))
-                .min(quota - selected_in_bucket);
+            (quota * 15) / 100
+        };
+        let potion_diversity_quota = MAX_DISTINCT_POTION_SIGNATURES
+            .min(pct_cap.min(quota.saturating_sub(5)).max(1))
+            .min(quota - selected_in_bucket);
 
-            let mut seen_sigs: SmallVec<[(u16, i16, u8, u64); 16]> = SmallVec::new();
-            let mut div_added = 0usize;
-            for &(_, i_u32) in order.iter() {
-                let i = i_u32 as usize;
-                if div_added >= diversity_cap || seen_sigs.len() >= 16 {
+        let mut seen_keys = [0u32; MAX_DISTINCT_POTION_SIGNATURES];
+        let mut seen_count = 0usize;
+
+        for &(_, idx_u32) in order.iter() {
+            if selected_in_bucket >= potion_diversity_quota
+                || seen_count >= MAX_DISTINCT_POTION_SIGNATURES
+            {
+                break;
+            }
+            let i = idx_u32 as usize;
+            let e = &entries[i];
+            let ps_sig =
+                ((e.used_potion_slot_mask as u32) << 16) | ((e.potion_cost as u16) as u32);
+            if seen_keys[..seen_count].contains(&ps_sig) {
+                continue;
+            }
+            if !try_consume_sig(
+                node_sigs[i],
+                sig_keys,
+                sig_counts,
+                sig_mask,
+                max_clones_per_sig,
+            ) {
+                continue;
+            }
+            seen_keys[seen_count] = ps_sig;
+            seen_count += 1;
+            marks[i] = 1;
+            out.push((e.primary, e.node_id));
+            selected_indices.push(i);
+            selected_in_bucket += 1;
+        }
+
+        if quota >= 16 && seen_count > 1 && selected_in_bucket < potion_diversity_quota {
+            for &target_sig in &seen_keys[..seen_count] {
+                if selected_in_bucket >= potion_diversity_quota || selected_in_bucket >= quota {
                     break;
                 }
-                if marks[i] != 0 {
-                    continue;
-                }
-                let k = &keys[i];
-                let sig = (
-                    k.used_potion_slot_mask,
-                    k.potion_cost,
-                    k.explicit_potion_count,
-                    k.forced_used_mask,
-                );
-                if !seen_sigs.contains(&sig) {
-                    seen_sigs.push(sig);
-                    marks[i] = 1;
-                    out.push((k.primary, k.node_id));
-                    selected_in_bucket += 1;
-                    div_added += 1;
-                }
-            }
-            if quota >= 16 && seen_sigs.len() > 1 && div_added < diversity_cap {
-                for target_sig in seen_sigs {
-                    if div_added >= diversity_cap || selected_in_bucket >= quota {
-                        break;
+                for &(_, idx_u32) in order.iter() {
+                    let i = idx_u32 as usize;
+                    if marks[i] != 0 {
+                        continue;
                     }
-                    for &(_, i_u32) in order.iter() {
-                        let i = i_u32 as usize;
-                        if marks[i] != 0 {
-                            continue;
-                        }
-                        let k = &keys[i];
-                        let sig = (
-                            k.used_potion_slot_mask,
-                            k.potion_cost,
-                            k.explicit_potion_count,
-                            k.forced_used_mask,
-                        );
-                        if sig == target_sig {
-                            marks[i] = 1;
-                            out.push((k.primary, k.node_id));
-                            selected_in_bucket += 1;
-                            div_added += 1;
-                            break;
-                        }
+                    let e = &entries[i];
+                    let ps_sig =
+                        ((e.used_potion_slot_mask as u32) << 16) | ((e.potion_cost as u16) as u32);
+                    if ps_sig == target_sig
+                        && try_consume_sig(
+                            node_sigs[i],
+                            sig_keys,
+                            sig_counts,
+                            sig_mask,
+                            max_clones_per_sig,
+                        )
+                    {
+                        marks[i] = 1;
+                        out.push((e.primary, e.node_id));
+                        selected_indices.push(i);
+                        selected_in_bucket += 1;
+                        break;
                     }
                 }
             }
@@ -1875,592 +3384,106 @@ fn select_from_potion_bucket_scratch<S: PruneSource>(
     }
 
     // 1. 5 MAP-Elites niche quotas + Niche 5b true full-pool Pareto
-    let (primary_q, survival_q, tempo_q, setup_q, optionality_q, pareto_q) =
-        compute_niche_quotas(rem, is_turn_boundary, aggressive_power_commitment);
+    let (
+        mut primary_q,
+        mut survival_q,
+        mut tempo_q,
+        mut setup_q,
+        mut optionality_q,
+        mut pareto_q,
+    ) = compute_niche_quotas(rem, is_turn_boundary, aggressive_power_commitment);
+
+    // Carved Strategy Niche: only when `has_any_strategy` and `rem >= 3`.
+    let mut strategy_q = 0usize;
+    if has_any_strategy && rem >= 3 {
+        let desired_strategy = if rem < 6 {
+            1
+        } else {
+            (rem / 10).clamp(2, 12)
+        };
+        let avail_primary = primary_q.saturating_sub(1);
+        let avail_opt = optionality_q;
+        let pool_avail = avail_primary + avail_opt;
+        if desired_strategy <= pool_avail {
+            let mut from_opt = if pool_avail > 0 {
+                avail_opt.min((desired_strategy * avail_opt + (pool_avail >> 1)) / pool_avail)
+            } else {
+                0
+            };
+            let mut from_primary = desired_strategy - from_opt;
+            if from_primary > avail_primary {
+                let excess = from_primary - avail_primary;
+                from_primary = avail_primary;
+                from_opt = avail_opt.min(from_opt + excess);
+            }
+            primary_q -= from_primary;
+            optionality_q -= from_opt;
+            strategy_q = from_primary + from_opt;
+        } else {
+            primary_q -= avail_primary;
+            optionality_q -= avail_opt;
+            strategy_q = avail_primary + avail_opt;
+            let mut still_need = desired_strategy - strategy_q;
+            if still_need > 0 && pareto_q > 0 {
+                let d = still_need.min(pareto_q);
+                pareto_q -= d;
+                strategy_q += d;
+                still_need -= d;
+            }
+            if still_need > 0 && tempo_q > 0 {
+                let d = still_need.min(tempo_q);
+                tempo_q -= d;
+                strategy_q += d;
+                still_need -= d;
+            }
+            if still_need > 0 && setup_q > 0 {
+                let d = still_need.min(setup_q);
+                setup_q -= d;
+                strategy_q += d;
+                still_need -= d;
+            }
+            if still_need > 0 && survival_q > 1 {
+                let d = still_need.min(survival_q - 1);
+                survival_q -= d;
+                strategy_q += d;
+            }
+        }
+    }
 
     let mut niche_pareto = [[0usize; PER_NICHE_PARETO_TOP_K]; NICHE_SLOT_COUNT];
     let mut niche_pareto_counts = [0usize; NICHE_SLOT_COUNT];
 
-    #[inline(always)]
-    fn cmp_pure_rollout(
-        keys: &[PruneKey],
-        state_hashes: &[crate::hash::StateHash],
-        ia: usize,
-        ib: usize,
-    ) -> std::cmp::Ordering {
-        let a = &keys[ia];
-        let b = &keys[ib];
-        let ha = a.has_rollout_score();
-        let hb = b.has_rollout_score();
-        hb.cmp(&ha)
-            .then_with(|| {
-                if ha && hb {
-                    b.aux_score.total_cmp(&a.aux_score)
-                } else {
-                    std::cmp::Ordering::Equal
-                }
-            })
-            .then_with(|| cmp_key_primary_desc(keys, state_hashes, ia, ib))
-    }
+    let has_rollout = use_rollout_scores && entries.iter().any(|e| e.has_rollout_score);
+    let has_choice_lookahead =
+        !is_turn_boundary && !has_rollout && entries.iter().any(|e| e.has_choice_lookahead);
 
-    #[inline(always)]
-    fn cmp_choice_lookahead(
-        keys: &[PruneKey],
-        state_hashes: &[crate::hash::StateHash],
-        ia: usize,
-        ib: usize,
-    ) -> std::cmp::Ordering {
-        let a = &keys[ia];
-        let b = &keys[ib];
-        let ha = a.has_choice_lookahead();
-        let hb = b.has_choice_lookahead();
-        hb.cmp(&ha)
-            .then_with(|| {
-                if ha && hb {
-                    b.aux_score.total_cmp(&a.aux_score)
-                } else {
-                    std::cmp::Ordering::Equal
-                }
-            })
-            .then_with(|| cmp_key_primary_desc(keys, state_hashes, ia, ib))
-    }
-
-    #[inline(always)]
-    fn cmp_survival(
-        keys: &[PruneKey],
-        state_hashes: &[crate::hash::StateHash],
-        ia: usize,
-        ib: usize,
-    ) -> std::cmp::Ordering {
-        let a = &keys[ia];
-        let b = &keys[ib];
-        a.death_save_use_count
-            .cmp(&b.death_save_use_count)
-            .then_with(|| a.effective_hp_loss.cmp(&b.effective_hp_loss))
-            .then_with(|| b.total_defense_hp.cmp(&a.total_defense_hp))
-            .then_with(|| b.best_hp.cmp(&a.best_hp))
-            .then_with(|| a.enemy_hp.cmp(&b.enemy_hp))
-            .then_with(|| cmp_key_primary_desc(keys, state_hashes, ia, ib))
-    }
-
-    #[inline(always)]
-    fn cmp_tempo(
-        keys: &[PruneKey],
-        state_hashes: &[crate::hash::StateHash],
-        ia: usize,
-        ib: usize,
-    ) -> std::cmp::Ordering {
-        let a = &keys[ia];
-        let b = &keys[ib];
-        a.rem_enemies
-            .cmp(&b.rem_enemies)
-            .then_with(|| a.enemy_hp.cmp(&b.enemy_hp))
-            .then_with(|| a.effective_hp_loss.cmp(&b.effective_hp_loss))
-            .then_with(|| cmp_key_primary_desc(keys, state_hashes, ia, ib))
-    }
-
-    #[inline(always)]
-    fn cmp_setup(
-        keys: &[PruneKey],
-        state_hashes: &[crate::hash::StateHash],
-        ia: usize,
-        ib: usize,
-    ) -> std::cmp::Ordering {
-        let a = &keys[ia];
-        let b = &keys[ib];
-        b.board_investment
-            .cmp(&a.board_investment)
-            .then_with(|| a.effective_hp_loss.cmp(&b.effective_hp_loss))
-            .then_with(|| b.setup_score.cmp(&a.setup_score))
-            .then_with(|| cmp_key_primary_desc(keys, state_hashes, ia, ib))
-    }
-
-    #[inline(always)]
-    fn cmp_optionality(
-        keys: &[PruneKey],
-        state_hashes: &[crate::hash::StateHash],
-        ia: usize,
-        ib: usize,
-    ) -> std::cmp::Ordering {
-        let a = &keys[ia];
-        let b = &keys[ib];
-        b.optionality_score
-            .cmp(&a.optionality_score)
-            .then_with(|| b.board_investment.cmp(&a.board_investment))
-            .then_with(|| a.effective_hp_loss.cmp(&b.effective_hp_loss))
-            .then_with(|| cmp_key_primary_desc(keys, state_hashes, ia, ib))
-    }
-
-    #[inline(always)]
-    #[allow(clippy::too_many_arguments)]
-    fn record_niche_selected<I>(
-        ordered_indices: I,
-        total_len: usize,
-        keys: &[PruneKey],
-        marks: &mut [u8],
-        take: usize,
-        pareto_extra: usize,
-        out: &mut Vec<(f64, NodeId)>,
-        pareto_out: &mut [usize; PER_NICHE_PARETO_TOP_K],
-        pareto_count_out: &mut usize,
-    ) -> usize
-    where
-        I: Iterator<Item = usize>,
-    {
-        let added = take.min(total_len);
-        let extra = pareto_extra.min(total_len.saturating_sub(added));
-        let mut iter = ordered_indices;
-        for idx in iter.by_ref().take(added) {
-            if marks[idx] == 0 {
-                marks[idx] = 1;
-                out.push((keys[idx].primary, keys[idx].node_id));
-            }
-        }
-        let mut p_cnt = 0usize;
-        for idx in iter.take(extra) {
-            pareto_out[p_cnt] = idx;
-            p_cnt += 1;
-        }
-        *pareto_count_out = p_cnt;
-        added
-    }
-
-    // O(N log K) bounded heap top-K selection over contiguous `PruneKey`s (fallback when !all_fast_exact)
-    #[inline]
-    #[allow(clippy::too_many_arguments)]
-    fn pick_top_k_niche<F>(
-        keys: &[PruneKey],
-        state_hashes: &[crate::hash::StateHash],
-        marks: &mut [u8],
-        heap: &mut Vec<usize>,
-        take: usize,
-        pareto_extra: usize,
-        out: &mut Vec<(f64, NodeId)>,
-        pareto_out: &mut [usize; PER_NICHE_PARETO_TOP_K],
-        pareto_count_out: &mut usize,
-        cmp_better: F,
-    ) -> usize
-    where
-        F: Fn(&[PruneKey], &[crate::hash::StateHash], usize, usize) -> std::cmp::Ordering,
-    {
-        *pareto_count_out = 0;
-        let total_k = take + pareto_extra;
-        if total_k == 0 {
-            return 0;
-        }
-        heap.clear();
-        for i in 0..keys.len() {
-            if marks[i] != 0 {
-                continue;
-            }
-            if heap.len() < total_k {
-                let mut pos = heap.len();
-                heap.push(i);
-                while pos > 0 {
-                    let parent = (pos - 1) >> 1;
-                    let p_idx = heap[parent];
-                    if cmp_better(keys, state_hashes, p_idx, i).is_lt() {
-                        heap[pos] = p_idx;
-                        pos = parent;
-                    } else {
-                        break;
-                    }
-                }
-                heap[pos] = i;
-            } else {
-                let w_idx = heap[0];
-                if cmp_better(keys, state_hashes, i, w_idx).is_lt() {
-                    let mut pos = 0;
-                    let len = heap.len();
-                    loop {
-                        let left = (pos << 1) + 1;
-                        if left >= len {
-                            break;
-                        }
-                        let right = left + 1;
-                        let worst_child = if right < len
-                            && cmp_better(keys, state_hashes, heap[left], heap[right]).is_lt()
-                        {
-                            right
-                        } else {
-                            left
-                        };
-                        let wc_idx = heap[worst_child];
-                        if cmp_better(keys, state_hashes, i, wc_idx).is_lt() {
-                            heap[pos] = wc_idx;
-                            pos = worst_child;
-                        } else {
-                            break;
-                        }
-                    }
-                    heap[pos] = i;
-                }
-            }
-        }
-        if heap.is_empty() {
-            return 0;
-        }
-        heap.sort_unstable_by(|&a, &b| cmp_better(keys, state_hashes, a, b));
-        record_niche_selected(
-            heap.iter().copied(),
-            heap.len(),
-            keys,
-            marks,
-            take,
-            pareto_extra,
-            out,
-            pareto_out,
-            pareto_count_out,
-        )
-    }
-
-    // Fast O(N) SoA 2-phase bounded heap top-K selection when `all_fast_exact` holds.
-    #[inline]
-    #[allow(clippy::too_many_arguments)]
-    fn pick_top_k_niche_fast(
-        keys: &[PruneKey],
-        state_hashes: &[crate::hash::StateHash],
-        fast_keys: &[i64],
-        marks: &mut [u8],
-        heap_fast: &mut Vec<(i64, f64, u32)>,
-        take: usize,
-        pareto_extra: usize,
-        out: &mut Vec<(f64, NodeId)>,
-        pareto_out: &mut [usize; PER_NICHE_PARETO_TOP_K],
-        pareto_count_out: &mut usize,
-    ) -> usize {
-        *pareto_count_out = 0;
-        let total_k = take + pareto_extra;
-        if total_k == 0 {
-            return 0;
-        }
-        #[inline(always)]
-        fn cmp_fast_entry(
-            fa: i64,
-            pa: f64,
-            ia: u32,
-            fb: i64,
-            pb: f64,
-            ib: u32,
-            keys: &[PruneKey],
-            state_hashes: &[crate::hash::StateHash],
-        ) -> std::cmp::Ordering {
-            if fa != fb {
-                fb.cmp(&fa)
-            } else if pa > pb {
-                std::cmp::Ordering::Less
-            } else if pa < pb {
-                std::cmp::Ordering::Greater
-            } else {
-                cmp_key_primary_desc(keys, state_hashes, ia as usize, ib as usize)
-            }
-        }
-        heap_fast.clear();
-        let n = keys.len().min(fast_keys.len());
-        let mut w_fast = 0i64;
-        let mut w_primary = 0.0f64;
-        let mut w_idx = 0u32;
-        let mut i = 0usize;
-        while i < n && heap_fast.len() < total_k {
-            if marks[i] == 0 {
-                let k_fast = fast_keys[i];
-                let k_primary = keys[i].primary;
-                let i_u32 = i as u32;
-                let mut pos = heap_fast.len();
-                heap_fast.push((k_fast, k_primary, i_u32));
-                while pos > 0 {
-                    let parent = (pos - 1) >> 1;
-                    let (p_fast, p_primary, p_idx) = heap_fast[parent];
-                    if cmp_fast_entry(
-                        p_fast,
-                        p_primary,
-                        p_idx,
-                        k_fast,
-                        k_primary,
-                        i_u32,
-                        keys,
-                        state_hashes,
-                    )
-                    .is_lt()
-                    {
-                        heap_fast[pos] = (p_fast, p_primary, p_idx);
-                        pos = parent;
-                    } else {
-                        break;
-                    }
-                }
-                heap_fast[pos] = (k_fast, k_primary, i_u32);
-                if heap_fast.len() == total_k {
-                    (w_fast, w_primary, w_idx) = heap_fast[0];
-                }
-            }
-            i += 1;
-        }
-        while i < n {
-            let k_fast = fast_keys[i];
-            if k_fast >= w_fast && marks[i] == 0 {
-                let k = &keys[i];
-                let k_primary = k.primary;
-                let reject = k_fast == w_fast
-                    && (k_primary < w_primary
-                        || (!(k_primary > w_primary)
-                            && !cmp_key_primary_desc(keys, state_hashes, i, w_idx as usize)
-                                .is_lt()));
-                if !reject {
-                    let i_u32 = i as u32;
-                    let mut pos = 0;
-                    let len = heap_fast.len();
-                    loop {
-                        let left = (pos << 1) + 1;
-                        if left >= len {
-                            break;
-                        }
-                        let right = left + 1;
-                        let (l_fast, l_primary, l_idx) = heap_fast[left];
-                        let (worst_child, c_fast, c_primary, c_idx) = if right < len {
-                            let (r_fast, r_primary, r_idx) = heap_fast[right];
-                            if cmp_fast_entry(
-                                l_fast,
-                                l_primary,
-                                l_idx,
-                                r_fast,
-                                r_primary,
-                                r_idx,
-                                keys,
-                                state_hashes,
-                            )
-                            .is_lt()
-                            {
-                                (right, r_fast, r_primary, r_idx)
-                            } else {
-                                (left, l_fast, l_primary, l_idx)
-                            }
-                        } else {
-                            (left, l_fast, l_primary, l_idx)
-                        };
-                        if cmp_fast_entry(
-                            k_fast,
-                            k_primary,
-                            i_u32,
-                            c_fast,
-                            c_primary,
-                            c_idx,
-                            keys,
-                            state_hashes,
-                        )
-                        .is_lt()
-                        {
-                            heap_fast[pos] = (c_fast, c_primary, c_idx);
-                            pos = worst_child;
-                        } else {
-                            break;
-                        }
-                    }
-                    heap_fast[pos] = (k_fast, k_primary, i_u32);
-                    (w_fast, w_primary, w_idx) = heap_fast[0];
-                }
-            }
-            i += 1;
-        }
-        if heap_fast.is_empty() {
-            return 0;
-        }
-        heap_fast.sort_unstable_by(|&(fa, pa, ia), &(fb, pb, ib)| {
-            cmp_fast_entry(fa, pa, ia, fb, pb, ib, keys, state_hashes)
-        });
-        record_niche_selected(
-            heap_fast.iter().map(|&(_, _, idx)| idx as usize),
-            heap_fast.len(),
-            keys,
-            marks,
-            take,
-            pareto_extra,
-            out,
-            pareto_out,
-            pareto_count_out,
-        )
-    }
-
-    // Fast 2-phase f64-keyed bounded heap top-K selection for Pure Rollout & Choice Lookahead niches.
-    #[inline]
-    #[allow(clippy::too_many_arguments)]
-    fn pick_top_k_niche_f64<F>(
-        keys: &[PruneKey],
-        state_hashes: &[crate::hash::StateHash],
-        aux_scores: &[f64],
-        marks: &mut [u8],
-        heap_f64: &mut Vec<(f64, u32)>,
-        take: usize,
-        pareto_extra: usize,
-        out: &mut Vec<(f64, NodeId)>,
-        pareto_out: &mut [usize; PER_NICHE_PARETO_TOP_K],
-        pareto_count_out: &mut usize,
-        cmp_better: F,
-    ) -> usize
-    where
-        F: Fn(&[PruneKey], &[crate::hash::StateHash], usize, usize) -> std::cmp::Ordering,
-    {
-        *pareto_count_out = 0;
-        let total_k = take + pareto_extra;
-        if total_k == 0 {
-            return 0;
-        }
-        #[inline(always)]
-        fn cmp_f64_entry<
-            F: Fn(&[PruneKey], &[crate::hash::StateHash], usize, usize) -> std::cmp::Ordering,
-        >(
-            fa: f64,
-            ia: u32,
-            fb: f64,
-            ib: u32,
-            keys: &[PruneKey],
-            state_hashes: &[crate::hash::StateHash],
-            cmp_better: &F,
-        ) -> std::cmp::Ordering {
-            if fa > fb {
-                std::cmp::Ordering::Less
-            } else if fa < fb {
-                std::cmp::Ordering::Greater
-            } else {
-                cmp_better(keys, state_hashes, ia as usize, ib as usize)
-            }
-        }
-        heap_f64.clear();
-        let n = keys.len().min(aux_scores.len());
-        let mut w_score = 0.0f64;
-        let mut w_idx = 0u32;
-        let mut i = 0usize;
-        while i < n && heap_f64.len() < total_k {
-            if marks[i] == 0 {
-                let k_score = aux_scores[i];
-                let i_u32 = i as u32;
-                let mut pos = heap_f64.len();
-                heap_f64.push((k_score, i_u32));
-                while pos > 0 {
-                    let parent = (pos - 1) >> 1;
-                    let (p_score, p_idx) = heap_f64[parent];
-                    if cmp_f64_entry(
-                        p_score,
-                        p_idx,
-                        k_score,
-                        i_u32,
-                        keys,
-                        state_hashes,
-                        &cmp_better,
-                    )
-                    .is_lt()
-                    {
-                        heap_f64[pos] = (p_score, p_idx);
-                        pos = parent;
-                    } else {
-                        break;
-                    }
-                }
-                heap_f64[pos] = (k_score, i_u32);
-                if heap_f64.len() == total_k {
-                    (w_score, w_idx) = heap_f64[0];
-                }
-            }
-            i += 1;
-        }
-        while i < n {
-            let k_score = aux_scores[i];
-            if !(k_score < w_score) && marks[i] == 0 {
-                let accept = k_score > w_score
-                    || cmp_better(keys, state_hashes, i, w_idx as usize).is_lt();
-                if accept {
-                    let i_u32 = i as u32;
-                    let mut pos = 0;
-                    let len = heap_f64.len();
-                    loop {
-                        let left = (pos << 1) + 1;
-                        if left >= len {
-                            break;
-                        }
-                        let right = left + 1;
-                        let (l_score, l_idx) = heap_f64[left];
-                        let (worst_child, c_score, c_idx) = if right < len {
-                            let (r_score, r_idx) = heap_f64[right];
-                            if cmp_f64_entry(
-                                l_score,
-                                l_idx,
-                                r_score,
-                                r_idx,
-                                keys,
-                                state_hashes,
-                                &cmp_better,
-                            )
-                            .is_lt()
-                            {
-                                (right, r_score, r_idx)
-                            } else {
-                                (left, l_score, l_idx)
-                            }
-                        } else {
-                            (left, l_score, l_idx)
-                        };
-                        if cmp_f64_entry(
-                            k_score,
-                            i_u32,
-                            c_score,
-                            c_idx,
-                            keys,
-                            state_hashes,
-                            &cmp_better,
-                        )
-                        .is_lt()
-                        {
-                            heap_f64[pos] = (c_score, c_idx);
-                            pos = worst_child;
-                        } else {
-                            break;
-                        }
-                    }
-                    heap_f64[pos] = (k_score, i_u32);
-                    (w_score, w_idx) = heap_f64[0];
-                }
-            }
-            i += 1;
-        }
-        if heap_f64.is_empty() {
-            return 0;
-        }
-        heap_f64.sort_unstable_by(|&(fa, ia), &(fb, ib)| {
-            cmp_f64_entry(fa, ia, fb, ib, keys, state_hashes, &cmp_better)
-        });
-        record_niche_selected(
-            heap_f64.iter().map(|&(_, idx)| idx as usize),
-            heap_f64.len(),
-            keys,
-            marks,
-            take,
-            pareto_extra,
-            out,
-            pareto_out,
-            pareto_count_out,
-        )
-    }
-
-    // Primary niche (reserve ~30% pure rollout slice on turn boundaries or ~20% choice-lookahead mid-turn)
+    // Niche 1 — Primary Value (>=34% non-strategy budget, sidecar PureRollout 20% / ChoiceLookahead 18%)
     if primary_q > 0 || pareto_q > 0 {
-        let has_rollout = use_rollout_scores
-            && keys
-                .iter()
-                .enumerate()
-                .any(|(i, k)| marks[i] == 0 && k.has_rollout_score());
-        let has_choice_lookahead = !is_turn_boundary
-            && !has_rollout
-            && keys
-                .iter()
-                .enumerate()
-                .any(|(i, k)| marks[i] == 0 && k.has_choice_lookahead());
-        let rollout_pure_q = if has_rollout && primary_q >= 3 {
-            (primary_q * 30 / 100).max(1)
+        let non_strategy_budget = rem.saturating_sub(strategy_q).max(1);
+        let min_blended_primary = primary_q.min(((non_strategy_budget * 34 + 99) / 100).max(1));
+        let mut max_primary_sidecar = primary_q.saturating_sub(min_blended_primary);
+        let sidecar_floor = if primary_q >= 6 {
+            2
+        } else if primary_q >= 3 {
+            1
         } else {
             0
         };
-        let choice_lookahead_q = if has_choice_lookahead && primary_q >= 3 {
-            (primary_q * 20 / 100).max(1)
+        if (has_rollout || has_choice_lookahead) && primary_q >= 6 && max_primary_sidecar < 2 {
+            max_primary_sidecar = 2usize.min(primary_q.saturating_sub(1));
+        }
+        let rollout_pure_q = if has_rollout && max_primary_sidecar > 0 && primary_q >= 3 {
+            sidecar_floor
+                .max((primary_q * 20) / 100)
+                .min(max_primary_sidecar)
+        } else {
+            0
+        };
+        let choice_lookahead_q = if has_choice_lookahead && max_primary_sidecar > 0 && primary_q >= 3
+        {
+            sidecar_floor
+                .max((primary_q * 18) / 100)
+                .min(max_primary_sidecar)
         } else {
             0
         };
@@ -2468,6 +3491,7 @@ fn select_from_potion_bucket_scratch<S: PruneSource>(
         let take_blended = blended_q.min(quota - selected_in_bucket);
         let mut taken_blended = 0usize;
         let mut p_cnt = 0usize;
+
         if second_rank_band && blended_q > 0 {
             unmarked.clear();
             unmarked.extend(
@@ -2478,15 +3502,32 @@ fn select_from_potion_bucket_scratch<S: PruneSource>(
             );
             BeamWidthPortfolio::move_leading_band_to_tail(unmarked, blended_q);
             for &idx in unmarked.iter() {
-                if taken_blended < take_blended {
+                let sig = node_sigs[idx];
+                if taken_blended < take_blended && selected_in_bucket < quota {
+                    if !try_consume_sig(sig, sig_keys, sig_counts, sig_mask, max_clones_per_sig) {
+                        continue;
+                    }
                     marks[idx] = 1;
-                    out.push((keys[idx].primary, keys[idx].node_id));
+                    out.push((entries[idx].primary, entries[idx].node_id));
+                    selected_indices.push(idx);
                     selected_in_bucket += 1;
                     taken_blended += 1;
-                } else if pareto_q > 0 && p_cnt < PER_NICHE_PARETO_TOP_K {
+                } else if pareto_q > 0 && selected_in_bucket < quota && p_cnt < PER_NICHE_PARETO_TOP_K
+                {
+                    let existing_count = get_sig_count(sig, sig_keys, sig_counts, sig_mask);
+                    if existing_count >= max_clones_per_sig {
+                        continue;
+                    }
+                    let queued_same_sig = niche_pareto[0][..p_cnt]
+                        .iter()
+                        .filter(|&&q| node_sigs[q] == sig)
+                        .count();
+                    if existing_count as usize + queued_same_sig >= max_clones_per_sig as usize {
+                        continue;
+                    }
                     niche_pareto[0][p_cnt] = idx;
                     p_cnt += 1;
-                } else {
+                } else if taken_blended >= take_blended || selected_in_bucket >= quota {
                     break;
                 }
             }
@@ -2496,15 +3537,32 @@ fn select_from_potion_bucket_scratch<S: PruneSource>(
                 if marks[idx] != 0 {
                     continue;
                 }
-                if taken_blended < take_blended {
+                let sig = node_sigs[idx];
+                if taken_blended < take_blended && selected_in_bucket < quota {
+                    if !try_consume_sig(sig, sig_keys, sig_counts, sig_mask, max_clones_per_sig) {
+                        continue;
+                    }
                     marks[idx] = 1;
-                    out.push((keys[idx].primary, keys[idx].node_id));
+                    out.push((entries[idx].primary, entries[idx].node_id));
+                    selected_indices.push(idx);
                     selected_in_bucket += 1;
                     taken_blended += 1;
-                } else if pareto_q > 0 && p_cnt < PER_NICHE_PARETO_TOP_K {
+                } else if pareto_q > 0 && selected_in_bucket < quota && p_cnt < PER_NICHE_PARETO_TOP_K
+                {
+                    let existing_count = get_sig_count(sig, sig_keys, sig_counts, sig_mask);
+                    if existing_count >= max_clones_per_sig {
+                        continue;
+                    }
+                    let queued_same_sig = niche_pareto[0][..p_cnt]
+                        .iter()
+                        .filter(|&&q| node_sigs[q] == sig)
+                        .count();
+                    if existing_count as usize + queued_same_sig >= max_clones_per_sig as usize {
+                        continue;
+                    }
                     niche_pareto[0][p_cnt] = idx;
                     p_cnt += 1;
-                } else {
+                } else if taken_blended >= take_blended || selected_in_bucket >= quota {
                     break;
                 }
             }
@@ -2513,188 +3571,213 @@ fn select_from_potion_bucket_scratch<S: PruneSource>(
 
         if has_rollout && (rollout_pure_q > 0 || pareto_q > 0) && selected_in_bucket < quota {
             let take_roll = rollout_pure_q.min(quota - selected_in_bucket);
-            selected_in_bucket += pick_top_k_niche_f64(
+            selected_in_bucket += select_top_k_unmarked(
+                entries,
                 keys,
                 state_hashes,
-                aux_scores,
+                node_sigs,
                 marks,
-                heap_f64,
+                sig_keys,
+                sig_counts,
+                sig_mask,
+                max_clones_per_sig,
+                heap,
+                heap_sig_keys,
+                heap_sig_counts,
+                heap_sig_worst_idx,
+                selected_indices,
                 take_roll,
                 if pareto_q > 0 { PER_NICHE_PARETO_TOP_K } else { 0 },
                 out,
                 &mut niche_pareto[5],
                 &mut niche_pareto_counts[5],
-                cmp_pure_rollout,
+                cmp_entry_pure_rollout,
             );
         } else if has_choice_lookahead
             && (choice_lookahead_q > 0 || pareto_q > 0)
             && selected_in_bucket < quota
         {
-            if use_rollout_scores {
-                for (slot, k) in aux_scores.iter_mut().zip(keys.iter()) {
-                    *slot = if k.has_choice_lookahead() {
-                        k.aux_score
-                    } else {
-                        f64::NEG_INFINITY
-                    };
-                }
-            }
             let take_la = choice_lookahead_q.min(quota - selected_in_bucket);
-            selected_in_bucket += pick_top_k_niche_f64(
+            selected_in_bucket += select_top_k_unmarked(
+                entries,
                 keys,
                 state_hashes,
-                aux_scores,
+                node_sigs,
                 marks,
-                heap_f64,
+                sig_keys,
+                sig_counts,
+                sig_mask,
+                max_clones_per_sig,
+                heap,
+                heap_sig_keys,
+                heap_sig_counts,
+                heap_sig_worst_idx,
+                selected_indices,
                 take_la,
                 if pareto_q > 0 { PER_NICHE_PARETO_TOP_K } else { 0 },
                 out,
                 &mut niche_pareto[5],
                 &mut niche_pareto_counts[5],
-                cmp_choice_lookahead,
+                cmp_entry_choice_lookahead,
             );
         }
     }
 
-    let pareto_extra = if pareto_q > 0 { PER_NICHE_PARETO_TOP_K } else { 0 };
+    let pareto_extra = if pareto_q > 0 {
+        PER_NICHE_PARETO_TOP_K
+    } else {
+        0
+    };
+
+    // Carved Strategy Niche
+    if has_any_strategy && (strategy_q > 0 || pareto_q > 0) && selected_in_bucket < quota {
+        let take_strategy = strategy_q.min(quota - selected_in_bucket);
+        selected_in_bucket += select_top_k_unmarked(
+            entries,
+            keys,
+            state_hashes,
+            node_sigs,
+            marks,
+            sig_keys,
+            sig_counts,
+            sig_mask,
+            max_clones_per_sig,
+            heap,
+            heap_sig_keys,
+            heap_sig_counts,
+            heap_sig_worst_idx,
+            selected_indices,
+            take_strategy,
+            pareto_extra,
+            out,
+            &mut niche_pareto[6],
+            &mut niche_pareto_counts[6],
+            |a, b| cmp_entry_strategy(a, b, allow_death_save_rescue, preserve_theft),
+        );
+    }
 
     // Niche 2 — Survival / HP Preservation
     if (survival_q > 0 || pareto_q > 0) && selected_in_bucket < quota {
         let take_survival = survival_q.min(quota - selected_in_bucket);
-        selected_in_bucket += if all_fast_exact {
-            pick_top_k_niche_fast(
-                keys,
-                state_hashes,
-                survival_keys,
-                marks,
-                heap_fast,
-                take_survival,
-                pareto_extra,
-                out,
-                &mut niche_pareto[1],
-                &mut niche_pareto_counts[1],
-            )
-        } else {
-            pick_top_k_niche(
-                keys,
-                state_hashes,
-                marks,
-                heap,
-                take_survival,
-                pareto_extra,
-                out,
-                &mut niche_pareto[1],
-                &mut niche_pareto_counts[1],
-                cmp_survival,
-            )
-        };
+        selected_in_bucket += select_top_k_unmarked(
+            entries,
+            keys,
+            state_hashes,
+            node_sigs,
+            marks,
+            sig_keys,
+            sig_counts,
+            sig_mask,
+            max_clones_per_sig,
+            heap,
+            heap_sig_keys,
+            heap_sig_counts,
+            heap_sig_worst_idx,
+            selected_indices,
+            take_survival,
+            pareto_extra,
+            out,
+            &mut niche_pareto[1],
+            &mut niche_pareto_counts[1],
+            |a, b| cmp_entry_survival(a, b, allow_death_save_rescue, preserve_theft, has_any_strategy),
+        );
     }
 
     // Niche 3 — Tempo / Kill Speed
     if (tempo_q > 0 || pareto_q > 0) && selected_in_bucket < quota {
         let take_tempo = tempo_q.min(quota - selected_in_bucket);
-        selected_in_bucket += if all_fast_exact {
-            pick_top_k_niche_fast(
-                keys,
-                state_hashes,
-                tempo_keys,
-                marks,
-                heap_fast,
-                take_tempo,
-                pareto_extra,
-                out,
-                &mut niche_pareto[2],
-                &mut niche_pareto_counts[2],
-            )
-        } else {
-            pick_top_k_niche(
-                keys,
-                state_hashes,
-                marks,
-                heap,
-                take_tempo,
-                pareto_extra,
-                out,
-                &mut niche_pareto[2],
-                &mut niche_pareto_counts[2],
-                cmp_tempo,
-            )
-        };
+        selected_in_bucket += select_top_k_unmarked(
+            entries,
+            keys,
+            state_hashes,
+            node_sigs,
+            marks,
+            sig_keys,
+            sig_counts,
+            sig_mask,
+            max_clones_per_sig,
+            heap,
+            heap_sig_keys,
+            heap_sig_counts,
+            heap_sig_worst_idx,
+            selected_indices,
+            take_tempo,
+            pareto_extra,
+            out,
+            &mut niche_pareto[2],
+            &mut niche_pareto_counts[2],
+            |a, b| cmp_entry_tempo(a, b, allow_death_save_rescue, preserve_theft),
+        );
     }
 
-    // Niche 4 — Persistent Board Investment
+    // Niche 4 — Generic Persistent Board Investment
     if (setup_q > 0 || pareto_q > 0) && selected_in_bucket < quota {
         let take_setup = setup_q.min(quota - selected_in_bucket);
-        selected_in_bucket += if all_fast_exact {
-            pick_top_k_niche_fast(
-                keys,
-                state_hashes,
-                setup_keys,
-                marks,
-                heap_fast,
-                take_setup,
-                pareto_extra,
-                out,
-                &mut niche_pareto[3],
-                &mut niche_pareto_counts[3],
-            )
-        } else {
-            pick_top_k_niche(
-                keys,
-                state_hashes,
-                marks,
-                heap,
-                take_setup,
-                pareto_extra,
-                out,
-                &mut niche_pareto[3],
-                &mut niche_pareto_counts[3],
-                cmp_setup,
-            )
-        };
+        selected_in_bucket += select_top_k_unmarked(
+            entries,
+            keys,
+            state_hashes,
+            node_sigs,
+            marks,
+            sig_keys,
+            sig_counts,
+            sig_mask,
+            max_clones_per_sig,
+            heap,
+            heap_sig_keys,
+            heap_sig_counts,
+            heap_sig_worst_idx,
+            selected_indices,
+            take_setup,
+            pareto_extra,
+            out,
+            &mut niche_pareto[3],
+            &mut niche_pareto_counts[3],
+            |a, b| cmp_entry_board_investment(a, b, allow_death_save_rescue, preserve_theft),
+        );
     }
 
-    // Niche 5a — Optionality / Control
+    // Niche 5a — Optionality / Mid-Turn Combo
     if (optionality_q > 0 || pareto_q > 0) && selected_in_bucket < quota {
         let take_opt = optionality_q.min(quota - selected_in_bucket);
-        selected_in_bucket += if all_fast_exact {
-            pick_top_k_niche_fast(
-                keys,
-                state_hashes,
-                optionality_keys,
-                marks,
-                heap_fast,
-                take_opt,
-                pareto_extra,
-                out,
-                &mut niche_pareto[4],
-                &mut niche_pareto_counts[4],
-            )
-        } else {
-            pick_top_k_niche(
-                keys,
-                state_hashes,
-                marks,
-                heap,
-                take_opt,
-                pareto_extra,
-                out,
-                &mut niche_pareto[4],
-                &mut niche_pareto_counts[4],
-                cmp_optionality,
-            )
-        };
+        selected_in_bucket += select_top_k_unmarked(
+            entries,
+            keys,
+            state_hashes,
+            node_sigs,
+            marks,
+            sig_keys,
+            sig_counts,
+            sig_mask,
+            max_clones_per_sig,
+            heap,
+            heap_sig_keys,
+            heap_sig_counts,
+            heap_sig_worst_idx,
+            selected_indices,
+            take_opt,
+            pareto_extra,
+            out,
+            &mut niche_pareto[4],
+            &mut niche_pareto_counts[4],
+            |a, b| cmp_entry_optionality(a, b, is_turn_boundary, allow_death_save_rescue, preserve_theft),
+        );
     }
 
-    // Niche 5b — True Full-Pool Pareto scanning top-32 runners-up from EACH niche via pre-extracted rows
+    // Niche 5b — True Full-Pool Pareto scanning top-32 runners-up from EACH niche (14+ dim)
     if pareto_q > 0 && selected_in_bucket < quota {
-        const NICHE_ORDER: [usize; NICHE_SLOT_COUNT] = [3, 1, 2, 4, 5, 0];
+        const NICHE_ORDER_WITH_STRATEGY: [usize; 7] = [6, 3, 1, 2, 4, 5, 0];
+        const NICHE_ORDER_DEFAULT: [usize; 6] = [3, 1, 2, 4, 5, 0];
+        let niche_order: &[usize] = if has_any_strategy {
+            &NICHE_ORDER_WITH_STRATEGY
+        } else {
+            &NICHE_ORDER_DEFAULT
+        };
         let mut pareto_pool = [0usize; NICHE_SLOT_COUNT * PER_NICHE_PARETO_TOP_K];
-        let mut pool_rows = [ParetoRow::default(); NICHE_SLOT_COUNT * PER_NICHE_PARETO_TOP_K];
         let mut pareto_pool_count = 0usize;
 
         for rank in 0..PER_NICHE_PARETO_TOP_K {
-            for &slot in &NICHE_ORDER {
+            for &slot in niche_order {
                 if rank >= niche_pareto_counts[slot] {
                     continue;
                 }
@@ -2702,124 +3785,96 @@ fn select_from_potion_bucket_scratch<S: PruneSource>(
                 if marks[idx] != 0 {
                     continue;
                 }
+                if get_sig_count(node_sigs[idx], sig_keys, sig_counts, sig_mask)
+                    >= max_clones_per_sig
+                {
+                    continue;
+                }
                 marks[idx] = 2;
                 pareto_pool[pareto_pool_count] = idx;
-                pool_rows[pareto_pool_count] = keys[idx].pareto_row();
                 pareto_pool_count += 1;
             }
         }
 
-        selected_rows.clear();
-        let mut sel_min_loss = i32::MAX;
-        let mut sel_min_enemy_hp = i32::MAX;
-        let mut sel_min_rem = i32::MAX;
-        let mut sel_max_board = i32::MIN;
-        let mut sel_max_opt = i32::MIN;
-        let mut sel_min_potion_cost = i32::MAX;
-        let mut sel_max_primary = f64::NEG_INFINITY;
-        for (idx, k) in keys.iter().enumerate() {
-            if marks[idx] == 1 {
-                let r = k.pareto_row();
-                sel_min_loss = sel_min_loss.min(r.loss);
-                sel_min_enemy_hp = sel_min_enemy_hp.min(r.enemy_hp);
-                sel_min_rem = sel_min_rem.min(r.rem);
-                sel_max_board = sel_max_board.max(r.board);
-                sel_max_opt = sel_max_opt.max(r.opt);
-                sel_min_potion_cost = sel_min_potion_cost.min(r.potion_cost);
-                if r.primary > sel_max_primary {
-                    sel_max_primary = r.primary;
-                }
-                selected_rows.push(r);
-            }
-        }
-        selected_rows.sort_unstable_by_key(|r| (r.loss, r.enemy_hp));
-        let mut selected_tail: SmallVec<[ParetoRow; 32]> = SmallVec::new();
-
         let pareto_budget = pareto_q.min(quota - selected_in_bucket);
         let mut pareto_added = 0usize;
-        let mut pool_alive = [true; NICHE_SLOT_COUNT * PER_NICHE_PARETO_TOP_K];
         for p in 0..pareto_pool_count {
-            if pareto_added >= pareto_budget {
+            if pareto_added >= pareto_budget || selected_in_bucket >= quota {
                 break;
             }
-            if !pool_alive[p] {
-                continue;
-            }
-            let cand_row = &pool_rows[p];
-            let has_sel = !selected_rows.is_empty() || !selected_tail.is_empty();
-            let mut dominated = false;
-            if has_sel
-                && !(cand_row.loss < sel_min_loss
-                    || cand_row.enemy_hp < sel_min_enemy_hp
-                    || cand_row.rem < sel_min_rem
-                    || cand_row.board > sel_max_board
-                    || cand_row.opt > sel_max_opt
-                    || cand_row.potion_cost < sel_min_potion_cost
-                    || cand_row.primary > sel_max_primary)
-            {
-                for r in selected_rows.iter() {
-                    if r.loss > cand_row.loss
-                        || (r.loss == cand_row.loss && r.enemy_hp > cand_row.enemy_hp)
-                    {
-                        break;
-                    }
-                    if pareto_row_dominates(r, cand_row) {
-                        dominated = true;
-                        break;
-                    }
-                }
-                if !dominated {
-                    for r in selected_tail.iter() {
-                        if pareto_row_dominates(r, cand_row) {
-                            dominated = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            if !dominated {
-                for j in 0..pareto_pool_count {
-                    if j != p && pool_alive[j] && pareto_row_dominates(&pool_rows[j], cand_row) {
-                        dominated = true;
-                        break;
-                    }
-                }
-            }
-            if dominated {
-                pool_alive[p] = false;
-                continue;
-            }
-
             let cand_idx = pareto_pool[p];
-            marks[cand_idx] = 1;
-            out.push((keys[cand_idx].primary, keys[cand_idx].node_id));
-            sel_min_loss = sel_min_loss.min(cand_row.loss);
-            sel_min_enemy_hp = sel_min_enemy_hp.min(cand_row.enemy_hp);
-            sel_min_rem = sel_min_rem.min(cand_row.rem);
-            sel_max_board = sel_max_board.max(cand_row.board);
-            sel_max_opt = sel_max_opt.max(cand_row.opt);
-            sel_min_potion_cost = sel_min_potion_cost.min(cand_row.potion_cost);
-            if cand_row.primary > sel_max_primary {
-                sel_max_primary = cand_row.primary;
+            let cand_sig = node_sigs[cand_idx];
+            if get_sig_count(cand_sig, sig_keys, sig_counts, sig_mask) >= max_clones_per_sig {
+                continue;
             }
-            selected_tail.push(*cand_row);
-            pool_alive[p] = false;
+            if is_dominated_in_full_pool_pareto(
+                &entries[cand_idx],
+                entries,
+                marks,
+                node_sigs,
+                sig_keys,
+                sig_counts,
+                sig_mask,
+                max_clones_per_sig,
+                selected_indices,
+                &pareto_pool[..pareto_pool_count],
+                p,
+                allow_death_save_rescue,
+                preserve_theft,
+                forced_potion_mask,
+                require_explicit_potion,
+                has_pure_growth,
+                has_relic,
+            ) {
+                continue;
+            }
+            if !try_consume_sig(cand_sig, sig_keys, sig_counts, sig_mask, max_clones_per_sig) {
+                continue;
+            }
+            marks[cand_idx] = 1;
+            out.push((entries[cand_idx].primary, entries[cand_idx].node_id));
+            selected_indices.push(cand_idx);
             selected_in_bucket += 1;
             pareto_added += 1;
         }
     }
 
-    // Fill any remaining seats in primary order
+    // Pass 1 spillover: fill unused quota in Primary order while still respecting signature cap.
     for &(_, i_u32) in order.iter() {
         let i = i_u32 as usize;
         if selected_in_bucket >= quota {
             break;
         }
-        if marks[i] != 1 {
-            marks[i] = 1;
-            out.push((keys[i].primary, keys[i].node_id));
-            selected_in_bucket += 1;
+        if marks[i] == 1 {
+            continue;
         }
+        if !try_consume_sig(
+            node_sigs[i],
+            sig_keys,
+            sig_counts,
+            sig_mask,
+            max_clones_per_sig,
+        ) {
+            continue;
+        }
+        marks[i] = 1;
+        out.push((entries[i].primary, entries[i].node_id));
+        selected_indices.push(i);
+        selected_in_bucket += 1;
+    }
+
+    // Pass 2 spillover (narrow-tree fallback): ignore signature cap so zero beam slots are wasted.
+    for &(_, i_u32) in order.iter() {
+        let i = i_u32 as usize;
+        if selected_in_bucket >= quota {
+            break;
+        }
+        if marks[i] == 1 {
+            continue;
+        }
+        marks[i] = 1;
+        out.push((entries[i].primary, entries[i].node_id));
+        selected_in_bucket += 1;
     }
 }
 
@@ -2982,15 +4037,10 @@ mod tests {
         let bucket = &mut expected_scratch.buckets[1];
         bucket.nodes.extend_from_slice(&cands);
         for (i, &nid) in bucket.nodes.iter().enumerate() {
-            let (k, s, t, su, o, a, sh) = arena.build_prune_entry(nid, &root, false);
+            let (k, _, _, _, _, _, sh) = arena.build_prune_entry(nid, &root, false);
             bucket.order.push((k.primary, i as u32));
             bucket.keys.push(k);
             bucket.state_hashes.push(sh);
-            bucket.survival_keys.push(s);
-            bucket.tempo_keys.push(t);
-            bucket.setup_keys.push(su);
-            bucket.optionality_keys.push(o);
-            bucket.aux_scores.push(a);
         }
         bucket.order.sort_unstable_by(|&(pa, ia), &(pb, ib)| {
             pb.total_cmp(&pa).then_with(|| {
@@ -3024,5 +4074,461 @@ mod tests {
         );
         // Same-sig partial path picks 1 diverse slot (order[0]) then niches, while mixed path adds the worst-score slot-2 node
         assert_eq!(actual_ids[0], expected_ids[0]);
+    }
+
+    #[test]
+    fn scalar_pick_top_k_niche_fast_handles_ties_and_extremes() {
+        let root = RootEvalBaseline::default();
+        for &n in &[0usize, 1, 15, 31, 32, 33, 64, 127, 257] {
+            let mut keys = Vec::with_capacity(n);
+            let mut hashes = Vec::with_capacity(n);
+            let mut fast_keys = Vec::with_capacity(n);
+            let mut init_marks = Vec::with_capacity(n);
+            for i in 0..n {
+                let primary = ((i * 17) % 13) as f64 * 100.0;
+                let fk = match i % 11 {
+                    0 => i64::MIN,
+                    1 => i64::MAX,
+                    2 => -1,
+                    3 => 0,
+                    4 => 1,
+                    // Force frequent w_fast ties to test boundary tie-break parity
+                    _ => ((i as i64 * 37) % 9) * 10 - 30,
+                };
+                let (mut k, _, _, _, _, _) = PruneKey::from_raw_fields(
+                    NodeId(i as u32),
+                    &root,
+                    false,
+                    (i % 50) as i32,
+                    70,
+                    80,
+                    5,
+                    65,
+                    (i % 7) as i16,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    3,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    true,
+                    primary,
+                    false,
+                    false,
+                    0.0,
+                    5,
+                    1,
+                    1,
+                    1,
+                );
+                k.cumulative_hp_lost = ((i * 5) % 9) as i16;
+                keys.push(k);
+                hashes.push(StateHash::from_parts(0, ((n - i) as u64).wrapping_mul(31)));
+                fast_keys.push(fk);
+                init_marks.push(if i % 4 == 0 { 1u8 } else { 0u8 });
+            }
+
+            for &(take, pareto_extra) in &[(1usize, 0usize), (5, 4), (16, 16), (32, 32)] {
+                let mut marks_scalar = init_marks.clone();
+                let mut heap_scalar = Vec::new();
+                let mut scan_buf = Vec::new();
+                let mut out_scalar = Vec::new();
+                let mut p_scalar = [0usize; PER_NICHE_PARETO_TOP_K];
+                let mut pc_scalar = 0usize;
+
+                let added_scalar = pick_top_k_niche_fast_impl(
+                    &keys,
+                    &hashes,
+                    &fast_keys,
+                    &mut marks_scalar,
+                    &mut heap_scalar,
+                    &mut scan_buf,
+                    take,
+                    pareto_extra,
+                    &mut out_scalar,
+                    &mut p_scalar,
+                    &mut pc_scalar,
+                    false,
+                );
+                let unmarked_total = init_marks.iter().filter(|&&m| m == 0).count();
+                assert_eq!(added_scalar, take.min(unmarked_total));
+                assert_eq!(
+                    pc_scalar,
+                    pareto_extra.min(unmarked_total.saturating_sub(added_scalar))
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn frozen_incumbent_guards_match_csharp_hp_potion_and_turn_rules() {
+        let mut root = RootEvalBaseline::default();
+        root.initial_player_hp = 80;
+        root.initial_player_max_hp = 80;
+        root.boss_hp_relief = BossHpRelief::None;
+        let cert = ClosureCertificate {
+            healing_certified: true,
+            max_in_combat_heal: 0,
+            growth_certified_zero: true,
+            ..Default::default()
+        };
+
+        let mut inc = FrozenIncumbentBound::default();
+        // theft_preserve_resources disables tightening even when outstanding_stolen == 0 and !forfeits_gold
+        assert!(!inc.tighten(&root, true, 0, -1000, 0, 10, 0, 0, 0, 3, 0, false, true));
+        assert!(!inc.has_certified_overall_bound);
+
+        // Zero-potion win at 70 HP (-1000 centi-HP), 10 battle_hp_lost, turn 3
+        assert!(inc.tighten(&root, true, 0, -1000, 0, 10, 0, 0, 0, 3, 0, false, false));
+        // Strictly lower battle_hp_lost on HP tie updates tie-break even on later turn
+        assert!(inc.tighten(&root, true, 0, -1000, 0, 8, 0, 0, 0, 5, 0, false, false));
+        assert_eq!(inc.best_zero_potion_battle_hp_lost, 8);
+        assert_eq!(inc.best_zero_potion_end_turn, 5);
+
+        // Zero-potion tie on upper_bound_hp_delta (-1000): fewer battle_hp_lost (7 < 8) at turn 6 > 5 must NOT be pruned
+        assert!(!inc.is_pruned(&cert, &root, 70, 80, 0, 0, 0, false, false, 6, 7, 0, 0, 0, 0, false));
+        // battle_hp_lost >= 8 at turn 6 > 5 IS pruned
+        assert!(inc.is_pruned(&cert, &root, 70, 80, 0, 0, 0, false, false, 6, 8, 0, 0, 0, 0, false));
+        // battle_hp_lost > 8 at turn 4 <= 5 is pruned by overall bound (`battle_hp_lost > best_overall_battle_hp_lost`)
+        assert!(inc.is_pruned(&cert, &root, 70, 80, 0, 0, 0, false, false, 4, 9, 0, 0, 0, 0, false));
+        // Overall V=-1000 tie with higher persistent HP (-100 > -1000 despite 900 potion cost) must NOT be pruned
+        assert!(!inc.is_pruned(&cert, &root, 79, 80, 0, 0, 0, false, false, 4, 8, 1, 1, 1, 900, false));
+        // Overall tie on V=-1000 AND hp_delta=-1000 AND battle_hp_lost==8 with potion_count 1 > 0 IS pruned even when turn <= 5
+        assert!(inc.is_pruned(&cert, &root, 70, 80, 0, 0, 0, false, false, 4, 8, 1, 0, 0, 0, false));
+
+        // Reset to isolate zero-potion vs overall `potion_count`:
+        let mut inc2 = FrozenIncumbentBound::default();
+        // 1-potion win: player_hp=79 (-100 centi-HP), potion_cost=900 -> V = -1000, hp_delta = -100, loss = 1, potions = 1, turn = 3
+        assert!(inc2.tighten(&root, true, 0, -100, 900, 1, 1, 1, 1, 3, 0, false, false));
+        // Another 1-potion route tying V=-1000, hp_delta=-100, loss=1, potions=0 < 1 must NOT be pruned
+        assert!(!inc2.is_pruned(&cert, &root, 79, 80, 0, 0, 0, false, false, 5, 1, 0, 0, 1, 900, false));
+        // Same potions=1 and loss=1, turn 4 > 3 IS pruned
+        assert!(inc2.is_pruned(&cert, &root, 79, 80, 0, 0, 0, false, false, 4, 1, 1, 0, 1, 900, false));
+    }
+
+    #[test]
+    fn tactical_sig_clone_capping_and_pass2_spillover_behavior() {
+        let mut arena = NodeArena::default();
+        let root = RootEvalBaseline {
+            initial_player_hp: 80,
+            initial_player_max_hp: 80,
+            ignore_long_term_rewards: true,
+            ..Default::default()
+        };
+
+        // 8 clones with identical tactical stats (only differ in state_hash and score 1000..993)
+        let mut cands = Vec::new();
+        for i in 0..8u64 {
+            let mut n = SearchNode {
+                state_hash: StateHash::from_parts(0, 100 + i),
+                beam_rank_score: (1000 - i) as f64,
+                turn: 1,
+                action_count: 1,
+                fast_eval: StoredFastEval {
+                    player_hp: 70,
+                    player_max_hp: 80,
+                    enemy_hp: 50,
+                    alive_enemy_count: 1,
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let mut full = StoredNodeEval::default();
+            full.beam_rank_score = n.beam_rank_score;
+            n.set_full_eval(&full);
+            cands.push(arena.push_node(n));
+        }
+        // 4 distinct tactical states with lower primary scores (different enemy_hp / block)
+        for j in 0..4u64 {
+            let mut n = SearchNode {
+                state_hash: StateHash::from_parts(0, 200 + j),
+                beam_rank_score: (500 - j) as f64,
+                turn: 1,
+                action_count: 1,
+                fast_eval: StoredFastEval {
+                    player_hp: 65 - j as i16,
+                    player_max_hp: 80,
+                    enemy_hp: 40 - j as i32 * 5,
+                    alive_enemy_count: 1,
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let mut full = StoredNodeEval::default();
+            full.beam_rank_score = n.beam_rank_score;
+            n.set_full_eval(&full);
+            cands.push(arena.push_node(n));
+        }
+
+        // At turn boundary (cap=2 per tactical_sig), beam_width=8 selects 2 clones + 4 diverse + 2 spillover clones
+        let mut kept_tb = Vec::new();
+        let mut scratch = PruneScratch::default();
+        BeamRetentionPolicy::prune_wave_full_into(
+            &arena,
+            &cands,
+            8,
+            None,
+            None,
+            &root,
+            false,
+            false,
+            false,
+            true,
+            false,
+            None,
+            &mut kept_tb,
+            &mut scratch,
+        );
+        assert_eq!(kept_tb.len(), 8);
+        for d in &cands[8..12] {
+            assert!(kept_tb.contains(d), "diverse node must survive Pass 1 clone cap");
+        }
+
+        // Mid-turn (cap=3 per tactical_sig) takes 3 clones + 4 diverse + 1 spillover = 8
+        let kept_mt = BeamRetentionPolicy::prune_wave_full(
+            &mut arena,
+            &cands,
+            8,
+            None,
+            None,
+            &root,
+            false,
+            false,
+            false,
+            false,
+            false,
+        );
+        assert_eq!(kept_mt.len(), 8);
+        assert!(kept_mt.contains(&cands[2]), "3rd clone allowed under mid-turn cap=3");
+        assert!(kept_mt.contains(&cands[11]), "diverse node 4 still retained");
+
+        // All-clones narrow tree: Pass 2 spillover fills full quota cleanly
+        let narrow = BeamRetentionPolicy::prune_wave_full(
+            &mut arena,
+            &cands[..8],
+            6,
+            None,
+            None,
+            &root,
+            false,
+            false,
+            false,
+            true,
+            false,
+        );
+        assert_eq!(narrow.len(), 6);
+    }
+
+    #[test]
+    fn potion_bucketing_optional_paid_forced_and_dynamic_quotas_match_csharp() {
+        let mut root = RootEvalBaseline::default();
+        root.initial_player_hp = 80;
+        root.initial_player_max_hp = 80;
+        root.forced_directive_count = 1;
+        root.all_forced_potion_mask = 1u64 << 2;
+
+        // Free/combat-generated potion (`potion_count=1`, `optional_paid=0`, `forced_mask=0`) lands in Bucket 0
+        assert_eq!(compute_potion_bucket(1, 0, 0, 0, &root, false), 0);
+        // 1 optional paid + 1 forced lands in Bucket 2
+        assert_eq!(compute_potion_bucket(2, 2, 1, 1u64 << 2, &root, false), 2);
+        // RequireAtLeastOne promotes explicit_potion_count > 0 to >= Bucket 1
+        root.effective_potion_policy = SolverPotionPolicy::RequireAtLeastOne;
+        assert_eq!(compute_potion_bucket(1, 1, 0, 0, &root, false), 1);
+
+        // Phase B Bucket 0 dynamic reserves
+        let counts = [100, 100, 100, 100];
+        let q_phase_b_t1 = allocate_potion_bucket_quotas(counts, 100, true, false, 0, false, 1);
+        assert_eq!(q_phase_b_t1[0], 30);
+        let q_phase_b_t2 = allocate_potion_bucket_quotas(counts, 100, true, false, 0, false, 2);
+        assert_eq!(q_phase_b_t2[0], 26);
+        let q_relaxed = allocate_potion_bucket_quotas(counts, 100, true, true, 0, false, 1);
+        assert_eq!(q_relaxed[0], 25);
+        let q_floor40 = allocate_potion_bucket_quotas(counts, 100, true, false, 40, false, 2);
+        assert_eq!(q_floor40[0], 40);
+        let q_forced_t2 = allocate_potion_bucket_quotas(counts, 100, true, false, 0, true, 2);
+        assert_eq!(q_forced_t2[0], 12);
+        let q_phase_a_t1 = allocate_potion_bucket_quotas(counts, 100, false, false, 0, false, 1);
+        assert_eq!(q_phase_a_t1[0], 60);
+        assert_eq!(q_phase_a_t1.iter().sum::<usize>(), 100);
+    }
+
+    #[test]
+    fn death_save_rescue_pareto_survival_and_strategy_niche_carve() {
+        let mut arena = NodeArena::default();
+        let mut root = RootEvalBaseline::default();
+        root.initial_player_hp = 80;
+        root.initial_player_max_hp = 80;
+        root.effective_has_growth_targets = true;
+
+        // Node A: survived cleanly at 10 HP, 0 death saves, high score
+        let mut n_clean = SearchNode {
+            state_hash: StateHash::from_parts(0, 1),
+            beam_rank_score: 5000.0,
+            turn: 2,
+            action_count: 1,
+            fast_eval: StoredFastEval {
+                player_hp: 10,
+                player_max_hp: 80,
+                cumulative_hp_lost: 70,
+                death_save_use_count: 0,
+                enemy_hp: 50,
+                alive_enemy_count: 1,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let mut f_clean = StoredNodeEval::default();
+        f_clean.beam_rank_score = 5000.0;
+        n_clean.set_full_eval(&f_clean);
+
+        // Node B: death-save rescue at 40 HP (same effective net loss if death_save_hp_restored=30 -> raw 80-40+30=70),
+        // with high max_dark_evoke=30 so neither dominates unconditionally once cross-death-save domination is disabled.
+        let mut n_rescue = SearchNode {
+            state_hash: StateHash::from_parts(0, 2),
+            beam_rank_score: 100.0,
+            turn: 2,
+            action_count: 2,
+            max_dark_evoke: 30,
+            fast_eval: StoredFastEval {
+                player_hp: 40,
+                player_max_hp: 80,
+                cumulative_hp_lost: 40,
+                death_save_hp_restored: 30,
+                death_save_use_count: 1,
+                enemy_hp: 50,
+                alive_enemy_count: 1,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let mut f_rescue = StoredNodeEval::default();
+        f_rescue.beam_rank_score = 100.0;
+        f_rescue.max_dark_evoke = 30;
+        n_rescue.set_full_eval(&f_rescue);
+
+        let id_clean = arena.push_node(n_clean);
+        let id_rescue = arena.push_node(n_rescue);
+        let (k_c, ..) = arena.build_prune_entry(id_clean, &root, false);
+        let (k_r, ..) = arena.build_prune_entry(id_rescue, &root, false);
+        let e_c = arena.build_extended_prune_entry(id_clean, &k_c, &root, false);
+        let e_r = arena.build_extended_prune_entry(id_rescue, &k_r, &root, false);
+
+        // Without rescue: DeathSave=0 < DeathSave=1 wins in Survival; if clean also matches dark evoke, clean dominates rescue in Pareto
+        assert_eq!(cmp_entry_survival(&e_c, &e_r, false, false, false), std::cmp::Ordering::Less);
+        // With rescue: higher PlayerHp (40 > 10) defers DeathSave and wins in Survival; and cross-death-save domination is disabled in Pareto
+        assert_eq!(cmp_entry_survival(&e_r, &e_c, true, false, false), std::cmp::Ordering::Less);
+        assert!(!dominates_candidate(&e_c, &e_r, true, false, 0, false, false, false));
+
+        // Even if e_c beats e_r on every numeric stat including dark_evoke, `allow_death_save_rescue = true` still blocks cross-death-save domination
+        let mut e_c_sup = e_c;
+        e_c_sup.best_hp = 80;
+        e_c_sup.max_dark_evoke = 99;
+        assert!(dominates_candidate(&e_c_sup, &e_r, false, false, 0, false, false, false));
+        assert!(!dominates_candidate(&e_c_sup, &e_r, true, false, 0, false, false, false));
+
+        // Verify Strategy niche preserves strategy goal leader when `allow_death_save_rescue` / growth targets active
+        let mut nodes = Vec::new();
+        for i in 0..30u64 {
+            let mut n = SearchNode {
+                state_hash: StateHash::from_parts(0, 500 + i),
+                beam_rank_score: (2000 - i) as f64,
+                turn: 1,
+                action_count: 1,
+                board_investment: i as i16,
+                fast_eval: StoredFastEval {
+                    player_hp: 70 - (i % 5) as i16,
+                    player_max_hp: 80,
+                    enemy_hp: 50 + i as i32,
+                    alive_enemy_count: 1,
+                    strategy_goal_hp_credit: if i == 29 { 25 } else { 0 },
+                    strategy_goal_count: if i == 29 { 2 } else { 0 },
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let mut full = StoredNodeEval::default();
+            full.beam_rank_score = n.beam_rank_score;
+            full.board_investment = i as i32;
+            n.set_full_eval(&full);
+            nodes.push(arena.push_node(n));
+        }
+        let mut kept = Vec::new();
+        let mut scratch = PruneScratch {
+            allow_death_save_rescue: true,
+            ..Default::default()
+        };
+        BeamRetentionPolicy::prune_wave_full_into(
+            &arena,
+            &nodes,
+            12,
+            None,
+            None,
+            &root,
+            false,
+            false,
+            false,
+            true,
+            false,
+            None,
+            &mut kept,
+            &mut scratch,
+        );
+        assert!(kept.contains(&nodes[29]), "Strategy leader must be preserved by Strategy niche");
+
+        // Verify BoardInvestment (16_000*board + 18_000*setup), mid-turn Optionality combo, and non-bypassed explicit split
+        let mut bi_nodes = Vec::new();
+        for i in 0..24u64 {
+            let mut n = SearchNode {
+                state_hash: StateHash::from_parts(0, 900 + i),
+                beam_rank_score: (3000 - i) as f64,
+                turn: 1,
+                action_count: 1,
+                explicit_potion_count: if i < 12 { 0 } else { 1 },
+                optional_paid_potion_count: if i < 12 { 0 } else { 1 },
+                potion_count: if i < 12 { 0 } else { 1 },
+                board_investment: if i == 11 { 2 } else { 0 },
+                setup_score: if i == 11 { 5 } else { 0 },
+                fast_eval: StoredFastEval {
+                    player_hp: 75,
+                    player_max_hp: 80,
+                    enemy_hp: 60,
+                    energy: if i == 23 { 6 } else { 0 },
+                    playable_hand_count: if i == 23 { 5 } else { 0 },
+                    alive_enemy_count: 1,
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let mut full = StoredNodeEval::default();
+            full.beam_rank_score = n.beam_rank_score;
+            full.board_investment = n.board_investment as i32;
+            full.setup_score = n.setup_score as i32;
+            n.set_full_eval(&full);
+            bi_nodes.push(arena.push_node(n));
+        }
+        let kept_split = BeamRetentionPolicy::prune_wave_full(
+            &mut arena,
+            &bi_nodes,
+            10,
+            Some(5),
+            Some(5),
+            &root,
+            false,
+            false,
+            false,
+            false,
+            false,
+        );
+        assert_eq!(kept_split.len(), 10);
+        // Bucket 0 must run BoardInvestment and keep bi_nodes[11]; Bucket 1 must run Optionality combo and keep bi_nodes[23]!
+        assert!(kept_split.contains(&bi_nodes[11]), "explicit split must preserve BoardInvestment leader in Bucket 0");
+        assert!(kept_split.contains(&bi_nodes[23]), "explicit split must preserve mid-turn Optionality combo leader in Bucket 1");
     }
 }

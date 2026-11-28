@@ -5,8 +5,10 @@ use std::sync::atomic::{AtomicU8, Ordering};
 
 pub const TT_SHARD_COUNT: usize = 256;
 const INITIAL_SHARD_SLOTS: usize = 256;
+const MAX_LABELS_PER_HASH_KEY: usize = 8;
+const MAX_ACTION_BYPASS_THRESHOLD: u16 = 48;
 
-/// Compact 32-byte 8-dimensional Pareto non-dominance label matching `HotTtLabel`.
+/// Compact 40-byte 11-dimensional Pareto non-dominance label matching `HotTtLabel`.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TranspositionLabel {
     pub forced_used_mask: u64,
@@ -14,10 +16,16 @@ pub struct TranspositionLabel {
     pub cumulative_player_hp_lost: i32,
     pub potion_strategic_cost: i16,
     pub future_sold_hp: i16,
+    pub death_save_hp_restored: i16,
     pub action_count: u16,
     pub potion_count: u8,
+    pub optional_paid_potion_count: u8,
+    pub alchemize_count: u8,
     pub death_save_use_count: u8,
+    pub has_explicit_potion: bool,
 }
+
+const _: () = assert!(std::mem::size_of::<TranspositionLabel>() <= 40);
 
 impl TranspositionLabel {
     #[inline]
@@ -39,22 +47,63 @@ impl TranspositionLabel {
             potion_strategic_cost: potion_strategic_cost
                 .clamp(i16::MIN as i32, i16::MAX as i32) as i16,
             future_sold_hp: future_sold_hp.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
+            death_save_hp_restored: 0,
             action_count,
             potion_count: potion_count.min(u8::MAX as u16) as u8,
+            optional_paid_potion_count: 0,
+            alchemize_count: 0,
             death_save_use_count: death_save_use_count.clamp(0, u8::MAX as i32) as u8,
+            has_explicit_potion: potion_count > 0,
         }
+    }
+
+    #[inline]
+    pub const fn with_details(
+        mut self,
+        has_explicit_potion: bool,
+        optional_paid_potion_count: u8,
+        alchemize_count: u8,
+        death_save_hp_restored: i16,
+    ) -> Self {
+        self.has_explicit_potion = has_explicit_potion;
+        self.optional_paid_potion_count = optional_paid_potion_count;
+        self.alchemize_count = alchemize_count;
+        self.death_save_hp_restored = death_save_hp_restored;
+        self
     }
 
     #[inline]
     pub fn dominates(&self, other: &Self) -> bool {
         (self.forced_used_mask & other.forced_used_mask) == other.forced_used_mask
-            && self.death_save_use_count <= other.death_save_use_count
+            && (!other.has_explicit_potion || self.has_explicit_potion)
             && self.potion_count <= other.potion_count
+            && self.optional_paid_potion_count <= other.optional_paid_potion_count
             && self.potion_strategic_cost <= other.potion_strategic_cost
-            && self.future_sold_hp <= other.future_sold_hp
+            && self.alchemize_count >= other.alchemize_count
+            && self.death_save_use_count <= other.death_save_use_count
+            && self.death_save_hp_restored <= other.death_save_hp_restored
             && self.cumulative_player_hp_lost <= other.cumulative_player_hp_lost
             && self.score >= other.score
-            && (self.action_count <= other.action_count || self.score > other.score)
+            && (self.action_count <= other.action_count
+                || (self.score > other.score && self.action_count <= MAX_ACTION_BYPASS_THRESHOLD))
+    }
+
+    /// 链满时决定保留优先级的比较器：`Less` 表示 `self` 更值得保留，`Greater` 表示更应被淘汰。
+    #[inline]
+    pub fn cmp_retention_priority(&self, other: &Self) -> std::cmp::Ordering {
+        self.death_save_use_count
+            .cmp(&other.death_save_use_count)
+            .then_with(|| self.potion_count.cmp(&other.potion_count))
+            .then_with(|| {
+                self.optional_paid_potion_count
+                    .cmp(&other.optional_paid_potion_count)
+            })
+            .then_with(|| self.potion_strategic_cost.cmp(&other.potion_strategic_cost))
+            .then_with(|| {
+                self.cumulative_player_hp_lost
+                    .cmp(&other.cumulative_player_hp_lost)
+            })
+            .then_with(|| other.score.total_cmp(&self.score))
     }
 }
 
@@ -106,6 +155,20 @@ impl TranspositionFrontier {
             }
         }
         self.tail.retain(|cur| !next.dominates(cur));
+        if self.tail.len() >= MAX_LABELS_PER_HASH_KEY {
+            let mut worst_idx = 0usize;
+            for i in 1..self.tail.len() {
+                if self.tail[i].cmp_retention_priority(&self.tail[worst_idx])
+                    == std::cmp::Ordering::Greater
+                {
+                    worst_idx = i;
+                }
+            }
+            if next.cmp_retention_priority(&self.tail[worst_idx]) == std::cmp::Ordering::Less {
+                self.tail[worst_idx] = next;
+            }
+            return true;
+        }
         self.tail.push(next);
         if self.tail.len() == 1 {
             self.single = self.tail[0];
@@ -119,10 +182,10 @@ impl TranspositionFrontier {
 #[derive(Clone, Copy, Debug)]
 #[repr(C, align(64))]
 struct TtSlot {
-    generation: u32,
-    overflow_idx: u32,
     hash: StateHash,
     single: TranspositionLabel,
+    generation: u32,
+    overflow_idx: u32,
 }
 
 const _: () = {
@@ -141,9 +204,13 @@ impl TtSlot {
                 cumulative_player_hp_lost: 0,
                 potion_strategic_cost: 0,
                 future_sold_hp: 0,
+                death_save_hp_restored: 0,
                 action_count: 0,
                 potion_count: 0,
+                optional_paid_potion_count: 0,
+                alchemize_count: 0,
                 death_save_use_count: 0,
+                has_explicit_potion: false,
             },
             generation: 0,
             overflow_idx: u32::MAX,
@@ -282,6 +349,22 @@ impl TtShard {
                     }
                 }
                 tail.retain(|cur| !label.dominates(cur));
+                if tail.len() >= MAX_LABELS_PER_HASH_KEY {
+                    let mut worst_idx = 0usize;
+                    for i in 1..tail.len() {
+                        if tail[i].cmp_retention_priority(&tail[worst_idx])
+                            == std::cmp::Ordering::Greater
+                        {
+                            worst_idx = i;
+                        }
+                    }
+                    if label.cmp_retention_priority(&tail[worst_idx])
+                        == std::cmp::Ordering::Less
+                    {
+                        tail[worst_idx] = label;
+                    }
+                    return true;
+                }
                 tail.push(label);
                 if tail.len() == 1 {
                     slot.single = tail[0];
@@ -371,6 +454,15 @@ impl ShardedParetoTT {
                 shard.slots.shrink_to(INITIAL_SHARD_SLOTS);
                 shard.mask = INITIAL_SHARD_SLOTS - 1;
             }
+        }
+    }
+
+    pub fn clear_and_shrink_idle(&mut self) {
+        self.branches_pruned = 0;
+        self.generation = 1;
+        for shard in &mut self.shards {
+            shard.clear_all(4096);
+            shard.overflow.shrink_to(0);
         }
     }
 
@@ -884,5 +976,88 @@ mod tests {
         }
         assert_eq!(seq_expected, got);
         assert_eq!(tt_seq.branches_pruned, tt_grp.branches_pruned);
+    }
+
+    #[test]
+    fn dominates_enforces_11_dim_parity_and_48_action_bypass_cap() {
+        let base = TranspositionLabel::new(0b01, 0, 1, 9, 0, 5, 10, 100.0)
+            .with_details(true, 1, 2, 0);
+
+        // Strictly better score with action_count <= 48 dominates higher action_count (within bypass cap)
+        let better_48 = TranspositionLabel::new(0b01, 0, 1, 9, 0, 5, 48, 200.0)
+            .with_details(true, 1, 2, 0);
+        assert!(better_48.dominates(&base));
+
+        // action_count == 49 > MAX_ACTION_BYPASS_THRESHOLD (48) CANNOT dominate slower-score shorter path
+        let blocked_49 = TranspositionLabel::new(0b01, 0, 1, 9, 0, 5, 49, 200.0)
+            .with_details(true, 1, 2, 0);
+        assert!(!blocked_49.dominates(&base));
+
+        // Equal score requires action_count <= other.action_count
+        let tie_score_slower = TranspositionLabel::new(0b01, 0, 1, 9, 0, 5, 11, 100.0)
+            .with_details(true, 1, 2, 0);
+        assert!(!tie_score_slower.dominates(&base));
+
+        // has_explicit_potion: explicit candidate cannot be dominated by non-explicit candidate
+        let non_explicit = TranspositionLabel::new(0b01, 0, 1, 9, 0, 5, 5, 500.0)
+            .with_details(false, 1, 2, 0);
+        assert!(!non_explicit.dominates(&base));
+        assert!(base.dominates(
+            &TranspositionLabel::new(0b01, 0, 1, 9, 0, 5, 12, 90.0).with_details(false, 1, 2, 0)
+        ));
+
+        // alchemize_count >=, optional_paid_potion_count <=, death_save_hp_restored <=
+        let fewer_alch = TranspositionLabel::new(0b01, 0, 1, 9, 0, 5, 10, 500.0)
+            .with_details(true, 1, 1, 0);
+        assert!(!fewer_alch.dominates(&base));
+        let more_paid = TranspositionLabel::new(0b01, 0, 1, 9, 0, 5, 10, 500.0)
+            .with_details(true, 2, 2, 0);
+        assert!(!more_paid.dominates(&base));
+        let more_ds_hp = TranspositionLabel::new(0b01, 0, 1, 9, 0, 5, 10, 500.0)
+            .with_details(true, 1, 2, 5);
+        assert!(!more_ds_hp.dominates(&base));
+    }
+
+    #[test]
+    fn frontier_and_shard_cap_8_labels_via_retention_priority() {
+        let h = mk_hash(77);
+        let mut tt = ShardedParetoTT::new(1024);
+
+        // Build 9 mutually non-dominated labels (trade off potion_count vs score):
+        // i=0..=8 have potion_count = i (ascending cost -> descending priority), score = i*100 (mutually non-dominated).
+        let mut labels = Vec::new();
+        for i in 0..=8u16 {
+            labels.push(
+                TranspositionLabel::new(0, 0, i, i as i32 * 9, 0, 5, 5, (i as f64) * 100.0)
+                    .with_details(i > 0, i as u8, 0, 0),
+            );
+        }
+
+        // Insert labels 1..=8 (8 worst priority -> 1 best priority) -> all 8 admitted
+        let mut frontier = TranspositionFrontier::new(labels[1]);
+        assert!(tt.try_insert_single(h, labels[1]));
+        for i in 2..=8usize {
+            assert!(frontier.try_accept(labels[i]));
+            assert!(tt.try_insert_single(h, labels[i]));
+        }
+        assert_eq!(frontier.tail.len(), 8);
+
+        // Insert labels[0] (potion_count=0, highest retention priority!): must evict lowest priority (labels[8])
+        assert!(frontier.try_accept(labels[0]));
+        assert!(tt.try_insert_single(h, labels[0]));
+        assert_eq!(frontier.tail.len(), 8);
+        assert!(frontier.is_dominated_by(&labels[0]));
+        // labels[8] was evicted so probing labels[8] is no longer dominated by exact labels[8]
+        assert!(!frontier.is_dominated_by(&labels[8]));
+        assert!(!tt.probe_dominated(h, &labels[8]));
+
+        // Insert a low-priority non-dominated label (death_save_use_count=1, super high score):
+        // must NOT evict any DeathSave=0 survivor and still return true (C# Admitted)!
+        let low_pri = TranspositionLabel::new(0, 1, 9, 81, 0, 9, 1, 999_999.0);
+        assert!(frontier.try_accept(low_pri));
+        assert!(tt.try_insert_single(h, low_pri));
+        assert_eq!(frontier.tail.len(), 8);
+        assert!(!frontier.is_dominated_by(&low_pri));
+        assert!(!tt.probe_dominated(h, &low_pri));
     }
 }

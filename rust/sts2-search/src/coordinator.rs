@@ -13,11 +13,13 @@ use crate::early_turn::{
     EARLY_TURN_EXPLORATION_MAX_RANK_LIMIT, EARLY_TURN_EXPLORATION_NODE_BUDGET,
 };
 use crate::eval::{
-    allows_brightest_flame, compute_beam_rank_score_with_centi, evaluate_fast, evaluate_full,
-    evaluate_full_details_cached, select_final_plan, ActEndingBossPolicy, EvalMode,
-    FastEvalSummary, FullEvalDetails, IntentHitsCache, PotionUsePolicy, PotionValuationRegistry,
-    PowerCardValuationRegistry, PowerRoutePriority, RareNodeEval, RelicCounterEvaluation,
-    RootEvalBaseline, SolverPotionPolicy, SolverTheftPolicy, StoredFastEval, StoredNodeEval,
+    allows_brightest_flame, compute_beam_rank_score_with_centi, evaluate_fast,
+    evaluate_fast_and_full_fused, evaluate_full, evaluate_full_details_cached, select_final_plan,
+    ActEndingBossPolicy, EvalMode, FastEvalSummary, FullEvalDetails, IntentHitsCache,
+    PaidPotionImproveInput, PotionUsePolicy, PotionValuationRegistry, PowerCardValuationRegistry,
+    PowerRoutePriority, RareNodeEval, RelicCounterEvaluation, RelicCounterId, RootEvalBaseline,
+    SolverPotionPolicy, SolverTheftPolicy, StoredFastEval, StoredNodeEval,
+    FAST_FLAG_FORFEITS_GOLD,
 };
 use crate::hash::StateHash;
 use crate::novelty::{
@@ -37,7 +39,8 @@ use crate::portfolio::{
     SolverSearchProfile,
 };
 use crate::pruning::{
-    BeamRetentionPolicy, ClosureCertificate, FrozenIncumbentBound, PrimaryIncumbentBucket,
+    compute_effective_net_hp_loss_centi, compute_tactical_signature, BeamRetentionPolicy,
+    ClosureCertificate, ExtendedPruneEntry, FrozenIncumbentBound, PrimaryIncumbentBucket,
     PrimaryIncumbentTable, PrimarySearchIncumbent, PruneKey, PruneScratch, PruneSource,
 };
 use crate::rollout::{
@@ -48,18 +51,23 @@ use crate::rollout::{
 };
 use crate::tt::{ShardedParetoTT, TranspositionLabel, TT_SHARD_COUNT};
 use crate::{InCombatSolveResponse, PlannedAction, SearchPolicy, SearchProgress, SearchStatistics};
+use rayon::prelude::*;
 use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, AtomicUsize, Ordering};
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant};
+use sts2_kernel::content_dispatch::{rollout_meta_flags, rollout_op_flags};
 use sts2_kernel::state::{
     ActiveHookCache, BattleState, CardHandle, CreatureHandle, FieldMap, GrowthCounters,
     RelicDirtyMask, RootStaticContext, SemanticHistory, HOOK_DIRTY_ALL,
 };
 use sts2_kernel::{CombatEngine, ContentDispatcher, KernelError, KernelErrorKind, StepOutcome};
-use sts2_types::{PileType, PlayerTurnPhase, PotionId, RoomType, TargetType};
+use sts2_types::{
+    CardStaticFlags, CardTags, CardType, PileType, PlayerTurnPhase, PotionId, PowerId, RoomType,
+    TargetType,
+};
 
 struct SearchAbortSlot {
     tripped: AtomicBool,
@@ -111,8 +119,10 @@ fn should_abort_search_on_kernel_error(err: &KernelError) -> bool {
 }
 
 const CHOICE_RESOLVED_CAPACITY: usize = 160;
-const CHOICE_TT_SIZE: usize = 512;
+const TURN_SETUP_CHOICE_RESOLVED_CAPACITY: usize = 384;
+const CHOICE_TT_SIZE: usize = 1024;
 const CHOICE_TT_MASK: usize = CHOICE_TT_SIZE - 1;
+const MAX_BEAM_WIDTH: usize = 640;
 
 #[derive(Clone, Copy, Debug)]
 enum ActionSpec {
@@ -167,6 +177,9 @@ struct PassSearchOptions {
     early_turn_scout_depth: i32,
     boss_tempo_scout_turns: i32,
     rollout_horizon_turns: usize,
+    allow_death_save_rescue: bool,
+    relax_zero_potion_reserve: bool,
+    min_zero_potion_reserve_percent: i32,
 }
 
 impl Default for PassSearchOptions {
@@ -178,6 +191,9 @@ impl Default for PassSearchOptions {
             early_turn_scout_depth: 0,
             boss_tempo_scout_turns: 0,
             rollout_horizon_turns: 0,
+            allow_death_save_rescue: false,
+            relax_zero_potion_reserve: false,
+            min_zero_potion_reserve_percent: 0,
         }
     }
 }
@@ -219,6 +235,7 @@ struct WorkerCandidate {
 struct ResolvedChoiceCandidate {
     choices_offset: u32,
     choices_len: u8,
+    depth0_sig: u64,
     action: CompactAction,
     por_key: u64,
     has_extra_end_turn: bool,
@@ -249,8 +266,37 @@ struct ResolvedChoiceCandidate {
     lookahead_score: f64,
     lookahead_hp_lost: i32,
     lookahead_board_investment: i32,
+    lookahead_setup_score: i32,
     has_lookahead: bool,
     lookahead_victory: bool,
+}
+
+struct DeferredChoiceBatch {
+    task_idx: usize,
+    parent_rank: u32,
+    action_ord: u32,
+    parent_id: NodeId,
+    max_branches: usize,
+    probe_max_turns_ahead: usize,
+    probed_pool: Vec<usize>,
+    selected_indices: SmallVec<[usize; 64]>,
+    resolved: Vec<ResolvedChoiceCandidate>,
+    slab: LocalStateSlab,
+    choices: ChoiceArena,
+    probe_results: Vec<Option<ChoiceProbeResult>>,
+}
+
+#[derive(Clone, Copy)]
+struct ProbeJob {
+    batch_idx: u32,
+    cand_idx: u32,
+    state_slab_idx: u32,
+    state_off: u32,
+    state_len: u32,
+    state_hash: StateHash,
+    opt_cost: i32,
+    opt_count: usize,
+    action_count: u16,
 }
 
 struct WorkerScratch {
@@ -260,7 +306,7 @@ struct WorkerScratch {
     choice_probe_ws: ChoiceProbeWorkspace,
     eval_intent_cache: IntentHitsCache,
     choice_resolved: Vec<ResolvedChoiceCandidate>,
-    choice_enum_bufs: [Vec<SmallVec<[usize; 8]>>; 4],
+    choice_enum_bufs: Vec<Vec<SmallVec<[usize; 8]>>>,
     choice_enum_scratch: ChoiceEnumScratch,
     choice_slab: LocalStateSlab,
     choice_staging_choices: ChoiceArena,
@@ -271,6 +317,8 @@ struct WorkerScratch {
     marginal_scores: Vec<f64>,
     marginal_order: Vec<usize>,
     probed_sels: Vec<(SmallVec<[usize; 8]>, f64, u64, u64)>,
+    deferred_batches: Vec<DeferredChoiceBatch>,
+    deferred_probe_out: Vec<(usize, Option<ChoiceProbeResult>)>,
     pack_buf: Vec<u8>,
     action_buf: Vec<ActionTask>,
     slab: LocalStateSlab,
@@ -282,6 +330,7 @@ struct WorkerScratch {
     incumbent_pruned: u64,
     tt_probe_pruned: u64,
     por_pruned: u64,
+    branch_truncations: u64,
     wave_dirty: bool,
     fatal_error: Option<KernelError>,
 }
@@ -296,8 +345,8 @@ impl WorkerScratch {
             choice_paused_states,
             choice_probe_ws: ChoiceProbeWorkspace::new(static_ctx.clone()),
             eval_intent_cache: IntentHitsCache::new(),
-            choice_resolved: Vec::with_capacity(CHOICE_RESOLVED_CAPACITY),
-            choice_enum_bufs: [
+            choice_resolved: Vec::with_capacity(TURN_SETUP_CHOICE_RESOLVED_CAPACITY),
+            choice_enum_bufs: vec![
                 Vec::with_capacity(64),
                 Vec::with_capacity(32),
                 Vec::with_capacity(16),
@@ -313,6 +362,8 @@ impl WorkerScratch {
             marginal_scores: Vec::with_capacity(64),
             marginal_order: Vec::with_capacity(64),
             probed_sels: Vec::with_capacity(64),
+            deferred_batches: Vec::new(),
+            deferred_probe_out: Vec::new(),
             state: empty_scratch_state(static_ctx),
             pack_buf: Vec::with_capacity(4096),
             action_buf: Vec::with_capacity(16),
@@ -325,6 +376,7 @@ impl WorkerScratch {
             incumbent_pruned: 0,
             tt_probe_pruned: 0,
             por_pruned: 0,
+            branch_truncations: 0,
             wave_dirty: false,
             fatal_error: None,
         }
@@ -339,11 +391,14 @@ impl WorkerScratch {
         self.cand_shards.clear();
         self.cand_fast_meta.clear();
         self.choice_resolved.clear();
+        self.deferred_batches.clear();
+        self.deferred_probe_out.clear();
         self.transitions = 0;
         self.choice_replay_attempts = 0;
         self.incumbent_pruned = 0;
         self.tt_probe_pruned = 0;
         self.por_pruned = 0;
+        self.branch_truncations = 0;
         self.wave_dirty = false;
         self.fatal_error = None;
     }
@@ -353,6 +408,17 @@ impl WorkerScratch {
     fn record_fatal_error(&mut self, err: KernelError) {
         if self.fatal_error.is_none() {
             self.fatal_error = Some(err);
+        }
+    }
+
+    #[inline]
+    fn ensure_choice_depth(&mut self, depth: usize, static_ctx: &Arc<RootStaticContext>) {
+        while self.choice_paused_states.len() <= depth {
+            self.choice_paused_states
+                .push(empty_scratch_state(static_ctx.clone()));
+        }
+        while self.choice_enum_bufs.len() <= depth {
+            self.choice_enum_bufs.push(Vec::with_capacity(16));
         }
     }
 
@@ -370,12 +436,18 @@ impl WorkerScratch {
 
     #[inline]
     fn try_insert_local_choice_tt(&mut self, hash: StateHash) -> bool {
-        let idx = (hash.0 as usize) & CHOICE_TT_MASK;
-        if self.choice_tt_epochs[idx] == self.choice_tt_epoch && self.choice_tt_hashes[idx] == hash {
-            return false;
+        let mut slot = (hash.0 as usize) & CHOICE_TT_MASK;
+        for _ in 0..CHOICE_TT_SIZE {
+            if self.choice_tt_epochs[slot] != self.choice_tt_epoch {
+                self.choice_tt_epochs[slot] = self.choice_tt_epoch;
+                self.choice_tt_hashes[slot] = hash;
+                return true;
+            }
+            if self.choice_tt_hashes[slot] == hash {
+                return false;
+            }
+            slot = (slot + 1) & CHOICE_TT_MASK;
         }
-        self.choice_tt_epochs[idx] = self.choice_tt_epoch;
-        self.choice_tt_hashes[idx] = hash;
         true
     }
 }
@@ -440,20 +512,55 @@ impl<'a> ParentStateSource<'a> {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+struct StandPatParentKey {
+    forced_used_mask: u64,
+    used_potion_slot_mask: u16,
+    potion_strategic_cost: i16,
+    optional_paid_potion_cost: i16,
+    action_count: u16,
+    potion_count: u8,
+    explicit_potion_count: u8,
+    optional_paid_potion_count: u8,
+    ambergris_count: u8,
+    forced_ambergris_count: u8,
+}
+
+impl StandPatParentKey {
+    #[inline(always)]
+    fn from_node(n: &SearchNode) -> Self {
+        Self {
+            forced_used_mask: n.forced_used_mask,
+            used_potion_slot_mask: n.used_potion_slot_mask,
+            potion_strategic_cost: n.potion_strategic_cost,
+            optional_paid_potion_cost: n.optional_paid_potion_cost,
+            action_count: n.action_count,
+            potion_count: n.potion_count,
+            explicit_potion_count: n.explicit_potion_count,
+            optional_paid_potion_count: n.optional_paid_potion_count,
+            ambergris_count: n.ambergris_count,
+            forced_ambergris_count: n.forced_ambergris_count,
+        }
+    }
+}
+
 struct PassResources {
     scratches: Vec<WorkerScratch>,
     parent_states: Vec<BattleState>,
+    enumerated_tasks: Vec<Vec<ActionTask>>,
     rollout_workspaces: Vec<crate::rollout::RolloutWorkspace>,
     node_arena: NodeArena,
     prune_scratch: PruneScratch,
     flat_tasks: Vec<(usize, ActionTask)>,
+    deferred_batches: Vec<DeferredChoiceBatch>,
+    probe_jobs: Vec<ProbeJob>,
     step_arena: MainStateArena,
     prev_worker_slabs: Vec<LocalStateSlab>,
     turn_staging_arena: MainStateArena,
     tt: ShardedParetoTT,
     choice_probe_cache: ChoiceProbeCache,
     turn_rollout_cache: TurnRolloutCache,
-    stand_pat_seen: hashbrown::HashSet<StateHash, ahash::RandomState>,
+    stand_pat_seen: hashbrown::HashSet<(StateHash, StandPatParentKey), ahash::RandomState>,
     sort_list: Vec<(usize, usize, (u32, u32, u32))>,
     parent_slices: Vec<AtomicU64>,
     active_parent_slices: Vec<(u32, u16, u32, u32)>,
@@ -568,6 +675,26 @@ impl PruneSource for WorkerCandidateSource<'_> {
     }
 
     #[inline(always)]
+    fn optional_paid_potion_count(&self, id: NodeId) -> u8 {
+        let acc = &self.accepted[id.0 as usize];
+        self.scratches[acc.w_idx as usize].candidates[acc.c_idx as usize]
+            .optional_paid_potion_count
+            .min(u8::MAX as u16) as u8
+    }
+
+    #[inline(always)]
+    fn forced_used_mask(&self, id: NodeId) -> u64 {
+        let acc = &self.accepted[id.0 as usize];
+        self.scratches[acc.w_idx as usize].candidates[acc.c_idx as usize].forced_used_mask
+    }
+
+    #[inline(always)]
+    fn node_turn(&self, id: NodeId) -> i32 {
+        let acc = &self.accepted[id.0 as usize];
+        self.scratches[acc.w_idx as usize].candidates[acc.c_idx as usize].turn
+    }
+
+    #[inline(always)]
     fn beam_score(&self, id: NodeId, use_rollout_scores: bool) -> f64 {
         let acc = &self.accepted[id.0 as usize];
         if !use_rollout_scores {
@@ -608,6 +735,147 @@ impl PruneSource for WorkerCandidateSource<'_> {
             cla,
             cand.state_hash,
         )
+    }
+
+    #[inline]
+    fn build_extended_prune_entry(
+        &self,
+        id: NodeId,
+        k: &PruneKey,
+        root: &RootEvalBaseline,
+        _use_rollout_scores: bool,
+    ) -> ExtendedPruneEntry {
+        let acc = &self.accepted[id.0 as usize];
+        let cand = &self.scratches[acc.w_idx as usize].candidates[acc.c_idx as usize];
+        let f = &cand.fast_eval;
+        let rare = cand.rare_eval.unwrap_or_default();
+        let has_meat = root
+            .active_relic_targets
+            .iter()
+            .any(|t| t.id == RelicCounterId::MeatOnTheBone);
+        let won = f.won();
+        let eff_net_loss_centi = compute_effective_net_hp_loss_centi(
+            root,
+            has_meat,
+            f.player_hp as i32,
+            f.player_max_hp as i32,
+            f.projected_player_hp as i32,
+            f.cumulative_hp_lost as i32,
+            f.recovered_hp as i32,
+            f.death_save_hp_restored as i32,
+            f.death_save_use_count,
+            f.feed_count,
+            won,
+        );
+        let eff_def = cand
+            .full_eval
+            .as_ref()
+            .map_or(f.player_block as i32, |full| full.effective_defense);
+        let max_dark_evoke = cand
+            .full_eval
+            .as_ref()
+            .map_or(0, |full| full.max_dark_evoke);
+        let total_poison_and_doom = cand
+            .full_eval
+            .as_ref()
+            .map_or(0, |full| full.total_poison_and_doom);
+        let has_pure_growth = !root.ignore_long_term_rewards && root.effective_has_growth_targets;
+        let has_relic = !root.active_relic_targets.is_empty();
+        let preserve_theft = root.theft_policy == SolverTheftPolicy::PreserveResources;
+        let growth_hp_credit = (f.strategy_goal_hp_credit as i32) - rare.relic_eval.hp_credit;
+        let growth_reward_count =
+            (f.strategy_goal_count as i32) - rare.relic_eval.satisfied_priority;
+        let forfeits_gold = (f.flags & FAST_FLAG_FORFEITS_GOLD) != 0;
+        let max_hp_delta = if root.initial_player_max_hp > 0 {
+            (root.initial_player_max_hp - (f.player_max_hp as i32))
+                .clamp(i16::MIN as i32, i16::MAX as i32) as i16
+        } else {
+            0
+        };
+        let turn_i16 = cand.turn.clamp(i16::MIN as i32, i16::MAX as i32) as i16;
+        let potion_count = cand.potion_count.min(u8::MAX as u16) as u8;
+        let optional_paid_potion_count =
+            cand.optional_paid_potion_count.min(u8::MAX as u16) as u8;
+        let sig = cand
+            .full_eval
+            .as_ref()
+            .map_or(0, |full| full.tactical_sig);
+        let tactical_sig = if sig != 0 {
+            sig
+        } else {
+            compute_tactical_signature(
+                turn_i16,
+                cand.used_potion_slot_mask,
+                potion_count,
+                f.death_save_use_count,
+                f.alive_enemy_count,
+                f.reviving_enemy_count,
+                f.energy,
+                f.cumulative_hp_lost as i32,
+                f.recovered_hp as i32,
+                k.best_hp as i32,
+                f.enemy_hp,
+                max_hp_delta,
+                eff_def,
+                k.optionality_score,
+                f.playable_hand_count,
+                k.setup_score as i32,
+                k.board_investment as i32,
+                max_dark_evoke,
+                total_poison_and_doom,
+                has_pure_growth,
+                growth_hp_credit,
+                growth_reward_count,
+                f.alchemize_count,
+                f.feed_count,
+                has_relic,
+                rare.relic_eval.satisfied_mask,
+                rare.relic_eval.distance,
+                rare.relic_eval.satisfied_priority,
+                rare.relic_eval.hp_credit,
+                preserve_theft,
+                f.outstanding_stolen,
+                forfeits_gold,
+            )
+        };
+        ExtendedPruneEntry {
+            effective_net_hp_loss_centi: eff_net_loss_centi,
+            tactical_sig,
+            node_id: id,
+            primary: k.primary,
+            aux_score: k.aux_score,
+            forced_used_mask: cand.forced_used_mask,
+            relic_satisfied_mask: rare.relic_eval.satisfied_mask,
+            best_hp: k.best_hp as i32,
+            effective_defense: eff_def,
+            enemy_hp: f.enemy_hp,
+            rem_enemies: k.rem_enemies as i32,
+            board_investment: k.board_investment as i32,
+            setup_score: k.setup_score as i32,
+            max_dark_evoke,
+            total_poison_and_doom,
+            optionality_score: k.optionality_score,
+            strategy_goal_hp_credit: f.strategy_goal_hp_credit as i32,
+            relic_distance: rare.relic_eval.distance,
+            relic_hp_credit: rare.relic_eval.hp_credit,
+            relic_healing_hp_credit: rare.relic_eval.healing_hp_credit,
+            relic_satisfied_priority: rare.relic_eval.satisfied_priority,
+            growth_hp_credit,
+            growth_reward_count,
+            used_potion_slot_mask: cand.used_potion_slot_mask,
+            potion_cost: k.potion_cost,
+            strategic_hp_credit: f.strategic_hp_credit,
+            energy: f.energy,
+            outstanding_stolen: f.outstanding_stolen,
+            playable_hand_count: f.playable_hand_count,
+            optional_paid_potion_count,
+            explicit_potion_count: k.explicit_potion_count,
+            death_save_use_count: f.death_save_use_count,
+            strategy_goal_count: f.strategy_goal_count,
+            forfeits_gold,
+            has_rollout_score: k.has_rollout_score(),
+            has_choice_lookahead: k.has_choice_lookahead(),
+        }
     }
 }
 
@@ -667,8 +935,9 @@ impl Drop for PooledPassResources {
     fn drop(&mut self) {
         if let Some(mut res) = self.0.take() {
             res.reset_for_new_solve(empty_static_ctx());
+            res.trim_for_idle();
             let mut pool = PASS_RESOURCE_POOL.lock();
-            if pool.len() < 2 {
+            if pool.is_empty() {
                 pool.push(res);
             }
         }
@@ -695,6 +964,9 @@ impl PassResources {
                 }
                 while r.parent_states.len() < worker_count {
                     r.parent_states.push(empty_scratch_state(static_ctx.clone()));
+                }
+                while r.enumerated_tasks.len() < worker_count {
+                    r.enumerated_tasks.push(Vec::new());
                 }
                 while r.rollout_workspaces.len() < worker_count {
                     r.rollout_workspaces
@@ -732,6 +1004,20 @@ impl PassResources {
         }
     }
 
+    fn trim_for_idle(&mut self) {
+        self.step_arena.trim_for_idle();
+        self.turn_staging_arena.trim_for_idle();
+        self.node_arena.trim_for_idle();
+        for slab in &mut self.prev_worker_slabs {
+            slab.trim_for_idle();
+        }
+        for s in &mut self.scratches {
+            s.slab.trim_for_idle();
+            s.choice_slab.trim_for_idle();
+        }
+        self.tt.clear_and_shrink_idle();
+    }
+
     fn new(
         static_ctx: &Arc<RootStaticContext>,
         worker_count: usize,
@@ -744,12 +1030,15 @@ impl PassResources {
             parent_states: (0..worker_count)
                 .map(|_| empty_scratch_state(static_ctx.clone()))
                 .collect(),
+            enumerated_tasks: (0..worker_count).map(|_| Vec::new()).collect(),
             rollout_workspaces: (0..worker_count)
                 .map(|_| crate::rollout::RolloutWorkspace::new(static_ctx.clone()))
                 .collect(),
             node_arena: NodeArena::with_capacity(32_768, 32_768),
             prune_scratch: PruneScratch::default(),
             flat_tasks: Vec::with_capacity(128),
+            deferred_batches: Vec::new(),
+            probe_jobs: Vec::new(),
             step_arena: MainStateArena::default(),
             prev_worker_slabs: (0..worker_count).map(|_| LocalStateSlab::default()).collect(),
             turn_staging_arena: MainStateArena::default(),
@@ -784,12 +1073,19 @@ impl PassResources {
             s.eval_intent_cache.clear();
             s.choice_probe_ws.intent_cache.clear();
             s.fatal_error = None;
+            s.deferred_batches.clear();
+            s.deferred_probe_out.clear();
         }
         for rw in &mut self.rollout_workspaces {
             rw.intent_cache.clear();
         }
         self.node_arena.clear();
         self.flat_tasks.clear();
+        self.deferred_batches.clear();
+        self.probe_jobs.clear();
+        for et in &mut self.enumerated_tasks {
+            et.clear();
+        }
         self.step_arena.clear();
         for slab in &mut self.prev_worker_slabs {
             slab.clear();
@@ -1156,6 +1452,9 @@ pub(crate) fn clone_battle_state_into(src: &BattleState, dst: &mut BattleState) 
     copy_vec_copy(&sp.orbs, &mut dp.orbs);
     copy_vec_copy(&sp.arrows, &mut dp.arrows);
     dp.card_or_potion_effect_depth = sp.card_or_potion_effect_depth;
+    dp.death_save_use_count = sp.death_save_use_count;
+    dp.death_save_relic_hp_restored = sp.death_save_relic_hp_restored;
+    dp.death_save_potion_hp_restored = sp.death_save_potion_hp_restored;
     if same_root
         && src.static_ctx.has_root_relics
         && dp.relics.len() == sp.relics.len()
@@ -1394,7 +1693,9 @@ struct BeamRunOutput {
     death_save_use_count: i32,
     player_hp: i32,
     end_player_max_hp: i32,
+    enemy_hp: i32,
     all_forced_uses_satisfied: bool,
+    all_strategy_targets_satisfied: bool,
     strategic_hp_deficit: i32,
     net_persistent_hp_delta_centi: i32,
     net_potion_opportunity_cost_centi: i32,
@@ -1409,6 +1710,7 @@ struct BeamRunOutput {
     optional_potion_count: usize,
     optional_paid_potion_count: usize,
     optional_potion_strategic_cost: i32,
+    raw_optional_paid_potion_cost: i32,
     optional_ambergris_count: i32,
     used_potion_slot_mask: u16,
     alchemize_count: u8,
@@ -1427,9 +1729,67 @@ struct BeamRunOutput {
     por_pruned: u64,
     packed_state_bytes_total: u64,
     termination: &'static str,
+    was_losslessly_exhausted: bool,
     terminal_cards_hint: Vec<sts2_types::CardId>,
     early_turn_frontiers: Vec<crate::early_turn::EarlyTurnFrontierCandidate>,
     boss_tempo_prefixes: Vec<BossTempoPrefix>,
+}
+
+impl BeamRunOutput {
+    fn clone_summary(&self) -> Self {
+        Self {
+            best_node: self.best_node,
+            best_turn: self.best_turn,
+            nodes_in_arena: self.nodes_in_arena,
+            root_baseline: self.root_baseline.clone(),
+            won: self.won,
+            survives: self.survives,
+            is_event_defeat: self.is_event_defeat,
+            death_save_use_count: self.death_save_use_count,
+            player_hp: self.player_hp,
+            end_player_max_hp: self.end_player_max_hp,
+            enemy_hp: self.enemy_hp,
+            all_forced_uses_satisfied: self.all_forced_uses_satisfied,
+            all_strategy_targets_satisfied: self.all_strategy_targets_satisfied,
+            strategic_hp_deficit: self.strategic_hp_deficit,
+            net_persistent_hp_delta_centi: self.net_persistent_hp_delta_centi,
+            net_potion_opportunity_cost_centi: self.net_potion_opportunity_cost_centi,
+            strategy_goal_hp_credit: self.strategy_goal_hp_credit,
+            strategy_goal_count: self.strategy_goal_count,
+            growth_rewards: self.growth_rewards,
+            relic_eval: self.relic_eval,
+            recovered_hp: self.recovered_hp,
+            hp_lost: self.hp_lost,
+            potion_count: self.potion_count,
+            explicit_potion_count: self.explicit_potion_count,
+            optional_potion_count: self.optional_potion_count,
+            optional_paid_potion_count: self.optional_paid_potion_count,
+            optional_potion_strategic_cost: self.optional_potion_strategic_cost,
+            raw_optional_paid_potion_cost: self.raw_optional_paid_potion_cost,
+            optional_ambergris_count: self.optional_ambergris_count,
+            used_potion_slot_mask: self.used_potion_slot_mask,
+            alchemize_count: self.alchemize_count,
+            empty_potion_slots: self.empty_potion_slots,
+            outstanding_stolen: self.outstanding_stolen,
+            forfeits_gold: self.forfeits_gold,
+            has_completed_turn_ongoing: self.has_completed_turn_ongoing,
+            completed_ongoing_turn: self.completed_ongoing_turn,
+            score: self.score,
+            actions: self.actions.clone(),
+            expanded_nodes: self.expanded_nodes,
+            transition_count: self.transition_count,
+            choice_replay_attempts: self.choice_replay_attempts,
+            tt_pruned: self.tt_pruned,
+            incumbent_pruned: self.incumbent_pruned,
+            por_pruned: self.por_pruned,
+            packed_state_bytes_total: self.packed_state_bytes_total,
+            termination: self.termination,
+            was_losslessly_exhausted: self.was_losslessly_exhausted,
+            terminal_cards_hint: self.terminal_cards_hint.clone(),
+            early_turn_frontiers: Vec::new(),
+            boss_tempo_prefixes: Vec::new(),
+        }
+    }
 }
 
 fn target_candidates_for(
@@ -1464,6 +1824,259 @@ fn target_candidates_for(
     out
 }
 
+#[inline]
+fn move_name_is_summoner(name: &str) -> bool {
+    let bytes = name.as_bytes();
+    for needle in [b"SUMMON".as_slice(), b"SPAWN", b"REVIVE", b"REBIRTH"] {
+        if bytes.len() >= needle.len()
+            && bytes.windows(needle.len()).any(|w| w.eq_ignore_ascii_case(needle))
+        {
+            return true;
+        }
+    }
+    false
+}
+
+/// Priority-ranked card/target selection matching `HotParallelExpander.BuildDistinctCardFirstMask`:
+/// ranks enemy targets per attack (lethal -> summoner -> highest incoming -> lowest effective HP -> slot)
+/// and prioritizes lethal / 0-cost / energy / draw / power / setup / block / debuff cards.
+fn filter_play_candidates_priority(
+    state: &mut BattleState,
+    content: &dyn ContentDispatcher,
+    hand_cards: &[CardHandle],
+    play_candidates: &[(usize, usize, CardHandle, Option<CreatureHandle>, PorActionClass)],
+    max_branches: usize,
+    keep_mask: &mut [bool],
+) {
+    let enemy_count = state.enemy_handles.len().min(64);
+    let mut enemy_eff_hp = [0i32; 64];
+    let mut enemy_incoming = [0i32; 64];
+    let mut enemy_is_summoner = [false; 64];
+    let mut enemy_is_minion = [false; 64];
+    let mut any_alive_minion = false;
+    let mut min_alive_enemy_eff_hp = i32::MAX;
+
+    for e in 0..enemy_count {
+        let eh = state.enemy_handles[e];
+        let Some(ec) = state.creature(eh) else {
+            continue;
+        };
+        if !ec.is_alive() {
+            continue;
+        }
+        let eff_hp = ec.current_hp.max(0) + ec.block.max(0);
+        enemy_eff_hp[e] = eff_hp;
+        if eff_hp > 0 && eff_hp < min_alive_enemy_eff_hp {
+            min_alive_enemy_eff_hp = eff_hp;
+        }
+        if ec.has_minion_power
+            || ec
+                .powers
+                .iter()
+                .any(|p| p.id == PowerId::MinionPower && p.amount > 0)
+        {
+            enemy_is_minion[e] = true;
+            any_alive_minion = true;
+        }
+        if let Ok(hits) = content.monster_attack_intent_hits(state, eh) {
+            let mut dmg = 0i32;
+            for (d, count) in hits {
+                let di = d.to_i32_trunc().unwrap_or(0);
+                if di > 0 && count > 0 {
+                    dmg = dmg.saturating_add(di.saturating_mul(count));
+                }
+            }
+            enemy_incoming[e] = dmg;
+        }
+        if let Some(m) = ec.monster.as_deref() {
+            let move_str = m
+                .next_move_id
+                .as_deref()
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| m.current_state_id.as_ref());
+            if !move_str.is_empty() && move_name_is_summoner(move_str) {
+                enemy_is_summoner[e] = true;
+            }
+        }
+    }
+    if any_alive_minion {
+        for e in 0..enemy_count {
+            let eh = state.enemy_handles[e];
+            if state.creature(eh).is_some_and(|c| c.is_alive()) && !enemy_is_minion[e] {
+                enemy_is_summoner[e] = true;
+            }
+        }
+    }
+
+    let player_strength = state.player_creature().map_or(0, |pc| {
+        pc.powers
+            .iter()
+            .find(|p| p.id == PowerId::StrengthPower)
+            .map_or(0, |p| p.amount)
+    });
+
+    let mut card_est_dmg: SmallVec<[i32; 32]> = smallvec::smallvec![0; hand_cards.len()];
+    let mut card_priority: SmallVec<[i32; 32]> = smallvec::smallvec![0; hand_cards.len()];
+    let mut card_has_lethal: SmallVec<[bool; 32]> = smallvec::smallvec![false; hand_cards.len()];
+
+    for (h_idx, &ch) in hand_cards.iter().enumerate() {
+        let Some(card) = state.card(ch).copied() else {
+            continue;
+        };
+        let Ok(meta) = content.card_meta(card.id) else {
+            continue;
+        };
+        let eff_cost = sts2_kernel::ordering::resolve_energy_cost(state, content, ch)
+            .unwrap_or(card.base_energy_cost as i32);
+        let star_cost = sts2_kernel::ordering::resolve_star_cost(state, content, ch).unwrap_or(0);
+        let rp = state.fast_card_rollout_profile(content, card.id);
+
+        let mut prio = (40 - eff_cost.max(0) * 10).max(0);
+        if eff_cost == 0 && star_cost <= 0 {
+            prio += 400;
+        }
+        if meta.card_type == CardType::Power {
+            prio += 250;
+        }
+        if rp.setup_weight > 0 {
+            prio += 150.min(i32::from(rp.setup_weight) * 15);
+        }
+        if (rp.meta_flags & rollout_meta_flags::GAINS_BLOCK) != 0
+            || (rp.op_flags & rollout_op_flags::HAS_BLOCK) != 0
+            || meta.flags.contains(CardStaticFlags::GAINS_BLOCK)
+            || meta.base_tags.contains(CardTags::DEFEND)
+        {
+            prio += 150;
+        }
+        if (rp.op_flags & rollout_op_flags::HAS_ENERGY_OR_STAR_GAIN) != 0 {
+            prio += 350;
+        }
+        if (rp.op_flags & rollout_op_flags::HAS_DRAW) != 0 {
+            prio += 300;
+        }
+        if (rp.meta_flags & rollout_meta_flags::APPLIES_WEAK) != 0
+            || (rp.op_flags & rollout_op_flags::HAS_ENEMY_DEBUFF) != 0
+        {
+            prio += 120;
+        }
+        if meta.card_type == CardType::Attack {
+            let base_dmg = if card.upgrade_level > 0 {
+                rp.upg_damage
+            } else {
+                rp.base_damage
+            } as i32;
+            let hits = if card.upgrade_level > 0 {
+                rp.upg_hits
+            } else {
+                rp.hits
+            } as i32;
+            let per_hit = (base_dmg + player_strength).max(0);
+            card_est_dmg[h_idx] = if hits > 0 {
+                per_hit.saturating_mul(hits)
+            } else if base_dmg > 0 {
+                per_hit
+            } else {
+                0
+            };
+        }
+        card_priority[h_idx] = prio;
+    }
+
+    let cand_len = play_candidates.len();
+    let mut target_keys: SmallVec<[i64; 128]> = smallvec::smallvec![0; cand_len];
+    for (a, &(_, h_idx, _, target_handle, _)) in play_candidates.iter().enumerate() {
+        let est_dmg = card_est_dmg[h_idx];
+        if let Some(th) = target_handle {
+            if let Some(t_slot) = state.enemy_handles[..enemy_count]
+                .iter()
+                .position(|&eh| eh == th)
+            {
+                let eff_hp = enemy_eff_hp[t_slot];
+                let is_lethal = est_dmg > 0 && eff_hp > 0 && est_dmg >= eff_hp;
+                if is_lethal {
+                    card_has_lethal[h_idx] = true;
+                }
+                let is_summoner = enemy_is_summoner[t_slot];
+                let incoming = enemy_incoming[t_slot].clamp(0, 10_000) as i64;
+                let inv_eff_hp = (10_000 - eff_hp).clamp(0, 10_000) as i64;
+                let inv_slot = (63usize.saturating_sub(t_slot).min(63)) as i64;
+                target_keys[a] = (i64::from(is_lethal) << 44)
+                    | (i64::from(is_summoner) << 43)
+                    | (incoming << 24)
+                    | (inv_eff_hp << 8)
+                    | inv_slot;
+            }
+        } else if est_dmg > 0
+            && min_alive_enemy_eff_hp < i32::MAX
+            && est_dmg >= min_alive_enemy_eff_hp
+        {
+            card_has_lethal[h_idx] = true;
+            target_keys[a] = 1i64 << 44;
+        }
+    }
+
+    for h_idx in 0..hand_cards.len() {
+        if card_has_lethal[h_idx] {
+            card_priority[h_idx] += 1000;
+        }
+    }
+
+    // Compute per-hand-card smart target rank (0 = best target for that card, 1 = 2nd best, ...).
+    let mut action_rank: SmallVec<[usize; 128]> = smallvec::smallvec![0; cand_len];
+    let mut max_rank = 0usize;
+    for a in 0..cand_len {
+        let h_a = play_candidates[a].1;
+        let key_a = target_keys[a];
+        let mut rank = 0usize;
+        for b in 0..cand_len {
+            if b == a || play_candidates[b].1 != h_a {
+                continue;
+            }
+            let key_b = target_keys[b];
+            if key_b > key_a || (key_b == key_a && b < a) {
+                rank += 1;
+            }
+        }
+        action_rank[a] = rank;
+        if rank > max_rank {
+            max_rank = rank;
+        }
+    }
+
+    keep_mask[..cand_len].fill(false);
+    let mut rank_order: SmallVec<[usize; 128]> = SmallVec::new();
+    let mut remaining = max_branches;
+    for target_rank in 0..=max_rank {
+        if remaining == 0 {
+            break;
+        }
+        rank_order.clear();
+        for a in 0..cand_len {
+            if action_rank[a] == target_rank {
+                rank_order.push(a);
+            }
+        }
+        if rank_order.len() <= remaining {
+            for &idx in &rank_order {
+                keep_mask[idx] = true;
+            }
+            remaining -= rank_order.len();
+            continue;
+        }
+        rank_order.sort_unstable_by(|&ia, &ib| {
+            let pa = card_priority[play_candidates[ia].1];
+            let pb = card_priority[play_candidates[ib].1];
+            pb.cmp(&pa)
+                .then_with(|| target_keys[ib].cmp(&target_keys[ia]))
+                .then_with(|| ia.cmp(&ib))
+        });
+        for &idx in rank_order.iter().take(remaining) {
+            keep_mask[idx] = true;
+        }
+        remaining = 0;
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn enumerate_parent_tasks(
     parent_rank: u32,
@@ -1475,15 +2088,18 @@ fn enumerate_parent_tasks(
     content: &dyn ContentDispatcher,
     policy: &SearchPolicy,
     profile: &SolverSearchProfile,
-    sensitivity: &CombatOrderSensitivity,
+    _root_sensitivity: &CombatOrderSensitivity,
     root_baseline: &RootEvalBaseline,
     allow_paid_optional_potions: bool,
     tasks_out: &mut Vec<ActionTask>,
     por_pruned: &mut u64,
+    branch_truncations: &mut u64,
 ) {
     if !state.is_in_progress || state.won || state.pending.is_some() {
         return;
     }
+
+    let sensitivity = CombatOrderSensitivity::analyze_live(state, content);
 
     let parent_filled_potions = state
         .player
@@ -1535,14 +2151,14 @@ fn enumerate_parent_tasks(
         } else {
             profile.max_card_branches_per_node
         };
-        let mut play_candidates: SmallVec<[(usize, CardHandle, Option<CreatureHandle>, PorActionClass); 64]> =
-            SmallVec::new();
-        let mut max_target_rank = 0usize;
+        let mut play_candidates: SmallVec<
+            [(usize, usize, CardHandle, Option<CreatureHandle>, PorActionClass); 64],
+        > = SmallVec::new();
 
-        for ch in hand_cards {
+        for (h_pos, &ch) in hand_cards.iter().enumerate() {
             let Some((card_id, meta)) = state
                 .card(ch)
-                .and_then(|c| state.fast_card_meta(content, c.id).ok().map(|m| (c.id, m)))
+                .and_then(|c| content.card_meta(c.id).ok().map(|m| (c.id, m)))
             else {
                 continue;
             };
@@ -1565,14 +2181,13 @@ fn enumerate_parent_tasks(
                     *por_pruned += 1;
                     continue;
                 }
-                max_target_rank = max_target_rank.max(rank_for_card);
-                play_candidates.push((rank_for_card, ch, target_handle, por_class));
+                play_candidates.push((rank_for_card, h_pos, ch, target_handle, por_class));
                 rank_for_card += 1;
             }
         }
 
         if play_candidates.len() <= max_branches {
-            for &(_, card_handle, target_handle, por_class) in &play_candidates {
+            for &(_, _, card_handle, target_handle, por_class) in &play_candidates {
                 tasks_out.push(make_task(
                     action_ord,
                     ActionSpec::PlayCard {
@@ -1586,24 +2201,18 @@ fn enumerate_parent_tasks(
                 action_ord += 1;
             }
         } else {
-            let mut keep_mask: SmallVec<[bool; 64]> =
+            *branch_truncations += 1;
+            let mut keep_mask: SmallVec<[bool; 128]> =
                 smallvec::smallvec![false; play_candidates.len()];
-            let mut remaining = max_branches;
-            for target_rank in 0..=max_target_rank {
-                if remaining == 0 {
-                    break;
-                }
-                for (i, &(rank, _, _, _)) in play_candidates.iter().enumerate() {
-                    if remaining == 0 {
-                        break;
-                    }
-                    if rank == target_rank {
-                        keep_mask[i] = true;
-                        remaining -= 1;
-                    }
-                }
-            }
-            for (i, &(_, card_handle, target_handle, por_class)) in
+            filter_play_candidates_priority(
+                state,
+                content,
+                &hand_cards,
+                &play_candidates,
+                max_branches,
+                &mut keep_mask,
+            );
+            for (i, &(_, _, card_handle, target_handle, por_class)) in
                 play_candidates.iter().enumerate()
             {
                 if !keep_mask[i] {
@@ -1626,7 +2235,7 @@ fn enumerate_parent_tasks(
         if policy.allows_any_potion() {
             let potions = dedup_and_filter_potions_with_root(
                 state,
-                sensitivity,
+                &sensitivity,
                 policy,
                 Some(root_baseline),
                 policy.accelerations.enable_hand_potion_dedup,
@@ -1734,14 +2343,23 @@ fn prepare_staged_candidate(
         let has_card = has_any_playable_hand_card(&mut scratch.state, content);
         let has_potion = !has_card
             && policy.allows_any_potion()
-            && has_any_usable_potion_with_root(
-                &scratch.state,
-                sensitivity,
-                policy,
-                Some(root_baseline),
-                allow_paid_optional_potions,
-                root_baseline.renewable_potion_shaped_rock,
-            );
+            && {
+                let live_sens = CombatOrderSensitivity {
+                    any_heal_hook: CombatOrderSensitivity::has_live_heal_hook(
+                        &mut scratch.state,
+                        content,
+                    ),
+                    ..*sensitivity
+                };
+                has_any_usable_potion_with_root(
+                    &scratch.state,
+                    &live_sens,
+                    policy,
+                    Some(root_baseline),
+                    allow_paid_optional_potions,
+                    root_baseline.renewable_potion_shaped_rock,
+                )
+            };
         if !has_card && !has_potion {
             clone_battle_state_into(&scratch.state, &mut scratch.pre_end_turn_state);
             match CombatEngine::end_player_turn(&mut scratch.state, content) {
@@ -1878,6 +2496,8 @@ fn prepare_staged_candidate(
             fast_eval.won,
             fast_eval.player_dead,
             turn,
+            fast_eval.cumulative_hp_lost,
+            potion_count as usize,
             optional_paid_potion_count as usize,
             explicit_potion_count as usize,
             net_potion_cost_centi,
@@ -1935,6 +2555,14 @@ fn prepare_staged_candidate(
         fast_eval.cumulative_hp_lost,
         action_count,
         tt_score,
+    )
+    .with_details(
+        explicit_potion_count > 0,
+        optional_paid_potion_count.min(u8::MAX as u16) as u8,
+        fast_eval.alchemize_count,
+        fast_eval
+            .death_save_hp_restored
+            .clamp(i16::MIN as i32, i16::MAX as i32) as i16,
     );
 
     if !is_terminal && tt.probe_dominated(state_hash, &label) {
@@ -1997,22 +2625,125 @@ fn choice_probe_limits(
     first_pile: PileType,
     is_end_turn: bool,
     is_turn_setup: bool,
-) -> (bool, usize) {
+) -> (bool, usize, usize) {
     let max_branches = if is_turn_setup {
-        profile.beam_width.max(64).min(CHOICE_RESOLVED_CAPACITY)
+        profile
+            .beam_width
+            .max(64)
+            .clamp(64, TURN_SETUP_CHOICE_RESOLVED_CAPACITY)
     } else if first_pile == PileType::Hand {
-        profile.max_hand_choice_branches_per_action
+        profile.max_hand_choice_branches_per_action.clamp(1, 64)
     } else {
-        profile.max_pile_choice_branches_per_action
-    }
-    .max(1);
+        profile.max_pile_choice_branches_per_action.clamp(1, 64)
+    };
+    let resolved_cap = if is_turn_setup {
+        max_branches
+            .max(CHOICE_RESOLVED_CAPACITY)
+            .clamp(CHOICE_RESOLVED_CAPACITY, TURN_SETUP_CHOICE_RESOLVED_CAPACITY)
+    } else {
+        CHOICE_RESOLVED_CAPACITY
+    };
     let is_delayed_or_end_turn = is_end_turn
         || is_turn_setup
         || matches!(
             first_pile,
             PileType::Draw | PileType::Discard | PileType::Exhaust
         );
-    (is_delayed_or_end_turn, max_branches)
+    (is_delayed_or_end_turn, max_branches, resolved_cap)
+}
+
+#[inline]
+fn encode_choice_probe_rank_score_with_policy(
+    probe: &ChoiceProbeResult,
+    root_baseline: &RootEvalBaseline,
+) -> f64 {
+    if probe.is_victory {
+        let s = probe
+            .score
+            .clamp(-1_000_000_000_000_000.0, 1_000_000_000_000_000.0);
+        let mut rank = 2_000_000_000_000_000.0 + s - (probe.hp_lost as f64) * 100_000.0;
+        let has_strategy_targets = root_baseline.effective_has_growth_targets
+            || !root_baseline.active_relic_targets.is_empty();
+        if has_strategy_targets {
+            rank += (probe.strategy_goal_hp_credit as f64) * 100_000.0;
+        }
+        return rank;
+    }
+    if !probe.is_defeat && probe.is_event_defeat {
+        let s = probe
+            .score
+            .clamp(-1_000_000_000_000_000.0, 1_000_000_000_000_000.0);
+        return -1_500_000_000_000.0 + s;
+    }
+    encode_choice_probe_rank_score(probe)
+}
+
+#[inline]
+fn hash_step0_choices(step0: Option<&SmallVec<[usize; 8]>>) -> u64 {
+    let Some(sel) = step0 else {
+        return 0;
+    };
+    let mut h = 0x517C_C1B7_2722_0A95u64 ^ (sel.len() as u64);
+    for &idx in sel {
+        h = h
+            .wrapping_mul(0x9E37_79B9_7F4A_7C15)
+            .wrapping_add(idx as u64 + 1);
+        h ^= h >> 29;
+    }
+    h
+}
+
+#[inline]
+fn count_choice_combinations_capped(n: usize, k: usize, cap: usize) -> usize {
+    if k == 0 {
+        return 1;
+    }
+    if k > n {
+        return 0;
+    }
+    let kk = k.min(n - k);
+    let mut comb = 1usize;
+    for i in 1..=kk {
+        comb = comb.saturating_mul(n - kk + i) / i;
+        if comb >= cap {
+            return cap;
+        }
+    }
+    comb
+}
+
+#[inline]
+fn total_choice_combos_exceeds(
+    n: usize,
+    min_count: usize,
+    max_count: usize,
+    can_skip: bool,
+    resolved_cap: usize,
+) -> bool {
+    if n == 0 || max_count == 0 {
+        return false;
+    }
+    let is_optional = min_count == 0 || can_skip;
+    if is_optional && max_count >= n {
+        return n >= 16 || (1usize << n) > resolved_cap;
+    }
+    let mut total = usize::from(can_skip && min_count == 0);
+    let min_pick = min_count.max(usize::from(can_skip));
+    let max_pick = max_count.min(n);
+    if min_pick > max_pick {
+        return false;
+    }
+    for k in min_pick..=max_pick {
+        total = total.saturating_add(count_choice_combinations_capped(
+            n,
+            k,
+            resolved_cap + 1,
+        ));
+        if total > resolved_cap {
+            return true;
+        }
+    }
+    false
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -2144,11 +2875,7 @@ fn stage_resolved_choice(
     action: CompactAction,
     por_key: u64,
     choices: &[SmallVec<[usize; 8]>],
-    is_delayed_or_end_turn: bool,
-    max_branches: usize,
     defer_pack: bool,
-    likely_runs_mini_rollout: bool,
-    static_ctx: &Arc<RootStaticContext>,
     content: &dyn ContentDispatcher,
     root_baseline: &RootEvalBaseline,
     policy: &SearchPolicy,
@@ -2156,7 +2883,6 @@ fn stage_resolved_choice(
     cert: &ClosureCertificate,
     frozen_incumbent: &FrozenIncumbentBound,
     tt: &ShardedParetoTT,
-    probe_cache: &mut ProbeCacheAccess<'_>,
     sensitivity: &CombatOrderSensitivity,
     allow_paid_optional_potions: bool,
     eval_mode: EvalMode,
@@ -2184,96 +2910,7 @@ fn stage_resolved_choice(
     };
 
     let (choices_offset, choices_len) = scratch.choice_staging_choices.push_choices(choices);
-    let already_resolved = scratch.choice_resolved.len();
-    let should_probe_in_mem = !s.is_terminal
-        && (likely_runs_mini_rollout
-            || (is_delayed_or_end_turn && already_resolved >= 1)
-            || (!is_delayed_or_end_turn && already_resolved >= max_branches));
-    let (
-        lookahead_score,
-        lookahead_hp_lost,
-        lookahead_board_investment,
-        has_lookahead,
-        lookahead_victory,
-    ) = if should_probe_in_mem {
-        let probe_opt = if s.state_len > 0 {
-            let packed_fallback =
-                scratch
-                    .choice_slab
-                    .get(s.state_slab_idx, s.state_off, s.state_len);
-            evaluate_choice_probe_in_place(
-                &mut scratch.choice_probe_ws,
-                &mut scratch.state,
-                packed_fallback,
-                s.state_hash,
-                probe_cache,
-                static_ctx,
-                content,
-                root_baseline,
-                profile,
-                eval_mode,
-                1,
-                s.optional_paid_potion_cost,
-                s.optional_paid_potion_count as usize,
-                s.action_count,
-            )
-        } else {
-            let paused_base = &scratch.choice_paused_states[0];
-            let arena_ref = &scratch.choice_staging_choices;
-            let has_extra_end = s.has_extra_end_turn;
-            evaluate_choice_probe_in_place_with_restore(
-                &mut scratch.choice_probe_ws,
-                &mut scratch.state,
-                |st| {
-                    replay_deferred_choice_state_from_arena(
-                        paused_base,
-                        st,
-                        arena_ref,
-                        choices_offset,
-                        choices_len,
-                        has_extra_end,
-                        content,
-                    )
-                },
-                s.state_hash,
-                probe_cache,
-                content,
-                root_baseline,
-                profile,
-                eval_mode,
-                1,
-                s.optional_paid_potion_cost,
-                s.optional_paid_potion_count as usize,
-                s.action_count,
-            )
-        };
-        if let Some(probe) = probe_opt {
-            let encoded = encode_choice_probe_rank_score(&probe);
-            (
-                encoded,
-                probe.hp_lost,
-                probe.board_investment,
-                true,
-                probe.is_victory,
-            )
-        } else {
-            (
-                0.0,
-                s.fast_eval.cumulative_hp_lost,
-                s.full_eval.as_ref().map_or(0, |f| f.board_investment),
-                false,
-                s.fast_eval.won,
-            )
-        }
-    } else {
-        (
-            0.0,
-            s.fast_eval.cumulative_hp_lost,
-            s.full_eval.as_ref().map_or(0, |f| f.board_investment),
-            false,
-            s.fast_eval.won,
-        )
-    };
+    let depth0_sig = hash_step0_choices(choices.first());
 
     let terminal_probe_score = if s.is_terminal {
         let net_potion_cost_centi =
@@ -2302,9 +2939,12 @@ fn stage_resolved_choice(
     let rare_eval = rare_eval_opt(&s.fast_eval);
     let stored_fast = StoredFastEval::from(&s.fast_eval);
     let stored_full = s.full_eval.map(|f| f.to_stored());
+    let lookahead_board_investment = stored_full.as_ref().map_or(0, |f| f.board_investment);
+    let lookahead_setup_score = stored_full.as_ref().map_or(0, |f| f.setup_score);
     scratch.choice_resolved.push(ResolvedChoiceCandidate {
         choices_offset,
         choices_len,
+        depth0_sig,
         action,
         por_key,
         has_extra_end_turn: s.has_extra_end_turn,
@@ -2332,11 +2972,12 @@ fn stage_resolved_choice(
         rare_eval,
         label: s.label,
         terminal_probe_score,
-        lookahead_score,
-        lookahead_hp_lost,
+        lookahead_score: 0.0,
+        lookahead_hp_lost: s.fast_eval.cumulative_hp_lost,
         lookahead_board_investment,
-        has_lookahead,
-        lookahead_victory,
+        lookahead_setup_score,
+        has_lookahead: false,
+        lookahead_victory: s.fast_eval.won,
     });
 }
 
@@ -2492,7 +3133,7 @@ fn probe_choice_selection_1t(
     let Some(probe) = probe_opt else {
         return f64::NEG_INFINITY;
     };
-    encode_choice_probe_rank_score(&probe)
+    encode_choice_probe_rank_score_with_policy(&probe, root_baseline)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -2505,6 +3146,9 @@ fn screen_high_branching_multi_pick(
     is_delayed_or_end_turn: bool,
     is_turn_setup: bool,
     max_branches: usize,
+    resolved_cap: usize,
+    max_choice_depth: usize,
+    defer_choice_probes: bool,
     static_ctx: &Arc<RootStaticContext>,
     content: &dyn ContentDispatcher,
     root_baseline: &RootEvalBaseline,
@@ -2543,9 +3187,21 @@ fn screen_high_branching_multi_pick(
     }
 
     let distinct_n = groups.len();
-    let is_optional_multi = req.min_count == 0 && req.max_count > 1 && distinct_n > 6;
+    if !total_choice_combos_exceeds(
+        distinct_n,
+        req.min_count,
+        req.max_count,
+        req.can_skip,
+        resolved_cap,
+    ) {
+        return false;
+    }
+
+    let is_optional_multi = (req.min_count == 0 || req.can_skip || req.min_count == 1)
+        && req.max_count > 1
+        && distinct_n > 6;
     let is_fixed_k_multi =
-        req.min_count > 1 && req.max_count >= req.min_count && distinct_n > 10;
+        !is_optional_multi && req.min_count > 1 && req.max_count >= req.min_count && distinct_n > 4;
     if !is_optional_multi && !is_fixed_k_multi {
         return false;
     }
@@ -2587,11 +3243,10 @@ fn screen_high_branching_multi_pick(
         for &g in &order {
             greedy_flat.extend_from_slice(&groups[g].1);
         }
+        let exhaustive_keep = if resolved_cap >= 256 { 7 } else { 6 };
         let max_greedy = greedy_flat.len().min(req.max_count).min(15);
-        for subset_size in 7..=max_greedy {
-            if scratch.fatal_error.is_some()
-                || scratch.choice_resolved.len() >= CHOICE_RESOLVED_CAPACITY
-            {
+        for subset_size in (exhaustive_keep + 1)..=max_greedy {
+            if scratch.fatal_error.is_some() || scratch.choice_resolved.len() >= resolved_cap {
                 break;
             }
             let mut sel: SmallVec<[usize; 8]> = greedy_flat[..subset_size].iter().copied().collect();
@@ -2618,11 +3273,7 @@ fn screen_high_branching_multi_pick(
                         action,
                         por_key,
                         choices_so_far.as_slice(),
-                        is_delayed_or_end_turn,
-                        max_branches,
-                        !is_turn_setup,
-                        true,
-                        static_ctx,
+                        !is_turn_setup && !defer_choice_probes,
                         content,
                         root_baseline,
                         policy,
@@ -2630,7 +3281,6 @@ fn screen_high_branching_multi_pick(
                         cert,
                         frozen_incumbent,
                         tt,
-                        probe_cache,
                         sensitivity,
                         allow_paid_optional_potions,
                         eval_mode,
@@ -2642,6 +3292,7 @@ fn screen_high_branching_multi_pick(
                         root_baseline.initial_brightest_flame_max_hp_spent,
                         root_baseline.brightest_flame_spent(&scratch.state),
                     ) {
+                        scratch.ensure_choice_depth(1, static_ctx);
                         clone_battle_state_into(
                             &scratch.state,
                             &mut scratch.choice_paused_states[1],
@@ -2656,6 +3307,9 @@ fn screen_high_branching_multi_pick(
                             is_delayed_or_end_turn,
                             is_turn_setup,
                             max_branches,
+                            resolved_cap,
+                            max_choice_depth,
+                            defer_choice_probes,
                             static_ctx,
                             content,
                             root_baseline,
@@ -2675,7 +3329,7 @@ fn screen_high_branching_multi_pick(
             choices_so_far.pop();
         }
 
-        let keep_groups = 6.min(distinct_n);
+        let keep_groups = exhaustive_keep.min(distinct_n);
         let mut kept_orig: SmallVec<[usize; 24]> = SmallVec::new();
         for &g in &order[..keep_groups] {
             kept_orig.extend_from_slice(&groups[g].1);
@@ -2697,7 +3351,7 @@ fn screen_high_branching_multi_pick(
             &mut scratch.choice_paused_states[0],
             content,
             &sub_req,
-            CHOICE_RESOLVED_CAPACITY,
+            resolved_cap,
             policy.accelerations.enable_multiset_choice_dedup,
             &mut enum_scratch,
             &mut sub_choices,
@@ -2713,7 +3367,7 @@ fn screen_high_branching_multi_pick(
         return true;
     }
 
-    // Fixed-k multi-pick (distinct_n > 10)
+    // Fixed-k multi-pick
     let k = req.min_count.min(n);
     let mut tail_anchors: SmallVec<[usize; 8]> = SmallVec::new();
     for g in (0..distinct_n).rev().take(k + 1) {
@@ -2854,13 +3508,18 @@ fn screen_high_branching_multi_pick(
     }
     order.sort_unstable_by(|&a, &b| scores[b].total_cmp(&scores[a]).then_with(|| a.cmp(&b)));
 
-    let target_s = if k <= 2 {
-        10
+    let mut target_s = if k <= 2 {
+        12
     } else if k == 3 {
-        9
+        10
     } else {
-        7
+        8
     };
+    while target_s > k
+        && count_choice_combinations_capped(target_s, k, resolved_cap + 1) > resolved_cap
+    {
+        target_s -= 1;
+    }
     let cap_total = target_s.max(k.min(n)).min(n);
     let mut kept_orig: SmallVec<[usize; 16]> = SmallVec::new();
     for &g in order.iter().take(cap_total.min(distinct_n)) {
@@ -2893,7 +3552,7 @@ fn screen_high_branching_multi_pick(
         &mut scratch.choice_paused_states[0],
         content,
         &sub_req,
-        CHOICE_RESOLVED_CAPACITY,
+        resolved_cap,
         policy.accelerations.enable_multiset_choice_dedup,
         &mut enum_scratch,
         &mut sub_choices,
@@ -2920,6 +3579,9 @@ fn resolve_choices_recursive(
     is_delayed_or_end_turn: bool,
     is_turn_setup: bool,
     max_branches: usize,
+    resolved_cap: usize,
+    max_choice_depth: usize,
+    defer_choice_probes: bool,
     static_ctx: &Arc<RootStaticContext>,
     content: &dyn ContentDispatcher,
     root_baseline: &RootEvalBaseline,
@@ -2933,9 +3595,10 @@ fn resolve_choices_recursive(
     allow_paid_optional_potions: bool,
     eval_mode: EvalMode,
 ) {
-    if depth >= 4 || scratch.choice_resolved.len() >= CHOICE_RESOLVED_CAPACITY {
+    if depth >= max_choice_depth || scratch.choice_resolved.len() >= resolved_cap {
         return;
     }
+    scratch.ensure_choice_depth(depth, static_ctx);
     let need_screen = depth == 0
         && scratch.choice_paused_states[0]
             .pending
@@ -2943,8 +3606,14 @@ fn resolve_choices_recursive(
             .is_some_and(|p| {
                 let req = &p.request;
                 let n = req.candidates.len();
-                (req.min_count == 0 && req.max_count > 1 && n > 6)
-                    || (req.min_count > 1 && req.max_count >= req.min_count && n > 10)
+                n > 4
+                    && total_choice_combos_exceeds(
+                        n,
+                        req.min_count,
+                        req.max_count,
+                        req.can_skip,
+                        resolved_cap,
+                    )
             });
     let screened = if need_screen {
         let req = scratch.choice_paused_states[0]
@@ -2962,6 +3631,9 @@ fn resolve_choices_recursive(
             is_delayed_or_end_turn,
             is_turn_setup,
             max_branches,
+            resolved_cap,
+            max_choice_depth,
+            defer_choice_probes,
             static_ctx,
             content,
             root_baseline,
@@ -2997,7 +3669,7 @@ fn resolve_choices_recursive(
             &mut scratch.choice_paused_states[depth],
             content,
             &req,
-            CHOICE_RESOLVED_CAPACITY,
+            resolved_cap,
             policy.accelerations.enable_multiset_choice_dedup,
             &mut enum_scratch,
             &mut buf,
@@ -3024,18 +3696,13 @@ fn resolve_choices_recursive(
             })
         });
     for (opt_idx, sel) in choice_options.iter().enumerate() {
-        if scratch.fatal_error.is_some()
-            || scratch.choice_resolved.len() >= CHOICE_RESOLVED_CAPACITY
-        {
+        if scratch.fatal_error.is_some() || scratch.choice_resolved.len() >= resolved_cap {
             break;
         }
         let est_total_options = scratch.choice_resolved.len() + (num_options - opt_idx);
-        let likely_runs_mini_rollout = if is_delayed_or_end_turn {
-            est_total_options >= 2
-        } else {
-            est_total_options > max_branches
-        };
-        let defer_pack = if is_turn_setup
+        let defer_pack = if defer_choice_probes && est_total_options >= 2 {
+            false
+        } else if is_turn_setup
             || (is_expensive_hook_resume && est_total_options <= max_branches * 2)
         {
             false
@@ -3072,11 +3739,7 @@ fn resolve_choices_recursive(
                     action,
                     por_key,
                     choices_so_far.as_slice(),
-                    is_delayed_or_end_turn,
-                    max_branches,
                     defer_pack,
-                    likely_runs_mini_rollout,
-                    static_ctx,
                     content,
                     root_baseline,
                     policy,
@@ -3084,20 +3747,20 @@ fn resolve_choices_recursive(
                     cert,
                     frozen_incumbent,
                     tt,
-                    probe_cache,
                     sensitivity,
                     allow_paid_optional_potions,
                     eval_mode,
                 );
             }
             StepOutcome::NeedsChoice(_) => {
-                if depth + 1 < 4
+                if depth + 1 < max_choice_depth
                     && allows_brightest_flame(
                         policy.brightest_flame_max_hp_loss_limit,
                         root_baseline.initial_brightest_flame_max_hp_spent,
                         root_baseline.brightest_flame_spent(&scratch.state),
                     )
                 {
+                    scratch.ensure_choice_depth(depth + 1, static_ctx);
                     clone_battle_state_into(
                         &scratch.state,
                         &mut scratch.choice_paused_states[depth + 1],
@@ -3112,6 +3775,9 @@ fn resolve_choices_recursive(
                         is_delayed_or_end_turn,
                         is_turn_setup,
                         max_branches,
+                        resolved_cap,
+                        max_choice_depth,
+                        defer_choice_probes,
                         static_ctx,
                         content,
                         root_baseline,
@@ -3145,8 +3811,10 @@ fn compare_resolved_choice(
             .as_ref()
             .map_or(c.base_score, |f| f.beam_rank_score)
     };
-    let board_of = |c: &ResolvedChoiceCandidate| -> i32 {
-        c.full_eval.as_ref().map_or(0, |f| f.board_investment)
+    let invest_of = |c: &ResolvedChoiceCandidate| -> i64 {
+        c.full_eval.as_ref().map_or(0, |f| {
+            (f.board_investment as i64) * 16_000 + (f.setup_score as i64) * 18_000
+        })
     };
     let opt_of = |c: &ResolvedChoiceCandidate| -> i32 {
         (c.fast_eval.energy as i32).max(0)
@@ -3177,11 +3845,15 @@ fn compare_resolved_choice(
             }
         }
         3 => {
-            let cmp = b.lookahead_board_investment.cmp(&a.lookahead_board_investment);
+            let a_look_inv = (a.lookahead_board_investment as i64) * 16_000
+                + (a.lookahead_setup_score as i64) * 18_000;
+            let b_look_inv = (b.lookahead_board_investment as i64) * 16_000
+                + (b.lookahead_setup_score as i64) * 18_000;
+            let cmp = b_look_inv.cmp(&a_look_inv);
             if !cmp.is_eq() {
                 return cmp;
             }
-            let cmp = board_of(b).cmp(&board_of(a));
+            let cmp = invest_of(b).cmp(&invest_of(a));
             if !cmp.is_eq() {
                 return cmp;
             }
@@ -3214,32 +3886,91 @@ struct ChoiceSortKey {
     beam_score: f64,
     lookahead_hp_lost: i32,
     cum_hp_lost: i16,
-    lookahead_board: i32,
-    board: i32,
+    lookahead_invest: i64,
+    eval_invest: i64,
     opt: i32,
-    flags: u8, // bit 0 = lookahead_victory, bit 1 = has_lookahead
+    effective_defense: i32,
+    flags: u8, // bit 0 = lookahead_victory, bit 1 = has_lookahead, bit 2 = static_won, bit 3 = static_defeat
 }
 
 impl ChoiceSortKey {
     #[inline(always)]
     fn from_candidate(c: &ResolvedChoiceCandidate) -> Self {
-        let (beam_score, board, opt_cards) = match c.full_eval.as_ref() {
-            Some(f) => (f.beam_rank_score, f.board_investment, f.optionality_cards),
-            None => (c.base_score, 0, 0),
+        let (beam_score, eval_invest, opt_cards, effective_defense) = match c.full_eval.as_ref() {
+            Some(f) => (
+                f.beam_rank_score,
+                (f.board_investment as i64) * 16_000 + (f.setup_score as i64) * 18_000,
+                f.optionality_cards,
+                f.effective_defense,
+            ),
+            None => (c.base_score, 0, 0, 0),
         };
         let opt = (c.fast_eval.energy as i32).max(0) + (c.fast_eval.stars as i32).max(0) + opt_cards;
+        let static_won = c.fast_eval.won();
+        let static_defeat = c.fast_eval.player_dead() || c.fast_eval.projected_player_hp <= 0;
         Self {
             state_hash: c.state_hash,
             lookahead_score: c.lookahead_score,
             beam_score,
             lookahead_hp_lost: c.lookahead_hp_lost,
             cum_hp_lost: c.fast_eval.cumulative_hp_lost,
-            lookahead_board: c.lookahead_board_investment,
-            board,
+            lookahead_invest: (c.lookahead_board_investment as i64) * 16_000
+                + (c.lookahead_setup_score as i64) * 18_000,
+            eval_invest,
             opt,
-            flags: u8::from(c.lookahead_victory) | (u8::from(c.has_lookahead) << 1),
+            effective_defense,
+            flags: u8::from(c.lookahead_victory)
+                | (u8::from(c.has_lookahead) << 1)
+                | (u8::from(static_won) << 2)
+                | (u8::from(static_defeat) << 3),
         }
     }
+}
+
+#[inline(always)]
+fn compare_choice_static_key(
+    a: &ChoiceSortKey,
+    b: &ChoiceSortKey,
+    criterion: usize,
+) -> std::cmp::Ordering {
+    let a_won = (a.flags & 4) != 0;
+    let b_won = (b.flags & 4) != 0;
+    let cmp = b_won.cmp(&a_won);
+    if !cmp.is_eq() {
+        return cmp;
+    }
+    match criterion {
+        1 => {
+            let a_def = (a.flags & 8) != 0;
+            let b_def = (b.flags & 8) != 0;
+            let cmp = a_def.cmp(&b_def);
+            if !cmp.is_eq() {
+                return cmp;
+            }
+            let cmp = a.cum_hp_lost.cmp(&b.cum_hp_lost);
+            if !cmp.is_eq() {
+                return cmp;
+            }
+            let cmp = b.effective_defense.cmp(&a.effective_defense);
+            if !cmp.is_eq() {
+                return cmp;
+            }
+        }
+        2 => {
+            let cmp = b.eval_invest.cmp(&a.eval_invest);
+            if !cmp.is_eq() {
+                return cmp;
+            }
+            let cmp = b.opt.cmp(&a.opt);
+            if !cmp.is_eq() {
+                return cmp;
+            }
+        }
+        _ => {}
+    }
+    b.beam_score
+        .total_cmp(&a.beam_score)
+        .then_with(|| a.state_hash.cmp(&b.state_hash))
 }
 
 #[inline(always)]
@@ -3266,11 +3997,11 @@ fn compare_choice_sort_key(
             }
         }
         3 => {
-            let cmp = b.lookahead_board.cmp(&a.lookahead_board);
+            let cmp = b.lookahead_invest.cmp(&a.lookahead_invest);
             if !cmp.is_eq() {
                 return cmp;
             }
-            let cmp = b.board.cmp(&a.board);
+            let cmp = b.eval_invest.cmp(&a.eval_invest);
             if !cmp.is_eq() {
                 return cmp;
             }
@@ -3300,45 +4031,538 @@ fn compare_choice_sort_key(
         .then_with(|| a.state_hash.cmp(&b.state_hash))
 }
 
+fn select_depth0_representatives_from_sorted_pool(
+    resolved: &[ResolvedChoiceCandidate],
+    choices: &ChoiceArena,
+    sorted_pool: &[usize],
+    marks: &mut [bool],
+    max_take: usize,
+    dst: &mut [usize],
+    dst_len: &mut usize,
+) {
+    if max_take == 0 || sorted_pool.is_empty() {
+        return;
+    }
+    let mut seen: SmallVec<[(u64, u32, u8); 64]> = SmallVec::new();
+    let mut tmp_a: SmallVec<[usize; 16]> = SmallVec::new();
+    let mut tmp_b: SmallVec<[usize; 16]> = SmallVec::new();
+
+    for &idx in sorted_pool {
+        if seen.len() >= max_take {
+            break;
+        }
+        if marks[idx] {
+            continue;
+        }
+        let cand = &resolved[idx];
+        let mut dup = false;
+        for &(sig, off_b, len_b) in &seen {
+            if sig != cand.depth0_sig {
+                continue;
+            }
+            if cand.choices_len == 0 && len_b == 0 {
+                dup = true;
+                break;
+            }
+            if cand.choices_len > 0 && len_b > 0 {
+                choices.copy_step_indices(cand.choices_offset, 0, &mut tmp_a);
+                choices.copy_step_indices(off_b, 0, &mut tmp_b);
+                if tmp_a == tmp_b {
+                    dup = true;
+                    break;
+                }
+            }
+        }
+        if dup {
+            continue;
+        }
+        seen.push((cand.depth0_sig, cand.choices_offset, cand.choices_len));
+        marks[idx] = true;
+        dst[*dst_len] = idx;
+        *dst_len += 1;
+    }
+}
+
+fn pre_filter_static_probe_candidates(
+    resolved: &[ResolvedChoiceCandidate],
+    choices: &ChoiceArena,
+    probe_budget: usize,
+    probe_out: &mut Vec<usize>,
+) {
+    let resolved_count = resolved.len();
+    probe_out.clear();
+    if probe_budget >= resolved_count {
+        probe_out.extend(0..resolved_count);
+        return;
+    }
+    probe_out.resize(probe_budget, 0);
+    let mut keys: [std::mem::MaybeUninit<ChoiceSortKey>; TURN_SETUP_CHOICE_RESOLVED_CAPACITY] =
+        [const { std::mem::MaybeUninit::uninit() }; TURN_SETUP_CHOICE_RESOLVED_CAPACITY];
+    debug_assert!(resolved_count <= TURN_SETUP_CHOICE_RESOLVED_CAPACITY);
+    for (i, c) in resolved.iter().enumerate() {
+        keys[i].write(ChoiceSortKey::from_candidate(c));
+    }
+    // SAFETY: `keys[..resolved_count]` was just initialized above.
+    let keys = unsafe {
+        std::slice::from_raw_parts(keys.as_ptr().cast::<ChoiceSortKey>(), resolved_count)
+    };
+    let mut static_order_buf = [0usize; TURN_SETUP_CHOICE_RESOLVED_CAPACITY];
+    let static_order = &mut static_order_buf[..resolved_count];
+    for (i, slot) in static_order.iter_mut().enumerate() {
+        *slot = i;
+    }
+    static_order.sort_unstable_by(|&ia, &ib| {
+        compare_choice_static_key(&keys[ia], &keys[ib], 0).then_with(|| ia.cmp(&ib))
+    });
+    let mut marks = [false; TURN_SETUP_CHOICE_RESOLVED_CAPACITY];
+    let mut written = 0usize;
+
+    let min_niche_reserve = ((probe_budget * 35) / 100).max(6);
+    let depth0_probe_cap = probe_budget.saturating_sub(min_niche_reserve).min(probe_budget);
+    select_depth0_representatives_from_sorted_pool(
+        resolved,
+        choices,
+        static_order,
+        &mut marks[..resolved_count],
+        depth0_probe_cap,
+        probe_out,
+        &mut written,
+    );
+
+    let remaining = probe_budget.saturating_sub(written);
+    if remaining > 0 {
+        let surv_quota = if remaining >= 3 {
+            ((remaining * 25 + 50) / 100).max(1)
+        } else {
+            0
+        };
+        let inv_quota = if remaining >= 2 {
+            ((remaining * 25 + 50) / 100).max(1)
+        } else {
+            0
+        };
+        let eval_quota = remaining.saturating_sub(surv_quota + inv_quota);
+
+        for &(take, criterion) in &[
+            (eval_quota, 0usize),
+            (surv_quota, 1usize),
+            (inv_quota, 2usize),
+            (probe_budget, 0usize),
+        ] {
+            for _ in 0..take {
+                if written >= probe_budget {
+                    break;
+                }
+                let mut best_i: Option<usize> = None;
+                for i in 0..resolved_count {
+                    if marks[i] {
+                        continue;
+                    }
+                    if best_i.is_none_or(|bi| {
+                        compare_choice_static_key(&keys[i], &keys[bi], criterion)
+                            .then_with(|| i.cmp(&bi))
+                            .is_lt()
+                    }) {
+                        best_i = Some(i);
+                    }
+                }
+                let Some(bi) = best_i else { break };
+                marks[bi] = true;
+                probe_out[written] = bi;
+                written += 1;
+            }
+        }
+    }
+    probe_out.truncate(written);
+}
+
+fn select_choice_indices_from_pool(
+    resolved: &[ResolvedChoiceCandidate],
+    choices: &ChoiceArena,
+    probed_pool: &[usize],
+    max_branches: usize,
+    selected_indices: &mut [usize; TURN_SETUP_CHOICE_RESOLVED_CAPACITY],
+) -> usize {
+    let resolved_count = resolved.len();
+    let mut keys: [std::mem::MaybeUninit<ChoiceSortKey>; TURN_SETUP_CHOICE_RESOLVED_CAPACITY] =
+        [const { std::mem::MaybeUninit::uninit() }; TURN_SETUP_CHOICE_RESOLVED_CAPACITY];
+    debug_assert!(resolved_count <= TURN_SETUP_CHOICE_RESOLVED_CAPACITY);
+    for (i, c) in resolved[..resolved_count].iter().enumerate() {
+        keys[i].write(ChoiceSortKey::from_candidate(c));
+    }
+    // SAFETY: `keys[..resolved_count]` was just initialized above.
+    let keys = unsafe {
+        std::slice::from_raw_parts(keys.as_ptr().cast::<ChoiceSortKey>(), resolved_count)
+    };
+
+    let mut selected_len = 0usize;
+    if resolved_count <= max_branches {
+        for i in 0..resolved_count {
+            selected_indices[selected_len] = i;
+            selected_len += 1;
+        }
+        selected_indices[..selected_len].sort_unstable_by(|&ia, &ib| {
+            let ord = compare_choice_sort_key(&keys[ia], &keys[ib], 0).then_with(|| ia.cmp(&ib));
+            #[cfg(debug_assertions)]
+            debug_assert_eq!(
+                compare_choice_sort_key(&keys[ia], &keys[ib], 0),
+                compare_resolved_choice(&resolved[ia], &resolved[ib], 0)
+            );
+            ord
+        });
+        return selected_len;
+    }
+
+    let cap = max_branches.min(probed_pool.len()).min(resolved_count);
+    if cap == 0 {
+        return 0;
+    }
+
+    let mut sorted_pool_buf = [0usize; TURN_SETUP_CHOICE_RESOLVED_CAPACITY];
+    let sorted_pool = &mut sorted_pool_buf[..probed_pool.len()];
+    sorted_pool.copy_from_slice(probed_pool);
+    sorted_pool.sort_unstable_by(|&ia, &ib| {
+        let ord = compare_choice_sort_key(&keys[ia], &keys[ib], 0).then_with(|| ia.cmp(&ib));
+        #[cfg(debug_assertions)]
+        debug_assert_eq!(
+            compare_choice_sort_key(&keys[ia], &keys[ib], 0),
+            compare_resolved_choice(&resolved[ia], &resolved[ib], 0)
+        );
+        ord
+    });
+
+    let mut marks = [false; TURN_SETUP_CHOICE_RESOLVED_CAPACITY];
+    let depth0_cap = cap / 2;
+    if depth0_cap > 0 {
+        select_depth0_representatives_from_sorted_pool(
+            resolved,
+            choices,
+            sorted_pool,
+            &mut marks[..resolved_count],
+            depth0_cap,
+            selected_indices,
+            &mut selected_len,
+        );
+    }
+
+    let remaining = cap.saturating_sub(selected_len);
+    if remaining > 0 {
+        let primary_q = ((remaining * 55 + 50) / 100).max(1);
+        let immediate_q = if remaining >= 4 {
+            ((remaining * 15) / 100).max(1)
+        } else {
+            0
+        };
+        let survival_q = if remaining >= 3 {
+            ((remaining * 15) / 100).max(1)
+        } else {
+            0
+        };
+        let invest_q = remaining.saturating_sub(primary_q + immediate_q + survival_q);
+
+        for &(take, criterion) in &[
+            (primary_q, 0usize),
+            (immediate_q, 1usize),
+            (survival_q, 2usize),
+            (invest_q, 3usize),
+            (cap, 0usize),
+        ] {
+            for _ in 0..take {
+                if selected_len >= cap {
+                    break;
+                }
+                let mut best_i: Option<usize> = None;
+                for &idx in &*sorted_pool {
+                    if marks[idx] {
+                        continue;
+                    }
+                    if best_i.is_none_or(|bi| {
+                        let ord = compare_choice_sort_key(&keys[idx], &keys[bi], criterion);
+                        #[cfg(debug_assertions)]
+                        debug_assert_eq!(
+                            ord,
+                            compare_resolved_choice(&resolved[idx], &resolved[bi], criterion)
+                        );
+                        ord.then_with(|| idx.cmp(&bi)).is_lt()
+                    }) {
+                        best_i = Some(idx);
+                    }
+                }
+                let Some(bi) = best_i else { break };
+                marks[bi] = true;
+                selected_indices[selected_len] = bi;
+                selected_len += 1;
+            }
+        }
+    }
+
+    selected_indices[..selected_len].sort_unstable_by(|&ia, &ib| {
+        compare_choice_sort_key(&keys[ia], &keys[ib], 0).then_with(|| ia.cmp(&ib))
+    });
+    selected_len
+}
+
+#[allow(clippy::too_many_arguments)]
+fn emit_selected_choices(
+    parent_id: NodeId,
+    parent_rank: u32,
+    action_ord: u32,
+    resolved: &[ResolvedChoiceCandidate],
+    selected: &[usize],
+    src_slab: &LocalStateSlab,
+    src_choices: &ChoiceArena,
+    dst_slab: &mut LocalStateSlab,
+    dst_choices: &mut ChoiceArena,
+    dst_candidates: &mut Vec<WorkerCandidate>,
+    dst_shards: &mut Vec<u16>,
+    dst_fast_meta: &mut Vec<WorkerCandFastMeta>,
+    paused_base: Option<&BattleState>,
+    mut replay_state: Option<&mut BattleState>,
+    mut pack_buf: Option<&mut Vec<u8>>,
+    content: &dyn ContentDispatcher,
+) {
+    for (choice_ord, &idx) in selected.iter().enumerate() {
+        let cand = resolved[idx];
+        let (state_slab_idx, state_off, state_len) = if cand.is_terminal {
+            (0, 0, 0)
+        } else if cand.state_len > 0 {
+            let bytes = src_slab.get(cand.state_slab_idx, cand.state_off, cand.state_len);
+            dst_slab.alloc_slice(bytes)
+        } else if let (Some(base), Some(rstate), Some(pbuf)) = (
+            paused_base,
+            replay_state.as_deref_mut(),
+            pack_buf.as_deref_mut(),
+        ) {
+            let ok = replay_deferred_choice_state_from_arena(
+                base,
+                rstate,
+                src_choices,
+                cand.choices_offset,
+                cand.choices_len,
+                cand.has_extra_end_turn,
+                content,
+            );
+            debug_assert!(ok, "deferred choice replay failed in commit_resolved_choices");
+            if !ok {
+                continue;
+            }
+            #[cfg(debug_assertions)]
+            debug_assert_eq!(
+                hash_canonical_key(rstate),
+                cand.state_hash,
+                "deferred choice replay state_hash diverged"
+            );
+            pack_state(rstate, pbuf);
+            dst_slab.alloc_slice(pbuf)
+        } else {
+            debug_assert!(false, "missing packed bytes for deferred choice batch");
+            continue;
+        };
+        let (choices_offset, choices_len) = dst_choices.extend_from_arena_slice(
+            src_choices,
+            cand.choices_offset,
+            cand.choices_len,
+        );
+        dst_shards.push(if cand.is_terminal {
+            u16::MAX
+        } else {
+            cand.state_hash.shard_index() as u16
+        });
+        let fast_beam_score = cand
+            .full_eval
+            .as_ref()
+            .map_or(cand.base_score, |f| f.beam_rank_score);
+        dst_fast_meta.push(WorkerCandFastMeta {
+            flags: u8::from(cand.is_terminal) | (u8::from(cand.turn_completed) << 1),
+            potion_count: cand.potion_count.min(u8::MAX as u16) as u8,
+            explicit_potion_count: cand.explicit_potion_count.min(u8::MAX as u16) as u8,
+            _pad: [0; 5],
+            beam_score: fast_beam_score,
+        });
+        dst_candidates.push(WorkerCandidate {
+            sort_key: (parent_rank, action_ord, choice_ord as u32),
+            parent_id,
+            action: cand.action,
+            por_key: cand.por_key,
+            has_extra_end_turn: cand.has_extra_end_turn,
+            choices_offset,
+            choices_len,
+            state_slab_idx,
+            state_off,
+            state_len,
+            state_hash: cand.state_hash,
+            turn: cand.turn,
+            turn_completed: cand.turn_completed,
+            action_count: cand.action_count,
+            potion_count: cand.potion_count,
+            explicit_potion_count: cand.explicit_potion_count,
+            optional_paid_potion_count: cand.optional_paid_potion_count,
+            automatic_potion_count: cand.automatic_potion_count,
+            used_potion_slot_mask: cand.used_potion_slot_mask,
+            potion_strategic_cost: cand.potion_strategic_cost,
+            optional_paid_potion_cost: cand.optional_paid_potion_cost,
+            ambergris_count: cand.ambergris_count,
+            forced_used_mask: cand.forced_used_mask,
+            forced_ambergris_count: cand.forced_ambergris_count,
+            is_terminal: cand.is_terminal,
+            base_score: cand.base_score,
+            fast_eval: cand.fast_eval,
+            full_eval: cand.full_eval,
+            rare_eval: cand.rare_eval,
+            label: cand.label,
+        });
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn commit_resolved_choices(
     scratch: &mut WorkerScratch,
     task: &ActionTask,
+    task_idx: usize,
+    defer_large_choice_probes: bool,
+    turn_boundary_rollouts_enabled: bool,
     first_pile: PileType,
     is_end_turn: bool,
     is_turn_setup: bool,
+    max_branches: usize,
     static_ctx: &Arc<RootStaticContext>,
     content: &dyn ContentDispatcher,
     root_baseline: &RootEvalBaseline,
     profile: &SolverSearchProfile,
     eval_mode: EvalMode,
     probe_cache: &mut ProbeCacheAccess<'_>,
-) {
+) -> bool {
     let resolved_count = scratch.choice_resolved.len();
     if resolved_count == 0 {
-        return;
+        return false;
     }
 
-    let max_branches = if is_turn_setup {
-        profile.beam_width.max(64).min(CHOICE_RESOLVED_CAPACITY)
-    } else if first_pile == PileType::Hand {
-        profile.max_hand_choice_branches_per_action
+    let max_prefix_len = scratch.choice_resolved[..resolved_count]
+        .iter()
+        .map(|c| c.choices_len as usize)
+        .max()
+        .unwrap_or(0);
+    let is_start_turn = task.parent_turn == root_baseline.start_turn_number;
+    let effective_max_branches = if is_start_turn && max_prefix_len >= 2 {
+        max_branches.max(36)
     } else {
-        profile.max_pile_choice_branches_per_action
+        max_branches
+    };
+    let cap = resolved_count.min(effective_max_branches);
+    let needs_pruning = resolved_count > cap;
+    if needs_pruning {
+        scratch.branch_truncations += 1;
     }
-    .max(1);
 
-    let is_delayed_or_end_turn = is_end_turn
-        || is_turn_setup
-        || matches!(
-            first_pile,
-            PileType::Draw | PileType::Discard | PileType::Exhaust
-        );
-    let run_mini_rollout =
-        resolved_count >= 2 && (resolved_count > max_branches || is_delayed_or_end_turn);
+    let is_delayed_pile_choice = matches!(
+        first_pile,
+        PileType::Draw | PileType::Discard | PileType::Exhaust
+    );
+    let run_unpruned_probe = !needs_pruning
+        && resolved_count >= 2
+        && !is_turn_setup
+        && ((is_start_turn && is_delayed_pile_choice && !is_end_turn && resolved_count <= 12)
+            || (is_end_turn && !turn_boundary_rollouts_enabled));
+    let run_mini_rollout = needs_pruning || run_unpruned_probe;
+
+    let mut probed_pool: Vec<usize> = Vec::new();
 
     if run_mini_rollout {
-        for i in 0..resolved_count {
+        let probe_max_turns_ahead = if !needs_pruning {
+            1
+        } else if first_pile == PileType::Hand {
+            0
+        } else {
+            1
+        };
+        if !needs_pruning {
+            probed_pool.extend(0..resolved_count);
+        } else {
+            let probe_budget = resolved_count.min((effective_max_branches * 2).max(16));
+            if probe_budget >= resolved_count {
+                probed_pool.extend(0..resolved_count);
+            } else {
+                pre_filter_static_probe_candidates(
+                    &scratch.choice_resolved[..resolved_count],
+                    &scratch.choice_staging_choices,
+                    probe_budget,
+                    &mut probed_pool,
+                );
+            }
+        }
+
+        let unprobed_count = if defer_large_choice_probes {
+            probed_pool
+                .iter()
+                .filter(|&&i| {
+                    let c = &scratch.choice_resolved[i];
+                    !c.is_terminal && !c.has_lookahead
+                })
+                .count()
+        } else {
+            0
+        };
+        if unprobed_count >= 2 {
+            let mut missing_bytes = false;
+            for &i in &probed_pool {
+                let c = &scratch.choice_resolved[i];
+                if !c.is_terminal && !c.has_lookahead && c.state_len == 0 {
+                    missing_bytes = true;
+                    break;
+                }
+            }
+            if missing_bytes {
+                for &i in &probed_pool {
+                    if scratch.choice_resolved[i].is_terminal
+                        || scratch.choice_resolved[i].has_lookahead
+                        || scratch.choice_resolved[i].state_len > 0
+                    {
+                        continue;
+                    }
+                    let (ch_off, ch_len, has_extra_end) = {
+                        let c = &scratch.choice_resolved[i];
+                        (c.choices_offset, c.choices_len, c.has_extra_end_turn)
+                    };
+                    if replay_deferred_choice_state_from_arena(
+                        &scratch.choice_paused_states[0],
+                        &mut scratch.state,
+                        &scratch.choice_staging_choices,
+                        ch_off,
+                        ch_len,
+                        has_extra_end,
+                        content,
+                    ) {
+                        pack_state(&scratch.state, &mut scratch.pack_buf);
+                        let (si, so, sl) = scratch.choice_slab.alloc_slice(&scratch.pack_buf);
+                        let c = &mut scratch.choice_resolved[i];
+                        c.state_slab_idx = si;
+                        c.state_off = so;
+                        c.state_len = sl;
+                    }
+                }
+            }
+            let resolved = std::mem::take(&mut scratch.choice_resolved);
+            let slab = std::mem::take(&mut scratch.choice_slab);
+            let choices = std::mem::take(&mut scratch.choice_staging_choices);
+            let probe_results = vec![None; resolved.len()];
+            scratch.deferred_batches.push(DeferredChoiceBatch {
+                task_idx,
+                parent_rank: task.parent_rank,
+                action_ord: task.action_ord,
+                parent_id: task.parent_id,
+                max_branches: cap,
+                probe_max_turns_ahead,
+                probed_pool,
+                selected_indices: SmallVec::new(),
+                resolved,
+                slab,
+                choices,
+                probe_results,
+            });
+            return true;
+        }
+
+        for &i in &probed_pool {
             if scratch.choice_resolved[i].has_lookahead {
                 let c = &mut scratch.choice_resolved[i];
                 if !c.turn_completed {
@@ -3383,14 +4607,23 @@ fn commit_resolved_choices(
                 ChoiceProbeResult {
                     score: c.terminal_probe_score,
                     hp_lost: c.fast_eval.cumulative_hp_lost as i32,
-                    board_investment: 0,
+                    setup_score: c.full_eval.as_ref().map_or(0, |f| f.setup_score),
+                    board_investment: c.full_eval.as_ref().map_or(0, |f| f.board_investment),
+                    strategy_goal_hp_credit: c.fast_eval.strategy_goal_hp_credit as i32,
+                    strategic_hp_credit: c.fast_eval.strategic_hp_credit as i32,
                     is_victory: c.fast_eval.won(),
                     is_defeat: c.fast_eval.player_dead() || c.fast_eval.projected_player_hp <= 0,
+                    is_event_defeat: c.fast_eval.is_event_defeat(),
                 }
             } else if len > 0 {
                 let state_bytes = scratch.choice_slab.get(slab_idx, off, len);
-                let Some(probe) = evaluate_choice_probe_packed(
+                // SAFETY: `state_bytes` was written by `pack_state` in this process.
+                if unsafe { unpack_state(state_bytes, static_ctx, &mut scratch.state) }.is_err() {
+                    continue;
+                }
+                let Some(probe) = evaluate_choice_probe_in_place(
                     &mut scratch.choice_probe_ws,
+                    &mut scratch.state,
                     state_bytes,
                     state_hash,
                     probe_cache,
@@ -3399,7 +4632,7 @@ fn commit_resolved_choices(
                     root_baseline,
                     profile,
                     eval_mode,
-                    1,
+                    probe_max_turns_ahead,
                     opt_cost,
                     opt_count as usize,
                     action_count,
@@ -3441,7 +4674,7 @@ fn commit_resolved_choices(
                     root_baseline,
                     profile,
                     eval_mode,
-                    1,
+                    probe_max_turns_ahead,
                     opt_cost,
                     opt_count as usize,
                     action_count,
@@ -3450,11 +4683,12 @@ fn commit_resolved_choices(
                 };
                 probe
             };
-            let encoded = encode_choice_probe_rank_score(&probe);
+            let encoded = encode_choice_probe_rank_score_with_policy(&probe, root_baseline);
             let c = &mut scratch.choice_resolved[i];
             c.lookahead_score = encoded;
             c.lookahead_hp_lost = probe.hp_lost;
             c.lookahead_board_investment = probe.board_investment;
+            c.lookahead_setup_score = probe.setup_score;
             c.lookahead_victory = probe.is_victory;
             c.has_lookahead = true;
             if !c.turn_completed {
@@ -3465,250 +4699,319 @@ fn commit_resolved_choices(
             }
         }
     } else {
-        for c in &mut scratch.choice_resolved[..resolved_count] {
-            if c.has_lookahead {
-                c.has_lookahead = false;
-                c.lookahead_score = 0.0;
-                c.lookahead_hp_lost = c.fast_eval.cumulative_hp_lost as i32;
-                c.lookahead_board_investment =
-                    c.full_eval.as_ref().map_or(0, |f| f.board_investment);
-                c.lookahead_victory = c.fast_eval.won();
+        probed_pool.extend(0..resolved_count);
+    }
+
+    let mut selected_indices = [0usize; TURN_SETUP_CHOICE_RESOLVED_CAPACITY];
+    let selected_len = select_choice_indices_from_pool(
+        &scratch.choice_resolved[..resolved_count],
+        &scratch.choice_staging_choices,
+        &probed_pool,
+        cap,
+        &mut selected_indices,
+    );
+    emit_selected_choices(
+        task.parent_id,
+        task.parent_rank,
+        task.action_ord,
+        &scratch.choice_resolved,
+        &selected_indices[..selected_len],
+        &scratch.choice_slab,
+        &scratch.choice_staging_choices,
+        &mut scratch.slab,
+        &mut scratch.staged_choices,
+        &mut scratch.candidates,
+        &mut scratch.cand_shards,
+        &mut scratch.cand_fast_meta,
+        Some(&scratch.choice_paused_states[0]),
+        Some(&mut scratch.state),
+        Some(&mut scratch.pack_buf),
+        content,
+    );
+    scratch.choice_resolved.clear();
+    false
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn resolve_deferred_choice_batches_on_pool(
+    dop: usize,
+    pool: Option<&rayon::ThreadPool>,
+    scratches: &mut [WorkerScratch],
+    deferred_batches: &mut Vec<DeferredChoiceBatch>,
+    probe_jobs: &mut Vec<ProbeJob>,
+    probe_cache: &ChoiceProbeCache,
+    static_ctx: &Arc<RootStaticContext>,
+    content: &(dyn ContentDispatcher + Sync),
+    root_baseline: &RootEvalBaseline,
+    profile: &SolverSearchProfile,
+    eval_mode: EvalMode,
+    cancel: &AtomicBool,
+    commit_slices: &[AtomicU64],
+    write_commit_slices: bool,
+) {
+    deferred_batches.clear();
+    for s in scratches.iter_mut() {
+        if !s.deferred_batches.is_empty() {
+            deferred_batches.append(&mut s.deferred_batches);
+        }
+    }
+    if deferred_batches.is_empty() {
+        return;
+    }
+
+    probe_jobs.clear();
+    for (b_idx, batch) in deferred_batches.iter_mut().enumerate() {
+        for &c_idx in &batch.probed_pool {
+            let c = &batch.resolved[c_idx];
+            if c.is_terminal {
+                batch.probe_results[c_idx] = Some(ChoiceProbeResult {
+                    score: c.terminal_probe_score,
+                    hp_lost: c.fast_eval.cumulative_hp_lost as i32,
+                    setup_score: c.full_eval.as_ref().map_or(0, |f| f.setup_score),
+                    board_investment: c.full_eval.as_ref().map_or(0, |f| f.board_investment),
+                    strategy_goal_hp_credit: c.fast_eval.strategy_goal_hp_credit as i32,
+                    strategic_hp_credit: c.fast_eval.strategic_hp_credit as i32,
+                    is_victory: c.fast_eval.won(),
+                    is_defeat: c.fast_eval.player_dead() || c.fast_eval.projected_player_hp <= 0,
+                    is_event_defeat: c.fast_eval.is_event_defeat(),
+                });
+            } else if !c.has_lookahead && c.state_len > 0 {
+                probe_jobs.push(ProbeJob {
+                    batch_idx: b_idx as u32,
+                    cand_idx: c_idx as u32,
+                    state_slab_idx: c.state_slab_idx,
+                    state_off: c.state_off,
+                    state_len: c.state_len,
+                    state_hash: c.state_hash,
+                    opt_cost: c.optional_paid_potion_cost,
+                    opt_count: c.optional_paid_potion_count as usize,
+                    action_count: c.action_count,
+                });
             }
         }
     }
 
-    let mut keys: [std::mem::MaybeUninit<ChoiceSortKey>; CHOICE_RESOLVED_CAPACITY] =
-        [const { std::mem::MaybeUninit::uninit() }; CHOICE_RESOLVED_CAPACITY];
-    debug_assert!(resolved_count <= CHOICE_RESOLVED_CAPACITY);
-    for (i, c) in scratch.choice_resolved[..resolved_count].iter().enumerate() {
-        keys[i].write(ChoiceSortKey::from_candidate(c));
-    }
-    // SAFETY: `keys[..resolved_count]` was just initialized above.
-    let keys = unsafe {
-        std::slice::from_raw_parts(keys.as_ptr().cast::<ChoiceSortKey>(), resolved_count)
-    };
-
-    let mut selected_indices = [0usize; CHOICE_RESOLVED_CAPACITY];
-    let mut selected_len = 0usize;
-    if resolved_count <= max_branches {
-        for i in 0..resolved_count {
-            selected_indices[selected_len] = i;
-            selected_len += 1;
-        }
-        selected_indices[..selected_len].sort_unstable_by(|&ia, &ib| {
-            let ord = compare_choice_sort_key(&keys[ia], &keys[ib], 0);
-            #[cfg(debug_assertions)]
-            debug_assert_eq!(
-                ord,
-                compare_resolved_choice(
-                    &scratch.choice_resolved[ia],
-                    &scratch.choice_resolved[ib],
-                    0
-                )
-            );
-            ord
-        });
-    } else {
-        let cap = max_branches.min(resolved_count);
-        let primary_q = ((cap * 55 + 50) / 100).max(1);
-        let immediate_q = if cap >= 4 { ((cap * 15) / 100).max(1) } else { 0 };
-        let survival_q = if cap >= 3 { ((cap * 15) / 100).max(1) } else { 0 };
-        let invest_q = cap.saturating_sub(primary_q + immediate_q + survival_q);
-
-        #[cfg(debug_assertions)]
-        let mut dbg_selected = [0usize; CHOICE_RESOLVED_CAPACITY];
-        #[cfg(debug_assertions)]
-        let mut dbg_selected_len = 0usize;
-        #[cfg(debug_assertions)]
+    if !probe_jobs.is_empty() {
+        if let Some(p) = pool.filter(|_| dop > 1 && probe_jobs.len() >= 2 && scratches.len() >= 2)
         {
-            let mut marks = [false; CHOICE_RESOLVED_CAPACITY];
-            for &(take, criterion) in &[
-                (primary_q, 0),
-                (immediate_q, 1),
-                (survival_q, 2),
-                (invest_q, 3),
-                (cap, 0),
-            ] {
-                for _ in 0..take {
-                    if dbg_selected_len >= cap {
+            let workers = dop.min(probe_jobs.len()).min(scratches.len());
+            let jobs_ref = probe_jobs.as_slice();
+            let batches_ref = deferred_batches.as_slice();
+            let next_job = AtomicUsize::new(0);
+            for scratch in &mut scratches[..workers] {
+                scratch.deferred_probe_out.clear();
+            }
+            let (first_scratch, rest_scratches) =
+                scratches[..workers].split_first_mut().expect("workers >= 2");
+            let run_probe_worker = |scratch: &mut WorkerScratch| {
+                let mut probe_access = ProbeCacheAccess::Shared(probe_cache);
+                loop {
+                    if cancel.load(Ordering::Relaxed) {
                         break;
                     }
-                    let mut best_i: Option<usize> = None;
-                    for i in 0..resolved_count {
-                        if marks[i] {
-                            continue;
-                        }
-                        if best_i.is_none_or(|bi| {
-                            let ord = compare_choice_sort_key(&keys[i], &keys[bi], criterion);
-                            debug_assert_eq!(
-                                ord,
-                                compare_resolved_choice(
-                                    &scratch.choice_resolved[i],
-                                    &scratch.choice_resolved[bi],
-                                    criterion
-                                )
-                            );
-                            ord.is_lt()
-                        }) {
-                            best_i = Some(i);
-                        }
+                    let j = next_job.fetch_add(1, Ordering::Relaxed);
+                    if j >= jobs_ref.len() {
+                        break;
                     }
-                    let Some(bi) = best_i else { break };
-                    marks[bi] = true;
-                    dbg_selected[dbg_selected_len] = bi;
-                    dbg_selected_len += 1;
+                    let job = jobs_ref[j];
+                    let batch = &batches_ref[job.batch_idx as usize];
+                    let bytes = batch.slab.get(job.state_slab_idx, job.state_off, job.state_len);
+                    let res = evaluate_choice_probe_packed(
+                        &mut scratch.choice_probe_ws,
+                        bytes,
+                        job.state_hash,
+                        &mut probe_access,
+                        static_ctx,
+                        content,
+                        root_baseline,
+                        profile,
+                        eval_mode,
+                        batch.probe_max_turns_ahead,
+                        job.opt_cost,
+                        job.opt_count,
+                        job.action_count,
+                    );
+                    scratch.deferred_probe_out.push((j, res));
                 }
-            }
-            dbg_selected[..dbg_selected_len].sort_unstable_by(|&ia, &ib| {
-                compare_choice_sort_key(&keys[ia], &keys[ib], 0)
+            };
+            let worker_fn = &run_probe_worker;
+            p.scope(|scope| {
+                for scratch in rest_scratches.iter_mut() {
+                    scope.spawn(move |_| worker_fn(scratch));
+                }
+                worker_fn(first_scratch);
             });
-        }
-
-        let mut rem = [0usize; CHOICE_RESOLVED_CAPACITY];
-        for i in 0..resolved_count {
-            rem[i] = i;
-        }
-        let mut rem_len = resolved_count;
-        for &(take, criterion) in &[
-            (primary_q, 0),
-            (immediate_q, 1),
-            (survival_q, 2),
-            (invest_q, 3),
-            (cap, 0),
-        ] {
-            let need = take.min(cap - selected_len).min(rem_len);
-            if need == 0 {
-                continue;
-            }
-            if need == 1 {
-                let mut best_pos = 0usize;
-                for p in 1..rem_len {
-                    let ia = rem[p];
-                    let ib = rem[best_pos];
-                    if compare_choice_sort_key(&keys[ia], &keys[ib], criterion)
-                        .then_with(|| ia.cmp(&ib))
-                        .is_lt()
-                    {
-                        best_pos = p;
-                    }
+            for scratch in &mut scratches[..workers] {
+                for (j, res) in scratch.deferred_probe_out.drain(..) {
+                    let job = probe_jobs[j];
+                    deferred_batches[job.batch_idx as usize].probe_results[job.cand_idx as usize] =
+                        res;
                 }
-                selected_indices[selected_len] = rem[best_pos];
-                selected_len += 1;
-                rem_len -= 1;
-                rem[best_pos] = rem[rem_len];
-            } else if need == rem_len {
-                selected_indices[selected_len..selected_len + need].copy_from_slice(&rem[..need]);
-                selected_len += need;
-                break;
-            } else {
-                rem[..rem_len].select_nth_unstable_by(need - 1, |&ia, &ib| {
-                    compare_choice_sort_key(&keys[ia], &keys[ib], criterion)
-                        .then_with(|| ia.cmp(&ib))
-                });
-                selected_indices[selected_len..selected_len + need].copy_from_slice(&rem[..need]);
-                selected_len += need;
-                rem.copy_within(need..rem_len, 0);
-                rem_len -= need;
+            }
+        } else {
+            let mut probe_access = ProbeCacheAccess::Shared(probe_cache);
+            for &job in probe_jobs.iter() {
+                if cancel.load(Ordering::Relaxed) {
+                    break;
+                }
+                let batch = &deferred_batches[job.batch_idx as usize];
+                let bytes = batch.slab.get(job.state_slab_idx, job.state_off, job.state_len);
+                let res = evaluate_choice_probe_packed(
+                    &mut scratches[0].choice_probe_ws,
+                    bytes,
+                    job.state_hash,
+                    &mut probe_access,
+                    static_ctx,
+                    content,
+                    root_baseline,
+                    profile,
+                    eval_mode,
+                    batch.probe_max_turns_ahead,
+                    job.opt_cost,
+                    job.opt_count,
+                    job.action_count,
+                );
+                deferred_batches[job.batch_idx as usize].probe_results[job.cand_idx as usize] = res;
             }
         }
-        selected_indices[..selected_len].sort_unstable_by(|&ia, &ib| {
-            compare_choice_sort_key(&keys[ia], &keys[ib], 0).then_with(|| ia.cmp(&ib))
-        });
-        #[cfg(debug_assertions)]
-        debug_assert_eq!(
-            &selected_indices[..selected_len],
-            &dbg_selected[..dbg_selected_len]
-        );
     }
 
-    for (choice_ord, &idx) in selected_indices[..selected_len].iter().enumerate() {
-        let cand = scratch.choice_resolved[idx];
-        let (state_slab_idx, state_off, state_len) = if cand.is_terminal {
-            (0, 0, 0)
-        } else if cand.state_len > 0 {
-            let bytes =
-                scratch
-                    .choice_slab
-                    .get(cand.state_slab_idx, cand.state_off, cand.state_len);
-            scratch.slab.alloc_slice(bytes)
-        } else {
-            let ok = replay_deferred_choice_state_from_arena(
-                &scratch.choice_paused_states[0],
-                &mut scratch.state,
-                &scratch.choice_staging_choices,
-                cand.choices_offset,
-                cand.choices_len,
-                cand.has_extra_end_turn,
+    let select_batch = |batch: &mut DeferredChoiceBatch| {
+        for &c_idx in &batch.probed_pool {
+            let c = &mut batch.resolved[c_idx];
+            if c.has_lookahead {
+                if !c.turn_completed {
+                    let encoded = c.lookahead_score;
+                    if let Some(fe) = c.full_eval.as_mut() {
+                        fe.has_choice_lookahead = true;
+                        fe.choice_lookahead_score = Some(encoded);
+                    }
+                }
+                continue;
+            }
+            if let Some(probe) = &batch.probe_results[c_idx] {
+                let encoded = encode_choice_probe_rank_score_with_policy(probe, root_baseline);
+                c.lookahead_score = encoded;
+                c.lookahead_hp_lost = probe.hp_lost;
+                c.lookahead_board_investment = probe.board_investment;
+                c.lookahead_setup_score = probe.setup_score;
+                c.lookahead_victory = probe.is_victory;
+                c.has_lookahead = true;
+                if !c.turn_completed {
+                    if let Some(fe) = c.full_eval.as_mut() {
+                        fe.has_choice_lookahead = true;
+                        fe.choice_lookahead_score = Some(encoded);
+                    }
+                }
+            }
+        }
+        let mut selected_indices = [0usize; TURN_SETUP_CHOICE_RESOLVED_CAPACITY];
+        let selected_len = select_choice_indices_from_pool(
+            &batch.resolved,
+            &batch.choices,
+            &batch.probed_pool,
+            batch.max_branches,
+            &mut selected_indices,
+        );
+        batch.selected_indices.clear();
+        batch
+            .selected_indices
+            .extend_from_slice(&selected_indices[..selected_len]);
+    };
+
+    if let Some(p) = pool.filter(|_| dop > 1 && deferred_batches.len() >= 2) {
+        p.install(|| {
+            deferred_batches.par_iter_mut().for_each(select_batch);
+        });
+    } else {
+        for batch in deferred_batches.iter_mut() {
+            select_batch(batch);
+        }
+    }
+
+    if let Some(p) = pool.filter(|_| dop > 1 && deferred_batches.len() >= 2 && scratches.len() >= 2)
+    {
+        let workers = dop.min(deferred_batches.len()).min(scratches.len());
+        let batches_ref = deferred_batches.as_slice();
+        let next_batch = AtomicUsize::new(0);
+        let (first_scratch, rest_scratches) =
+            scratches[..workers].split_first_mut().expect("workers >= 2");
+        let run_emit = |w_idx: usize, scratch: &mut WorkerScratch| {
+            scratch.wave_dirty = true;
+            loop {
+                let b_idx = next_batch.fetch_add(1, Ordering::Relaxed);
+                if b_idx >= batches_ref.len() {
+                    break;
+                }
+                let batch = &batches_ref[b_idx];
+                let c_start = scratch.candidates.len();
+                emit_selected_choices(
+                    batch.parent_id,
+                    batch.parent_rank,
+                    batch.action_ord,
+                    &batch.resolved,
+                    &batch.selected_indices,
+                    &batch.slab,
+                    &batch.choices,
+                    &mut scratch.slab,
+                    &mut scratch.staged_choices,
+                    &mut scratch.candidates,
+                    &mut scratch.cand_shards,
+                    &mut scratch.cand_fast_meta,
+                    None,
+                    None,
+                    None,
+                    content,
+                );
+                let c_len = scratch.candidates.len() - c_start;
+                if write_commit_slices && c_len > 0 {
+                    commit_slices[batch.task_idx].store(
+                        pack_parent_slice(w_idx, c_start, c_len),
+                        Ordering::Relaxed,
+                    );
+                }
+            }
+        };
+        let emit_ref = &run_emit;
+        p.scope(|scope| {
+            for (i, scratch) in rest_scratches.iter_mut().enumerate() {
+                scope.spawn(move |_| emit_ref(i + 1, scratch));
+            }
+            emit_ref(0, first_scratch);
+        });
+    } else {
+        let scratch = &mut scratches[0];
+        scratch.wave_dirty = true;
+        for batch in deferred_batches.iter() {
+            let c_start = scratch.candidates.len();
+            emit_selected_choices(
+                batch.parent_id,
+                batch.parent_rank,
+                batch.action_ord,
+                &batch.resolved,
+                &batch.selected_indices,
+                &batch.slab,
+                &batch.choices,
+                &mut scratch.slab,
+                &mut scratch.staged_choices,
+                &mut scratch.candidates,
+                &mut scratch.cand_shards,
+                &mut scratch.cand_fast_meta,
+                None,
+                None,
+                None,
                 content,
             );
-            debug_assert!(ok, "deferred choice replay failed in commit_resolved_choices");
-            if !ok {
-                continue;
+            let c_len = scratch.candidates.len() - c_start;
+            if write_commit_slices && c_len > 0 {
+                commit_slices[batch.task_idx]
+                    .store(pack_parent_slice(0, c_start, c_len), Ordering::Relaxed);
             }
-            #[cfg(debug_assertions)]
-            debug_assert_eq!(
-                hash_canonical_key(&scratch.state),
-                cand.state_hash,
-                "deferred choice replay state_hash diverged"
-            );
-            pack_state(&scratch.state, &mut scratch.pack_buf);
-            scratch.slab.alloc_slice(&scratch.pack_buf)
-        };
-        let (choices_offset, choices_len) = scratch.staged_choices.extend_from_arena_slice(
-            &scratch.choice_staging_choices,
-            cand.choices_offset,
-            cand.choices_len,
-        );
-        scratch.cand_shards.push(if cand.is_terminal {
-            u16::MAX
-        } else {
-            cand.state_hash.shard_index() as u16
-        });
-        let fast_beam_score = cand
-            .full_eval
-            .as_ref()
-            .map_or(cand.base_score, |f| f.beam_rank_score);
-        scratch.cand_fast_meta.push(WorkerCandFastMeta {
-            flags: u8::from(cand.is_terminal) | (u8::from(cand.turn_completed) << 1),
-            potion_count: cand.potion_count.min(u8::MAX as u16) as u8,
-            explicit_potion_count: cand.explicit_potion_count.min(u8::MAX as u16) as u8,
-            _pad: [0; 5],
-            beam_score: fast_beam_score,
-        });
-        scratch.candidates.push(WorkerCandidate {
-            sort_key: (task.parent_rank, task.action_ord, choice_ord as u32),
-            parent_id: task.parent_id,
-            action: cand.action,
-            por_key: cand.por_key,
-            has_extra_end_turn: cand.has_extra_end_turn,
-            choices_offset,
-            choices_len,
-            state_slab_idx,
-            state_off,
-            state_len,
-            state_hash: cand.state_hash,
-            turn: cand.turn,
-            turn_completed: cand.turn_completed,
-            action_count: cand.action_count,
-            potion_count: cand.potion_count,
-            explicit_potion_count: cand.explicit_potion_count,
-            optional_paid_potion_count: cand.optional_paid_potion_count,
-            automatic_potion_count: cand.automatic_potion_count,
-            used_potion_slot_mask: cand.used_potion_slot_mask,
-            potion_strategic_cost: cand.potion_strategic_cost,
-            optional_paid_potion_cost: cand.optional_paid_potion_cost,
-            ambergris_count: cand.ambergris_count,
-            forced_used_mask: cand.forced_used_mask,
-            forced_ambergris_count: cand.forced_ambergris_count,
-            is_terminal: cand.is_terminal,
-            base_score: cand.base_score,
-            fast_eval: cand.fast_eval,
-            full_eval: cand.full_eval,
-            rare_eval: cand.rare_eval,
-            label: cand.label,
-        });
+        }
     }
-    scratch.choice_resolved.clear();
+    deferred_batches.clear();
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -3716,6 +5019,9 @@ fn execute_action_from_parent(
     scratch: &mut WorkerScratch,
     parent_state: &BattleState,
     task: &ActionTask,
+    task_idx: usize,
+    defer_large_choice_probes: bool,
+    turn_boundary_rollouts_enabled: bool,
     static_ctx: &Arc<RootStaticContext>,
     content: &dyn ContentDispatcher,
     root_baseline: &RootEvalBaseline,
@@ -3728,7 +5034,7 @@ fn execute_action_from_parent(
     sensitivity: &CombatOrderSensitivity,
     allow_paid_optional_potions: bool,
     eval_mode: EvalMode,
-) {
+) -> bool {
     clone_battle_state_into(parent_state, &mut scratch.state);
 
     let (action, por_key) = match task.spec {
@@ -3772,11 +5078,12 @@ fn execute_action_from_parent(
 
     if matches!(task.spec, ActionSpec::TurnSetup) {
         let Some(req) = scratch.state.pending.as_ref().map(|p| p.request.clone()) else {
-            return;
+            return false;
         };
         let first_pile = req.source_pile;
-        let (is_delayed_or_end_turn, max_branches) =
+        let (is_delayed_or_end_turn, max_branches, resolved_cap) =
             choice_probe_limits(profile, first_pile, false, true);
+        let max_choice_depth = 16;
         scratch.begin_choice_tree();
         clone_battle_state_into(&scratch.state, &mut scratch.choice_paused_states[0]);
         let mut choices_so_far: SmallVec<[SmallVec<[usize; 8]>; 2]> = SmallVec::new();
@@ -3790,6 +5097,9 @@ fn execute_action_from_parent(
             is_delayed_or_end_turn,
             true,
             max_branches,
+            resolved_cap,
+            max_choice_depth,
+            defer_large_choice_probes,
             static_ctx,
             content,
             root_baseline,
@@ -3804,14 +5114,18 @@ fn execute_action_from_parent(
             eval_mode,
         );
         if scratch.fatal_error.is_some() {
-            return;
+            return false;
         }
-        commit_resolved_choices(
+        return commit_resolved_choices(
             scratch,
             task,
+            task_idx,
+            defer_large_choice_probes,
+            turn_boundary_rollouts_enabled,
             first_pile,
             false,
             true,
+            max_branches,
             static_ctx,
             content,
             root_baseline,
@@ -3819,7 +5133,6 @@ fn execute_action_from_parent(
             eval_mode,
             probe_cache,
         );
-        return;
     }
 
     let mut empty_q: SmallVec<[Vec<usize>; 2]> = SmallVec::new();
@@ -3857,7 +5170,7 @@ fn execute_action_from_parent(
             if should_abort_search_on_kernel_error(&err) {
                 scratch.record_fatal_error(err);
             }
-            return;
+            return false;
         }
     };
 
@@ -3882,6 +5195,7 @@ fn execute_action_from_parent(
                 allow_paid_optional_potions,
                 eval_mode,
             );
+            false
         }
         StepOutcome::NeedsChoice(req) => {
             if !allows_brightest_flame(
@@ -3889,12 +5203,13 @@ fn execute_action_from_parent(
                 root_baseline.initial_brightest_flame_max_hp_spent,
                 root_baseline.brightest_flame_spent(&scratch.state),
             ) {
-                return;
+                return false;
             }
             let first_pile = req.source_pile;
             let is_end_turn = matches!(task.spec, ActionSpec::EndTurn);
-            let (is_delayed_or_end_turn, max_branches) =
+            let (is_delayed_or_end_turn, max_branches, resolved_cap) =
                 choice_probe_limits(profile, first_pile, is_end_turn, false);
+            let max_choice_depth = 8;
             scratch.begin_choice_tree();
             clone_battle_state_into(&scratch.state, &mut scratch.choice_paused_states[0]);
             let mut choices_so_far: SmallVec<[SmallVec<[usize; 8]>; 2]> = SmallVec::new();
@@ -3908,6 +5223,9 @@ fn execute_action_from_parent(
                 is_delayed_or_end_turn,
                 false,
                 max_branches,
+                resolved_cap,
+                max_choice_depth,
+                defer_large_choice_probes,
                 static_ctx,
                 content,
                 root_baseline,
@@ -3922,21 +5240,25 @@ fn execute_action_from_parent(
                 eval_mode,
             );
             if scratch.fatal_error.is_some() {
-                return;
+                return false;
             }
             commit_resolved_choices(
                 scratch,
                 task,
+                task_idx,
+                defer_large_choice_probes,
+                turn_boundary_rollouts_enabled,
                 first_pile,
                 is_end_turn,
                 false,
+                max_branches,
                 static_ctx,
                 content,
                 root_baseline,
                 profile,
                 eval_mode,
                 probe_cache,
-            );
+            )
         }
     }
 }
@@ -3959,36 +5281,32 @@ fn expand_wave_tasks(
     probe_cache: &mut ChoiceProbeCache,
     sensitivity: &CombatOrderSensitivity,
     allow_paid_optional_potions: bool,
+    turn_boundary_rollouts_enabled: bool,
     eval_mode: EvalMode,
     cancel: &AtomicBool,
     abort: &SearchAbortSlot,
     scratches: &mut [WorkerScratch],
-    parent_states: &mut [BattleState],
+    parent_states: &mut Vec<BattleState>,
+    enumerated_tasks: &mut Vec<Vec<ActionTask>>,
     flat_tasks: &mut Vec<(usize, ActionTask)>,
+    deferred_batches: &mut Vec<DeferredChoiceBatch>,
+    probe_jobs: &mut Vec<ProbeJob>,
     parent_slices: &mut Vec<AtomicU64>,
-) -> bool {
-    if parent_slice.is_empty() {
-        for s in scratches.iter_mut() {
-            if s.wave_dirty {
-                s.reset_for_wave();
-            }
+) -> usize {
+    for s in scratches.iter_mut() {
+        if s.wave_dirty {
+            s.reset_for_wave();
         }
-        return true;
     }
-    if parent_slices.len() < parent_slice.len() {
-        parent_slices.resize_with(parent_slice.len(), || AtomicU64::new(0));
+    if parent_slice.is_empty() {
+        return 0;
     }
 
     if dop <= 1 || pool.is_none() {
-        if scratches[0].wave_dirty {
-            scratches[0].reset_for_wave();
+        if parent_slices.len() < parent_slice.len() {
+            parent_slices.resize_with(parent_slice.len(), || AtomicU64::new(0));
         }
         scratches[0].wave_dirty = true;
-        for s in &mut scratches[1..] {
-            if s.wave_dirty {
-                s.reset_for_wave();
-            }
-        }
         let scratch = &mut scratches[0];
         let parent_state = &mut parent_states[0];
         let mut probe_access = ProbeCacheAccess::SingleThread(probe_cache);
@@ -4023,16 +5341,20 @@ fn expand_wave_tasks(
                 allow_paid_optional_potions,
                 &mut local_tasks,
                 &mut scratch.por_pruned,
+                &mut scratch.branch_truncations,
             );
             let c_start = scratch.candidates.len();
             for task in &local_tasks {
                 if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
                     break;
                 }
-                execute_action_from_parent(
+                let _ = execute_action_from_parent(
                     scratch,
                     parent_state,
                     task,
+                    0,
+                    false,
+                    turn_boundary_rollouts_enabled,
                     static_ctx,
                     content,
                     root_baseline,
@@ -4062,362 +5384,165 @@ fn expand_wave_tasks(
             );
             scratch.action_buf = local_tasks;
         }
-        return true;
+        return parent_slice.len();
     }
 
     let pool = pool.unwrap();
-    if parent_slice.len() < dop && parent_slice.len() <= parent_states.len() {
-        if scratches[0].wave_dirty {
-            scratches[0].reset_for_wave();
+    debug_assert!(scratches.len() >= dop);
+    const PARENT_UNPACK_BATCH: usize = 512;
+    let total_parents = parent_slice.len();
+    let mut global_task_offset = 0usize;
+
+    for chunk_start in (0..total_parents).step_by(PARENT_UNPACK_BATCH) {
+        if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
+            break;
         }
-        scratches[0].wave_dirty = true;
-        flat_tasks.clear();
-        let mut unpacked_count = 0usize;
-        for (parent_rank, &pid) in parent_slice.iter().enumerate() {
-            let pnode = arena.get(pid);
-            let p_has_la = pnode.has_choice_lookahead();
-            let p_la_score = pnode.choice_lookahead_score();
-            let pbytes = parent_source.get(pnode.state_handle);
-            let pstate = &mut parent_states[unpacked_count];
-            // SAFETY: `pbytes` was committed from `pack_state` output in this process.
-            if unsafe { unpack_state(pbytes, static_ctx, pstate) }.is_err() {
-                continue;
-            }
-            let p_idx = unpacked_count;
-            let mut local_tasks = std::mem::take(&mut scratches[0].action_buf);
-            local_tasks.clear();
-            enumerate_parent_tasks(
-                parent_rank as u32,
-                pid,
-                pnode,
-                p_has_la,
-                p_la_score,
-                pstate,
-                content,
-                policy,
-                profile,
-                sensitivity,
-                root_baseline,
-                allow_paid_optional_potions,
-                &mut local_tasks,
-                &mut scratches[0].por_pruned,
-            );
-            for t in local_tasks.drain(..) {
-                flat_tasks.push((p_idx, t));
-            }
-            scratches[0].action_buf = local_tasks;
-            unpacked_count += 1;
+        let chunk_end = (chunk_start + PARENT_UNPACK_BATCH).min(total_parents);
+        let batch_len = chunk_end - chunk_start;
+        while parent_states.len() < batch_len {
+            parent_states.push(empty_scratch_state(static_ctx.clone()));
+        }
+        while enumerated_tasks.len() < batch_len {
+            enumerated_tasks.push(Vec::new());
         }
 
-        if flat_tasks.is_empty() {
-            for s in &mut scratches[1..] {
-                if s.wave_dirty {
-                    s.reset_for_wave();
-                }
-            }
-            return false;
-        }
-        if flat_tasks.len() <= 1 || (parent_slice.len() <= 2 && flat_tasks.len() <= 4) {
-            for s in &mut scratches[1..] {
-                if s.wave_dirty {
-                    s.reset_for_wave();
-                }
-            }
-            let mut probe_access = ProbeCacheAccess::SingleThread(probe_cache);
-            for &(p_idx, ref task) in flat_tasks.iter() {
-                if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
-                    break;
-                }
-                execute_action_from_parent(
-                    &mut scratches[0],
-                    &parent_states[p_idx],
-                    task,
-                    static_ctx,
-                    content,
-                    root_baseline,
-                    policy,
-                    profile,
-                    cert,
-                    frozen_incumbent,
-                    tt,
-                    &mut probe_access,
-                    sensitivity,
-                    allow_paid_optional_potions,
-                    eval_mode,
-                );
-                if let Some(err) = scratches[0].fatal_error.take() {
-                    abort.record_error(err);
-                    break;
-                }
-            }
-            return false;
-        }
-
-        let active = dop.min(flat_tasks.len()).min(scratches.len());
-        for s in &mut scratches[active..] {
-            if s.wave_dirty {
-                s.reset_for_wave();
-            }
-        }
-        let next_idx = AtomicUsize::new(0);
-        let tasks_ref: &[(usize, ActionTask)] = flat_tasks.as_slice();
-        let parents_ref = &parent_states[..unpacked_count];
-        let probe_cache_ref: &ChoiceProbeCache = &*probe_cache;
-        let (first_scratch, rest_scratches) = scratches[..active]
-            .split_first_mut()
-            .expect("active >= 1");
-        pool.scope(|scope| {
-            for scratch in rest_scratches.iter_mut() {
-                let next_ref = &next_idx;
-                scope.spawn(move |_| {
-                    if scratch.wave_dirty {
-                        scratch.reset_for_wave();
+        let (por_sum, trunc_sum) = pool.install(|| {
+            parent_states[..batch_len]
+                .par_iter_mut()
+                .zip(enumerated_tasks[..batch_len].par_iter_mut())
+                .enumerate()
+                .map(|(rel_p, (pstate, tasks_vec))| {
+                    tasks_vec.clear();
+                    if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
+                        return (0u64, 0u64);
                     }
-                    scratch.wave_dirty = true;
-                    let mut probe_access = ProbeCacheAccess::Shared(probe_cache_ref);
-                    loop {
-                        if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
-                            break;
-                        }
-                        let idx = next_ref.fetch_add(1, Ordering::Relaxed);
-                        if idx >= tasks_ref.len() {
-                            break;
-                        }
-                        let (p_idx, ref task) = tasks_ref[idx];
-                        execute_action_from_parent(
-                            scratch,
-                            &parents_ref[p_idx],
-                            task,
-                            static_ctx,
-                            content,
-                            root_baseline,
-                            policy,
-                            profile,
-                            cert,
-                            frozen_incumbent,
-                            tt,
-                            &mut probe_access,
-                            sensitivity,
-                            allow_paid_optional_potions,
-                            eval_mode,
-                        );
-                        if let Some(err) = scratch.fatal_error.take() {
-                            abort.record_error(err);
-                            break;
-                        }
+                    let parent_rank = chunk_start + rel_p;
+                    let pid = parent_slice[parent_rank];
+                    let pnode = arena.get(pid);
+                    let p_has_la = pnode.has_choice_lookahead();
+                    let p_la_score = pnode.choice_lookahead_score();
+                    let pbytes = parent_source.get(pnode.state_handle);
+                    // SAFETY: `pbytes` was committed from `pack_state` output in this process.
+                    if unsafe { unpack_state(pbytes, static_ctx, pstate) }.is_err() {
+                        return (0u64, 0u64);
                     }
-                });
-            }
-            let mut probe_access = ProbeCacheAccess::Shared(probe_cache_ref);
-            loop {
-                if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
-                    break;
-                }
-                let idx = next_idx.fetch_add(1, Ordering::Relaxed);
-                if idx >= tasks_ref.len() {
-                    break;
-                }
-                let (p_idx, ref task) = tasks_ref[idx];
-                execute_action_from_parent(
-                    first_scratch,
-                    &parents_ref[p_idx],
-                    task,
-                    static_ctx,
-                    content,
-                    root_baseline,
-                    policy,
-                    profile,
-                    cert,
-                    frozen_incumbent,
-                    tt,
-                    &mut probe_access,
-                    sensitivity,
-                    allow_paid_optional_potions,
-                    eval_mode,
-                );
-                if let Some(err) = first_scratch.fatal_error.take() {
-                    abort.record_error(err);
-                    break;
-                }
-            }
+                    let mut local_por = 0u64;
+                    let mut local_trunc = 0u64;
+                    enumerate_parent_tasks(
+                        parent_rank as u32,
+                        pid,
+                        pnode,
+                        p_has_la,
+                        p_la_score,
+                        pstate,
+                        content,
+                        policy,
+                        profile,
+                        sensitivity,
+                        root_baseline,
+                        allow_paid_optional_potions,
+                        tasks_vec,
+                        &mut local_por,
+                        &mut local_trunc,
+                    );
+                    (local_por, local_trunc)
+                })
+                .reduce(|| (0u64, 0u64), |a, b| (a.0 + b.0, a.1 + b.1))
         });
-        return false;
-    }
+        scratches[0].wave_dirty = true;
+        scratches[0].por_pruned += por_sum;
+        scratches[0].branch_truncations += trunc_sum;
 
-    for slot in &parent_slices[..parent_slice.len()] {
-        slot.store(0, Ordering::Relaxed);
-    }
-    let total = parent_slice.len();
-    let active = dop.min(total).min(scratches.len()).min(parent_states.len());
-    for s in &mut scratches[active..] {
-        if s.wave_dirty {
-            s.reset_for_wave();
+        flat_tasks.clear();
+        for rel_p in 0..batch_len {
+            let tasks_vec = &mut enumerated_tasks[rel_p];
+            for t in tasks_vec.drain(..) {
+                flat_tasks.push((rel_p, t));
+            }
         }
-    }
-    let next_parent = AtomicUsize::new(0);
-    let slices_ref = &parent_slices[..total];
-    let probe_cache_ref: &ChoiceProbeCache = &*probe_cache;
-    let (first_scratch, rest_scratches) = scratches[..active]
-        .split_first_mut()
-        .expect("active >= 1");
-    let (first_parent, rest_parents) = parent_states[..active]
-        .split_first_mut()
-        .expect("active >= 1");
-    pool.scope(|scope| {
-        for (i, (scratch, parent_state)) in rest_scratches
-            .iter_mut()
-            .zip(rest_parents.iter_mut())
-            .enumerate()
-        {
-            let w_idx = i + 1;
-            let next_ref = &next_parent;
-            scope.spawn(move |_| {
-                if scratch.wave_dirty {
-                    scratch.reset_for_wave();
+        let chunk_tasks = flat_tasks.len();
+        if chunk_tasks == 0 {
+            continue;
+        }
+        let new_total = global_task_offset + chunk_tasks;
+        if parent_slices.len() < new_total {
+            parent_slices.resize_with(new_total, || AtomicU64::new(0));
+        }
+        for slot in &parent_slices[global_task_offset..new_total] {
+            slot.store(0, Ordering::Relaxed);
+        }
+
+        if chunk_tasks == 1 || scratches.len() < 2 {
+            let mut probe_access = ProbeCacheAccess::Shared(probe_cache);
+            for (rel_t, &(rel_p, ref task)) in flat_tasks.iter().enumerate() {
+                if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
+                    break;
                 }
+                let task_idx = global_task_offset + rel_t;
+                let scratch = &mut scratches[0];
+                scratch.wave_dirty = true;
+                let c_start = scratch.candidates.len();
+                let deferred = execute_action_from_parent(
+                    scratch,
+                    &parent_states[rel_p],
+                    task,
+                    task_idx,
+                    true,
+                    turn_boundary_rollouts_enabled,
+                    static_ctx,
+                    content,
+                    root_baseline,
+                    policy,
+                    profile,
+                    cert,
+                    frozen_incumbent,
+                    tt,
+                    &mut probe_access,
+                    sensitivity,
+                    allow_paid_optional_potions,
+                    eval_mode,
+                );
+                if let Some(err) = scratch.fatal_error.take() {
+                    abort.record_error(err);
+                    break;
+                } else if !deferred {
+                    let c_len = scratch.candidates.len() - c_start;
+                    if c_len > 0 {
+                        parent_slices[task_idx]
+                            .store(pack_parent_slice(0, c_start, c_len), Ordering::Relaxed);
+                    }
+                }
+            }
+        } else {
+            let active = dop.min(chunk_tasks).min(scratches.len());
+            let next_task = AtomicUsize::new(0);
+            let tasks_ref: &[(usize, ActionTask)] = flat_tasks.as_slice();
+            let parents_ref = &parent_states[..batch_len];
+            let slices_ref = &parent_slices[..new_total];
+            let probe_cache_ref: &ChoiceProbeCache = &*probe_cache;
+            let (first_scratch, rest_scratches) =
+                scratches[..active].split_first_mut().expect("active >= 2");
+            let run_task_worker = |w_idx: usize, scratch: &mut WorkerScratch| {
                 scratch.wave_dirty = true;
                 let mut probe_access = ProbeCacheAccess::Shared(probe_cache_ref);
                 loop {
                     if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
                         break;
                     }
-                    let cur = next_ref.load(Ordering::Relaxed);
-                    if cur >= total {
+                    let rel_t = next_task.fetch_add(1, Ordering::Relaxed);
+                    if rel_t >= chunk_tasks {
                         break;
                     }
-                    let chunk = ((total - cur) / (active * 4)).clamp(1, 4);
-                    let batch_start = next_ref.fetch_add(chunk, Ordering::Relaxed);
-                    if batch_start >= total {
-                        break;
-                    }
-                    let batch_end = (batch_start + chunk).min(total);
-                    for parent_rank in batch_start..batch_end {
-                        if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
-                            break;
-                        }
-                        let pid = parent_slice[parent_rank];
-                        let pnode = arena.get(pid);
-                        let p_has_la = pnode.has_choice_lookahead();
-                        let p_la_score = pnode.choice_lookahead_score();
-                        let pbytes = parent_source.get(pnode.state_handle);
-                        // SAFETY: `pbytes` was committed from `pack_state` output in this process.
-                        if unsafe { unpack_state(pbytes, static_ctx, parent_state) }.is_err() {
-                            continue;
-                        }
-                        let mut local_tasks = std::mem::take(&mut scratch.action_buf);
-                        local_tasks.clear();
-                        enumerate_parent_tasks(
-                            parent_rank as u32,
-                            pid,
-                            pnode,
-                            p_has_la,
-                            p_la_score,
-                            parent_state,
-                            content,
-                            policy,
-                            profile,
-                            sensitivity,
-                            root_baseline,
-                            allow_paid_optional_potions,
-                            &mut local_tasks,
-                            &mut scratch.por_pruned,
-                        );
-                        let c_start = scratch.candidates.len();
-                        for task in &local_tasks {
-                            if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
-                                break;
-                            }
-                            execute_action_from_parent(
-                                scratch,
-                                parent_state,
-                                task,
-                                static_ctx,
-                                content,
-                                root_baseline,
-                                policy,
-                                profile,
-                                cert,
-                                frozen_incumbent,
-                                tt,
-                                &mut probe_access,
-                                sensitivity,
-                                allow_paid_optional_potions,
-                                eval_mode,
-                            );
-                            if let Some(err) = scratch.fatal_error.take() {
-                                abort.record_error(err);
-                                break;
-                            }
-                        }
-                        let c_len = scratch.candidates.len() - c_start;
-                        if c_len > 0 {
-                            slices_ref[parent_rank]
-                                .store(pack_parent_slice(w_idx, c_start, c_len), Ordering::Relaxed);
-                        }
-                        scratch.action_buf = local_tasks;
-                    }
-                }
-            });
-        }
-        if first_scratch.wave_dirty {
-            first_scratch.reset_for_wave();
-        }
-        first_scratch.wave_dirty = true;
-        let mut probe_access = ProbeCacheAccess::Shared(probe_cache_ref);
-        loop {
-            if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
-                break;
-            }
-            let cur = next_parent.load(Ordering::Relaxed);
-            if cur >= total {
-                break;
-            }
-            let chunk = ((total - cur) / (active * 4)).clamp(1, 4);
-            let batch_start = next_parent.fetch_add(chunk, Ordering::Relaxed);
-            if batch_start >= total {
-                break;
-            }
-            let batch_end = (batch_start + chunk).min(total);
-            for parent_rank in batch_start..batch_end {
-                if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
-                    break;
-                }
-                let pid = parent_slice[parent_rank];
-                let pnode = arena.get(pid);
-                let p_has_la = pnode.has_choice_lookahead();
-                let p_la_score = pnode.choice_lookahead_score();
-                let pbytes = parent_source.get(pnode.state_handle);
-                // SAFETY: `pbytes` was committed from `pack_state` output in this process.
-                if unsafe { unpack_state(pbytes, static_ctx, first_parent) }.is_err() {
-                    continue;
-                }
-                let mut local_tasks = std::mem::take(&mut first_scratch.action_buf);
-                local_tasks.clear();
-                enumerate_parent_tasks(
-                    parent_rank as u32,
-                    pid,
-                    pnode,
-                    p_has_la,
-                    p_la_score,
-                    first_parent,
-                    content,
-                    policy,
-                    profile,
-                    sensitivity,
-                    root_baseline,
-                    allow_paid_optional_potions,
-                    &mut local_tasks,
-                    &mut first_scratch.por_pruned,
-                );
-                let c_start = first_scratch.candidates.len();
-                for task in &local_tasks {
-                    if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
-                        break;
-                    }
-                    execute_action_from_parent(
-                        first_scratch,
-                        first_parent,
+                    let task_idx = global_task_offset + rel_t;
+                    let (rel_p, ref task) = tasks_ref[rel_t];
+                    let c_start = scratch.candidates.len();
+                    let deferred = execute_action_from_parent(
+                        scratch,
+                        &parents_ref[rel_p],
                         task,
+                        task_idx,
+                        true,
+                        turn_boundary_rollouts_enabled,
                         static_ctx,
                         content,
                         root_baseline,
@@ -4431,21 +5556,51 @@ fn expand_wave_tasks(
                         allow_paid_optional_potions,
                         eval_mode,
                     );
-                    if let Some(err) = first_scratch.fatal_error.take() {
+                    if let Some(err) = scratch.fatal_error.take() {
                         abort.record_error(err);
                         break;
                     }
+                    if !deferred {
+                        let c_len = scratch.candidates.len() - c_start;
+                        if c_len > 0 {
+                            slices_ref[task_idx].store(
+                                pack_parent_slice(w_idx, c_start, c_len),
+                                Ordering::Relaxed,
+                            );
+                        }
+                    }
                 }
-                let c_len = first_scratch.candidates.len() - c_start;
-                if c_len > 0 {
-                    slices_ref[parent_rank]
-                        .store(pack_parent_slice(0, c_start, c_len), Ordering::Relaxed);
+            };
+            let worker_fn = &run_task_worker;
+            pool.scope(|scope| {
+                for (i, scratch) in rest_scratches.iter_mut().enumerate() {
+                    scope.spawn(move |_| worker_fn(i + 1, scratch));
                 }
-                first_scratch.action_buf = local_tasks;
-            }
+                worker_fn(0, first_scratch);
+            });
         }
-    });
-    true
+        global_task_offset = new_total;
+    }
+
+    if global_task_offset > 0 {
+        resolve_deferred_choice_batches_on_pool(
+            dop,
+            Some(pool),
+            scratches,
+            deferred_batches,
+            probe_jobs,
+            probe_cache,
+            static_ctx,
+            content,
+            root_baseline,
+            profile,
+            eval_mode,
+            cancel,
+            &parent_slices[..global_task_offset],
+            true,
+        );
+    }
+    global_task_offset
 }
 
 fn replay_fixed_prefix(
@@ -4660,15 +5815,193 @@ fn select_stand_pat_candidates(
     out
 }
 
+#[inline(always)]
+fn projected_battle_hp_lost_from_cumulative(
+    root: &RootEvalBaseline,
+    cumulative_hp_lost: i32,
+) -> i32 {
+    root.prior_battle_hp_lost + (cumulative_hp_lost - root.initial_cumulative_hp_lost).max(0)
+}
+
+#[inline(always)]
+fn are_strategy_targets_satisfied_raw(
+    root: &RootEvalBaseline,
+    fast: &StoredFastEval,
+    rare: &RareNodeEval,
+) -> bool {
+    if fast.all_strategy_targets_satisfied() {
+        return true;
+    }
+    let growth_ok = !root.effective_has_growth_targets
+        || root
+            .growth_opportunity_targets
+            .is_satisfied_by(&rare.growth_rewards);
+    let relic_ok = rare.relic_eval.all_satisfied();
+    growth_ok && relic_ok
+}
+
+#[inline(always)]
+fn are_strategy_targets_satisfied_output(root: &RootEvalBaseline, out: &BeamRunOutput) -> bool {
+    if out.all_strategy_targets_satisfied {
+        return true;
+    }
+    let growth_ok = !root.effective_has_growth_targets
+        || root
+            .growth_opportunity_targets
+            .is_satisfied_by(&out.growth_rewards);
+    let relic_ok = out.relic_eval.all_satisfied();
+    growth_ok && relic_ok
+}
+
+#[derive(Clone, Copy, Debug)]
+struct BestVictoryState {
+    win_turn: i32,
+    raw_won_hp_lost: i32,
+    projected_battle_hp_lost: i32,
+    total_potions: u16,
+    optional_paid_potion_count: u16,
+    net_hp_delta_centi: i32,
+    net_potion_cost_centi: i32,
+    strategic_hp_deficit: i32,
+    strategy_goal_hp_credit: i32,
+    strategy_goal_count: i32,
+    death_save_use_count: i32,
+    outstanding_stolen: i32,
+    forfeits_gold: bool,
+    all_strategy_targets_satisfied: bool,
+    enemy_hp: i32,
+    score: i64,
+}
+
+#[inline]
+fn is_better_victory(
+    cand: &BestVictoryState,
+    cur: &BestVictoryState,
+    check_theft: bool,
+) -> bool {
+    if cand.death_save_use_count != cur.death_save_use_count {
+        return cand.death_save_use_count < cur.death_save_use_count;
+    }
+    if check_theft {
+        if cand.outstanding_stolen != cur.outstanding_stolen {
+            return cand.outstanding_stolen < cur.outstanding_stolen;
+        }
+        if cand.forfeits_gold != cur.forfeits_gold {
+            return !cand.forfeits_gold;
+        }
+    }
+    let cand_v = (cand.net_hp_delta_centi as i64) - (cand.net_potion_cost_centi as i64);
+    let cur_v = (cur.net_hp_delta_centi as i64) - (cur.net_potion_cost_centi as i64);
+    if cand_v != cur_v {
+        return cand_v > cur_v;
+    }
+    if cand.net_hp_delta_centi != cur.net_hp_delta_centi {
+        return cand.net_hp_delta_centi > cur.net_hp_delta_centi;
+    }
+    if cand.strategy_goal_hp_credit != cur.strategy_goal_hp_credit {
+        return cand.strategy_goal_hp_credit > cur.strategy_goal_hp_credit;
+    }
+    if cand.strategy_goal_count != cur.strategy_goal_count {
+        return cand.strategy_goal_count > cur.strategy_goal_count;
+    }
+    if cand.projected_battle_hp_lost != cur.projected_battle_hp_lost {
+        return cand.projected_battle_hp_lost < cur.projected_battle_hp_lost;
+    }
+    if cand.total_potions != cur.total_potions {
+        return cand.total_potions < cur.total_potions;
+    }
+    if cand.win_turn != cur.win_turn {
+        return cand.win_turn < cur.win_turn;
+    }
+    if cand.enemy_hp != cur.enemy_hp {
+        return cand.enemy_hp < cur.enemy_hp;
+    }
+    cand.score > cur.score
+}
+
+#[inline]
+fn keep_early_beam_width(
+    best_victory: Option<&BestVictoryState>,
+    root_baseline: &RootEvalBaseline,
+) -> bool {
+    let Some(v) = best_victory else {
+        return true;
+    };
+    let has_any_strategy_targets = root_baseline.effective_has_growth_targets
+        || !root_baseline.active_relic_targets.is_empty();
+    v.projected_battle_hp_lost > 0
+        || v.strategic_hp_deficit > 0
+        || v.optional_paid_potion_count > 0
+        || v.death_save_use_count > 0
+        || (has_any_strategy_targets && !v.all_strategy_targets_satisfied)
+}
+
+#[inline]
+fn has_exceeded_post_victory_turn_cap(
+    best_victory: Option<&BestVictoryState>,
+    next_turn_number: i32,
+    root_baseline: &RootEvalBaseline,
+    policy: &SearchPolicy,
+    is_elite_or_boss: bool,
+    allow_paid_optional_potions: bool,
+) -> bool {
+    let Some(v) = best_victory else {
+        return false;
+    };
+    if v.win_turn == i32::MAX {
+        return false;
+    }
+    let has_any_strategy_targets = root_baseline.effective_has_growth_targets
+        || !root_baseline.active_relic_targets.is_empty();
+    let has_relic_targets = !root_baseline.active_relic_targets.is_empty();
+    let unsatisfied_strategy_targets =
+        has_any_strategy_targets && !v.all_strategy_targets_satisfied;
+
+    let check_theft = policy.theft_policy == SolverTheftPolicy::PreserveResources;
+    let can_heal_or_grow = root_baseline.has_any_heal_or_unknown_generation
+        || unsatisfied_strategy_targets
+        || (allow_paid_optional_potions
+            && (root_baseline.paid_heal_potion_slot_mask != 0
+                || root_baseline.paid_fruit_juice_slot_mask != 0
+                || root_baseline.paid_entropic_brew_slot_mask != 0))
+        || v.death_save_use_count > 0
+        || (check_theft && (v.outstanding_stolen > 0 || v.forfeits_gold));
+
+    let took_persistent_damage = v.net_hp_delta_centi < 0 || v.strategic_hp_deficit > 0;
+    let took_raw_battle_hp_loss = v.projected_battle_hp_lost > 0;
+    let spent_optional_paid_potion =
+        v.net_potion_cost_centi > 0 || v.optional_paid_potion_count > 0;
+
+    let max_post_victory_turn = if unsatisfied_strategy_targets {
+        let strategy_margin = if has_relic_targets { 5 } else { 4 };
+        let strategy_floor = if has_relic_targets { 10 } else { 9 };
+        (v.win_turn + strategy_margin).max(strategy_floor)
+    } else if can_heal_or_grow || took_persistent_damage || spent_optional_paid_potion {
+        (v.win_turn + 4).max(8)
+    } else {
+        let post_victory_margin = if took_raw_battle_hp_loss {
+            if is_elite_or_boss {
+                3
+            } else {
+                2
+            }
+        } else {
+            1
+        };
+        v.win_turn + post_victory_margin
+    };
+
+    next_turn_number > max_post_victory_turn
+}
+
 #[allow(clippy::too_many_arguments)]
 fn record_victory_and_tighten_precomputed(
     root_baseline: &RootEvalBaseline,
-    cert: &ClosureCertificate,
     incumbent_table: &PrimaryIncumbentTable,
     incumbent: &mut FrozenIncumbentBound,
     policy: &SearchPolicy,
-    allow_paid_optional_potions: bool,
     fast_eval: &StoredFastEval,
+    rare: &RareNodeEval,
     win_turn: i32,
     total_potions: u16,
     explicit_potion_count: u16,
@@ -4678,10 +6011,9 @@ fn record_victory_and_tighten_precomputed(
     net_hp_delta_centi: i32,
     net_potion_cost_centi: i32,
     deficit: i32,
+    score: i64,
     has_victory: &mut bool,
-    best_victory_turn: &mut Option<i32>,
-    best_victory_key: &mut Option<(i64, i32, i32)>,
-    best_victory_clean_zero_cost: &mut bool,
+    best_victory: &mut Option<BestVictoryState>,
 ) {
     incumbent_table.tighten(
         PrimaryIncumbentBucket {
@@ -4714,6 +6046,8 @@ fn record_victory_and_tighten_precomputed(
         fast_eval.death_save_use_count as i32,
         net_hp_delta_centi,
         net_potion_cost_centi,
+        fast_eval.cumulative_hp_lost as i32,
+        total_potions as usize,
         optional_paid_potion_count as usize,
         explicit_potion_count as usize,
         win_turn,
@@ -4722,38 +6056,49 @@ fn record_victory_and_tighten_precomputed(
         check_theft,
     );
 
-    let v_centi = (net_hp_delta_centi as i64) - (net_potion_cost_centi as i64);
-    let key = (-v_centi, -net_hp_delta_centi, win_turn);
+    let raw_won_hp_lost = fast_eval.cumulative_hp_lost as i32;
+    let cand_v = BestVictoryState {
+        win_turn,
+        raw_won_hp_lost,
+        projected_battle_hp_lost: projected_battle_hp_lost_from_cumulative(
+            root_baseline,
+            raw_won_hp_lost,
+        ),
+        total_potions,
+        optional_paid_potion_count,
+        net_hp_delta_centi,
+        net_potion_cost_centi,
+        strategic_hp_deficit: deficit,
+        strategy_goal_hp_credit: fast_eval.strategy_goal_hp_credit as i32,
+        strategy_goal_count: fast_eval.strategy_goal_count as i32,
+        death_save_use_count: fast_eval.death_save_use_count as i32,
+        outstanding_stolen: fast_eval.outstanding_stolen as i32,
+        forfeits_gold: fast_eval.forfeits_gold(),
+        all_strategy_targets_satisfied: are_strategy_targets_satisfied_raw(
+            root_baseline,
+            fast_eval,
+            rare,
+        ),
+        enemy_hp: fast_eval.enemy_hp,
+        score,
+    };
     *has_victory = true;
-    if best_victory_key.is_none_or(|cur| key < cur) {
-        *best_victory_key = Some(key);
-        *best_victory_turn = Some(win_turn);
-        let can_heal_or_grow = root_baseline.has_any_heal_or_unknown_generation
-            || root_baseline.effective_has_growth_targets
-            || !root_baseline.active_relic_targets.is_empty()
-            || !cert.healing_certified
-            || fast_eval.death_save_use_count > 0
-            || (check_theft && (fast_eval.outstanding_stolen > 0 || fast_eval.forfeits_gold()))
-            || (allow_paid_optional_potions
-                && (root_baseline.paid_heal_potion_slot_mask != 0
-                    || root_baseline.paid_fruit_juice_slot_mask != 0
-                    || root_baseline.paid_entropic_brew_slot_mask != 0));
-        let lossless = net_hp_delta_centi >= 0
-            && optional_paid_potion_count == 0
-            && net_potion_cost_centi <= 0;
-        *best_victory_clean_zero_cost = lossless && !can_heal_or_grow;
+    if best_victory
+        .as_ref()
+        .is_none_or(|cur| is_better_victory(&cand_v, cur, check_theft))
+    {
+        *best_victory = Some(cand_v);
     }
 }
 
 #[allow(clippy::too_many_arguments)]
 fn record_victory_and_tighten(
     root_baseline: &RootEvalBaseline,
-    cert: &ClosureCertificate,
     incumbent_table: &PrimaryIncumbentTable,
     incumbent: &mut FrozenIncumbentBound,
     policy: &SearchPolicy,
-    allow_paid_optional_potions: bool,
     fast_eval: &StoredFastEval,
+    rare: &RareNodeEval,
     win_turn: i32,
     total_potions: u16,
     explicit_potion_count: u16,
@@ -4761,10 +6106,9 @@ fn record_victory_and_tighten(
     potion_strategic_cost: i32,
     optional_paid_potion_cost: i32,
     forced_used_mask: u64,
+    score: i64,
     has_victory: &mut bool,
-    best_victory_turn: &mut Option<i32>,
-    best_victory_key: &mut Option<(i64, i32, i32)>,
-    best_victory_clean_zero_cost: &mut bool,
+    best_victory: &mut Option<BestVictoryState>,
 ) {
     let end_max_hp = if fast_eval.player_max_hp > 0 {
         fast_eval.player_max_hp as i32
@@ -4799,12 +6143,11 @@ fn record_victory_and_tighten(
     let deficit = ActEndingBossPolicy::round_centi_to_hp(-net_hp_delta_centi);
     record_victory_and_tighten_precomputed(
         root_baseline,
-        cert,
         incumbent_table,
         incumbent,
         policy,
-        allow_paid_optional_potions,
         fast_eval,
+        rare,
         win_turn,
         total_potions,
         explicit_potion_count,
@@ -4814,179 +6157,919 @@ fn record_victory_and_tighten(
         net_hp_delta_centi,
         net_potion_cost_centi,
         deficit,
+        score,
         has_victory,
-        best_victory_turn,
-        best_victory_key,
-        best_victory_clean_zero_cost,
+        best_victory,
     );
 }
 
-#[allow(clippy::too_many_arguments)]
-fn run_beam_pass(
-    root: &BattleState,
-    content: &(dyn ContentDispatcher + Sync),
-    policy: &SearchPolicy,
-    profile: &SolverSearchProfile,
-    cert: &ClosureCertificate,
-    incumbent_table: &PrimaryIncumbentTable,
-    incumbent: &mut FrozenIncumbentBound,
-    pool: Option<&rayon::ThreadPool>,
-    cancel: &AtomicBool,
-    abort: &SearchAbortSlot,
-    progress_cb: Option<&(dyn Fn(&SearchProgress) + Sync)>,
-    options: PassSearchOptions,
-    fixed_prefix: Option<&[PlannedAction]>,
-) -> Result<BeamRunOutput, KernelError> {
-    let dop = policy
-        .max_degree_of_parallelism
-        .clamp(1, crate::eval::weights::MAXIMUM_SEARCH_MAX_DEGREE_OF_PARALLELISM);
-    let active_pool = if dop > 1 { pool } else { None };
-    let worker_count = if active_pool.is_some() { dop } else { 1 };
-    let mut resources = PassResources::acquire(
-        &root.static_ctx,
-        worker_count,
-        policy.transposition_entry_limit,
-    );
-    run_beam_pass_with_resources(
-        root,
-        content,
-        policy,
-        profile,
-        cert,
-        incumbent_table,
-        incumbent,
-        pool,
-        cancel,
-        abort,
-        progress_cb,
-        options,
-        fixed_prefix,
-        &mut resources,
-    )
+#[inline]
+fn push_worker_candidate_node(
+    arena: &mut NodeArena,
+    cand: &WorkerCandidate,
+    state_handle: PackedHandle,
+    choices_offset: u32,
+    choices_len: u8,
+) -> NodeId {
+    let mut node_flags = 0u8;
+    if cand.has_extra_end_turn {
+        node_flags |= NODE_FLAG_HAS_EXTRA_END_TURN;
+    }
+    if cand.is_terminal {
+        node_flags |= NODE_FLAG_IS_TERMINAL;
+    }
+    let rare_eval_idx = arena.push_opt_rare_eval(cand.rare_eval);
+    let (
+        beam_rank_score,
+        rollout_score,
+        effective_defense,
+        board_investment,
+        persistent_buff_value,
+        max_dark_evoke,
+        total_poison_and_doom,
+        setup_score,
+        reachable_hand_value,
+        optionality_cards,
+        best_power_priority,
+        tactical_sig,
+    ) = if let Some(ref full) = cand.full_eval {
+        node_flags |= NODE_FLAG_HAS_FULL_EVAL;
+        let rs = if let Some(rs) = full.rollout_score {
+            node_flags |= NODE_FLAG_HAS_ROLLOUT_SCORE;
+            rs
+        } else {
+            full.choice_lookahead_score.unwrap_or(0.0)
+        };
+        if full.has_choice_lookahead {
+            node_flags |= NODE_FLAG_HAS_CHOICE_LOOKAHEAD;
+        }
+        (
+            full.beam_rank_score,
+            rs,
+            full.effective_defense.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
+            full.board_investment.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
+            full.persistent_buff_value
+                .clamp(i16::MIN as i32, i16::MAX as i32) as i16,
+            full.max_dark_evoke.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
+            full.total_poison_and_doom
+                .clamp(i16::MIN as i32, i16::MAX as i32) as i16,
+            full.setup_score.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
+            full.reachable_hand_value
+                .clamp(i16::MIN as i32, i16::MAX as i32) as i16,
+            full.optionality_cards.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
+            full.best_power_priority,
+            full.tactical_sig,
+        )
+    } else {
+        (
+            cand.base_score,
+            0.0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            PowerRoutePriority::Low,
+            0,
+        )
+    };
+    let turn = cand.turn.clamp(i16::MIN as i32, i16::MAX as i32) as i16;
+    let potion_strategic_cost =
+        cand.potion_strategic_cost.clamp(i16::MIN as i32, i16::MAX as i32) as i16;
+    let optional_paid_potion_cost = cand
+        .optional_paid_potion_cost
+        .clamp(i16::MIN as i32, i16::MAX as i32)
+        as i16;
+    let potion_count = cand.potion_count.min(u8::MAX as u16) as u8;
+    let explicit_potion_count = cand.explicit_potion_count.min(u8::MAX as u16) as u8;
+    let optional_paid_potion_count =
+        cand.optional_paid_potion_count.min(u8::MAX as u16) as u8;
+    let automatic_potion_count = cand.automatic_potion_count.min(u8::MAX as u16) as u8;
+    let ambergris_count = cand.ambergris_count.min(u8::MAX as u16) as u8;
+    let forced_ambergris_count = cand.forced_ambergris_count.min(u8::MAX as u16) as u8;
+    arena.push_node_with(|| SearchNode {
+        state_hash: cand.state_hash,
+        forced_used_mask: cand.forced_used_mask,
+        tactical_sig,
+        beam_rank_score,
+        rollout_score,
+        por_key: cand.por_key,
+        fast_eval: cand.fast_eval,
+        state_handle,
+        action: cand.action,
+        parent_raw: cand.parent_id.0,
+        choices_offset,
+        rare_eval_idx,
+        effective_defense,
+        board_investment,
+        persistent_buff_value,
+        max_dark_evoke,
+        total_poison_and_doom,
+        turn,
+        action_count: cand.action_count,
+        used_potion_slot_mask: cand.used_potion_slot_mask,
+        potion_strategic_cost,
+        optional_paid_potion_cost,
+        setup_score,
+        reachable_hand_value,
+        optionality_cards,
+        choices_len,
+        potion_count,
+        explicit_potion_count,
+        optional_paid_potion_count,
+        automatic_potion_count,
+        ambergris_count,
+        forced_ambergris_count,
+        boundary_rank: 0,
+        best_power_priority,
+        node_flags,
+    })
 }
 
+#[cold]
+#[inline(never)]
 #[allow(clippy::too_many_arguments)]
-fn run_beam_pass_with_resources(
-    root: &BattleState,
-    content: &(dyn ContentDispatcher + Sync),
+fn commit_terminal_candidate(
+    cand: &WorkerCandidate,
+    staged_choices: &ChoiceArena,
+    root_baseline: &RootEvalBaseline,
     policy: &SearchPolicy,
-    profile: &SolverSearchProfile,
-    cert: &ClosureCertificate,
     incumbent_table: &PrimaryIncumbentTable,
     incumbent: &mut FrozenIncumbentBound,
-    pool: Option<&rayon::ThreadPool>,
-    cancel: &AtomicBool,
-    abort: &SearchAbortSlot,
-    progress_cb: Option<&(dyn Fn(&SearchProgress) + Sync)>,
-    options: PassSearchOptions,
-    fixed_prefix: Option<&[PlannedAction]>,
-    resources: &mut PassResources,
-) -> Result<BeamRunOutput, KernelError> {
-    let dop = policy
-        .max_degree_of_parallelism
-        .clamp(1, crate::eval::weights::MAXIMUM_SEARCH_MAX_DEGREE_OF_PARALLELISM);
-    if dop > 1 {
-        if let Some(p) = pool {
-            return p.install(|| {
-                run_beam_pass_with_resources_inner(
-                    root,
-                    content,
-                    policy,
-                    profile,
-                    cert,
-                    incumbent_table,
-                    incumbent,
-                    pool,
-                    cancel,
-                    abort,
-                    progress_cb,
-                    options,
-                    fixed_prefix,
-                    resources,
-                )
-            });
+    check_theft: bool,
+    options: &PassSearchOptions,
+    arena: &mut NodeArena,
+    completed: &mut Vec<NodeId>,
+    terminal_tracker: &mut crate::eval::FinalPlanTracker,
+    has_victory: &mut bool,
+    best_victory: &mut Option<BestVictoryState>,
+    hp_target_reached: &mut bool,
+) {
+    let turn = cand.turn.clamp(i16::MIN as i32, i16::MAX as i32);
+    let optional_paid_potion_cost = cand
+        .optional_paid_potion_cost
+        .clamp(i16::MIN as i32, i16::MAX as i32)
+        as i16;
+    let potion_count = cand.potion_count.min(u8::MAX as u16) as u8;
+    let explicit_potion_count = cand.explicit_potion_count.min(u8::MAX as u16) as u8;
+    let optional_paid_potion_count = cand.optional_paid_potion_count.min(u8::MAX as u16) as u8;
+    let ambergris_count = cand.ambergris_count.min(u8::MAX as u16) as u8;
+    let forced_ambergris_count = cand.forced_ambergris_count.min(u8::MAX as u16) as u8;
+    if !cand.fast_eval.won()
+        && terminal_tracker.can_fast_reject_non_victory(
+            &cand.fast_eval,
+            cand.action_count,
+            cand.forced_used_mask,
+            explicit_potion_count,
+            optional_paid_potion_count,
+            root_baseline,
+        )
+    {
+        return;
+    }
+    let rare = cand.rare_eval.unwrap_or_default();
+    let beam_rank_score = cand
+        .full_eval
+        .as_ref()
+        .map_or(cand.base_score, |f| f.beam_rank_score);
+    let (eval_cand, satisfies_hard) = terminal_tracker.evaluate_raw(
+        NodeId(0),
+        &cand.fast_eval,
+        rare,
+        cand.action_count,
+        turn,
+        potion_count,
+        explicit_potion_count,
+        optional_paid_potion_count,
+        optional_paid_potion_cost,
+        ambergris_count,
+        cand.forced_used_mask,
+        forced_ambergris_count,
+        cand.used_potion_slot_mask,
+        0,
+        beam_rank_score,
+        cand.state_hash,
+        root_baseline,
+    );
+    if cand.fast_eval.won() {
+        record_victory_and_tighten_precomputed(
+            root_baseline,
+            incumbent_table,
+            incumbent,
+            policy,
+            &cand.fast_eval,
+            &rare,
+            cand.turn,
+            cand.potion_count,
+            cand.explicit_potion_count,
+            cand.optional_paid_potion_count,
+            cand.potion_strategic_cost,
+            cand.forced_used_mask,
+            eval_cand.net_persistent_hp_delta_centi,
+            eval_cand.net_potion_opportunity_cost_centi,
+            eval_cand.quality.strategic_hp_deficit,
+            beam_rank_score.round() as i64,
+            has_victory,
+            best_victory,
+        );
+        if !*hp_target_reached
+            && options.early_turn_scout_depth == 0
+            && options.boss_tempo_scout_turns == 0
+            && has_reached_acceptable_battle_hp_loss_raw(
+                root_baseline,
+                policy,
+                &cand.fast_eval,
+                &rare,
+                cand.action_count,
+                cand.forced_used_mask,
+                optional_paid_potion_count,
+                explicit_potion_count,
+            )
+            && (!options.allow_paid_optional_potions
+                || !PotionUsePolicy::can_any_paid_potion_improve_on(
+                    PaidPotionImproveInput {
+                        won: true,
+                        survives: true,
+                        death_save_use_count: cand.fast_eval.death_save_use_count as i32,
+                        end_player_hp: cand.fast_eval.player_hp as i32,
+                        end_player_max_hp: cand.fast_eval.player_max_hp as i32,
+                        used_potion_slot_mask: cand.used_potion_slot_mask,
+                        optional_paid_potion_count: cand
+                            .optional_paid_potion_count
+                            .min(u8::MAX as u16) as u8,
+                        raw_potion_strategic_cost: cand.optional_paid_potion_cost,
+                        net_potion_opportunity_cost_centi: eval_cand
+                            .net_potion_opportunity_cost_centi,
+                        alchemize_count: cand.fast_eval.alchemize_count,
+                        empty_potion_slots: cand.fast_eval.empty_potion_slots,
+                        all_strategy_targets_satisfied: are_strategy_targets_satisfied_raw(
+                            root_baseline,
+                            &cand.fast_eval,
+                            &rare,
+                        ),
+                        all_growth_targets_satisfied: !root_baseline.effective_has_growth_targets
+                            || root_baseline
+                                .growth_opportunity_targets
+                                .is_satisfied_by(&rare.growth_rewards),
+                        growth_hp_credit: cand.fast_eval.strategy_goal_hp_credit as i32,
+                        relic_satisfied_mask: rare.relic_eval.satisfied_mask as u32,
+                        outstanding_stolen: cand.fast_eval.outstanding_stolen as i32,
+                        forfeits_gold: cand.fast_eval.forfeits_gold(),
+                        theft_preserve_resources: check_theft,
+                    },
+                    root_baseline,
+                ))
+        {
+            *hp_target_reached = true;
         }
     }
-    run_beam_pass_with_resources_inner(
-        root,
-        content,
-        policy,
-        profile,
-        cert,
-        incumbent_table,
-        incumbent,
-        pool,
-        cancel,
-        abort,
-        progress_cb,
-        options,
-        fixed_prefix,
-        resources,
-    )
+    if terminal_tracker.would_improve(&eval_cand, satisfies_hard) {
+        let (choices_offset, choices_len) = arena.choices.extend_from_arena_slice(
+            staged_choices,
+            cand.choices_offset,
+            cand.choices_len,
+        );
+        let nid = push_worker_candidate_node(
+            arena,
+            cand,
+            PackedHandle::default(),
+            choices_offset,
+            choices_len,
+        );
+        terminal_tracker.record(nid, eval_cand, satisfies_hard);
+        completed.push(nid);
+    }
+}
+
+#[inline]
+#[allow(clippy::too_many_arguments)]
+fn commit_one_accepted(
+    w_idx: usize,
+    c_idx: usize,
+    cand: &WorkerCandidate,
+    slab: &LocalStateSlab,
+    staged_choices: &ChoiceArena,
+    root_baseline: &RootEvalBaseline,
+    policy: &SearchPolicy,
+    incumbent_table: &PrimaryIncumbentTable,
+    incumbent: &mut FrozenIncumbentBound,
+    check_theft: bool,
+    options: &PassSearchOptions,
+    arena: &mut NodeArena,
+    turn_arena: &mut MainStateArena,
+    completed: &mut Vec<NodeId>,
+    terminal_tracker: &mut crate::eval::FinalPlanTracker,
+    next_step_candidates: &mut Vec<NodeId>,
+    next_turn_candidates: &mut Vec<NodeId>,
+    defer_mid_turn: Option<&mut Vec<AcceptedMidTurn>>,
+    packed_state_bytes_total: &mut u64,
+    has_victory: &mut bool,
+    best_victory: &mut Option<BestVictoryState>,
+    hp_target_reached: &mut bool,
+) {
+    if cand.is_terminal {
+        commit_terminal_candidate(
+            cand,
+            staged_choices,
+            root_baseline,
+            policy,
+            incumbent_table,
+            incumbent,
+            check_theft,
+            options,
+            arena,
+            completed,
+            terminal_tracker,
+            has_victory,
+            best_victory,
+            hp_target_reached,
+        );
+        return;
+    }
+    if !cand.turn_completed {
+        if let Some(buf) = defer_mid_turn {
+            let beam_score = cand
+                .full_eval
+                .as_ref()
+                .map_or(cand.base_score, |f| f.beam_rank_score);
+            buf.push(AcceptedMidTurn {
+                w_idx: w_idx as u16,
+                potion_count: cand.potion_count.min(u8::MAX as u16) as u8,
+                explicit_potion_count: cand.explicit_potion_count.min(u8::MAX as u16) as u8,
+                c_idx: c_idx as u32,
+                beam_score,
+            });
+            return;
+        }
+    }
+    let state_handle = if cand.turn_completed {
+        let state_bytes = slab.get(cand.state_slab_idx, cand.state_off, cand.state_len);
+        *packed_state_bytes_total += state_bytes.len() as u64;
+        turn_arena.commit_slice(state_bytes)
+    } else {
+        PackedHandle {
+            slab: w_idx as u32,
+            offset: c_idx as u32,
+            len: 0,
+        }
+    };
+    let (choices_offset, choices_len) = arena.choices.extend_from_arena_slice(
+        staged_choices,
+        cand.choices_offset,
+        cand.choices_len,
+    );
+    let nid = push_worker_candidate_node(arena, cand, state_handle, choices_offset, choices_len);
+
+    if cand.turn_completed {
+        next_turn_candidates.push(nid);
+    } else {
+        next_step_candidates.push(nid);
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
-fn run_beam_pass_with_resources_inner(
-    root: &BattleState,
-    content: &(dyn ContentDispatcher + Sync),
+fn commit_wave_candidates(
+    scratches: &mut [WorkerScratch],
+    tt: &mut ShardedParetoTT,
+    arena: &mut NodeArena,
+    turn_arena: &mut MainStateArena,
+    root_baseline: &RootEvalBaseline,
     policy: &SearchPolicy,
-    profile: &SolverSearchProfile,
-    cert: &ClosureCertificate,
     incumbent_table: &PrimaryIncumbentTable,
     incumbent: &mut FrozenIncumbentBound,
-    pool: Option<&rayon::ThreadPool>,
-    cancel: &AtomicBool,
-    abort: &SearchAbortSlot,
-    progress_cb: Option<&(dyn Fn(&SearchProgress) + Sync)>,
-    options: PassSearchOptions,
-    fixed_prefix: Option<&[PlannedAction]>,
-    resources: &mut PassResources,
-) -> Result<BeamRunOutput, KernelError> {
-    let started = Instant::now();
-    let root_baseline = RootEvalBaseline::from_state_with_policy(root, content, policy);
-    let sensitivity = CombatOrderSensitivity::analyze(root, content);
-    let dop = policy
-        .max_degree_of_parallelism
-        .clamp(1, crate::eval::weights::MAXIMUM_SEARCH_MAX_DEGREE_OF_PARALLELISM);
-    let active_pool = if dop > 1 { pool } else { None };
-    let worker_count = if active_pool.is_some() { dop } else { 1 };
-
-    resources.reset_for_pass();
-    let PassResources {
-        scratches,
-        parent_states,
-        rollout_workspaces,
-        node_arena,
-        prune_scratch,
-        flat_tasks,
-        step_arena,
-        prev_worker_slabs,
-        turn_staging_arena,
-        tt,
-        choice_probe_cache,
-        turn_rollout_cache,
-        stand_pat_seen,
-        sort_list,
-        parent_slices,
-        active_parent_slices,
-        tt_group_accepted,
-        tt_accepted_epoch,
-        tt_cur_epoch,
-        tt_shard_buckets,
-        tt_accepted_flags,
-        tt_flat_refs,
-        accepted_mid_turn,
-        mid_turn_ords,
-        surviving_ords,
-        surviving_commit_order,
-        rollout_results,
-    } = resources;
-    debug_assert!(scratches.len() >= worker_count && parent_states.len() >= worker_count);
-    let use_l1_probe = dop > 1 && active_pool.is_some();
-    for s in scratches.iter_mut() {
-        s.choice_probe_ws.l1.use_l1 = use_l1_probe;
+    check_theft: bool,
+    options: &PassSearchOptions,
+    dop: usize,
+    active_pool: Option<&rayon::ThreadPool>,
+    active_parent_slices: &mut Vec<(u32, u16, u32, u32)>,
+    tt_group_accepted: &mut [Vec<u32>; 16],
+    tt_accepted_epoch: &mut Vec<u8>,
+    tt_cur_epoch: &mut u8,
+    tt_shard_buckets: &mut [Vec<(usize, StateHash, TranspositionLabel)>],
+    tt_accepted_flags: &mut Vec<AtomicU8>,
+    tt_flat_refs: &mut Vec<(usize, usize)>,
+    completed: &mut Vec<NodeId>,
+    terminal_tracker: &mut crate::eval::FinalPlanTracker,
+    next_step_candidates: &mut Vec<NodeId>,
+    next_turn_candidates: &mut Vec<NodeId>,
+    mut defer_mid_turn: Option<&mut Vec<AcceptedMidTurn>>,
+    transition_count: &mut u64,
+    choice_replay_attempts: &mut u64,
+    incumbent_pruned: &mut u64,
+    por_pruned: &mut u64,
+    branch_truncations: &mut u64,
+    packed_state_bytes_total: &mut u64,
+    has_victory: &mut bool,
+    best_victory: &mut Option<BestVictoryState>,
+    hp_target_reached: &mut bool,
+    parent_count: usize,
+    parent_slices_valid: bool,
+    parent_slices: &[AtomicU64],
+    sort_list: &mut Vec<(usize, usize, (u32, u32, u32))>,
+) {
+    let mut total_cands = 0usize;
+    for wo in scratches.iter() {
+        debug_assert_eq!(wo.candidates.len(), wo.cand_shards.len());
+        debug_assert_eq!(wo.candidates.len(), wo.cand_fast_meta.len());
+        total_cands += wo.candidates.len();
+        *transition_count += wo.transitions;
+        *choice_replay_attempts += wo.choice_replay_attempts;
+        *incumbent_pruned += wo.incumbent_pruned;
+        tt.branches_pruned += wo.tt_probe_pruned;
+        *por_pruned += wo.por_pruned;
+        *branch_truncations += wo.branch_truncations;
+    }
+    if let Some(buf) = defer_mid_turn.as_deref_mut() {
+        buf.reserve(total_cands);
+    } else {
+        next_step_candidates.reserve(total_cands);
     }
 
+    if let Some(pool) = active_pool.filter(|_| dop > 1 && total_cands >= 1024) {
+        if parent_slices_valid {
+            active_parent_slices.clear();
+            let mut base_sort = 0u32;
+            for slice_atom in &parent_slices[..parent_count] {
+                let raw = slice_atom.load(Ordering::Relaxed);
+                if raw == 0 {
+                    continue;
+                }
+                let (w_idx, start, len) = unpack_parent_slice(raw);
+                active_parent_slices.push((
+                    base_sort,
+                    w_idx as u16,
+                    start as u32,
+                    len as u32,
+                ));
+                base_sort += len as u32;
+            }
+            let scratches_ref: &[WorkerScratch] = &*scratches;
+            pool.install(|| {
+                tt.insert_grouped_parallel_from_slices(
+                    active_parent_slices,
+                    tt_group_accepted,
+                    |w| scratches_ref[w].cand_shards.as_slice(),
+                    |w, c| {
+                        let cand = &scratches_ref[w].candidates[c];
+                        (cand.state_hash, cand.label)
+                    },
+                );
+            });
+            *tt_cur_epoch = tt_cur_epoch.wrapping_add(1);
+            if *tt_cur_epoch == 0 {
+                tt_accepted_epoch.fill(0);
+                *tt_cur_epoch = 1;
+            }
+            let epoch = *tt_cur_epoch;
+            if tt_accepted_epoch.len() < total_cands {
+                tt_accepted_epoch.resize(total_cands, 0);
+            }
+            for acc in tt_group_accepted.iter() {
+                for &idx in acc {
+                    tt_accepted_epoch[idx as usize] = epoch;
+                }
+            }
+            #[cfg(debug_assertions)]
+            let mut prev_sort_key: Option<(u32, u32, u32)> = None;
+            for &(base_sort, w_idx_u16, start_u32, len_u32) in active_parent_slices.iter() {
+                let w_idx = w_idx_u16 as usize;
+                let wo = &scratches[w_idx];
+                let start = start_u32 as usize;
+                let len = len_u32 as usize;
+                for i in 0..len {
+                    let c_idx = start + i;
+                    let sort_idx = base_sort as usize + i;
+                    let fmeta = wo.cand_fast_meta[c_idx];
+                    let is_terminal = (fmeta.flags & 1) != 0;
+                    #[cfg(debug_assertions)]
+                    {
+                        let cand = &wo.candidates[c_idx];
+                        debug_assert_eq!(is_terminal, cand.is_terminal);
+                        debug_assert_eq!((fmeta.flags & 2) != 0, cand.turn_completed);
+                        debug_assert!(
+                            prev_sort_key.is_none_or(|p| p <= cand.sort_key),
+                            "parent_slices commit out of sort_key order: {:?} > {:?}",
+                            prev_sort_key,
+                            cand.sort_key
+                        );
+                        prev_sort_key = Some(cand.sort_key);
+                    }
+                    if is_terminal || tt_accepted_epoch[sort_idx] == epoch {
+                        if fmeta.flags == 0 {
+                            if let Some(buf) = defer_mid_turn.as_deref_mut() {
+                                buf.push(AcceptedMidTurn {
+                                    w_idx: w_idx as u16,
+                                    potion_count: fmeta.potion_count,
+                                    explicit_potion_count: fmeta.explicit_potion_count,
+                                    c_idx: c_idx as u32,
+                                    beam_score: fmeta.beam_score,
+                                });
+                                continue;
+                            }
+                        }
+                        let cand = &wo.candidates[c_idx];
+                        commit_one_accepted(
+                            w_idx,
+                            c_idx,
+                            cand,
+                            &wo.slab,
+                            &wo.staged_choices,
+                            root_baseline,
+                            policy,
+                            incumbent_table,
+                            incumbent,
+                            check_theft,
+                            options,
+                            arena,
+                            turn_arena,
+                            completed,
+                            terminal_tracker,
+                            next_step_candidates,
+                            next_turn_candidates,
+                            defer_mid_turn.as_deref_mut(),
+                            packed_state_bytes_total,
+                            has_victory,
+                            best_victory,
+                            hp_target_reached,
+                        );
+                    }
+                }
+            }
+        } else {
+            tt_flat_refs.clear();
+            tt_flat_refs.reserve(total_cands);
+            for b in tt_shard_buckets.iter_mut() {
+                b.clear();
+            }
+            sort_list.clear();
+            for (w_idx, wo) in scratches.iter().enumerate() {
+                for (c_idx, cand) in wo.candidates.iter().enumerate() {
+                    sort_list.push((w_idx, c_idx, cand.sort_key));
+                }
+            }
+            sort_list.sort_unstable_by_key(|&(_, _, sk)| sk);
+            for &(w_idx, c_idx, _) in sort_list.iter() {
+                let cand = &scratches[w_idx].candidates[c_idx];
+                let sort_idx = tt_flat_refs.len();
+                tt_flat_refs.push((w_idx, c_idx));
+                if !cand.is_terminal {
+                    tt_shard_buckets[cand.state_hash.shard_index()].push((
+                        sort_idx,
+                        cand.state_hash,
+                        cand.label,
+                    ));
+                }
+            }
+            if tt_accepted_flags.len() < tt_flat_refs.len() {
+                tt_accepted_flags.resize_with(tt_flat_refs.len(), || AtomicU8::new(0));
+            }
+            let flags_slice = &tt_accepted_flags[..tt_flat_refs.len()];
+            pool.install(|| {
+                tt.insert_sharded_batch_atomic_flags(tt_shard_buckets, true, flags_slice);
+            });
+            for (sort_idx, &(w_idx, c_idx)) in tt_flat_refs.iter().enumerate() {
+                let wo = &scratches[w_idx];
+                let cand = &wo.candidates[c_idx];
+                if cand.is_terminal || flags_slice[sort_idx].load(Ordering::Relaxed) != 0 {
+                    commit_one_accepted(
+                        w_idx,
+                        c_idx,
+                        cand,
+                        &wo.slab,
+                        &wo.staged_choices,
+                        root_baseline,
+                        policy,
+                        incumbent_table,
+                        incumbent,
+                        check_theft,
+                        options,
+                        arena,
+                        turn_arena,
+                        completed,
+                        terminal_tracker,
+                        next_step_candidates,
+                        next_turn_candidates,
+                        defer_mid_turn.as_deref_mut(),
+                        packed_state_bytes_total,
+                        has_victory,
+                        best_victory,
+                        hp_target_reached,
+                    );
+                }
+            }
+        }
+    } else if parent_slices_valid {
+        #[cfg(debug_assertions)]
+        let mut prev_sort_key: Option<(u32, u32, u32)> = None;
+        for slice_atom in &parent_slices[..parent_count] {
+            let raw = slice_atom.load(Ordering::Relaxed);
+            if raw == 0 {
+                continue;
+            }
+            let (w_idx, start, len) = unpack_parent_slice(raw);
+            let wo = &scratches[w_idx];
+            let end = start + len;
+            for c_idx in start..end {
+                if c_idx + 4 < end && wo.cand_shards[c_idx + 4] != u16::MAX {
+                    tt.prefetch(wo.candidates[c_idx + 4].state_hash);
+                }
+                let fmeta = wo.cand_fast_meta[c_idx];
+                let is_terminal = (fmeta.flags & 1) != 0;
+                let cand = &wo.candidates[c_idx];
+                #[cfg(debug_assertions)]
+                {
+                    debug_assert_eq!(is_terminal, cand.is_terminal);
+                    debug_assert_eq!((fmeta.flags & 2) != 0, cand.turn_completed);
+                    debug_assert!(
+                        prev_sort_key.is_none_or(|p| p <= cand.sort_key),
+                        "parent_slices commit out of sort_key order: {:?} > {:?}",
+                        prev_sort_key,
+                        cand.sort_key
+                    );
+                    prev_sort_key = Some(cand.sort_key);
+                }
+                if is_terminal || tt.try_insert_single(cand.state_hash, cand.label) {
+                    if fmeta.flags == 0 {
+                        if let Some(buf) = defer_mid_turn.as_deref_mut() {
+                            buf.push(AcceptedMidTurn {
+                                w_idx: w_idx as u16,
+                                potion_count: fmeta.potion_count,
+                                explicit_potion_count: fmeta.explicit_potion_count,
+                                c_idx: c_idx as u32,
+                                beam_score: fmeta.beam_score,
+                            });
+                            continue;
+                        }
+                    }
+                    commit_one_accepted(
+                        w_idx,
+                        c_idx,
+                        cand,
+                        &wo.slab,
+                        &wo.staged_choices,
+                        root_baseline,
+                        policy,
+                        incumbent_table,
+                        incumbent,
+                        check_theft,
+                        options,
+                        arena,
+                        turn_arena,
+                        completed,
+                        terminal_tracker,
+                        next_step_candidates,
+                        next_turn_candidates,
+                        defer_mid_turn.as_deref_mut(),
+                        packed_state_bytes_total,
+                        has_victory,
+                        best_victory,
+                        hp_target_reached,
+                    );
+                }
+            }
+        }
+    } else {
+        sort_list.clear();
+        for (w_idx, wo) in scratches.iter().enumerate() {
+            for (c_idx, cand) in wo.candidates.iter().enumerate() {
+                sort_list.push((w_idx, c_idx, cand.sort_key));
+            }
+        }
+        sort_list.sort_unstable_by_key(|&(_, _, sk)| sk);
+        for &(w_idx, c_idx, _) in sort_list.iter() {
+            let wo = &scratches[w_idx];
+            let cand = &wo.candidates[c_idx];
+            if cand.is_terminal || tt.try_insert_single(cand.state_hash, cand.label) {
+                commit_one_accepted(
+                    w_idx,
+                    c_idx,
+                    cand,
+                    &wo.slab,
+                    &wo.staged_choices,
+                    root_baseline,
+                    policy,
+                    incumbent_table,
+                    incumbent,
+                    check_theft,
+                    options,
+                    arena,
+                    turn_arena,
+                    completed,
+                    terminal_tracker,
+                    next_step_candidates,
+                    next_turn_candidates,
+                    defer_mid_turn.as_deref_mut(),
+                    packed_state_bytes_total,
+                    has_victory,
+                    best_victory,
+                    hp_target_reached,
+                );
+            }
+        }
+    }
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn materialize_promoted_victory(
+    arena: &mut NodeArena,
+    pid: NodeId,
+    pv: crate::rollout::PromotedVictory,
+    root_baseline: &RootEvalBaseline,
+    incumbent_table: &PrimaryIncumbentTable,
+    incumbent: &mut FrozenIncumbentBound,
+    policy: &SearchPolicy,
+    allow_paid_optional_potions: bool,
+    check_theft: bool,
+    check_hp_target: bool,
+    has_victory: &mut bool,
+    best_victory: &mut Option<BestVictoryState>,
+    hp_target_reached: &mut bool,
+    terminal_tracker: &mut crate::eval::FinalPlanTracker,
+    completed: &mut Vec<NodeId>,
+) {
+    let pnode = arena.get(pid).clone();
+    let mut cur_parent = pid;
+    let total_acts = pv.steps.len();
+    let mut cur_turn = pnode.turn as i32;
+    let mut final_nid = pid;
+    let final_rare = RareNodeEval {
+        growth_rewards: pv.final_fast.growth_rewards,
+        relic_eval: pv.final_fast.relic_eval,
+    };
+    for (step_idx, step) in pv.steps.iter().enumerate() {
+        let is_last = step_idx + 1 == total_acts;
+        let (kind, step_turn) = if step.is_end_turn != 0 {
+            let t = cur_turn;
+            cur_turn += 1;
+            (CompactActionKind::EndTurn, t)
+        } else {
+            (
+                CompactActionKind::PlayCard {
+                    card_handle: step.card_handle,
+                    target_handle: if step.target_handle == u32::MAX {
+                        None
+                    } else {
+                        Some(step.target_handle)
+                    },
+                },
+                cur_turn,
+            )
+        };
+        let (c_off, c_len) = arena.choices.push_raw_slab_slice(
+            &pv.choices.steps_meta,
+            &pv.choices.indices,
+            step.choices_offset,
+            step.choices_len,
+        );
+        let node_turn = if is_last { pv.final_turn } else { step_turn };
+        let rare_eval_idx = if is_last {
+            arena.push_rare_eval(final_rare)
+        } else {
+            pnode.rare_eval_idx
+        };
+        let (step_action, step_por_key) =
+            CompactAction::new(kind, step_turn, PorActionClass::Barrier);
+        let nid = arena.push_node(SearchNode {
+            parent_raw: cur_parent.0,
+            action: step_action,
+            por_key: step_por_key,
+            choices_offset: c_off,
+            choices_len: c_len,
+            state_handle: PackedHandle::default(),
+            state_hash: if is_last {
+                pv.final_state_hash
+            } else {
+                pnode.state_hash
+            },
+            beam_rank_score: if is_last {
+                pv.final_fast.base_score
+            } else {
+                pnode.beam_rank_score
+            },
+            turn: node_turn.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
+            action_count: pnode.action_count + step_idx as u16 + 1,
+            potion_count: if is_last {
+                (pnode.potion_count as u16 + pv.auto_potions_used).min(u8::MAX as u16) as u8
+            } else {
+                pnode.potion_count
+            },
+            explicit_potion_count: pnode.explicit_potion_count,
+            optional_paid_potion_count: pnode.optional_paid_potion_count,
+            automatic_potion_count: if is_last {
+                (pnode.automatic_potion_count as u16 + pv.auto_potions_used)
+                    .min(u8::MAX as u16) as u8
+            } else {
+                pnode.automatic_potion_count
+            },
+            used_potion_slot_mask: pnode.used_potion_slot_mask,
+            potion_strategic_cost: pnode.potion_strategic_cost,
+            optional_paid_potion_cost: pnode.optional_paid_potion_cost,
+            ambergris_count: pnode.ambergris_count,
+            forced_used_mask: pnode.forced_used_mask,
+            forced_ambergris_count: pnode.forced_ambergris_count,
+            node_flags: if is_last { NODE_FLAG_IS_TERMINAL } else { 0 },
+            fast_eval: if is_last {
+                StoredFastEval::from(&pv.final_fast)
+            } else {
+                pnode.fast_eval
+            },
+            rare_eval_idx,
+            ..Default::default()
+        });
+        cur_parent = nid;
+        final_nid = nid;
+    }
+    let promoted_fast = StoredFastEval::from(&pv.final_fast);
+    record_victory_and_tighten(
+        root_baseline,
+        incumbent_table,
+        incumbent,
+        policy,
+        &promoted_fast,
+        &final_rare,
+        pv.final_turn,
+        pnode.potion_count as u16 + pv.auto_potions_used,
+        pnode.explicit_potion_count as u16,
+        pnode.optional_paid_potion_count as u16,
+        pnode.potion_strategic_cost as i32,
+        pnode.optional_paid_potion_cost as i32,
+        pnode.forced_used_mask,
+        pv.final_fast.base_score.round() as i64,
+        has_victory,
+        best_victory,
+    );
+    if check_hp_target
+        && has_reached_acceptable_battle_hp_loss_node(root_baseline, policy, arena, final_nid)
+        && (!allow_paid_optional_potions || {
+            let promoted_rare = arena.rare_eval(final_nid);
+            let promoted_net_cost = PotionUsePolicy::compute_net_potion_opportunity_cost_centi(
+                pnode.optional_paid_potion_cost as i32,
+                pnode.optional_paid_potion_count as i32,
+                pv.final_fast.alchemize_count as i32,
+                pv.final_fast.empty_potion_slots as i32,
+                root_baseline,
+            );
+            !PotionUsePolicy::can_any_paid_potion_improve_on(
+                PaidPotionImproveInput {
+                    won: true,
+                    survives: true,
+                    death_save_use_count: pv.final_fast.death_save_use_count,
+                    end_player_hp: pv.final_fast.player_hp,
+                    end_player_max_hp: pv.final_fast.player_max_hp,
+                    used_potion_slot_mask: pnode.used_potion_slot_mask,
+                    optional_paid_potion_count: pnode.optional_paid_potion_count,
+                    raw_potion_strategic_cost: pnode.optional_paid_potion_cost as i32,
+                    net_potion_opportunity_cost_centi: promoted_net_cost,
+                    alchemize_count: pv.final_fast.alchemize_count,
+                    empty_potion_slots: pv.final_fast.empty_potion_slots,
+                    all_strategy_targets_satisfied: are_strategy_targets_satisfied_raw(
+                        root_baseline,
+                        &promoted_fast,
+                        &promoted_rare,
+                    ),
+                    all_growth_targets_satisfied: !root_baseline.effective_has_growth_targets
+                        || root_baseline
+                            .growth_opportunity_targets
+                            .is_satisfied_by(&promoted_rare.growth_rewards),
+                    growth_hp_credit: pv.final_fast.strategy_goal_hp_credit,
+                    relic_satisfied_mask: promoted_rare.relic_eval.satisfied_mask as u32,
+                    outstanding_stolen: pv.final_fast.outstanding_stolen,
+                    forfeits_gold: pv.final_fast.forfeits_gold,
+                    theft_preserve_resources: check_theft,
+                },
+                root_baseline,
+            )
+        })
+    {
+        *hp_target_reached = true;
+    }
+    terminal_tracker.observe_node(arena, final_nid, root_baseline);
+    completed.push(final_nid);
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn init_beam_pass_root(
+    root: &BattleState,
+    content: &dyn ContentDispatcher,
+    policy: &SearchPolicy,
+    profile: &SolverSearchProfile,
+    eval_mode: EvalMode,
+    fixed_prefix: Option<&[PlannedAction]>,
+    root_baseline: &RootEvalBaseline,
+    pack_buf: &mut Vec<u8>,
+    arena: &mut NodeArena,
+    step_arena: &mut MainStateArena,
+    completed: &mut Vec<NodeId>,
+    current_turn_frontier: &mut Vec<NodeId>,
+    terminal_tracker: &mut crate::eval::FinalPlanTracker,
+) -> Result<(BattleState, NodeId, i32, i32, i32, u64), KernelError> {
     let (
         start_state,
         prefix_potions,
@@ -4998,7 +7081,7 @@ fn run_beam_pass_with_resources_inner(
         prefix_forced_mask,
         prefix_forced_amb,
     ) = if let Some(prefix) = fixed_prefix {
-        replay_fixed_prefix(root, prefix, policy, &root_baseline, content)?
+        replay_fixed_prefix(root, prefix, policy, root_baseline, content)?
     } else {
         (
             root.clone(),
@@ -5013,43 +7096,43 @@ fn run_beam_pass_with_resources_inner(
         )
     };
 
-    let arena = node_arena;
     arena.clear();
     let prefix_len = fixed_prefix.map_or(0, |p| p.len() as u16);
-
-    pack_state(&start_state, &mut scratches[0].pack_buf);
-    let mut packed_state_bytes_total: u64 = scratches[0].pack_buf.len() as u64;
+    pack_state(&start_state, pack_buf);
+    let packed_state_bytes_total = pack_buf.len() as u64;
     let root_hash = hash_canonical_key(&start_state);
-    let root_state_handle = step_arena.commit_slice(&scratches[0].pack_buf);
-    let root_fast = evaluate_fast(&start_state, content, &root_baseline, None);
-    let mut root_full = evaluate_full(&start_state, content, &root_fast, &root_baseline);
+    let root_state_handle = step_arena.commit_slice(pack_buf);
+    let (root_fast, mut root_full, _) =
+        evaluate_fast_and_full_fused(&start_state, content, root_baseline, 0, 0, None, None);
     let prefix_net_potion_cost_centi = PotionUsePolicy::compute_net_potion_opportunity_cost_centi(
         prefix_optional_paid_cost,
         prefix_optional_paid_potions as i32,
         root_fast.alchemize_count as i32,
         root_fast.empty_potion_slots as i32,
-        &root_baseline,
+        root_baseline,
     );
     root_full.beam_rank_score = compute_beam_rank_score_with_centi(
         &root_fast,
         &root_full,
-        &root_baseline,
+        root_baseline,
         profile.base_score_only,
         profile.boss_tempo_hp_pricing,
         profile.beam_weight_perturbation,
-        options.eval_mode,
+        eval_mode,
         prefix_net_potion_cost_centi,
         prefix_len,
     );
-    let mut best_seen_max_dark_evoke = root_full.max_dark_evoke;
-    let mut best_seen_poison_and_doom = root_full.total_poison_and_doom;
-    let mut best_seen_board_investment = root_full.board_investment;
+    let best_seen_max_dark_evoke = root_full.max_dark_evoke;
+    let best_seen_poison_and_doom = root_full.total_poison_and_doom;
+    let best_seen_board_investment = root_full.board_investment;
     let root_rare_idx = arena.push_rare_eval(RareNodeEval {
         growth_rewards: root_fast.growth_rewards,
         relic_eval: root_fast.relic_eval,
     });
-    let root_terminal =
-        !start_state.is_in_progress || root_fast.won || root_fast.player_dead || root_fast.is_event_defeat;
+    let root_terminal = !start_state.is_in_progress
+        || root_fast.won
+        || root_fast.player_dead
+        || root_fast.is_event_defeat;
     let mut root_node = SearchNode {
         state_handle: root_state_handle,
         state_hash: root_hash,
@@ -5080,1656 +7163,305 @@ fn run_beam_pass_with_resources_inner(
     };
     root_node.set_full_eval(&root_full.to_stored());
     let root_id = arena.push_node(root_node);
-
-    let mut current_turn_frontier: Vec<NodeId> = Vec::new();
-    let mut completed: Vec<NodeId> = Vec::new();
-    let mut terminal_tracker = crate::eval::FinalPlanTracker::new(
-        &root_baseline,
-        policy.potion_policy,
-        Some(policy.theft_policy),
-        root_baseline.minimum_required_potion_uses,
-    );
     if arena.get(root_id).is_terminal() {
-        terminal_tracker.observe_node(arena, root_id, &root_baseline);
+        terminal_tracker.observe_node(arena, root_id, root_baseline);
         completed.push(root_id);
     } else {
         current_turn_frontier.push(root_id);
     }
+    Ok((
+        start_state,
+        root_id,
+        best_seen_max_dark_evoke,
+        best_seen_poison_and_doom,
+        best_seen_board_investment,
+        packed_state_bytes_total,
+    ))
+}
 
-    let mut expanded_nodes = 0usize;
-    let mut transition_count = 0u64;
-    let mut choice_replay_attempts = 0u64;
-    let mut incumbent_pruned = 0u64;
-    let mut por_pruned = 0u64;
-    let mut termination: &'static str = "None";
-    let mut early_turn_frontiers = Vec::new();
-    let mut boss_tempo_prefixes = Vec::new();
-    let mut latest_completed_turn_nodes: Vec<NodeId> = Vec::new();
-    let mut last_active_frontier: Vec<NodeId> = Vec::new();
-    let mut active_frontier: Vec<NodeId> = Vec::new();
-    let mut next_step_candidates: Vec<NodeId> = Vec::new();
-    let mut next_turn_candidates: Vec<NodeId> = Vec::new();
-    let mut turn_setup_ended_turn: Vec<NodeId> = Vec::new();
-    let mut shortlist_buf: Vec<NodeId> = Vec::new();
-    let mut sp_mid_unused: Vec<NodeId> = Vec::new();
-
-    let mut has_victory = completed.iter().any(|&id| arena.get(id).fast_eval.won());
-    let mut best_won_hp_lost: Option<i32> = completed
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn expand_depth0_turn_setup(
+    start_state: &BattleState,
+    root_id: NodeId,
+    prefix_len: u16,
+    prefix_potions: u16,
+    prefix_optional_paid_potions: u16,
+    prefix_used_slot_mask: u16,
+    prefix_potion_cost: i32,
+    prefix_optional_paid_cost: i32,
+    prefix_ambergris: u16,
+    prefix_forced_mask: u64,
+    prefix_forced_amb: u16,
+    started: Instant,
+    beam_width: usize,
+    check_theft: bool,
+    dop: usize,
+    active_pool: Option<&rayon::ThreadPool>,
+    cancel: &AtomicBool,
+    abort: &SearchAbortSlot,
+    content: &(dyn ContentDispatcher + Sync),
+    root_baseline: &RootEvalBaseline,
+    policy: &SearchPolicy,
+    profile: &SolverSearchProfile,
+    cert: &ClosureCertificate,
+    incumbent_table: &PrimaryIncumbentTable,
+    incumbent: &mut FrozenIncumbentBound,
+    sensitivity: &CombatOrderSensitivity,
+    options: &PassSearchOptions,
+    scratches: &mut [WorkerScratch],
+    deferred_batches: &mut Vec<DeferredChoiceBatch>,
+    probe_jobs: &mut Vec<ProbeJob>,
+    rollout_workspaces: &mut [crate::rollout::RolloutWorkspace],
+    rollout_results: &mut Vec<Option<RolloutResult>>,
+    turn_rollout_cache: &TurnRolloutCache,
+    choice_probe_cache: &mut ChoiceProbeCache,
+    tt: &mut ShardedParetoTT,
+    arena: &mut NodeArena,
+    step_arena: &mut MainStateArena,
+    turn_staging_arena: &mut MainStateArena,
+    prune_scratch: &mut PruneScratch,
+    active_parent_slices: &mut Vec<(u32, u16, u32, u32)>,
+    tt_group_accepted: &mut [Vec<u32>; 16],
+    tt_accepted_epoch: &mut Vec<u8>,
+    tt_cur_epoch: &mut u8,
+    tt_shard_buckets: &mut [Vec<(usize, StateHash, TranspositionLabel)>],
+    tt_accepted_flags: &mut Vec<AtomicU8>,
+    tt_flat_refs: &mut Vec<(usize, usize)>,
+    parent_slices: &mut Vec<AtomicU64>,
+    sort_list: &mut Vec<(usize, usize, (u32, u32, u32))>,
+    completed: &mut Vec<NodeId>,
+    terminal_tracker: &mut crate::eval::FinalPlanTracker,
+    next_step_candidates: &mut Vec<NodeId>,
+    turn_setup_ended_turn: &mut Vec<NodeId>,
+    shortlist_buf: &mut Vec<NodeId>,
+    current_turn_frontier: &mut Vec<NodeId>,
+    transition_count: &mut u64,
+    choice_replay_attempts: &mut u64,
+    incumbent_pruned: &mut u64,
+    por_pruned: &mut u64,
+    branch_truncations: &mut u64,
+    any_lossy_truncation: &mut bool,
+    packed_state_bytes_total: &mut u64,
+    has_victory: &mut bool,
+    best_victory: &mut Option<BestVictoryState>,
+    termination: &mut &'static str,
+) -> Result<(), KernelError> {
+    for s in scratches.iter_mut() {
+        if s.wave_dirty {
+            s.reset_for_wave();
+        }
+    }
+    scratches[0].wave_dirty = true;
+    let filled_at_start = start_state
+        .player
+        .potion_slots
         .iter()
-        .filter(|&&id| arena.get(id).fast_eval.won())
-        .map(|&id| arena.get(id).fast_eval.cumulative_hp_lost as i32)
-        .min();
-    let mut last_progress_ms: Option<u64> = None;
-    let mut best_seen_enemy_hp = root_fast.enemy_hp;
-    let mut best_seen_alive_enemies = root_fast.alive_enemy_count + root_fast.reviving_enemy_count;
-    let mut turns_without_progress = 0i32;
-    let mut turns_since_enemy_hp_decreased = 0i32;
-    let mut best_victory_turn: Option<i32> = None;
-    let mut best_victory_key: Option<(i64, i32, i32)> = None;
-    let mut best_victory_clean_zero_cost = false;
-
-    const MAX_ACTIONS_PER_TURN: usize = 64;
-    let max_turns = policy.max_turns.max(1);
-    let beam_width = profile.beam_width.max(1);
-    let check_theft = policy.theft_policy == SolverTheftPolicy::PreserveResources;
-
-    #[inline]
-    fn push_worker_candidate_node(
-        arena: &mut NodeArena,
-        cand: &WorkerCandidate,
-        state_handle: PackedHandle,
-        choices_offset: u32,
-        choices_len: u8,
-    ) -> NodeId {
-        let mut node_flags = 0u8;
-        if cand.has_extra_end_turn {
-            node_flags |= NODE_FLAG_HAS_EXTRA_END_TURN;
-        }
-        if cand.is_terminal {
-            node_flags |= NODE_FLAG_IS_TERMINAL;
-        }
-        let rare_eval_idx = arena.push_opt_rare_eval(cand.rare_eval);
-        let (
-            beam_rank_score,
-            rollout_score,
-            effective_defense,
-            board_investment,
-            persistent_buff_value,
-            max_dark_evoke,
-            total_poison_and_doom,
-            setup_score,
-            reachable_hand_value,
-            optionality_cards,
-            best_power_priority,
-        ) = if let Some(ref full) = cand.full_eval {
-            node_flags |= NODE_FLAG_HAS_FULL_EVAL;
-            let rs = if let Some(rs) = full.rollout_score {
-                node_flags |= NODE_FLAG_HAS_ROLLOUT_SCORE;
-                rs
-            } else {
-                full.choice_lookahead_score.unwrap_or(0.0)
-            };
-            if full.has_choice_lookahead {
-                node_flags |= NODE_FLAG_HAS_CHOICE_LOOKAHEAD;
-            }
-            (
-                full.beam_rank_score,
-                rs,
-                full.effective_defense.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
-                full.board_investment.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
-                full.persistent_buff_value
-                    .clamp(i16::MIN as i32, i16::MAX as i32) as i16,
-                full.max_dark_evoke.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
-                full.total_poison_and_doom
-                    .clamp(i16::MIN as i32, i16::MAX as i32) as i16,
-                full.setup_score.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
-                full.reachable_hand_value
-                    .clamp(i16::MIN as i32, i16::MAX as i32) as i16,
-                full.optionality_cards.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
-                full.best_power_priority,
-            )
-        } else {
-            (
-                cand.base_score,
-                0.0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                PowerRoutePriority::Low,
-            )
-        };
-        let turn = cand.turn.clamp(i16::MIN as i32, i16::MAX as i32) as i16;
-        let potion_strategic_cost =
-            cand.potion_strategic_cost.clamp(i16::MIN as i32, i16::MAX as i32) as i16;
-        let optional_paid_potion_cost = cand
-            .optional_paid_potion_cost
-            .clamp(i16::MIN as i32, i16::MAX as i32)
-            as i16;
-        let potion_count = cand.potion_count.min(u8::MAX as u16) as u8;
-        let explicit_potion_count = cand.explicit_potion_count.min(u8::MAX as u16) as u8;
-        let optional_paid_potion_count =
-            cand.optional_paid_potion_count.min(u8::MAX as u16) as u8;
-        let automatic_potion_count = cand.automatic_potion_count.min(u8::MAX as u16) as u8;
-        let ambergris_count = cand.ambergris_count.min(u8::MAX as u16) as u8;
-        let forced_ambergris_count = cand.forced_ambergris_count.min(u8::MAX as u16) as u8;
-        arena.push_node_with(|| SearchNode {
-            state_hash: cand.state_hash,
-            forced_used_mask: cand.forced_used_mask,
-            beam_rank_score,
-            rollout_score,
-            por_key: cand.por_key,
-            fast_eval: cand.fast_eval,
-            state_handle,
-            action: cand.action,
-            parent_raw: cand.parent_id.0,
-            choices_offset,
-            rare_eval_idx,
-            effective_defense,
-            board_investment,
-            persistent_buff_value,
-            max_dark_evoke,
-            total_poison_and_doom,
-            turn,
-            action_count: cand.action_count,
-            used_potion_slot_mask: cand.used_potion_slot_mask,
-            potion_strategic_cost,
-            optional_paid_potion_cost,
-            setup_score,
-            reachable_hand_value,
-            optionality_cards,
-            choices_len,
-            potion_count,
-            explicit_potion_count,
-            optional_paid_potion_count,
-            automatic_potion_count,
-            ambergris_count,
-            forced_ambergris_count,
-            boundary_rank: 0,
-            best_power_priority,
-            node_flags,
-        })
+        .filter(|s| s.is_some())
+        .count()
+        .min(u8::MAX as usize) as u8;
+    let setup_task = ActionTask {
+        parent_rank: 0,
+        parent_id: root_id,
+        parent_turn: start_state.player.turn_number,
+        parent_action_count: prefix_len,
+        parent_potion_count: prefix_potions,
+        parent_explicit_potion_count: prefix_potions,
+        parent_optional_paid_potion_count: prefix_optional_paid_potions,
+        parent_automatic_potion_count: 0,
+        parent_filled_potions: filled_at_start,
+        parent_used_potion_slot_mask: prefix_used_slot_mask,
+        parent_potion_cost: prefix_potion_cost,
+        parent_optional_paid_potion_cost: prefix_optional_paid_cost,
+        parent_ambergris_count: prefix_ambergris,
+        parent_forced_used_mask: prefix_forced_mask,
+        parent_forced_ambergris_count: prefix_forced_amb,
+        parent_has_choice_lookahead: false,
+        parent_choice_lookahead_score: None,
+        action_ord: 0,
+        spec: ActionSpec::TurnSetup,
+    };
+    let frozen_setup_inc = *incumbent;
+    let mut setup_hp_target = false;
+    if parent_slices.is_empty() {
+        parent_slices.push(AtomicU64::new(0));
     }
-
-    #[inline]
-    #[allow(clippy::too_many_arguments)]
-    fn commit_one_accepted(
-        w_idx: usize,
-        c_idx: usize,
-        cand: &WorkerCandidate,
-        slab: &LocalStateSlab,
-        staged_choices: &ChoiceArena,
-        root_baseline: &RootEvalBaseline,
-        policy: &SearchPolicy,
-        cert: &ClosureCertificate,
-        incumbent_table: &PrimaryIncumbentTable,
-        incumbent: &mut FrozenIncumbentBound,
-        allow_paid_optional_potions: bool,
-        check_theft: bool,
-        options: &PassSearchOptions,
-        arena: &mut NodeArena,
-        turn_arena: &mut MainStateArena,
-        completed: &mut Vec<NodeId>,
-        terminal_tracker: &mut crate::eval::FinalPlanTracker,
-        next_step_candidates: &mut Vec<NodeId>,
-        next_turn_candidates: &mut Vec<NodeId>,
-        defer_mid_turn: Option<&mut Vec<AcceptedMidTurn>>,
-        packed_state_bytes_total: &mut u64,
-        has_victory: &mut bool,
-        best_won_hp_lost: &mut Option<i32>,
-        best_victory_turn: &mut Option<i32>,
-        best_victory_key: &mut Option<(i64, i32, i32)>,
-        best_victory_clean_zero_cost: &mut bool,
-        hp_target_reached: &mut bool,
-    ) {
-        if cand.is_terminal {
-            let turn = cand.turn.clamp(i16::MIN as i32, i16::MAX as i32);
-            let optional_paid_potion_cost = cand
-                .optional_paid_potion_cost
-                .clamp(i16::MIN as i32, i16::MAX as i32)
-                as i16;
-            let potion_count = cand.potion_count.min(u8::MAX as u16) as u8;
-            let explicit_potion_count = cand.explicit_potion_count.min(u8::MAX as u16) as u8;
-            let optional_paid_potion_count =
-                cand.optional_paid_potion_count.min(u8::MAX as u16) as u8;
-            let ambergris_count = cand.ambergris_count.min(u8::MAX as u16) as u8;
-            let forced_ambergris_count = cand.forced_ambergris_count.min(u8::MAX as u16) as u8;
-            if !cand.fast_eval.won()
-                && terminal_tracker.can_fast_reject_non_victory(
-                    &cand.fast_eval,
-                    cand.action_count,
-                    cand.forced_used_mask,
-                    explicit_potion_count,
-                    optional_paid_potion_count,
-                    root_baseline,
-                )
-            {
-                return;
-            }
-            let rare = cand.rare_eval.unwrap_or_default();
-            let beam_rank_score = cand
-                .full_eval
-                .as_ref()
-                .map_or(cand.base_score, |f| f.beam_rank_score);
-            let (eval_cand, satisfies_hard) = terminal_tracker.evaluate_raw(
-                NodeId(0),
-                &cand.fast_eval,
-                rare,
-                cand.action_count,
-                turn,
-                potion_count,
-                explicit_potion_count,
-                optional_paid_potion_count,
-                optional_paid_potion_cost,
-                ambergris_count,
-                cand.forced_used_mask,
-                forced_ambergris_count,
-                cand.used_potion_slot_mask,
-                0,
-                beam_rank_score,
-                cand.state_hash,
-                root_baseline,
-            );
-            if cand.fast_eval.won() {
-                *best_won_hp_lost = Some(match *best_won_hp_lost {
-                    Some(cur) => cur.min(cand.fast_eval.cumulative_hp_lost as i32),
-                    None => cand.fast_eval.cumulative_hp_lost as i32,
-                });
-                record_victory_and_tighten_precomputed(
-                    root_baseline,
-                    cert,
-                    incumbent_table,
-                    incumbent,
-                    policy,
-                    allow_paid_optional_potions,
-                    &cand.fast_eval,
-                    cand.turn,
-                    cand.potion_count,
-                    cand.explicit_potion_count,
-                    cand.optional_paid_potion_count,
-                    cand.potion_strategic_cost,
-                    cand.forced_used_mask,
-                    eval_cand.net_persistent_hp_delta_centi,
-                    eval_cand.net_potion_opportunity_cost_centi,
-                    eval_cand.quality.strategic_hp_deficit,
-                    has_victory,
-                    best_victory_turn,
-                    best_victory_key,
-                    best_victory_clean_zero_cost,
-                );
-                if !*hp_target_reached
-                    && options.early_turn_scout_depth == 0
-                    && options.boss_tempo_scout_turns == 0
-                    && has_reached_acceptable_battle_hp_loss_raw(
-                        root_baseline,
-                        policy,
-                        &cand.fast_eval,
-                        &rare,
-                        cand.action_count,
-                        cand.forced_used_mask,
-                        optional_paid_potion_count,
-                        explicit_potion_count,
-                    )
-                    && (!options.allow_paid_optional_potions
-                        || !PotionUsePolicy::can_any_paid_potion_improve_on(
-                            true,
-                            true,
-                            cand.fast_eval.death_save_use_count as i32,
-                            cand.fast_eval.player_hp as i32,
-                            cand.fast_eval.player_max_hp as i32,
-                            cand.used_potion_slot_mask,
-                            cand.fast_eval.outstanding_stolen as i32,
-                            cand.fast_eval.forfeits_gold(),
-                            check_theft,
-                            root_baseline,
-                        ))
-                {
-                    *hp_target_reached = true;
-                }
-            }
-            if terminal_tracker.would_improve(&eval_cand, satisfies_hard) {
-                let (choices_offset, choices_len) = arena.choices.extend_from_arena_slice(
-                    staged_choices,
-                    cand.choices_offset,
-                    cand.choices_len,
-                );
-                let nid = push_worker_candidate_node(
-                    arena,
-                    cand,
-                    PackedHandle::default(),
-                    choices_offset,
-                    choices_len,
-                );
-                terminal_tracker.record(nid, eval_cand, satisfies_hard);
-                completed.push(nid);
-            }
-            return;
-        }
-        if !cand.turn_completed {
-            if let Some(buf) = defer_mid_turn {
-                let beam_score = cand
-                    .full_eval
-                    .as_ref()
-                    .map_or(cand.base_score, |f| f.beam_rank_score);
-                buf.push(AcceptedMidTurn {
-                    w_idx: w_idx as u16,
-                    potion_count: cand.potion_count.min(u8::MAX as u16) as u8,
-                    explicit_potion_count: cand.explicit_potion_count.min(u8::MAX as u16) as u8,
-                    c_idx: c_idx as u32,
-                    beam_score,
-                });
-                return;
-            }
-        }
-        let state_handle = if cand.turn_completed {
-            let state_bytes = slab.get(cand.state_slab_idx, cand.state_off, cand.state_len);
-            *packed_state_bytes_total += state_bytes.len() as u64;
-            turn_arena.commit_slice(state_bytes)
-        } else {
-            PackedHandle {
-                slab: w_idx as u32,
-                offset: c_idx as u32,
-                len: 0,
-            }
-        };
-        let (choices_offset, choices_len) = arena.choices.extend_from_arena_slice(
-            staged_choices,
-            cand.choices_offset,
-            cand.choices_len,
-        );
-        let nid = push_worker_candidate_node(arena, cand, state_handle, choices_offset, choices_len);
-
-        if cand.turn_completed {
-            next_turn_candidates.push(nid);
-        } else {
-            next_step_candidates.push(nid);
-        }
-    }
-
-    let mut commit_wave_candidates =
-        |scratches: &mut [WorkerScratch],
-         tt: &mut ShardedParetoTT,
-         arena: &mut NodeArena,
-         turn_arena: &mut MainStateArena,
-         incumbent: &mut FrozenIncumbentBound,
-         completed: &mut Vec<NodeId>,
-         terminal_tracker: &mut crate::eval::FinalPlanTracker,
-         next_step_candidates: &mut Vec<NodeId>,
-         next_turn_candidates: &mut Vec<NodeId>,
-         mut defer_mid_turn: Option<&mut Vec<AcceptedMidTurn>>,
-         transition_count: &mut u64,
-         choice_replay_attempts: &mut u64,
-         incumbent_pruned: &mut u64,
-         por_pruned: &mut u64,
-         packed_state_bytes_total: &mut u64,
-         has_victory: &mut bool,
-         best_won_hp_lost: &mut Option<i32>,
-         best_victory_turn: &mut Option<i32>,
-         best_victory_key: &mut Option<(i64, i32, i32)>,
-         best_victory_clean_zero_cost: &mut bool,
-         hp_target_reached: &mut bool,
-         parent_count: usize,
-         parent_slices_valid: bool,
-         parent_slices: &[AtomicU64],
-         sort_list: &mut Vec<(usize, usize, (u32, u32, u32))>| {
-            let mut total_cands = 0usize;
-            for wo in scratches.iter() {
-                debug_assert_eq!(wo.candidates.len(), wo.cand_shards.len());
-                debug_assert_eq!(wo.candidates.len(), wo.cand_fast_meta.len());
-                total_cands += wo.candidates.len();
-                *transition_count += wo.transitions;
-                *choice_replay_attempts += wo.choice_replay_attempts;
-                *incumbent_pruned += wo.incumbent_pruned;
-                tt.branches_pruned += wo.tt_probe_pruned;
-                *por_pruned += wo.por_pruned;
-            }
-            if let Some(buf) = defer_mid_turn.as_deref_mut() {
-                buf.reserve(total_cands);
-            } else {
-                next_step_candidates.reserve(total_cands);
-            }
-
-            if let Some(pool) = active_pool.filter(|_| total_cands >= 1024) {
-                if parent_slices_valid {
-                    active_parent_slices.clear();
-                    let mut base_sort = 0u32;
-                    for slice_atom in &parent_slices[..parent_count] {
-                        let raw = slice_atom.load(Ordering::Relaxed);
-                        if raw == 0 {
-                            continue;
-                        }
-                        let (w_idx, start, len) = unpack_parent_slice(raw);
-                        active_parent_slices.push((
-                            base_sort,
-                            w_idx as u16,
-                            start as u32,
-                            len as u32,
-                        ));
-                        base_sort += len as u32;
-                    }
-                    let scratches_ref: &[WorkerScratch] = &*scratches;
-                    pool.install(|| {
-                        tt.insert_grouped_parallel_from_slices(
-                            active_parent_slices,
-                            tt_group_accepted,
-                            |w| scratches_ref[w].cand_shards.as_slice(),
-                            |w, c| {
-                                let cand = &scratches_ref[w].candidates[c];
-                                (cand.state_hash, cand.label)
-                            },
-                        );
-                    });
-                    *tt_cur_epoch = tt_cur_epoch.wrapping_add(1);
-                    if *tt_cur_epoch == 0 {
-                        tt_accepted_epoch.fill(0);
-                        *tt_cur_epoch = 1;
-                    }
-                    let epoch = *tt_cur_epoch;
-                    if tt_accepted_epoch.len() < total_cands {
-                        tt_accepted_epoch.resize(total_cands, 0);
-                    }
-                    for acc in tt_group_accepted.iter() {
-                        for &idx in acc {
-                            tt_accepted_epoch[idx as usize] = epoch;
-                        }
-                    }
-                    #[cfg(debug_assertions)]
-                    let mut prev_sort_key: Option<(u32, u32, u32)> = None;
-                    for &(base_sort, w_idx_u16, start_u32, len_u32) in active_parent_slices.iter() {
-                        let w_idx = w_idx_u16 as usize;
-                        let wo = &scratches[w_idx];
-                        let start = start_u32 as usize;
-                        let len = len_u32 as usize;
-                        for i in 0..len {
-                            let c_idx = start + i;
-                            let sort_idx = base_sort as usize + i;
-                            let fmeta = wo.cand_fast_meta[c_idx];
-                            let is_terminal = (fmeta.flags & 1) != 0;
-                            #[cfg(debug_assertions)]
-                            {
-                                let cand = &wo.candidates[c_idx];
-                                debug_assert_eq!(is_terminal, cand.is_terminal);
-                                debug_assert_eq!((fmeta.flags & 2) != 0, cand.turn_completed);
-                                debug_assert!(
-                                    prev_sort_key.is_none_or(|p| p <= cand.sort_key),
-                                    "parent_slices commit out of sort_key order: {:?} > {:?}",
-                                    prev_sort_key,
-                                    cand.sort_key
-                                );
-                                prev_sort_key = Some(cand.sort_key);
-                            }
-                            if is_terminal || tt_accepted_epoch[sort_idx] == epoch {
-                                if fmeta.flags == 0 {
-                                    if let Some(buf) = defer_mid_turn.as_deref_mut() {
-                                        buf.push(AcceptedMidTurn {
-                                            w_idx: w_idx as u16,
-                                            potion_count: fmeta.potion_count,
-                                            explicit_potion_count: fmeta.explicit_potion_count,
-                                            c_idx: c_idx as u32,
-                                            beam_score: fmeta.beam_score,
-                                        });
-                                        continue;
-                                    }
-                                }
-                                let cand = &wo.candidates[c_idx];
-                                commit_one_accepted(
-                                    w_idx,
-                                    c_idx,
-                                    cand,
-                                    &wo.slab,
-                                    &wo.staged_choices,
-                                    &root_baseline,
-                                    policy,
-                                    cert,
-                                    incumbent_table,
-                                    incumbent,
-                                    options.allow_paid_optional_potions,
-                                    check_theft,
-                                    &options,
-                                    arena,
-                                    turn_arena,
-                                    completed,
-                                    terminal_tracker,
-                                    next_step_candidates,
-                                    next_turn_candidates,
-                                    defer_mid_turn.as_deref_mut(),
-                                    packed_state_bytes_total,
-                                    has_victory,
-                                    best_won_hp_lost,
-                                    best_victory_turn,
-                                    best_victory_key,
-                                    best_victory_clean_zero_cost,
-                                    hp_target_reached,
-                                );
-                            }
-                        }
-                    }
-                } else {
-                    tt_flat_refs.clear();
-                    tt_flat_refs.reserve(total_cands);
-                    for b in tt_shard_buckets.iter_mut() {
-                        b.clear();
-                    }
-                    sort_list.clear();
-                    for (w_idx, wo) in scratches.iter().enumerate() {
-                        for (c_idx, cand) in wo.candidates.iter().enumerate() {
-                            sort_list.push((w_idx, c_idx, cand.sort_key));
-                        }
-                    }
-                    sort_list.sort_unstable_by_key(|&(_, _, sk)| sk);
-                    for &(w_idx, c_idx, _) in sort_list.iter() {
-                        let cand = &scratches[w_idx].candidates[c_idx];
-                        let sort_idx = tt_flat_refs.len();
-                        tt_flat_refs.push((w_idx, c_idx));
-                        if !cand.is_terminal {
-                            tt_shard_buckets[cand.state_hash.shard_index()].push((
-                                sort_idx,
-                                cand.state_hash,
-                                cand.label,
-                            ));
-                        }
-                    }
-                    if tt_accepted_flags.len() < tt_flat_refs.len() {
-                        tt_accepted_flags.resize_with(tt_flat_refs.len(), || AtomicU8::new(0));
-                    }
-                    let flags_slice = &tt_accepted_flags[..tt_flat_refs.len()];
-                    pool.install(|| {
-                        tt.insert_sharded_batch_atomic_flags(tt_shard_buckets, true, flags_slice);
-                    });
-                    for (sort_idx, &(w_idx, c_idx)) in tt_flat_refs.iter().enumerate() {
-                        let wo = &scratches[w_idx];
-                        let cand = &wo.candidates[c_idx];
-                        if cand.is_terminal || flags_slice[sort_idx].load(Ordering::Relaxed) != 0 {
-                            commit_one_accepted(
-                                w_idx,
-                                c_idx,
-                                cand,
-                                &wo.slab,
-                                &wo.staged_choices,
-                                &root_baseline,
-                                policy,
-                                cert,
-                                incumbent_table,
-                                incumbent,
-                                options.allow_paid_optional_potions,
-                                check_theft,
-                                &options,
-                                arena,
-                                turn_arena,
-                                completed,
-                                terminal_tracker,
-                                next_step_candidates,
-                                next_turn_candidates,
-                                defer_mid_turn.as_deref_mut(),
-                                packed_state_bytes_total,
-                                has_victory,
-                                best_won_hp_lost,
-                                best_victory_turn,
-                                best_victory_key,
-                                best_victory_clean_zero_cost,
-                                hp_target_reached,
-                            );
-                        }
-                    }
-                }
-            } else if parent_slices_valid {
-                #[cfg(debug_assertions)]
-                let mut prev_sort_key: Option<(u32, u32, u32)> = None;
-                for slice_atom in &parent_slices[..parent_count] {
-                    let raw = slice_atom.load(Ordering::Relaxed);
-                    if raw == 0 {
-                        continue;
-                    }
-                    let (w_idx, start, len) = unpack_parent_slice(raw);
-                    let wo = &scratches[w_idx];
-                    let end = start + len;
-                    for c_idx in start..end {
-                        if c_idx + 4 < end && wo.cand_shards[c_idx + 4] != u16::MAX {
-                            tt.prefetch(wo.candidates[c_idx + 4].state_hash);
-                        }
-                        let fmeta = wo.cand_fast_meta[c_idx];
-                        let is_terminal = (fmeta.flags & 1) != 0;
-                        let cand = &wo.candidates[c_idx];
-                        #[cfg(debug_assertions)]
-                        {
-                            debug_assert_eq!(is_terminal, cand.is_terminal);
-                            debug_assert_eq!((fmeta.flags & 2) != 0, cand.turn_completed);
-                            debug_assert!(
-                                prev_sort_key.is_none_or(|p| p <= cand.sort_key),
-                                "parent_slices commit out of sort_key order: {:?} > {:?}",
-                                prev_sort_key,
-                                cand.sort_key
-                            );
-                            prev_sort_key = Some(cand.sort_key);
-                        }
-                        if is_terminal || tt.try_insert_single(cand.state_hash, cand.label) {
-                            if fmeta.flags == 0 {
-                                if let Some(buf) = defer_mid_turn.as_deref_mut() {
-                                    buf.push(AcceptedMidTurn {
-                                        w_idx: w_idx as u16,
-                                        potion_count: fmeta.potion_count,
-                                        explicit_potion_count: fmeta.explicit_potion_count,
-                                        c_idx: c_idx as u32,
-                                        beam_score: fmeta.beam_score,
-                                    });
-                                    continue;
-                                }
-                            }
-                            commit_one_accepted(
-                                w_idx,
-                                c_idx,
-                                cand,
-                                &wo.slab,
-                                &wo.staged_choices,
-                                &root_baseline,
-                                policy,
-                                cert,
-                                incumbent_table,
-                                incumbent,
-                                options.allow_paid_optional_potions,
-                                check_theft,
-                                &options,
-                                arena,
-                                turn_arena,
-                                completed,
-                                terminal_tracker,
-                                next_step_candidates,
-                                next_turn_candidates,
-                                defer_mid_turn.as_deref_mut(),
-                                packed_state_bytes_total,
-                                has_victory,
-                                best_won_hp_lost,
-                                best_victory_turn,
-                                best_victory_key,
-                                best_victory_clean_zero_cost,
-                                hp_target_reached,
-                            );
-                        }
-                    }
-                }
-            } else {
-                sort_list.clear();
-                for (w_idx, wo) in scratches.iter().enumerate() {
-                    for (c_idx, cand) in wo.candidates.iter().enumerate() {
-                        sort_list.push((w_idx, c_idx, cand.sort_key));
-                    }
-                }
-                sort_list.sort_unstable_by_key(|&(_, _, sk)| sk);
-                for &(w_idx, c_idx, _) in sort_list.iter() {
-                    let wo = &scratches[w_idx];
-                    let cand = &wo.candidates[c_idx];
-                    if cand.is_terminal || tt.try_insert_single(cand.state_hash, cand.label) {
-                        commit_one_accepted(
-                            w_idx,
-                            c_idx,
-                            cand,
-                            &wo.slab,
-                            &wo.staged_choices,
-                            &root_baseline,
-                            policy,
-                            cert,
-                            incumbent_table,
-                            incumbent,
-                            options.allow_paid_optional_potions,
-                            check_theft,
-                            &options,
-                            arena,
-                            turn_arena,
-                            completed,
-                            terminal_tracker,
-                            next_step_candidates,
-                            next_turn_candidates,
-                            defer_mid_turn.as_deref_mut(),
-                            packed_state_bytes_total,
-                            has_victory,
-                            best_won_hp_lost,
-                            best_victory_turn,
-                            best_victory_key,
-                            best_victory_clean_zero_cost,
-                            hp_target_reached,
-                        );
-                    }
-                }
-            }
-        };
-
-    // Depth-0 TurnSetup expansion when root state starts paused on a pending choice
-    // (e.g., GamblingChip / ToolsOfTheTrade / HistoryCourse / Dread / Entropy / Toolbox).
-    if !arena.get(root_id).is_terminal() && start_state.pending.is_some() {
-        for s in scratches.iter_mut() {
-            if s.wave_dirty {
-                s.reset_for_wave();
-            }
-        }
-        scratches[0].wave_dirty = true;
-        let filled_at_start = start_state
-            .player
-            .potion_slots
-            .iter()
-            .filter(|s| s.is_some())
-            .count()
-            .min(u8::MAX as usize) as u8;
-        let setup_task = ActionTask {
-            parent_rank: 0,
-            parent_id: root_id,
-            parent_turn: start_state.player.turn_number,
-            parent_action_count: prefix_len,
-            parent_potion_count: prefix_potions,
-            parent_explicit_potion_count: prefix_potions,
-            parent_optional_paid_potion_count: prefix_optional_paid_potions,
-            parent_automatic_potion_count: 0,
-            parent_filled_potions: filled_at_start,
-            parent_used_potion_slot_mask: prefix_used_slot_mask,
-            parent_potion_cost: prefix_potion_cost,
-            parent_optional_paid_potion_cost: prefix_optional_paid_cost,
-            parent_ambergris_count: prefix_ambergris,
-            parent_forced_used_mask: prefix_forced_mask,
-            parent_forced_ambergris_count: prefix_forced_amb,
-            parent_has_choice_lookahead: false,
-            parent_choice_lookahead_score: None,
-            action_ord: 0,
-            spec: ActionSpec::TurnSetup,
-        };
-        let frozen_setup_inc = *incumbent;
-        let mut setup_hp_target = false;
-        if parent_slices.is_empty() {
-            parent_slices.push(AtomicU64::new(0));
-        }
-        {
-            let mut probe_access = ProbeCacheAccess::SingleThread(choice_probe_cache);
-            execute_action_from_parent(
-                &mut scratches[0],
-                &start_state,
-                &setup_task,
-                &root.static_ctx,
-                content,
-                &root_baseline,
-                policy,
-                profile,
-                cert,
-                &frozen_setup_inc,
-                tt,
-                &mut probe_access,
-                &sensitivity,
-                options.allow_paid_optional_potions,
-                options.eval_mode,
-            );
-        }
-        if let Some(err) = scratches[0].fatal_error.take() {
-            abort.record_error(err);
-            return Err(abort.clone_error().expect("abort error recorded"));
-        }
-        let setup_len = scratches[0].candidates.len();
-        parent_slices[0].store(
-            if setup_len > 0 {
-                pack_parent_slice(0, 0, setup_len)
-            } else {
-                0
-            },
-            Ordering::Relaxed,
-        );
-        next_step_candidates.clear();
-        turn_setup_ended_turn.clear();
-        commit_wave_candidates(
-            scratches,
-            tt,
-            arena,
-            turn_staging_arena,
-            incumbent,
-            &mut completed,
-            &mut terminal_tracker,
-            &mut next_step_candidates,
-            &mut turn_setup_ended_turn,
-            None,
-            &mut transition_count,
-            &mut choice_replay_attempts,
-            &mut incumbent_pruned,
-            &mut por_pruned,
-            &mut packed_state_bytes_total,
-            &mut has_victory,
-            &mut best_won_hp_lost,
-            &mut best_victory_turn,
-            &mut best_victory_key,
-            &mut best_victory_clean_zero_cost,
-            &mut setup_hp_target,
-            1,
+    parent_slices[0].store(0, Ordering::Relaxed);
+    let defer_probes = dop > 1 && active_pool.is_some();
+    let turn_boundary_rollouts_enabled = options.rollout_horizon_turns > 0;
+    let deferred = if defer_probes {
+        let mut probe_access = ProbeCacheAccess::Shared(choice_probe_cache);
+        execute_action_from_parent(
+            &mut scratches[0],
+            start_state,
+            &setup_task,
+            0,
             true,
-            parent_slices,
-            sort_list,
+            turn_boundary_rollouts_enabled,
+            &start_state.static_ctx,
+            content,
+            root_baseline,
+            policy,
+            profile,
+            cert,
+            &frozen_setup_inc,
+            tt,
+            &mut probe_access,
+            sensitivity,
+            options.allow_paid_optional_potions,
+            options.eval_mode,
+        )
+    } else {
+        let mut probe_access = ProbeCacheAccess::SingleThread(choice_probe_cache);
+        execute_action_from_parent(
+            &mut scratches[0],
+            start_state,
+            &setup_task,
+            0,
+            false,
+            turn_boundary_rollouts_enabled,
+            &start_state.static_ctx,
+            content,
+            root_baseline,
+            policy,
+            profile,
+            cert,
+            &frozen_setup_inc,
+            tt,
+            &mut probe_access,
+            sensitivity,
+            options.allow_paid_optional_potions,
+            options.eval_mode,
+        )
+    };
+    if let Some(err) = scratches[0].fatal_error.take() {
+        abort.record_error(err);
+        return Err(abort.clone_error().expect("abort error recorded"));
+    }
+    if deferred {
+        resolve_deferred_choice_batches_on_pool(
+            dop,
+            active_pool,
+            scratches,
+            deferred_batches,
+            probe_jobs,
+            choice_probe_cache,
+            &start_state.static_ctx,
+            content,
+            root_baseline,
+            profile,
+            options.eval_mode,
+            cancel,
+            &parent_slices[..1],
+            true,
         );
+    } else {
+        let setup_len = scratches[0].candidates.len();
+        if setup_len > 0 {
+            parent_slices[0].store(pack_parent_slice(0, 0, setup_len), Ordering::Relaxed);
+        }
+    }
+    next_step_candidates.clear();
+    turn_setup_ended_turn.clear();
+    commit_wave_candidates(
+        scratches,
+        tt,
+        arena,
+        turn_staging_arena,
+        root_baseline,
+        policy,
+        incumbent_table,
+        incumbent,
+        check_theft,
+        options,
+        dop,
+        active_pool,
+        active_parent_slices,
+        tt_group_accepted,
+        tt_accepted_epoch,
+        tt_cur_epoch,
+        tt_shard_buckets,
+        tt_accepted_flags,
+        tt_flat_refs,
+        completed,
+        terminal_tracker,
+        next_step_candidates,
+        turn_setup_ended_turn,
+        None,
+        transition_count,
+        choice_replay_attempts,
+        incumbent_pruned,
+        por_pruned,
+        branch_truncations,
+        packed_state_bytes_total,
+        has_victory,
+        best_victory,
+        &mut setup_hp_target,
+        1,
+        true,
+        parent_slices,
+        sort_list,
+    );
 
-        current_turn_frontier.clear();
-        if setup_hp_target {
-            termination = "HpTarget";
-        } else if !next_step_candidates.is_empty() {
+    current_turn_frontier.clear();
+    if setup_hp_target {
+        *termination = "HpTarget";
+    } else if !next_step_candidates.is_empty() {
+        let has_time_for_setup_rollout = profile.soft_time_budget_ms == 0
+            || profile
+                .soft_time_budget_ms
+                .saturating_sub(started.elapsed().as_millis() as u64)
+                >= 150;
+        let will_run_setup_rollout = next_step_candidates.len() > beam_width
+            && options.rollout_horizon_turns > 0
+            && !cancel.load(Ordering::Relaxed)
+            && has_time_for_setup_rollout;
+
+        if will_run_setup_rollout {
+            let shortlist_cap = next_step_candidates.len().min(beam_width * 2);
+            if next_step_candidates.len() > shortlist_cap {
+                BeamRetentionPolicy::prune_wave_with_rollout_into(
+                    arena,
+                    next_step_candidates,
+                    shortlist_cap,
+                    profile.potion_free_beam_width,
+                    profile.potion_beam_width,
+                    root_baseline,
+                    profile.second_rank_band,
+                    profile.aggressive_power_commitment,
+                    false,
+                    false,
+                    active_pool,
+                    shortlist_buf,
+                    prune_scratch,
+                );
+            } else {
+                shortlist_buf.clear();
+                shortlist_buf.extend_from_slice(next_step_candidates);
+            }
             step_arena.clear();
-            for &nid in &next_step_candidates {
+            for &nid in shortlist_buf.iter() {
                 let tmp_h = arena.get(nid).state_handle;
                 let wo = &scratches[tmp_h.slab as usize];
                 let cand = &wo.candidates[tmp_h.offset as usize];
                 let bytes = wo.slab.get(cand.state_slab_idx, cand.state_off, cand.state_len);
-                packed_state_bytes_total += bytes.len() as u64;
+                *packed_state_bytes_total += bytes.len() as u64;
                 arena.get_mut(nid).state_handle = step_arena.commit_slice(bytes);
-            }
-
-            let mut use_setup_rollout = false;
-            let has_time_for_setup_rollout = profile.soft_time_budget_ms == 0
-                || (started.elapsed().as_millis() as u64) < profile.soft_time_budget_ms;
-            if next_step_candidates.len() > beam_width
-                && options.rollout_horizon_turns > 0
-                && !cancel.load(Ordering::Relaxed)
-                && has_time_for_setup_rollout
-            {
-                let shortlist_cap = next_step_candidates.len().min(beam_width * 2);
-                if next_step_candidates.len() > shortlist_cap {
-                    BeamRetentionPolicy::prune_wave_with_rollout_into(
-                        arena,
-                        &next_step_candidates,
-                        shortlist_cap,
-                        profile.potion_free_beam_width,
-                        profile.potion_beam_width,
-                        &root_baseline,
-                        profile.second_rank_band,
-                        profile.aggressive_power_commitment,
-                        false,
-                        false,
-                        active_pool,
-                        &mut shortlist_buf,
-                        prune_scratch,
-                    );
-                } else {
-                    shortlist_buf.clear();
-                    shortlist_buf.extend_from_slice(&next_step_candidates);
-                }
-                let rollout_deadline = (profile.soft_time_budget_ms > 0)
-                    .then(|| started + Duration::from_millis(profile.soft_time_budget_ms));
-                evaluate_turn_boundary_rollouts_into(
-                    step_arena,
-                    arena,
-                    &shortlist_buf,
-                    &root.static_ctx,
-                    content,
-                    &root_baseline,
-                    policy,
-                    profile,
-                    options.eval_mode,
-                    2,
-                    rollout_deadline,
-                    active_pool,
-                    cancel,
-                    rollout_workspaces,
-                    Some(turn_rollout_cache),
-                    rollout_results,
-                );
-                for (idx, maybe_rr) in rollout_results.drain(..).enumerate() {
-                    let Some(rr) = maybe_rr else { continue };
-                    let pid = shortlist_buf[idx];
-                    arena.get_mut(pid).set_rollout_score(rr.rollout_score);
-                    if let Some(pv) = rr.promoted_victory {
-                        let pnode = arena.get(pid).clone();
-                        let mut cur_parent = pid;
-                        let total_acts = pv.steps.len();
-                        let mut cur_turn = pnode.turn as i32;
-                        let mut final_nid = pid;
-                        for (step_idx, step) in pv.steps.iter().enumerate() {
-                            let is_last = step_idx + 1 == total_acts;
-                            let (kind, step_turn) = if step.is_end_turn != 0 {
-                                let t = cur_turn;
-                                cur_turn += 1;
-                                (CompactActionKind::EndTurn, t)
-                            } else {
-                                (
-                                    CompactActionKind::PlayCard {
-                                        card_handle: step.card_handle,
-                                        target_handle: if step.target_handle == u32::MAX {
-                                            None
-                                        } else {
-                                            Some(step.target_handle)
-                                        },
-                                    },
-                                    cur_turn,
-                                )
-                            };
-                            let (c_off, c_len) = arena.choices.push_raw_slab_slice(
-                                &pv.choices.steps_meta,
-                                &pv.choices.indices,
-                                step.choices_offset,
-                                step.choices_len,
-                            );
-                            let node_turn = if is_last { pv.final_turn } else { step_turn };
-                            let rare_eval_idx = if is_last {
-                                arena.push_rare_eval(RareNodeEval {
-                                    growth_rewards: pv.final_fast.growth_rewards,
-                                    relic_eval: pv.final_fast.relic_eval,
-                                })
-                            } else {
-                                pnode.rare_eval_idx
-                            };
-                            let (step_action, step_por_key) =
-                                CompactAction::new(kind, step_turn, PorActionClass::Barrier);
-                            let nid = arena.push_node(SearchNode {
-                                parent_raw: cur_parent.0,
-                                action: step_action,
-                                por_key: step_por_key,
-                                choices_offset: c_off,
-                                choices_len: c_len,
-                                state_handle: PackedHandle::default(),
-                                state_hash: if is_last {
-                                    pv.final_state_hash
-                                } else {
-                                    pnode.state_hash
-                                },
-                                beam_rank_score: if is_last {
-                                    pv.final_fast.base_score
-                                } else {
-                                    pnode.beam_rank_score
-                                },
-                                turn: node_turn.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
-                                action_count: pnode.action_count + step_idx as u16 + 1,
-                                potion_count: if is_last {
-                                    (pnode.potion_count as u16 + pv.auto_potions_used)
-                                        .min(u8::MAX as u16) as u8
-                                } else {
-                                    pnode.potion_count
-                                },
-                                explicit_potion_count: pnode.explicit_potion_count,
-                                optional_paid_potion_count: pnode.optional_paid_potion_count,
-                                automatic_potion_count: if is_last {
-                                    (pnode.automatic_potion_count as u16 + pv.auto_potions_used)
-                                        .min(u8::MAX as u16) as u8
-                                } else {
-                                    pnode.automatic_potion_count
-                                },
-                                used_potion_slot_mask: pnode.used_potion_slot_mask,
-                                potion_strategic_cost: pnode.potion_strategic_cost,
-                                optional_paid_potion_cost: pnode.optional_paid_potion_cost,
-                                ambergris_count: pnode.ambergris_count,
-                                forced_used_mask: pnode.forced_used_mask,
-                                forced_ambergris_count: pnode.forced_ambergris_count,
-                                node_flags: if is_last { NODE_FLAG_IS_TERMINAL } else { 0 },
-                                fast_eval: if is_last {
-                                    StoredFastEval::from(&pv.final_fast)
-                                } else {
-                                    pnode.fast_eval
-                                },
-                                rare_eval_idx,
-                                ..Default::default()
-                            });
-                            cur_parent = nid;
-                            final_nid = nid;
-                        }
-                        let promoted_fast = StoredFastEval::from(&pv.final_fast);
-                        record_victory_and_tighten(
-                            &root_baseline,
-                            cert,
-                            incumbent_table,
-                            incumbent,
-                            policy,
-                            options.allow_paid_optional_potions,
-                            &promoted_fast,
-                            pv.final_turn,
-                            pnode.potion_count as u16 + pv.auto_potions_used,
-                            pnode.explicit_potion_count as u16,
-                            pnode.optional_paid_potion_count as u16,
-                            pnode.potion_strategic_cost as i32,
-                            pnode.optional_paid_potion_cost as i32,
-                            pnode.forced_used_mask,
-                            &mut has_victory,
-                            &mut best_victory_turn,
-                            &mut best_victory_key,
-                            &mut best_victory_clean_zero_cost,
-                        );
-                        if pv.final_fast.won {
-                            best_won_hp_lost = Some(match best_won_hp_lost {
-                                Some(cur) => cur.min(pv.final_fast.cumulative_hp_lost),
-                                None => pv.final_fast.cumulative_hp_lost,
-                            });
-                        }
-                        terminal_tracker.observe_node(arena, final_nid, &root_baseline);
-                        completed.push(final_nid);
-                    }
-                }
-                std::mem::swap(&mut next_step_candidates, &mut shortlist_buf);
-                shortlist_buf.clear();
-                use_setup_rollout = true;
-            }
-            BeamRetentionPolicy::prune_wave_with_rollout_into(
-                arena,
-                &next_step_candidates,
-                beam_width,
-                profile.potion_free_beam_width,
-                profile.potion_beam_width,
-                &root_baseline,
-                profile.second_rank_band,
-                profile.aggressive_power_commitment,
-                false,
-                use_setup_rollout,
-                active_pool,
-                &mut current_turn_frontier,
-                prune_scratch,
-            );
-        }
-    }
-
-    for turn_layer in 0..max_turns {
-        if termination == "HpTarget" {
-            break;
-        }
-        if current_turn_frontier.is_empty() && (turn_layer > 0 || turn_setup_ended_turn.is_empty()) {
-            break;
-        }
-        if has_victory {
-            if let Some(win_turn) = best_victory_turn {
-                let current_turn = root_baseline.start_turn_number + turn_layer;
-                let turn_cap = win_turn + if best_victory_clean_zero_cost { 1 } else { 4 };
-                if current_turn > turn_cap {
-                    break;
-                }
-            }
-        }
-        if let Some(err) = abort.clone_error() {
-            return Err(err);
-        }
-        if cancel.load(Ordering::Relaxed) {
-            termination = "Cancelled";
-            break;
-        }
-        if expanded_nodes >= profile.max_expanded_nodes {
-            termination = BeamWidthPortfolio::NODE_LIMIT_TERMINATION;
-            break;
-        }
-        if profile.soft_time_budget_ms > 0
-            && (started.elapsed().as_millis() as u64) >= profile.soft_time_budget_ms
-        {
-            termination = "TimeLimit";
-            break;
-        }
-
-        if turn_layer > 0 {
-            turn_staging_arena.clear();
-        }
-        active_frontier.clear();
-        active_frontier.append(&mut current_turn_frontier);
-        next_turn_candidates.clear();
-        if turn_layer == 0 && !turn_setup_ended_turn.is_empty() {
-            next_turn_candidates.append(&mut turn_setup_ended_turn);
-        }
-        let remaining_pass_nodes = profile.max_expanded_nodes.saturating_sub(expanded_nodes);
-        let per_turn_cap = if has_victory {
-            remaining_pass_nodes
-        } else {
-            remaining_pass_nodes
-                .min((beam_width * 40).max(profile.max_expanded_nodes / 4))
-                .max(
-                    crate::eval::weights::MINIMUM_TURN_LAYER_EXPANDED_NODES
-                        .min(remaining_pass_nodes.max(1)),
-                )
-        };
-        let mut expanded_this_turn = 0usize;
-        let mut last_turn_hit_per_turn_cap = false;
-        let mut aborted_limit = false;
-        let mut hp_target_reached = false;
-        let mut frontier_in_worker_slabs = false;
-
-        for _action_depth in 0..=MAX_ACTIONS_PER_TURN {
-            if active_frontier.is_empty() {
-                break;
-            }
-            if let Some(err) = abort.clone_error() {
-                return Err(err);
-            }
-            if cancel.load(Ordering::Relaxed) {
-                termination = "Cancelled";
-                aborted_limit = true;
-                break;
-            }
-            if expanded_nodes >= profile.max_expanded_nodes {
-                termination = BeamWidthPortfolio::NODE_LIMIT_TERMINATION;
-                aborted_limit = true;
-                break;
-            }
-            if expanded_this_turn >= per_turn_cap {
-                last_turn_hit_per_turn_cap = true;
-                break;
-            }
-            if profile.soft_time_budget_ms > 0
-                && (started.elapsed().as_millis() as u64) >= profile.soft_time_budget_ms
-            {
-                termination = "TimeLimit";
-                aborted_limit = true;
-                break;
-            }
-
-            let allowed = (profile.max_expanded_nodes - expanded_nodes)
-                .min(per_turn_cap - expanded_this_turn);
-            let wave_count = active_frontier.len().min(allowed);
-            if wave_count == 0 {
-                break;
-            }
-
-            let parent_slice = &active_frontier[..wave_count];
-            expanded_nodes += wave_count;
-            expanded_this_turn += wave_count;
-
-            let frozen_incumbent = *incumbent;
-            let parent_source = if frontier_in_worker_slabs {
-                ParentStateSource::WorkerSlabs(prev_worker_slabs.as_slice())
-            } else {
-                ParentStateSource::Main(step_arena)
-            };
-            let parent_slices_valid = expand_wave_tasks(
-                parent_slice,
-                dop,
-                active_pool,
-                &root.static_ctx,
-                arena,
-                parent_source,
-                content,
-                &root_baseline,
-                policy,
-                profile,
-                cert,
-                &frozen_incumbent,
-                tt,
-                choice_probe_cache,
-                &sensitivity,
-                options.allow_paid_optional_potions,
-                options.eval_mode,
-                cancel,
-                abort,
-                scratches,
-                parent_states,
-                flat_tasks,
-                parent_slices,
-            );
-            if let Some(err) = abort.clone_error() {
-                return Err(err);
-            }
-
-            next_step_candidates.clear();
-            accepted_mid_turn.clear();
-            commit_wave_candidates(
-                scratches,
-                tt,
-                arena,
-                turn_staging_arena,
-                incumbent,
-                &mut completed,
-                &mut terminal_tracker,
-                &mut next_step_candidates,
-                &mut next_turn_candidates,
-                Some(accepted_mid_turn),
-                &mut transition_count,
-                &mut choice_replay_attempts,
-                &mut incumbent_pruned,
-                &mut por_pruned,
-                &mut packed_state_bytes_total,
-                &mut has_victory,
-                &mut best_won_hp_lost,
-                &mut best_victory_turn,
-                &mut best_victory_key,
-                &mut best_victory_clean_zero_cost,
-                &mut hp_target_reached,
-                parent_slice.len(),
-                parent_slices_valid,
-                parent_slices,
-                sort_list,
-            );
-
-            if hp_target_reached {
-                termination = "HpTarget";
-                break;
-            }
-
-            if accepted_mid_turn.is_empty() {
-                active_frontier.clear();
-                if frontier_in_worker_slabs {
-                    for slab in prev_worker_slabs.iter_mut() {
-                        slab.clear();
-                    }
-                    frontier_in_worker_slabs = false;
-                }
-            } else {
-                mid_turn_ords.clear();
-                mid_turn_ords.extend((0..accepted_mid_turn.len() as u32).map(NodeId));
-                let cand_source = WorkerCandidateSource {
-                    scratches,
-                    accepted: accepted_mid_turn,
-                };
-                BeamRetentionPolicy::prune_with_source_into(
-                    &cand_source,
-                    mid_turn_ords,
-                    beam_width,
-                    profile.potion_free_beam_width,
-                    profile.potion_beam_width,
-                    &root_baseline,
-                    profile.second_rank_band,
-                    profile.aggressive_power_commitment,
-                    options.prefer_potion_buckets,
-                    false,
-                    false,
-                    active_pool,
-                    surviving_ords,
-                    prune_scratch,
-                );
-                active_frontier.resize(surviving_ords.len(), NodeId(0));
-                surviving_commit_order.clear();
-                surviving_commit_order.extend(0..surviving_ords.len());
-                surviving_commit_order.sort_unstable_by_key(|&k| surviving_ords[k].0);
-                let surv_len = surviving_commit_order.len();
-                for pos in 0..surv_len {
-                    #[cfg(target_arch = "x86_64")]
-                    if surv_len >= 16 && pos + 2 < surv_len {
-                        let k2 = surviving_commit_order[pos + 2];
-                        let acc2 = accepted_mid_turn[surviving_ords[k2].0 as usize];
-                        let wo2 = &scratches[acc2.w_idx as usize];
-                        let cand2 = &wo2.candidates[acc2.c_idx as usize];
-                        unsafe {
-                            std::arch::x86_64::_mm_prefetch(
-                                (cand2 as *const WorkerCandidate).cast::<i8>(),
-                                std::arch::x86_64::_MM_HINT_T0,
-                            );
-                        }
-                    }
-                    let k = surviving_commit_order[pos];
-                    let ord = surviving_ords[k].0 as usize;
-                    let acc = accepted_mid_turn[ord];
-                    let (w_idx, c_idx) = (acc.w_idx as usize, acc.c_idx as usize);
-                    let wo = &scratches[w_idx];
-                    let cand = &wo.candidates[c_idx];
-                    debug_assert!(w_idx < 65536 && cand.state_slab_idx < 65536);
-                    packed_state_bytes_total += u64::from(cand.state_len);
-                    let state_handle = PackedHandle {
-                        slab: ((w_idx as u32) << 16) | (cand.state_slab_idx & 0xFFFF),
-                        offset: cand.state_off,
-                        len: cand.state_len,
-                    };
-                    let (choices_offset, choices_len) = arena.choices.extend_from_arena_slice(
-                        &wo.staged_choices,
-                        cand.choices_offset,
-                        cand.choices_len,
-                    );
-                    let nid = push_worker_candidate_node(
-                        arena,
-                        cand,
-                        state_handle,
-                        choices_offset,
-                        choices_len,
-                    );
-                    active_frontier[k] = nid;
-                }
-                for (s, prev) in scratches.iter_mut().zip(prev_worker_slabs.iter_mut()) {
-                    std::mem::swap(&mut s.slab, prev);
-                    s.slab.clear();
-                }
-                frontier_in_worker_slabs = true;
-            }
-
-            if let Some(cb) = progress_cb {
-                let elapsed_ms = started.elapsed().as_millis() as u64;
-                if last_progress_ms.is_none_or(|prev| elapsed_ms.saturating_sub(prev) >= 100) {
-                    last_progress_ms = Some(elapsed_ms);
-                    cb(&SearchProgress {
-                        nodes_expanded: expanded_nodes,
-                        transition_count,
-                        choice_replay_attempts,
-                        current_turn: root_baseline.start_turn_number + turn_layer,
-                        best_won: has_victory,
-                        best_hp_lost: best_won_hp_lost,
-                        elapsed_ms,
-                    });
-                }
-            }
-        }
-
-        // Bounded StandPat EndTurn flush when a turn ended with mid-turn nodes still active
-        let need_stand_pat = !hp_target_reached
-            && !cancel.load(Ordering::Relaxed)
-            && !active_frontier.is_empty()
-            && ((next_turn_candidates.len() < beam_width && !aborted_limit)
-                || (!has_victory
-                    && latest_completed_turn_nodes.is_empty()
-                    && next_turn_candidates.is_empty()));
-        if need_stand_pat {
-            let sp_ids = select_stand_pat_candidates(
-                &active_frontier,
-                arena,
-                16,
-                options.prefer_potion_buckets,
-            );
-            let mut uncached_sp_ids: SmallVec<[NodeId; 16]> = SmallVec::new();
-            for nid in sp_ids {
-                let h = arena.get(nid).state_hash;
-                if stand_pat_seen.insert(h) {
-                    uncached_sp_ids.push(nid);
-                }
-            }
-            if !uncached_sp_ids.is_empty() {
-                for s in scratches.iter_mut() {
-                    if s.wave_dirty {
-                        s.reset_for_wave();
-                    }
-                }
-                let frozen_incumbent = *incumbent;
-                let sp_slice = uncached_sp_ids.as_slice();
-                if parent_slices.len() < sp_slice.len() {
-                    parent_slices.resize_with(sp_slice.len(), || AtomicU64::new(0));
-                }
-                for slot in &parent_slices[..sp_slice.len()] {
-                    slot.store(0, Ordering::Relaxed);
-                }
-                if let Some(pool) = active_pool.filter(|_| sp_slice.len() > 2) {
-                    let workers = dop.min(sp_slice.len()).min(scratches.len()).min(parent_states.len());
-                    let next_idx = AtomicUsize::new(0);
-                    let arena_ref: &NodeArena = &*arena;
-                    let sp_parent_source = if frontier_in_worker_slabs {
-                        ParentStateSource::WorkerSlabs(prev_worker_slabs.as_slice())
-                    } else {
-                        ParentStateSource::Main(step_arena)
-                    };
-                    let tt_ref: &ShardedParetoTT = &*tt;
-                    let probe_cache_ref: &ChoiceProbeCache = &*choice_probe_cache;
-                    let rb_ref: &RootEvalBaseline = &root_baseline;
-                    let static_ctx_ref = &root.static_ctx;
-                    let sens_ref = &sensitivity;
-                    let slices_ref = &parent_slices[..sp_slice.len()];
-                    pool.scope(|scope| {
-                        for (w_idx, (scratch, parent_state)) in scratches
-                            .iter_mut()
-                            .zip(parent_states.iter_mut())
-                            .take(workers)
-                            .enumerate()
-                        {
-                            let next_ref = &next_idx;
-                            scope.spawn(move |_| {
-                                scratch.wave_dirty = true;
-                                let mut probe_access = ProbeCacheAccess::Shared(probe_cache_ref);
-                                loop {
-                                    if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
-                                        break;
-                                    }
-                                    let rank = next_ref.fetch_add(1, Ordering::Relaxed);
-                                    if rank >= sp_slice.len() {
-                                        break;
-                                    }
-                                    let nid = sp_slice[rank];
-                                    let pnode = arena_ref.get(nid);
-                                    let pbytes = sp_parent_source.get(pnode.state_handle);
-                                    // SAFETY: `pbytes` was committed from `pack_state` output in this process.
-                                    if unsafe { unpack_state(pbytes, static_ctx_ref, parent_state) }
-                                        .is_err()
-                                    {
-                                        continue;
-                                    }
-                                    let filled = parent_state
-                                        .player
-                                        .potion_slots
-                                        .iter()
-                                        .filter(|s| s.is_some())
-                                        .count()
-                                        .min(u8::MAX as usize) as u8;
-                                    let task =
-                                        make_stand_pat_task(rank as u32, nid, pnode, filled, 0);
-                                    let c_start = scratch.candidates.len();
-                                    execute_action_from_parent(
-                                        scratch,
-                                        parent_state,
-                                        &task,
-                                        static_ctx_ref,
-                                        content,
-                                        rb_ref,
-                                        policy,
-                                        profile,
-                                        cert,
-                                        &frozen_incumbent,
-                                        tt_ref,
-                                        &mut probe_access,
-                                        sens_ref,
-                                        options.allow_paid_optional_potions,
-                                        options.eval_mode,
-                                    );
-                                    if let Some(err) = scratch.fatal_error.take() {
-                                        abort.record_error(err);
-                                        break;
-                                    }
-                                    let c_len = scratch.candidates.len() - c_start;
-                                    if c_len > 0 {
-                                        slices_ref[rank].store(
-                                            pack_parent_slice(w_idx, c_start, c_len),
-                                            Ordering::Relaxed,
-                                        );
-                                    }
-                                }
-                            });
-                        }
-                    });
-                } else {
-                    scratches[0].wave_dirty = true;
-                    let sp_parent_source = if frontier_in_worker_slabs {
-                        ParentStateSource::WorkerSlabs(prev_worker_slabs.as_slice())
-                    } else {
-                        ParentStateSource::Main(step_arena)
-                    };
-                    let mut probe_access = ProbeCacheAccess::SingleThread(choice_probe_cache);
-                    for (rank, &nid) in sp_slice.iter().enumerate() {
-                        if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
-                            break;
-                        }
-                        let pnode = arena.get(nid).clone();
-                        let pbytes = sp_parent_source.get(pnode.state_handle);
-                        // SAFETY: `pbytes` was committed from `pack_state` output in this process.
-                        if unsafe { unpack_state(pbytes, &root.static_ctx, &mut parent_states[0]) }
-                            .is_err()
-                        {
-                            continue;
-                        }
-                        let filled = parent_states[0]
-                            .player
-                            .potion_slots
-                            .iter()
-                            .filter(|s| s.is_some())
-                            .count()
-                            .min(u8::MAX as usize) as u8;
-                        let task = make_stand_pat_task(rank as u32, nid, &pnode, filled, 0);
-                        let c_start = scratches[0].candidates.len();
-                        execute_action_from_parent(
-                            &mut scratches[0],
-                            &parent_states[0],
-                            &task,
-                            &root.static_ctx,
-                            content,
-                            &root_baseline,
-                            policy,
-                            profile,
-                            cert,
-                            &frozen_incumbent,
-                            tt,
-                            &mut probe_access,
-                            &sensitivity,
-                            options.allow_paid_optional_potions,
-                            options.eval_mode,
-                        );
-                        if let Some(err) = scratches[0].fatal_error.take() {
-                            abort.record_error(err);
-                            break;
-                        }
-                        let c_len = scratches[0].candidates.len() - c_start;
-                        if c_len > 0 {
-                            parent_slices[rank].store(
-                                pack_parent_slice(0, c_start, c_len),
-                                Ordering::Relaxed,
-                            );
-                        }
-                    }
-                }
-                if let Some(err) = abort.clone_error() {
-                    return Err(err);
-                }
-                sp_mid_unused.clear();
-                commit_wave_candidates(
-                    scratches,
-                    tt,
-                    arena,
-                    turn_staging_arena,
-                    incumbent,
-                    &mut completed,
-                    &mut terminal_tracker,
-                    &mut sp_mid_unused,
-                    &mut next_turn_candidates,
-                    None,
-                    &mut transition_count,
-                    &mut choice_replay_attempts,
-                    &mut incumbent_pruned,
-                    &mut por_pruned,
-                    &mut packed_state_bytes_total,
-                    &mut has_victory,
-                    &mut best_won_hp_lost,
-                    &mut best_victory_turn,
-                    &mut best_victory_key,
-                    &mut best_victory_clean_zero_cost,
-                    &mut hp_target_reached,
-                    sp_slice.len(),
-                    true,
-                    parent_slices,
-                    sort_list,
-                );
-                if hp_target_reached {
-                    termination = "HpTarget";
-                }
-            }
-        }
-
-        if !active_frontier.is_empty() {
-            std::mem::swap(&mut last_active_frontier, &mut active_frontier);
-            active_frontier.clear();
-        }
-
-        if !next_turn_candidates.is_empty()
-            && (!aborted_limit || latest_completed_turn_nodes.is_empty())
-        {
-            latest_completed_turn_nodes.clear();
-            latest_completed_turn_nodes.extend(
-                next_turn_candidates
-                    .iter()
-                    .copied()
-                    .filter(|&nid| {
-                        let n = arena.get(nid);
-                        !n.fast_eval.player_dead() && n.fast_eval.projected_player_hp > 0
-                    }),
-            );
-        }
-
-        let completed_turns = turn_layer + 1;
-        if options.early_turn_scout_depth > 0 && completed_turns <= options.early_turn_scout_depth
-        {
-            let f = select_early_turn_frontier(
-                arena,
-                &next_turn_candidates,
-                root_baseline.start_turn_number,
-                completed_turns,
-            );
-            early_turn_frontiers.extend(f);
-            if completed_turns >= options.early_turn_scout_depth {
-                termination = "ScoutDepth";
-                break;
-            }
-        }
-
-        if options.boss_tempo_scout_turns > 0
-            && completed_turns >= options.boss_tempo_scout_turns
-        {
-            for &nid in &next_turn_candidates {
-                let n = arena.get(nid);
-                if !n.fast_eval.player_dead() {
-                    let eliminated = (root_baseline.initial_enemy_count as i32)
-                        - (n.fast_eval.alive_enemy_count as i32);
-                    let rank = n.beam_rank_score_or_base();
-                    let mut actions = fixed_prefix.map_or_else(Vec::new, |p| p.to_vec());
-                    actions.extend(arena.reconstruct_actions(nid));
-                    let forced_uses_satisfied = (n.forced_used_mask
-                        & root_baseline.all_forced_potion_mask)
-                        == root_baseline.all_forced_potion_mask;
-                    retain_boss_tempo_prefixes(
-                        &mut boss_tempo_prefixes,
-                        BossTempoPrefix {
-                            actions,
-                            state_hash: n.state_hash,
-                            forced_uses_satisfied,
-                            eliminated_enemies: eliminated,
-                            potion_count: n.potion_count as usize,
-                            rank,
-                        },
-                    );
-                }
-            }
-            termination = "BossTempoScout";
-            break;
-        }
-
-        if hp_target_reached || aborted_limit {
-            break;
-        }
-
-        if next_turn_candidates.is_empty() {
-            if last_turn_hit_per_turn_cap && !has_victory && termination == "None" {
-                termination = BeamWidthPortfolio::NODE_LIMIT_TERMINATION;
-            }
-            break;
-        }
-        if has_victory {
-            if let Some(win_turn) = best_victory_turn {
-                let next_turn = root_baseline.start_turn_number + turn_layer + 1;
-                let turn_cap = win_turn + if best_victory_clean_zero_cost { 1 } else { 4 };
-                if next_turn > turn_cap {
-                    break;
-                }
-            }
-        }
-
-        let has_time_for_rollout = profile.soft_time_budget_ms == 0
-            || (started.elapsed().as_millis() as u64) < profile.soft_time_budget_ms;
-        let ran_rollout = if options.rollout_horizon_turns > 0
-            && !cancel.load(Ordering::Relaxed)
-            && has_time_for_rollout
-        {
-            let shortlist_cap = (beam_width * 2).min(next_turn_candidates.len());
-            if next_turn_candidates.len() > shortlist_cap {
-                BeamRetentionPolicy::prune_wave_with_rollout_into(
-                    arena,
-                    &next_turn_candidates,
-                    shortlist_cap,
-                    profile.potion_free_beam_width,
-                    profile.potion_beam_width,
-                    &root_baseline,
-                    profile.second_rank_band,
-                    profile.aggressive_power_commitment,
-                    options.prefer_potion_buckets,
-                    false,
-                    active_pool,
-                    &mut shortlist_buf,
-                    prune_scratch,
-                );
-            } else {
-                shortlist_buf.clear();
-                shortlist_buf.extend_from_slice(&next_turn_candidates);
             }
             let rollout_deadline = (profile.soft_time_budget_ms > 0)
                 .then(|| started + Duration::from_millis(profile.soft_time_budget_ms));
             evaluate_turn_boundary_rollouts_into(
-                turn_staging_arena,
+                step_arena,
                 arena,
-                &shortlist_buf,
-                &root.static_ctx,
+                shortlist_buf,
+                &start_state.static_ctx,
                 content,
-                &root_baseline,
+                root_baseline,
                 policy,
                 profile,
                 options.eval_mode,
-                options.rollout_horizon_turns,
+                2,
                 rollout_deadline,
                 active_pool,
                 cancel,
@@ -6742,254 +7474,645 @@ fn run_beam_pass_with_resources_inner(
                 let pid = shortlist_buf[idx];
                 arena.get_mut(pid).set_rollout_score(rr.rollout_score);
                 if let Some(pv) = rr.promoted_victory {
-                    let pnode = arena.get(pid).clone();
-                    let mut cur_parent = pid;
-                    let mut cur_turn = pnode.turn as i32;
-                    let total_acts = pv.steps.len();
-                    let mut final_nid = pid;
-                    for (step_idx, step) in pv.steps.iter().enumerate() {
-                        let is_last = step_idx + 1 == total_acts;
-                        let (kind, step_turn) = if step.is_end_turn != 0 {
-                            let t = cur_turn;
-                            cur_turn += 1;
-                            (CompactActionKind::EndTurn, t)
-                        } else {
-                            (
-                                CompactActionKind::PlayCard {
-                                    card_handle: step.card_handle,
-                                    target_handle: if step.target_handle == u32::MAX {
-                                        None
-                                    } else {
-                                        Some(step.target_handle)
-                                    },
-                                },
-                                cur_turn,
-                            )
-                        };
-                        let (c_off, c_len) = arena.choices.push_raw_slab_slice(
-                            &pv.choices.steps_meta,
-                            &pv.choices.indices,
-                            step.choices_offset,
-                            step.choices_len,
-                        );
-                        let node_turn = if is_last { pv.final_turn } else { step_turn };
-                        let rare_eval_idx = if is_last {
-                            arena.push_rare_eval(RareNodeEval {
-                                growth_rewards: pv.final_fast.growth_rewards,
-                                relic_eval: pv.final_fast.relic_eval,
-                            })
-                        } else {
-                            pnode.rare_eval_idx
-                        };
-                        let (step_action, step_por_key) =
-                            CompactAction::new(kind, step_turn, PorActionClass::Barrier);
-                        let nid = arena.push_node(SearchNode {
-                            parent_raw: cur_parent.0,
-                            action: step_action,
-                            por_key: step_por_key,
-                            choices_offset: c_off,
-                            choices_len: c_len,
-                            state_handle: PackedHandle::default(),
-                            state_hash: if is_last {
-                                pv.final_state_hash
-                            } else {
-                                pnode.state_hash
-                            },
-                            beam_rank_score: if is_last {
-                                pv.final_fast.base_score
-                            } else {
-                                pnode.beam_rank_score
-                            },
-                            turn: node_turn.clamp(i16::MIN as i32, i16::MAX as i32) as i16,
-                            action_count: pnode.action_count + step_idx as u16 + 1,
-                            potion_count: if is_last {
-                                (pnode.potion_count as u16 + pv.auto_potions_used)
-                                    .min(u8::MAX as u16) as u8
-                            } else {
-                                pnode.potion_count
-                            },
-                            explicit_potion_count: pnode.explicit_potion_count,
-                            optional_paid_potion_count: pnode.optional_paid_potion_count,
-                            automatic_potion_count: if is_last {
-                                (pnode.automatic_potion_count as u16 + pv.auto_potions_used)
-                                    .min(u8::MAX as u16) as u8
-                            } else {
-                                pnode.automatic_potion_count
-                            },
-                            used_potion_slot_mask: pnode.used_potion_slot_mask,
-                            potion_strategic_cost: pnode.potion_strategic_cost,
-                            optional_paid_potion_cost: pnode.optional_paid_potion_cost,
-                            ambergris_count: pnode.ambergris_count,
-                            forced_used_mask: pnode.forced_used_mask,
-                            forced_ambergris_count: pnode.forced_ambergris_count,
-                            node_flags: if is_last { NODE_FLAG_IS_TERMINAL } else { 0 },
-                            fast_eval: if is_last {
-                                StoredFastEval::from(&pv.final_fast)
-                            } else {
-                                pnode.fast_eval
-                            },
-                            rare_eval_idx,
-                            ..Default::default()
-                        });
-                        cur_parent = nid;
-                        final_nid = nid;
-                    }
-                    let promoted_fast = StoredFastEval::from(&pv.final_fast);
-                    record_victory_and_tighten(
-                        &root_baseline,
-                        cert,
+                    materialize_promoted_victory(
+                        arena,
+                        pid,
+                        pv,
+                        root_baseline,
                         incumbent_table,
                         incumbent,
                         policy,
                         options.allow_paid_optional_potions,
-                        &promoted_fast,
-                        pv.final_turn,
-                        pnode.potion_count as u16 + pv.auto_potions_used,
-                        pnode.explicit_potion_count as u16,
-                        pnode.optional_paid_potion_count as u16,
-                        pnode.potion_strategic_cost as i32,
-                        pnode.optional_paid_potion_cost as i32,
-                        pnode.forced_used_mask,
-                        &mut has_victory,
-                        &mut best_victory_turn,
-                        &mut best_victory_key,
-                        &mut best_victory_clean_zero_cost,
+                        check_theft,
+                        false,
+                        has_victory,
+                        best_victory,
+                        &mut setup_hp_target,
+                        terminal_tracker,
+                        completed,
                     );
-                    if has_reached_acceptable_battle_hp_loss_node(
-                        &root_baseline,
-                        policy,
-                        arena,
-                        final_nid,
-                    ) && (!options.allow_paid_optional_potions
-                        || !PotionUsePolicy::can_any_paid_potion_improve_on(
-                            true,
-                            true,
-                            pv.final_fast.death_save_use_count,
-                            pv.final_fast.player_hp,
-                            pv.final_fast.player_max_hp,
-                            pnode.used_potion_slot_mask,
-                            pv.final_fast.outstanding_stolen,
-                            pv.final_fast.forfeits_gold,
-                            check_theft,
-                            &root_baseline,
-                        ))
-                    {
-                        hp_target_reached = true;
-                    }
-                    if pv.final_fast.won {
-                        best_won_hp_lost = Some(match best_won_hp_lost {
-                            Some(cur) => cur.min(pv.final_fast.cumulative_hp_lost),
-                            None => pv.final_fast.cumulative_hp_lost,
-                        });
-                    }
-                    terminal_tracker.observe_node(arena, final_nid, &root_baseline);
-                    completed.push(final_nid);
                 }
             }
-            std::mem::swap(&mut next_turn_candidates, &mut shortlist_buf);
+            BeamRetentionPolicy::prune_wave_with_rollout_into(
+                arena,
+                shortlist_buf,
+                beam_width,
+                profile.potion_free_beam_width,
+                profile.potion_beam_width,
+                root_baseline,
+                profile.second_rank_band,
+                profile.aggressive_power_commitment,
+                false,
+                true,
+                active_pool,
+                current_turn_frontier,
+                prune_scratch,
+            );
             shortlist_buf.clear();
-            true
+            if current_turn_frontier.len() < next_step_candidates.len()
+                || next_step_candidates.len() > beam_width
+            {
+                *any_lossy_truncation = true;
+            }
         } else {
-            false
-        };
-
-        if hp_target_reached {
-            termination = "HpTarget";
-            break;
-        }
-        if has_victory {
-            if let Some(win_turn) = best_victory_turn {
-                let next_turn = root_baseline.start_turn_number + turn_layer + 1;
-                let turn_cap = win_turn + if best_victory_clean_zero_cost { 1 } else { 4 };
-                if next_turn > turn_cap {
-                    break;
-                }
+            BeamRetentionPolicy::prune_wave_with_rollout_into(
+                arena,
+                next_step_candidates,
+                beam_width,
+                profile.potion_free_beam_width,
+                profile.potion_beam_width,
+                root_baseline,
+                profile.second_rank_band,
+                profile.aggressive_power_commitment,
+                false,
+                false,
+                active_pool,
+                current_turn_frontier,
+                prune_scratch,
+            );
+            if current_turn_frontier.len() < next_step_candidates.len()
+                || next_step_candidates.len() > beam_width
+            {
+                *any_lossy_truncation = true;
             }
-        }
-
-        BeamRetentionPolicy::prune_wave_with_rollout_into(
-            arena,
-            &next_turn_candidates,
-            beam_width,
-            profile.potion_free_beam_width,
-            profile.potion_beam_width,
-            &root_baseline,
-            profile.second_rank_band,
-            profile.aggressive_power_commitment,
-            options.prefer_potion_buckets,
-            ran_rollout,
-            active_pool,
-            &mut current_turn_frontier,
-            prune_scratch,
-        );
-
-        let mut layer_progressed = false;
-        let mut enemy_hp_decreased = false;
-        for &nid in &current_turn_frontier {
-            let n = arena.get(nid);
-            let f = &n.fast_eval;
-            let rem_enemies = (f.alive_enemy_count as i32) + (f.reviving_enemy_count as i32);
-            if f.enemy_hp < best_seen_enemy_hp {
-                best_seen_enemy_hp = f.enemy_hp;
-                layer_progressed = true;
-                enemy_hp_decreased = true;
-            }
-            if rem_enemies < best_seen_alive_enemies {
-                best_seen_alive_enemies = rem_enemies;
-                layer_progressed = true;
-            }
-            if n.has_full_eval() {
-                if (n.max_dark_evoke as i32) > best_seen_max_dark_evoke {
-                    best_seen_max_dark_evoke = n.max_dark_evoke as i32;
-                    layer_progressed = true;
-                }
-                if (n.total_poison_and_doom as i32) > best_seen_poison_and_doom {
-                    best_seen_poison_and_doom = n.total_poison_and_doom as i32;
-                    layer_progressed = true;
-                }
-                if (n.board_investment as i32) > best_seen_board_investment {
-                    best_seen_board_investment = n.board_investment as i32;
-                    layer_progressed = true;
-                }
-            }
-        }
-        turns_without_progress = if layer_progressed { 0 } else { turns_without_progress + 1 };
-        turns_since_enemy_hp_decreased = if enemy_hp_decreased {
-            0
-        } else {
-            turns_since_enemy_hp_decreased + 1
-        };
-        if turns_without_progress >= crate::eval::weights::SETUP_VALUE_HORIZON_TURNS {
-            if !has_victory {
-                termination = "TurnLimit";
-            }
-            break;
-        }
-        if root.static_ctx.room_type == RoomType::Boss
-            && turn_layer + 1 >= 28
-            && turns_since_enemy_hp_decreased > 2
-        {
-            if !has_victory && termination == "None" {
-                termination = "TurnLimit";
-            }
-            break;
-        }
-        step_arena.clear();
-        for &nid in &current_turn_frontier {
-            let tmp_h = arena.get(nid).state_handle;
-            if tmp_h.len > 0 {
-                let bytes = turn_staging_arena.get(tmp_h);
+            step_arena.clear();
+            for &nid in current_turn_frontier.iter() {
+                let tmp_h = arena.get(nid).state_handle;
+                let wo = &scratches[tmp_h.slab as usize];
+                let cand = &wo.candidates[tmp_h.offset as usize];
+                let bytes = wo.slab.get(cand.state_slab_idx, cand.state_off, cand.state_len);
+                *packed_state_bytes_total += bytes.len() as u64;
                 arena.get_mut(nid).state_handle = step_arena.commit_slice(bytes);
             }
         }
-        turn_staging_arena.clear();
-        for slab in prev_worker_slabs.iter_mut() {
-            slab.clear();
+    }
+    Ok(())
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn flush_stand_pat_end_turn(
+    active_frontier: &[NodeId],
+    stand_pat_limit: usize,
+    frontier_in_worker_slabs: bool,
+    check_theft: bool,
+    dop: usize,
+    active_pool: Option<&rayon::ThreadPool>,
+    cancel: &AtomicBool,
+    abort: &SearchAbortSlot,
+    static_ctx: &Arc<RootStaticContext>,
+    content: &(dyn ContentDispatcher + Sync),
+    root_baseline: &RootEvalBaseline,
+    policy: &SearchPolicy,
+    profile: &SolverSearchProfile,
+    cert: &ClosureCertificate,
+    incumbent_table: &PrimaryIncumbentTable,
+    incumbent: &mut FrozenIncumbentBound,
+    sensitivity: &CombatOrderSensitivity,
+    options: &PassSearchOptions,
+    scratches: &mut [WorkerScratch],
+    parent_states: &mut [BattleState],
+    deferred_batches: &mut Vec<DeferredChoiceBatch>,
+    probe_jobs: &mut Vec<ProbeJob>,
+    stand_pat_seen: &mut hashbrown::HashSet<(StateHash, StandPatParentKey), ahash::RandomState>,
+    choice_probe_cache: &mut ChoiceProbeCache,
+    tt: &mut ShardedParetoTT,
+    arena: &mut NodeArena,
+    step_arena: &MainStateArena,
+    prev_worker_slabs: &[LocalStateSlab],
+    turn_staging_arena: &mut MainStateArena,
+    active_parent_slices: &mut Vec<(u32, u16, u32, u32)>,
+    tt_group_accepted: &mut [Vec<u32>; 16],
+    tt_accepted_epoch: &mut Vec<u8>,
+    tt_cur_epoch: &mut u8,
+    tt_shard_buckets: &mut [Vec<(usize, StateHash, TranspositionLabel)>],
+    tt_accepted_flags: &mut Vec<AtomicU8>,
+    tt_flat_refs: &mut Vec<(usize, usize)>,
+    parent_slices: &mut Vec<AtomicU64>,
+    sort_list: &mut Vec<(usize, usize, (u32, u32, u32))>,
+    completed: &mut Vec<NodeId>,
+    terminal_tracker: &mut crate::eval::FinalPlanTracker,
+    sp_mid_unused: &mut Vec<NodeId>,
+    next_turn_candidates: &mut Vec<NodeId>,
+    transition_count: &mut u64,
+    choice_replay_attempts: &mut u64,
+    incumbent_pruned: &mut u64,
+    por_pruned: &mut u64,
+    branch_truncations: &mut u64,
+    packed_state_bytes_total: &mut u64,
+    has_victory: &mut bool,
+    best_victory: &mut Option<BestVictoryState>,
+    hp_target_reached: &mut bool,
+    termination: &mut &'static str,
+) -> Result<(), KernelError> {
+    let sp_ids = select_stand_pat_candidates(
+        active_frontier,
+        arena,
+        stand_pat_limit,
+        options.prefer_potion_buckets,
+    );
+    let mut uncached_sp_ids: SmallVec<[NodeId; 16]> = SmallVec::new();
+    for nid in sp_ids {
+        let pnode = arena.get(nid);
+        if stand_pat_seen.insert((pnode.state_hash, StandPatParentKey::from_node(pnode))) {
+            uncached_sp_ids.push(nid);
         }
-        tt.reset_generation();
-        stand_pat_seen.clear();
+    }
+    if uncached_sp_ids.is_empty() {
+        return Ok(());
     }
 
+    for s in scratches.iter_mut() {
+        if s.wave_dirty {
+            s.reset_for_wave();
+        }
+    }
+    let frozen_incumbent = *incumbent;
+    let turn_boundary_rollouts_enabled = options.rollout_horizon_turns > 0;
+    let sp_slice = uncached_sp_ids.as_slice();
+    if parent_slices.len() < sp_slice.len() {
+        parent_slices.resize_with(sp_slice.len(), || AtomicU64::new(0));
+    }
+    for slot in &parent_slices[..sp_slice.len()] {
+        slot.store(0, Ordering::Relaxed);
+    }
+    let sp_parent_source = if frontier_in_worker_slabs {
+        ParentStateSource::WorkerSlabs(prev_worker_slabs)
+    } else {
+        ParentStateSource::Main(step_arena)
+    };
+
+    if let Some(pool) = active_pool.filter(|_| dop > 1 && sp_slice.len() > 2) {
+        let workers = dop.min(sp_slice.len()).min(scratches.len()).min(parent_states.len());
+        let next_idx = AtomicUsize::new(0);
+        let arena_ref: &NodeArena = &*arena;
+        let tt_ref: &ShardedParetoTT = &*tt;
+        let probe_cache_ref: &ChoiceProbeCache = &*choice_probe_cache;
+        let slices_ref = &parent_slices[..sp_slice.len()];
+        pool.scope(|scope| {
+            for (w_idx, (scratch, parent_state)) in scratches
+                .iter_mut()
+                .zip(parent_states.iter_mut())
+                .take(workers)
+                .enumerate()
+            {
+                let next_ref = &next_idx;
+                scope.spawn(move |_| {
+                    scratch.wave_dirty = true;
+                    let mut probe_access = ProbeCacheAccess::Shared(probe_cache_ref);
+                    loop {
+                        if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
+                            break;
+                        }
+                        let rank = next_ref.fetch_add(1, Ordering::Relaxed);
+                        if rank >= sp_slice.len() {
+                            break;
+                        }
+                        let nid = sp_slice[rank];
+                        let pnode = arena_ref.get(nid);
+                        let pbytes = sp_parent_source.get(pnode.state_handle);
+                        // SAFETY: `pbytes` was committed from `pack_state` output in this process.
+                        if unsafe { unpack_state(pbytes, static_ctx, parent_state) }.is_err() {
+                            continue;
+                        }
+                        let filled = parent_state
+                            .player
+                            .potion_slots
+                            .iter()
+                            .filter(|s| s.is_some())
+                            .count()
+                            .min(u8::MAX as usize) as u8;
+                        let task = make_stand_pat_task(rank as u32, nid, pnode, filled, 0);
+                        let c_start = scratch.candidates.len();
+                        let deferred = execute_action_from_parent(
+                            scratch,
+                            parent_state,
+                            &task,
+                            rank,
+                            true,
+                            turn_boundary_rollouts_enabled,
+                            static_ctx,
+                            content,
+                            root_baseline,
+                            policy,
+                            profile,
+                            cert,
+                            &frozen_incumbent,
+                            tt_ref,
+                            &mut probe_access,
+                            sensitivity,
+                            options.allow_paid_optional_potions,
+                            options.eval_mode,
+                        );
+                        if let Some(err) = scratch.fatal_error.take() {
+                            abort.record_error(err);
+                            break;
+                        }
+                        if !deferred {
+                            let c_len = scratch.candidates.len() - c_start;
+                            if c_len > 0 {
+                                slices_ref[rank]
+                                    .store(pack_parent_slice(w_idx, c_start, c_len), Ordering::Relaxed);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+        if !abort.is_tripped() {
+            resolve_deferred_choice_batches_on_pool(
+                dop,
+                Some(pool),
+                scratches,
+                deferred_batches,
+                probe_jobs,
+                choice_probe_cache,
+                static_ctx,
+                content,
+                root_baseline,
+                profile,
+                options.eval_mode,
+                cancel,
+                &parent_slices[..sp_slice.len()],
+                true,
+            );
+        }
+    } else {
+        scratches[0].wave_dirty = true;
+        let mut probe_access = ProbeCacheAccess::SingleThread(choice_probe_cache);
+        for (rank, &nid) in sp_slice.iter().enumerate() {
+            if cancel.load(Ordering::Relaxed) || abort.is_tripped() {
+                break;
+            }
+            let pnode = arena.get(nid).clone();
+            let pbytes = sp_parent_source.get(pnode.state_handle);
+            // SAFETY: `pbytes` was committed from `pack_state` output in this process.
+            if unsafe { unpack_state(pbytes, static_ctx, &mut parent_states[0]) }.is_err() {
+                continue;
+            }
+            let filled = parent_states[0]
+                .player
+                .potion_slots
+                .iter()
+                .filter(|s| s.is_some())
+                .count()
+                .min(u8::MAX as usize) as u8;
+            let task = make_stand_pat_task(rank as u32, nid, &pnode, filled, 0);
+            let c_start = scratches[0].candidates.len();
+            let _ = execute_action_from_parent(
+                &mut scratches[0],
+                &parent_states[0],
+                &task,
+                rank,
+                false,
+                turn_boundary_rollouts_enabled,
+                static_ctx,
+                content,
+                root_baseline,
+                policy,
+                profile,
+                cert,
+                &frozen_incumbent,
+                tt,
+                &mut probe_access,
+                sensitivity,
+                options.allow_paid_optional_potions,
+                options.eval_mode,
+            );
+            if let Some(err) = scratches[0].fatal_error.take() {
+                abort.record_error(err);
+                break;
+            }
+            let c_len = scratches[0].candidates.len() - c_start;
+            if c_len > 0 {
+                parent_slices[rank].store(pack_parent_slice(0, c_start, c_len), Ordering::Relaxed);
+            }
+        }
+    }
+    if let Some(err) = abort.clone_error() {
+        return Err(err);
+    }
+    sp_mid_unused.clear();
+    commit_wave_candidates(
+        scratches,
+        tt,
+        arena,
+        turn_staging_arena,
+        root_baseline,
+        policy,
+        incumbent_table,
+        incumbent,
+        check_theft,
+        options,
+        dop,
+        active_pool,
+        active_parent_slices,
+        tt_group_accepted,
+        tt_accepted_epoch,
+        tt_cur_epoch,
+        tt_shard_buckets,
+        tt_accepted_flags,
+        tt_flat_refs,
+        completed,
+        terminal_tracker,
+        sp_mid_unused,
+        next_turn_candidates,
+        None,
+        transition_count,
+        choice_replay_attempts,
+        incumbent_pruned,
+        por_pruned,
+        branch_truncations,
+        packed_state_bytes_total,
+        has_victory,
+        best_victory,
+        hp_target_reached,
+        sp_slice.len(),
+        true,
+        parent_slices,
+        sort_list,
+    );
+    if *hp_target_reached {
+        *termination = "HpTarget";
+    }
+    Ok(())
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn emit_search_progress(
+    cb: &(dyn Fn(&SearchProgress) + Sync),
+    started: Instant,
+    last_progress_ms: &mut Option<u64>,
+    expanded_nodes: usize,
+    transition_count: u64,
+    choice_replay_attempts: u64,
+    current_turn: i32,
+    has_victory: bool,
+    best_won_hp_lost: Option<i32>,
+) {
+    let elapsed_ms = started.elapsed().as_millis() as u64;
+    if last_progress_ms.is_none_or(|prev| elapsed_ms.saturating_sub(prev) >= 100) {
+        *last_progress_ms = Some(elapsed_ms);
+        cb(&SearchProgress {
+            nodes_expanded: expanded_nodes,
+            transition_count,
+            choice_replay_attempts,
+            current_turn,
+            best_won: has_victory,
+            best_hp_lost: best_won_hp_lost,
+            elapsed_ms,
+        });
+    }
+}
+
+#[cold]
+#[inline(never)]
+fn collect_early_turn_scout_layer(
+    arena: &NodeArena,
+    next_turn_candidates: &[NodeId],
+    start_turn_number: i32,
+    completed_turns: i32,
+    early_turn_scout_depth: i32,
+    early_turn_frontiers: &mut Vec<crate::early_turn::EarlyTurnFrontierCandidate>,
+    termination: &mut &'static str,
+) -> bool {
+    let f = select_early_turn_frontier(
+        arena,
+        next_turn_candidates,
+        start_turn_number,
+        completed_turns,
+    );
+    early_turn_frontiers.extend(f);
+    if completed_turns >= early_turn_scout_depth {
+        *termination = "ScoutDepth";
+        true
+    } else {
+        false
+    }
+}
+
+#[cold]
+#[inline(never)]
+fn collect_boss_tempo_scout_prefixes(
+    arena: &NodeArena,
+    next_turn_candidates: &[NodeId],
+    root_baseline: &RootEvalBaseline,
+    fixed_prefix: Option<&[PlannedAction]>,
+    boss_tempo_prefixes: &mut Vec<BossTempoPrefix>,
+    termination: &mut &'static str,
+) {
+    for &nid in next_turn_candidates {
+        let n = arena.get(nid);
+        if !n.fast_eval.player_dead() {
+            let eliminated =
+                (root_baseline.initial_enemy_count as i32) - (n.fast_eval.alive_enemy_count as i32);
+            let rank = n.beam_rank_score_or_base();
+            let mut actions = fixed_prefix.map_or_else(Vec::new, |p| p.to_vec());
+            actions.extend(arena.reconstruct_actions(nid));
+            let forced_uses_satisfied = (n.forced_used_mask & root_baseline.all_forced_potion_mask)
+                == root_baseline.all_forced_potion_mask;
+            retain_boss_tempo_prefixes(
+                boss_tempo_prefixes,
+                BossTempoPrefix {
+                    actions,
+                    state_hash: n.state_hash,
+                    forced_uses_satisfied,
+                    eliminated_enemies: eliminated,
+                    potion_count: n.potion_count as usize,
+                    rank,
+                },
+            );
+        }
+    }
+    *termination = "BossTempoScout";
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn run_turn_boundary_rollouts_and_promote(
+    started: Instant,
+    effective_turn_boundary_width: usize,
+    next_turn_number: i32,
+    is_elite_or_boss: bool,
+    check_theft: bool,
+    active_pool: Option<&rayon::ThreadPool>,
+    cancel: &AtomicBool,
+    static_ctx: &Arc<RootStaticContext>,
+    content: &(dyn ContentDispatcher + Sync),
+    root_baseline: &RootEvalBaseline,
+    policy: &SearchPolicy,
+    profile: &SolverSearchProfile,
+    incumbent_table: &PrimaryIncumbentTable,
+    incumbent: &mut FrozenIncumbentBound,
+    options: &PassSearchOptions,
+    arena: &mut NodeArena,
+    turn_staging_arena: &MainStateArena,
+    prune_scratch: &mut PruneScratch,
+    next_turn_candidates: &mut Vec<NodeId>,
+    shortlist_buf: &mut Vec<NodeId>,
+    rollout_workspaces: &mut [crate::rollout::RolloutWorkspace],
+    turn_rollout_cache: &TurnRolloutCache,
+    rollout_results: &mut Vec<Option<RolloutResult>>,
+    has_victory: &mut bool,
+    best_victory: &mut Option<BestVictoryState>,
+    hp_target_reached: &mut bool,
+    hit_post_victory_turn_cap: &mut bool,
+    completed: &mut Vec<NodeId>,
+    terminal_tracker: &mut crate::eval::FinalPlanTracker,
+) -> bool {
+    let has_time_for_rollout = profile.soft_time_budget_ms == 0
+        || profile
+            .soft_time_budget_ms
+            .saturating_sub(started.elapsed().as_millis() as u64)
+            >= 150;
+    let has_any_strategy_targets = root_baseline.effective_has_growth_targets
+        || !root_baseline.active_relic_targets.is_empty();
+    let needs_turn_boundary_prune = next_turn_candidates.len() > effective_turn_boundary_width;
+    let victory_has_upside = keep_early_beam_width(best_victory.as_ref(), root_baseline);
+    let run_non_prune_rollout = !*has_victory
+        || (has_any_strategy_targets
+            && best_victory
+                .as_ref()
+                .is_some_and(|v| !v.all_strategy_targets_satisfied))
+        || (options.prefer_potion_buckets && victory_has_upside);
+
+    if options.rollout_horizon_turns == 0
+        || cancel.load(Ordering::Relaxed)
+        || !has_time_for_rollout
+        || (!needs_turn_boundary_prune && !run_non_prune_rollout)
+    {
+        return false;
+    }
+
+    let non_prune_rollout_cap = if options.prefer_potion_buckets {
+        64usize.max(effective_turn_boundary_width)
+    } else {
+        32
+    };
+    let shortlist_cap = if needs_turn_boundary_prune {
+        next_turn_candidates
+            .len()
+            .min(effective_turn_boundary_width * 2)
+    } else {
+        next_turn_candidates.len().min(non_prune_rollout_cap)
+    };
+    if next_turn_candidates.len() > shortlist_cap {
+        BeamRetentionPolicy::prune_wave_with_rollout_into(
+            arena,
+            next_turn_candidates,
+            shortlist_cap,
+            profile.potion_free_beam_width,
+            profile.potion_beam_width,
+            root_baseline,
+            profile.second_rank_band,
+            profile.aggressive_power_commitment,
+            options.prefer_potion_buckets,
+            false,
+            active_pool,
+            shortlist_buf,
+            prune_scratch,
+        );
+    } else {
+        shortlist_buf.clear();
+        shortlist_buf.extend_from_slice(next_turn_candidates);
+    }
+    let rollout_deadline = (profile.soft_time_budget_ms > 0)
+        .then(|| started + Duration::from_millis(profile.soft_time_budget_ms));
+    evaluate_turn_boundary_rollouts_into(
+        turn_staging_arena,
+        arena,
+        shortlist_buf,
+        static_ctx,
+        content,
+        root_baseline,
+        policy,
+        profile,
+        options.eval_mode,
+        options.rollout_horizon_turns,
+        rollout_deadline,
+        active_pool,
+        cancel,
+        rollout_workspaces,
+        Some(turn_rollout_cache),
+        rollout_results,
+    );
+    for (idx, maybe_rr) in rollout_results.drain(..).enumerate() {
+        let Some(rr) = maybe_rr else { continue };
+        let pid = shortlist_buf[idx];
+        arena.get_mut(pid).set_rollout_score(rr.rollout_score);
+        if let Some(pv) = rr.promoted_victory {
+            materialize_promoted_victory(
+                arena,
+                pid,
+                pv,
+                root_baseline,
+                incumbent_table,
+                incumbent,
+                policy,
+                options.allow_paid_optional_potions,
+                check_theft,
+                true,
+                has_victory,
+                best_victory,
+                hp_target_reached,
+                terminal_tracker,
+                completed,
+            );
+        }
+    }
+    if !*hp_target_reached
+        && has_exceeded_post_victory_turn_cap(
+            best_victory.as_ref(),
+            next_turn_number,
+            root_baseline,
+            policy,
+            is_elite_or_boss,
+            options.allow_paid_optional_potions,
+        )
+    {
+        *hit_post_victory_turn_cap = true;
+    }
+    if needs_turn_boundary_prune {
+        std::mem::swap(next_turn_candidates, shortlist_buf);
+        shortlist_buf.clear();
+        true
+    } else {
+        let all_rolled_out = shortlist_buf.len() == next_turn_candidates.len();
+        shortlist_buf.clear();
+        options.prefer_potion_buckets && all_rolled_out
+    }
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn finalize_beam_pass_output(
+    arena: &NodeArena,
+    start_state: &BattleState,
+    root_baseline: RootEvalBaseline,
+    policy: &SearchPolicy,
+    fixed_prefix: Option<&[PlannedAction]>,
+    completed: &mut Vec<NodeId>,
+    latest_completed_turn_nodes: &[NodeId],
+    current_turn_frontier: &[NodeId],
+    last_active_frontier: &[NodeId],
+    has_victory: bool,
+    mut termination: &'static str,
+    was_losslessly_exhausted: bool,
+    expanded_nodes: usize,
+    transition_count: u64,
+    choice_replay_attempts: u64,
+    tt_pruned: u64,
+    incumbent_pruned: u64,
+    por_pruned: u64,
+    packed_state_bytes_total: u64,
+    early_turn_frontiers: Vec<crate::early_turn::EarlyTurnFrontierCandidate>,
+    boss_tempo_prefixes: Vec<BossTempoPrefix>,
+) -> BeamRunOutput {
     if !has_victory && (termination != "None" || completed.is_empty()) {
         if !latest_completed_turn_nodes.is_empty() {
             completed.extend(latest_completed_turn_nodes.iter().copied());
@@ -7002,13 +8125,21 @@ fn run_beam_pass_with_resources_inner(
 
     let selected = select_final_plan(
         arena,
-        &completed,
+        completed,
         &root_baseline,
         policy.potion_policy,
         Some(policy.theft_policy),
         root_baseline.potion_replacement_hp_credit,
         root_baseline.minimum_required_potion_uses,
     );
+
+    let default_enemy_hp: i32 = start_state
+        .enemy_handles
+        .iter()
+        .filter_map(|&eh| start_state.creature(eh))
+        .filter(|c| c.is_alive())
+        .map(|c| c.current_hp.max(0))
+        .sum();
 
     let (
         best_node,
@@ -7137,11 +8268,33 @@ fn run_beam_pass_with_resources_inner(
         .filter_map(|&ch| start_state.card(ch).map(|c| c.id))
         .collect();
 
-    let explicit_potion_count =
-        best_node.map_or(0, |nid| arena.get(nid).explicit_potion_count as usize);
+    let (
+        explicit_potion_count,
+        raw_optional_paid_potion_cost,
+        enemy_hp,
+        all_strategy_targets_satisfied,
+    ) = match best_node {
+        Some(nid) => {
+            let n = arena.get(nid);
+            let rare = arena.rare_eval(nid);
+            (
+                n.explicit_potion_count as usize,
+                n.optional_paid_potion_cost as i32,
+                n.fast_eval.enemy_hp,
+                are_strategy_targets_satisfied_raw(&root_baseline, &n.fast_eval, &rare),
+            )
+        }
+        None => (
+            0,
+            0,
+            default_enemy_hp,
+            !root_baseline.effective_has_growth_targets
+                && root_baseline.active_relic_targets.is_empty(),
+        ),
+    };
     let nodes_in_arena = arena.len();
 
-    Ok(BeamRunOutput {
+    BeamRunOutput {
         best_node,
         best_turn,
         nodes_in_arena,
@@ -7152,7 +8305,9 @@ fn run_beam_pass_with_resources_inner(
         death_save_use_count,
         player_hp,
         end_player_max_hp,
+        enemy_hp,
         all_forced_uses_satisfied,
+        all_strategy_targets_satisfied,
         strategic_hp_deficit,
         net_persistent_hp_delta_centi,
         net_potion_opportunity_cost_centi,
@@ -7167,6 +8322,7 @@ fn run_beam_pass_with_resources_inner(
         optional_potion_count,
         optional_paid_potion_count,
         optional_potion_strategic_cost,
+        raw_optional_paid_potion_cost,
         optional_ambergris_count,
         used_potion_slot_mask,
         alchemize_count,
@@ -7180,17 +8336,1095 @@ fn run_beam_pass_with_resources_inner(
         expanded_nodes,
         transition_count,
         choice_replay_attempts,
-        tt_pruned: tt.branches_pruned,
+        tt_pruned,
         incumbent_pruned,
         por_pruned,
         packed_state_bytes_total,
         termination,
+        was_losslessly_exhausted,
         terminal_cards_hint,
         early_turn_frontiers,
         boss_tempo_prefixes,
-    })
+    }
 }
 
+#[allow(clippy::too_many_arguments)]
+fn run_beam_pass(
+    root: &BattleState,
+    content: &(dyn ContentDispatcher + Sync),
+    policy: &SearchPolicy,
+    profile: &SolverSearchProfile,
+    cert: &ClosureCertificate,
+    incumbent_table: &PrimaryIncumbentTable,
+    incumbent: &mut FrozenIncumbentBound,
+    pool: Option<&rayon::ThreadPool>,
+    cancel: &AtomicBool,
+    abort: &SearchAbortSlot,
+    progress_cb: Option<&(dyn Fn(&SearchProgress) + Sync)>,
+    options: PassSearchOptions,
+    fixed_prefix: Option<&[PlannedAction]>,
+) -> Result<BeamRunOutput, KernelError> {
+    let dop = policy
+        .max_degree_of_parallelism
+        .clamp(1, crate::eval::weights::MAXIMUM_SEARCH_MAX_DEGREE_OF_PARALLELISM);
+    let active_pool = if dop > 1 { pool } else { None };
+    let worker_count = if active_pool.is_some() { dop } else { 1 };
+    let mut resources = PassResources::acquire(
+        &root.static_ctx,
+        worker_count,
+        policy.transposition_entry_limit,
+    );
+    run_beam_pass_with_resources(
+        root,
+        content,
+        policy,
+        profile,
+        cert,
+        incumbent_table,
+        incumbent,
+        pool,
+        cancel,
+        abort,
+        progress_cb,
+        options,
+        fixed_prefix,
+        &mut resources,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn run_beam_pass_with_resources(
+    root: &BattleState,
+    content: &(dyn ContentDispatcher + Sync),
+    policy: &SearchPolicy,
+    profile: &SolverSearchProfile,
+    cert: &ClosureCertificate,
+    incumbent_table: &PrimaryIncumbentTable,
+    incumbent: &mut FrozenIncumbentBound,
+    pool: Option<&rayon::ThreadPool>,
+    cancel: &AtomicBool,
+    abort: &SearchAbortSlot,
+    progress_cb: Option<&(dyn Fn(&SearchProgress) + Sync)>,
+    options: PassSearchOptions,
+    fixed_prefix: Option<&[PlannedAction]>,
+    resources: &mut PassResources,
+) -> Result<BeamRunOutput, KernelError> {
+    let prev_allow_death_save_rescue = resources.prune_scratch.allow_death_save_rescue;
+    let prev_relax_zero_potion_reserve = resources.prune_scratch.relax_zero_potion_reserve;
+    let prev_min_zero_potion_reserve_percent =
+        resources.prune_scratch.min_zero_potion_reserve_percent;
+    let prev_turn_layer = resources.prune_scratch.turn_layer;
+    resources.prune_scratch.allow_death_save_rescue = options.allow_death_save_rescue;
+    resources.prune_scratch.relax_zero_potion_reserve = options.relax_zero_potion_reserve;
+    resources.prune_scratch.min_zero_potion_reserve_percent =
+        options.min_zero_potion_reserve_percent;
+    resources.prune_scratch.turn_layer = 0;
+
+    let dop = policy
+        .max_degree_of_parallelism
+        .clamp(1, crate::eval::weights::MAXIMUM_SEARCH_MAX_DEGREE_OF_PARALLELISM);
+    let res = if dop > 1 {
+        if let Some(p) = pool {
+            p.install(|| {
+                run_beam_pass_with_resources_inner(
+                    root,
+                    content,
+                    policy,
+                    profile,
+                    cert,
+                    incumbent_table,
+                    incumbent,
+                    pool,
+                    cancel,
+                    abort,
+                    progress_cb,
+                    options,
+                    fixed_prefix,
+                    resources,
+                )
+            })
+        } else {
+            run_beam_pass_with_resources_inner(
+                root,
+                content,
+                policy,
+                profile,
+                cert,
+                incumbent_table,
+                incumbent,
+                pool,
+                cancel,
+                abort,
+                progress_cb,
+                options,
+                fixed_prefix,
+                resources,
+            )
+        }
+    } else {
+        run_beam_pass_with_resources_inner(
+            root,
+            content,
+            policy,
+            profile,
+            cert,
+            incumbent_table,
+            incumbent,
+            pool,
+            cancel,
+            abort,
+            progress_cb,
+            options,
+            fixed_prefix,
+            resources,
+        )
+    };
+    resources.prune_scratch.allow_death_save_rescue = prev_allow_death_save_rescue;
+    resources.prune_scratch.relax_zero_potion_reserve = prev_relax_zero_potion_reserve;
+    resources.prune_scratch.min_zero_potion_reserve_percent =
+        prev_min_zero_potion_reserve_percent;
+    resources.prune_scratch.turn_layer = prev_turn_layer;
+    res
+}
+
+#[allow(clippy::too_many_arguments)]
+fn run_beam_pass_with_resources_inner(
+    root: &BattleState,
+    content: &(dyn ContentDispatcher + Sync),
+    policy: &SearchPolicy,
+    profile: &SolverSearchProfile,
+    cert: &ClosureCertificate,
+    incumbent_table: &PrimaryIncumbentTable,
+    incumbent: &mut FrozenIncumbentBound,
+    pool: Option<&rayon::ThreadPool>,
+    cancel: &AtomicBool,
+    abort: &SearchAbortSlot,
+    progress_cb: Option<&(dyn Fn(&SearchProgress) + Sync)>,
+    options: PassSearchOptions,
+    fixed_prefix: Option<&[PlannedAction]>,
+    resources: &mut PassResources,
+) -> Result<BeamRunOutput, KernelError> {
+    let started = Instant::now();
+    let root_baseline = RootEvalBaseline::from_state_with_policy(root, content, policy);
+    let sensitivity = CombatOrderSensitivity::analyze(root, content);
+    let dop = policy
+        .max_degree_of_parallelism
+        .clamp(1, crate::eval::weights::MAXIMUM_SEARCH_MAX_DEGREE_OF_PARALLELISM);
+    let active_pool = if dop > 1 { pool } else { None };
+    let worker_count = if active_pool.is_some() { dop } else { 1 };
+    let is_boss = root.static_ctx.room_type == RoomType::Boss;
+    let is_elite_or_boss = matches!(root.static_ctx.room_type, RoomType::Elite | RoomType::Boss);
+    let has_any_strategy_targets = root_baseline.effective_has_growth_targets
+        || !root_baseline.active_relic_targets.is_empty();
+    let has_relic_targets = !root_baseline.active_relic_targets.is_empty();
+
+    resources.reset_for_pass();
+    let PassResources {
+        scratches,
+        parent_states,
+        enumerated_tasks,
+        rollout_workspaces,
+        node_arena,
+        prune_scratch,
+        flat_tasks,
+        deferred_batches,
+        probe_jobs,
+        step_arena,
+        prev_worker_slabs,
+        turn_staging_arena,
+        tt,
+        choice_probe_cache,
+        turn_rollout_cache,
+        stand_pat_seen,
+        sort_list,
+        parent_slices,
+        active_parent_slices,
+        tt_group_accepted,
+        tt_accepted_epoch,
+        tt_cur_epoch,
+        tt_shard_buckets,
+        tt_accepted_flags,
+        tt_flat_refs,
+        accepted_mid_turn,
+        mid_turn_ords,
+        surviving_ords,
+        surviving_commit_order,
+        rollout_results,
+    } = resources;
+    debug_assert!(scratches.len() >= worker_count && parent_states.len() >= worker_count);
+    let use_l1_probe = dop > 1 && active_pool.is_some();
+    for s in scratches.iter_mut() {
+        s.choice_probe_ws.l1.use_l1 = use_l1_probe;
+    }
+
+    let arena = node_arena;
+    let mut current_turn_frontier: Vec<NodeId> = Vec::new();
+    let mut completed: Vec<NodeId> = Vec::new();
+    let mut terminal_tracker = crate::eval::FinalPlanTracker::new(
+        &root_baseline,
+        policy.potion_policy,
+        Some(policy.theft_policy),
+        root_baseline.minimum_required_potion_uses,
+    );
+    let (
+        start_state,
+        root_id,
+        mut best_seen_max_dark_evoke,
+        mut best_seen_poison_and_doom,
+        mut best_seen_board_investment,
+        mut packed_state_bytes_total,
+    ) = init_beam_pass_root(
+        root,
+        content,
+        policy,
+        profile,
+        options.eval_mode,
+        fixed_prefix,
+        &root_baseline,
+        &mut scratches[0].pack_buf,
+        arena,
+        step_arena,
+        &mut completed,
+        &mut current_turn_frontier,
+        &mut terminal_tracker,
+    )?;
+
+    let mut expanded_nodes = 0usize;
+    let mut transition_count = 0u64;
+    let mut choice_replay_attempts = 0u64;
+    let mut incumbent_pruned = 0u64;
+    let mut por_pruned = 0u64;
+    let mut branch_truncations = 0u64;
+    let mut termination: &'static str = "None";
+    let mut early_turn_frontiers = Vec::new();
+    let mut boss_tempo_prefixes = Vec::new();
+    let mut latest_completed_turn_nodes: Vec<NodeId> = Vec::new();
+    let mut last_active_frontier: Vec<NodeId> = Vec::new();
+    let mut active_frontier: Vec<NodeId> = Vec::new();
+    let mut next_step_candidates: Vec<NodeId> = Vec::new();
+    let mut next_turn_candidates: Vec<NodeId> = Vec::new();
+    let mut turn_setup_ended_turn: Vec<NodeId> = Vec::new();
+    let mut shortlist_buf: Vec<NodeId> = Vec::new();
+    let mut sp_mid_unused: Vec<NodeId> = Vec::new();
+
+    let check_theft = policy.theft_policy == SolverTheftPolicy::PreserveResources;
+    let mut has_victory = false;
+    let mut best_victory: Option<BestVictoryState> = None;
+    for &nid in &completed {
+        let n = arena.get(nid).clone();
+        if n.fast_eval.won() {
+            let rare = arena.rare_eval(nid);
+            record_victory_and_tighten(
+                &root_baseline,
+                incumbent_table,
+                incumbent,
+                policy,
+                &n.fast_eval,
+                &rare,
+                n.turn as i32,
+                n.potion_count as u16,
+                n.explicit_potion_count as u16,
+                n.optional_paid_potion_count as u16,
+                n.potion_strategic_cost as i32,
+                n.optional_paid_potion_cost as i32,
+                n.forced_used_mask,
+                n.beam_rank_score_or_base().round() as i64,
+                &mut has_victory,
+                &mut best_victory,
+            );
+        }
+    }
+    let mut last_progress_ms: Option<u64> = None;
+    let root_fast_eval = arena.get(root_id).fast_eval;
+    let mut best_seen_enemy_hp = root_fast_eval.enemy_hp;
+    let mut best_seen_alive_enemies =
+        (root_fast_eval.alive_enemy_count as i32) + (root_fast_eval.reviving_enemy_count as i32);
+    let mut best_seen_strategy_goal_hp_credit = if has_any_strategy_targets {
+        root_fast_eval.strategy_goal_hp_credit as i32
+    } else {
+        0
+    };
+    let mut best_seen_strategy_goal_count = if has_any_strategy_targets {
+        root_fast_eval.strategy_goal_count as i32
+    } else {
+        0
+    };
+    let mut seen_relic_satisfied_mask = if has_relic_targets {
+        arena.rare_eval(root_id).relic_eval.satisfied_mask
+    } else {
+        0
+    };
+    let mut turns_without_progress = 0i32;
+    let mut turns_since_enemy_hp_decreased = 0i32;
+
+    const MAX_ACTIONS_PER_TURN: usize = 64;
+    let max_turns = policy.max_turns.max(1);
+    let beam_width = profile.beam_width.clamp(1, MAX_BEAM_WIDTH);
+    let early_turn_boundary_width = ((beam_width * 3) / 2).min(MAX_BEAM_WIDTH).max(beam_width);
+    let early_mid_turn_width = ((beam_width * 5) / 4).min(MAX_BEAM_WIDTH).max(beam_width);
+    let turn_boundary_rollouts_enabled = options.rollout_horizon_turns > 0;
+    let mut any_lossy_truncation = false;
+    let mut any_turn_hit_per_turn_cap = false;
+    let mut hit_max_search_turns = false;
+    let mut hit_post_victory_turn_cap = false;
+    let mut hit_progress_stall = false;
+    let mut any_stop_target_reached = false;
+
+    if !arena.get(root_id).is_terminal() && start_state.pending.is_some() {
+        let prefix_len = fixed_prefix.map_or(0, |p| p.len() as u16);
+        let rn = arena.get(root_id);
+        expand_depth0_turn_setup(
+            &start_state,
+            root_id,
+            prefix_len,
+            rn.potion_count as u16,
+            rn.optional_paid_potion_count as u16,
+            rn.used_potion_slot_mask,
+            rn.potion_strategic_cost as i32,
+            rn.optional_paid_potion_cost as i32,
+            rn.ambergris_count as u16,
+            rn.forced_used_mask,
+            rn.forced_ambergris_count as u16,
+            started,
+            beam_width,
+            check_theft,
+            dop,
+            active_pool,
+            cancel,
+            abort,
+            content,
+            &root_baseline,
+            policy,
+            profile,
+            cert,
+            incumbent_table,
+            incumbent,
+            &sensitivity,
+            &options,
+            scratches,
+            deferred_batches,
+            probe_jobs,
+            rollout_workspaces,
+            rollout_results,
+            turn_rollout_cache,
+            choice_probe_cache,
+            tt,
+            arena,
+            step_arena,
+            turn_staging_arena,
+            prune_scratch,
+            active_parent_slices,
+            tt_group_accepted,
+            tt_accepted_epoch,
+            tt_cur_epoch,
+            tt_shard_buckets,
+            tt_accepted_flags,
+            tt_flat_refs,
+            parent_slices,
+            sort_list,
+            &mut completed,
+            &mut terminal_tracker,
+            &mut next_step_candidates,
+            &mut turn_setup_ended_turn,
+            &mut shortlist_buf,
+            &mut current_turn_frontier,
+            &mut transition_count,
+            &mut choice_replay_attempts,
+            &mut incumbent_pruned,
+            &mut por_pruned,
+            &mut branch_truncations,
+            &mut any_lossy_truncation,
+            &mut packed_state_bytes_total,
+            &mut has_victory,
+            &mut best_victory,
+            &mut termination,
+        )?;
+        if termination == "HpTarget" {
+            any_stop_target_reached = true;
+        }
+    }
+
+    for turn_layer in 0..max_turns {
+        if termination == "HpTarget" {
+            any_stop_target_reached = true;
+            break;
+        }
+        if current_turn_frontier.is_empty() && (turn_layer > 0 || turn_setup_ended_turn.is_empty()) {
+            break;
+        }
+        if has_exceeded_post_victory_turn_cap(
+            best_victory.as_ref(),
+            root_baseline.start_turn_number + turn_layer,
+            &root_baseline,
+            policy,
+            is_elite_or_boss,
+            options.allow_paid_optional_potions,
+        ) {
+            hit_post_victory_turn_cap = true;
+            break;
+        }
+        if let Some(err) = abort.clone_error() {
+            return Err(err);
+        }
+        if cancel.load(Ordering::Relaxed) {
+            termination = "Cancelled";
+            break;
+        }
+        if expanded_nodes >= profile.max_expanded_nodes {
+            termination = BeamWidthPortfolio::NODE_LIMIT_TERMINATION;
+            break;
+        }
+        if profile.soft_time_budget_ms > 0
+            && (started.elapsed().as_millis() as u64) >= profile.soft_time_budget_ms
+        {
+            termination = "TimeLimit";
+            break;
+        }
+
+        prune_scratch.turn_layer = turn_layer;
+        if turn_layer > 0 {
+            turn_staging_arena.clear();
+        }
+        active_frontier.clear();
+        active_frontier.append(&mut current_turn_frontier);
+        next_turn_candidates.clear();
+        if turn_layer == 0 && !turn_setup_ended_turn.is_empty() {
+            next_turn_candidates.append(&mut turn_setup_ended_turn);
+        }
+        let remaining_pass_nodes = profile.max_expanded_nodes.saturating_sub(expanded_nodes);
+        let is_boss_deep_rescue_pass = options.prefer_potion_buckets
+            || options.allow_death_save_rescue
+            || matches!(
+                options.eval_mode,
+                EvalMode::Offense | EvalMode::DesperateRescue
+            );
+        let base_turn_share = if is_boss {
+            if is_boss_deep_rescue_pass {
+                (beam_width * 32).max(profile.max_expanded_nodes / 4)
+            } else {
+                (beam_width * 24).max(profile.max_expanded_nodes / 8)
+            }
+        } else {
+            (beam_width * 40).max(profile.max_expanded_nodes / 4)
+        };
+        let keep_post_victory_turn_cap =
+            has_victory && keep_early_beam_width(best_victory.as_ref(), &root_baseline);
+        let per_turn_cap = if has_victory && !keep_post_victory_turn_cap {
+            remaining_pass_nodes
+        } else {
+            remaining_pass_nodes.min(base_turn_share).max(
+                crate::eval::weights::MINIMUM_TURN_LAYER_EXPANDED_NODES
+                    .min(remaining_pass_nodes.max(1)),
+            )
+        };
+        let mut expanded_this_turn = 0usize;
+        let mut last_turn_hit_per_turn_cap = false;
+        let mut aborted_limit = false;
+        let mut hp_target_reached = false;
+        let mut frontier_in_worker_slabs = false;
+
+        for _action_depth in 0..=MAX_ACTIONS_PER_TURN {
+            if active_frontier.is_empty() {
+                break;
+            }
+            if let Some(err) = abort.clone_error() {
+                return Err(err);
+            }
+            if cancel.load(Ordering::Relaxed) {
+                termination = "Cancelled";
+                aborted_limit = true;
+                break;
+            }
+            if expanded_nodes >= profile.max_expanded_nodes {
+                termination = BeamWidthPortfolio::NODE_LIMIT_TERMINATION;
+                aborted_limit = true;
+                break;
+            }
+            if expanded_this_turn >= per_turn_cap {
+                last_turn_hit_per_turn_cap = true;
+                any_turn_hit_per_turn_cap = true;
+                break;
+            }
+            if profile.soft_time_budget_ms > 0
+                && (started.elapsed().as_millis() as u64) >= profile.soft_time_budget_ms
+            {
+                termination = "TimeLimit";
+                aborted_limit = true;
+                break;
+            }
+
+            let allowed = (profile.max_expanded_nodes - expanded_nodes)
+                .min(per_turn_cap - expanded_this_turn);
+            let wave_count = active_frontier.len().min(allowed);
+            if wave_count == 0 {
+                break;
+            }
+            if wave_count < active_frontier.len() {
+                any_lossy_truncation = true;
+            }
+
+            let parent_slice = &active_frontier[..wave_count];
+            expanded_nodes += wave_count;
+            expanded_this_turn += wave_count;
+
+            let frozen_incumbent = *incumbent;
+            let parent_source = if frontier_in_worker_slabs {
+                ParentStateSource::WorkerSlabs(prev_worker_slabs.as_slice())
+            } else {
+                ParentStateSource::Main(step_arena)
+            };
+            let commit_slice_count = expand_wave_tasks(
+                parent_slice,
+                dop,
+                active_pool,
+                &root.static_ctx,
+                arena,
+                parent_source,
+                content,
+                &root_baseline,
+                policy,
+                profile,
+                cert,
+                &frozen_incumbent,
+                tt,
+                choice_probe_cache,
+                &sensitivity,
+                options.allow_paid_optional_potions,
+                turn_boundary_rollouts_enabled,
+                options.eval_mode,
+                cancel,
+                abort,
+                scratches,
+                parent_states,
+                enumerated_tasks,
+                flat_tasks,
+                deferred_batches,
+                probe_jobs,
+                parent_slices,
+            );
+            if let Some(err) = abort.clone_error() {
+                return Err(err);
+            }
+
+            next_step_candidates.clear();
+            accepted_mid_turn.clear();
+            commit_wave_candidates(
+                scratches,
+                tt,
+                arena,
+                turn_staging_arena,
+                &root_baseline,
+                policy,
+                incumbent_table,
+                incumbent,
+                check_theft,
+                &options,
+                dop,
+                active_pool,
+                active_parent_slices,
+                tt_group_accepted,
+                tt_accepted_epoch,
+                tt_cur_epoch,
+                tt_shard_buckets,
+                tt_accepted_flags,
+                tt_flat_refs,
+                &mut completed,
+                &mut terminal_tracker,
+                &mut next_step_candidates,
+                &mut next_turn_candidates,
+                Some(accepted_mid_turn),
+                &mut transition_count,
+                &mut choice_replay_attempts,
+                &mut incumbent_pruned,
+                &mut por_pruned,
+                &mut branch_truncations,
+                &mut packed_state_bytes_total,
+                &mut has_victory,
+                &mut best_victory,
+                &mut hp_target_reached,
+                commit_slice_count,
+                true,
+                parent_slices,
+                sort_list,
+            );
+
+            if hp_target_reached {
+                any_stop_target_reached = true;
+                termination = "HpTarget";
+                break;
+            }
+
+            if accepted_mid_turn.is_empty() {
+                active_frontier.clear();
+                if frontier_in_worker_slabs {
+                    for slab in prev_worker_slabs.iter_mut() {
+                        slab.clear();
+                    }
+                    frontier_in_worker_slabs = false;
+                }
+            } else {
+                let effective_mid_turn_width = if turn_layer <= 2
+                    && keep_early_beam_width(best_victory.as_ref(), &root_baseline)
+                {
+                    early_mid_turn_width
+                } else {
+                    beam_width
+                };
+                mid_turn_ords.clear();
+                mid_turn_ords.extend((0..accepted_mid_turn.len() as u32).map(NodeId));
+                let cand_source = WorkerCandidateSource {
+                    scratches,
+                    accepted: accepted_mid_turn,
+                };
+                BeamRetentionPolicy::prune_with_source_into(
+                    &cand_source,
+                    mid_turn_ords,
+                    effective_mid_turn_width,
+                    profile.potion_free_beam_width,
+                    profile.potion_beam_width,
+                    &root_baseline,
+                    profile.second_rank_band,
+                    profile.aggressive_power_commitment,
+                    options.prefer_potion_buckets,
+                    false,
+                    false,
+                    active_pool,
+                    surviving_ords,
+                    prune_scratch,
+                );
+                if surviving_ords.len() < accepted_mid_turn.len()
+                    || accepted_mid_turn.len() > effective_mid_turn_width
+                {
+                    any_lossy_truncation = true;
+                }
+                active_frontier.resize(surviving_ords.len(), NodeId(0));
+                surviving_commit_order.clear();
+                surviving_commit_order.extend(0..surviving_ords.len());
+                surviving_commit_order.sort_unstable_by_key(|&k| surviving_ords[k].0);
+                let surv_len = surviving_commit_order.len();
+                for pos in 0..surv_len {
+                    #[cfg(target_arch = "x86_64")]
+                    if surv_len >= 16 && pos + 2 < surv_len {
+                        let k2 = surviving_commit_order[pos + 2];
+                        let acc2 = accepted_mid_turn[surviving_ords[k2].0 as usize];
+                        let wo2 = &scratches[acc2.w_idx as usize];
+                        let cand2 = &wo2.candidates[acc2.c_idx as usize];
+                        unsafe {
+                            std::arch::x86_64::_mm_prefetch(
+                                (cand2 as *const WorkerCandidate).cast::<i8>(),
+                                std::arch::x86_64::_MM_HINT_T0,
+                            );
+                        }
+                    }
+                    let k = surviving_commit_order[pos];
+                    let ord = surviving_ords[k].0 as usize;
+                    let acc = accepted_mid_turn[ord];
+                    let (w_idx, c_idx) = (acc.w_idx as usize, acc.c_idx as usize);
+                    let wo = &scratches[w_idx];
+                    let cand = &wo.candidates[c_idx];
+                    debug_assert!(w_idx < 65536 && cand.state_slab_idx < 65536);
+                    packed_state_bytes_total += u64::from(cand.state_len);
+                    let state_handle = PackedHandle {
+                        slab: ((w_idx as u32) << 16) | (cand.state_slab_idx & 0xFFFF),
+                        offset: cand.state_off,
+                        len: cand.state_len,
+                    };
+                    let (choices_offset, choices_len) = arena.choices.extend_from_arena_slice(
+                        &wo.staged_choices,
+                        cand.choices_offset,
+                        cand.choices_len,
+                    );
+                    let nid = push_worker_candidate_node(
+                        arena,
+                        cand,
+                        state_handle,
+                        choices_offset,
+                        choices_len,
+                    );
+                    active_frontier[k] = nid;
+                }
+                for (s, prev) in scratches.iter_mut().zip(prev_worker_slabs.iter_mut()) {
+                    std::mem::swap(&mut s.slab, prev);
+                    s.slab.clear();
+                }
+                frontier_in_worker_slabs = true;
+            }
+
+            if let Some(cb) = progress_cb {
+                emit_search_progress(
+                    cb,
+                    started,
+                    &mut last_progress_ms,
+                    expanded_nodes,
+                    transition_count,
+                    choice_replay_attempts,
+                    root_baseline.start_turn_number + turn_layer,
+                    has_victory,
+                    best_victory.map(|v| v.raw_won_hp_lost),
+                );
+            }
+        }
+
+        if !active_frontier.is_empty() && !hp_target_reached && termination == "None" {
+            any_lossy_truncation = true;
+        }
+
+        let mut effective_turn_boundary_width = if turn_layer <= 2
+            && keep_early_beam_width(best_victory.as_ref(), &root_baseline)
+        {
+            early_turn_boundary_width
+        } else {
+            beam_width
+        };
+        let is_time_expired = termination == "TimeLimit";
+        let emergency_turn0_stand_pat = !has_victory
+            && latest_completed_turn_nodes.is_empty()
+            && turn_layer == 0
+            && !active_frontier.is_empty()
+            && !cancel.load(Ordering::Relaxed);
+        let need_stand_pat = !hp_target_reached
+            && !cancel.load(Ordering::Relaxed)
+            && !active_frontier.is_empty()
+            && ((next_turn_candidates.len() < effective_turn_boundary_width && !is_time_expired)
+                || emergency_turn0_stand_pat);
+        if need_stand_pat {
+            let stand_pat_limit = if is_time_expired { 4 } else { 16 };
+            flush_stand_pat_end_turn(
+                &active_frontier,
+                stand_pat_limit,
+                frontier_in_worker_slabs,
+                check_theft,
+                dop,
+                active_pool,
+                cancel,
+                abort,
+                &root.static_ctx,
+                content,
+                &root_baseline,
+                policy,
+                profile,
+                cert,
+                incumbent_table,
+                incumbent,
+                &sensitivity,
+                &options,
+                scratches,
+                parent_states,
+                deferred_batches,
+                probe_jobs,
+                stand_pat_seen,
+                choice_probe_cache,
+                tt,
+                arena,
+                step_arena,
+                prev_worker_slabs,
+                turn_staging_arena,
+                active_parent_slices,
+                tt_group_accepted,
+                tt_accepted_epoch,
+                tt_cur_epoch,
+                tt_shard_buckets,
+                tt_accepted_flags,
+                tt_flat_refs,
+                parent_slices,
+                sort_list,
+                &mut completed,
+                &mut terminal_tracker,
+                &mut sp_mid_unused,
+                &mut next_turn_candidates,
+                &mut transition_count,
+                &mut choice_replay_attempts,
+                &mut incumbent_pruned,
+                &mut por_pruned,
+                &mut branch_truncations,
+                &mut packed_state_bytes_total,
+                &mut has_victory,
+                &mut best_victory,
+                &mut hp_target_reached,
+                &mut termination,
+            )?;
+            if hp_target_reached {
+                any_stop_target_reached = true;
+            }
+        }
+
+        if !active_frontier.is_empty() {
+            std::mem::swap(&mut last_active_frontier, &mut active_frontier);
+            active_frontier.clear();
+        }
+
+        if !next_turn_candidates.is_empty()
+            && (!aborted_limit || latest_completed_turn_nodes.is_empty())
+        {
+            latest_completed_turn_nodes.clear();
+            latest_completed_turn_nodes.extend(
+                next_turn_candidates
+                    .iter()
+                    .copied()
+                    .filter(|&nid| {
+                        let n = arena.get(nid);
+                        !n.fast_eval.player_dead() && n.fast_eval.projected_player_hp > 0
+                    }),
+            );
+        }
+
+        let completed_turns = turn_layer + 1;
+        if options.early_turn_scout_depth > 0
+            && completed_turns <= options.early_turn_scout_depth
+            && collect_early_turn_scout_layer(
+                arena,
+                &next_turn_candidates,
+                root_baseline.start_turn_number,
+                completed_turns,
+                options.early_turn_scout_depth,
+                &mut early_turn_frontiers,
+                &mut termination,
+            )
+        {
+            break;
+        }
+
+        if options.boss_tempo_scout_turns > 0
+            && completed_turns >= options.boss_tempo_scout_turns
+        {
+            collect_boss_tempo_scout_prefixes(
+                arena,
+                &next_turn_candidates,
+                &root_baseline,
+                fixed_prefix,
+                &mut boss_tempo_prefixes,
+                &mut termination,
+            );
+            break;
+        }
+
+        if hp_target_reached || aborted_limit {
+            break;
+        }
+
+        if next_turn_candidates.is_empty() {
+            if last_turn_hit_per_turn_cap && !has_victory && termination == "None" {
+                termination = BeamWidthPortfolio::NODE_LIMIT_TERMINATION;
+            }
+            break;
+        }
+        let next_turn_number = root_baseline.start_turn_number + turn_layer + 1;
+        if has_exceeded_post_victory_turn_cap(
+            best_victory.as_ref(),
+            next_turn_number,
+            &root_baseline,
+            policy,
+            is_elite_or_boss,
+            options.allow_paid_optional_potions,
+        ) {
+            hit_post_victory_turn_cap = true;
+            break;
+        }
+
+        effective_turn_boundary_width = if turn_layer <= 2
+            && keep_early_beam_width(best_victory.as_ref(), &root_baseline)
+        {
+            early_turn_boundary_width
+        } else {
+            beam_width
+        };
+
+        let ran_rollout = run_turn_boundary_rollouts_and_promote(
+            started,
+            effective_turn_boundary_width,
+            next_turn_number,
+            is_elite_or_boss,
+            check_theft,
+            active_pool,
+            cancel,
+            &root.static_ctx,
+            content,
+            &root_baseline,
+            policy,
+            profile,
+            incumbent_table,
+            incumbent,
+            &options,
+            arena,
+            turn_staging_arena,
+            prune_scratch,
+            &mut next_turn_candidates,
+            &mut shortlist_buf,
+            rollout_workspaces,
+            turn_rollout_cache,
+            rollout_results,
+            &mut has_victory,
+            &mut best_victory,
+            &mut hp_target_reached,
+            &mut hit_post_victory_turn_cap,
+            &mut completed,
+            &mut terminal_tracker,
+        );
+
+        if hp_target_reached {
+            any_stop_target_reached = true;
+            termination = "HpTarget";
+            break;
+        }
+        if hit_post_victory_turn_cap {
+            break;
+        }
+
+        effective_turn_boundary_width = if turn_layer <= 2
+            && keep_early_beam_width(best_victory.as_ref(), &root_baseline)
+        {
+            early_turn_boundary_width
+        } else {
+            beam_width
+        };
+
+        BeamRetentionPolicy::prune_wave_with_rollout_into(
+            arena,
+            &next_turn_candidates,
+            effective_turn_boundary_width,
+            profile.potion_free_beam_width,
+            profile.potion_beam_width,
+            &root_baseline,
+            profile.second_rank_band,
+            profile.aggressive_power_commitment,
+            options.prefer_potion_buckets,
+            ran_rollout,
+            active_pool,
+            &mut current_turn_frontier,
+            prune_scratch,
+        );
+        if current_turn_frontier.len() < next_turn_candidates.len()
+            || next_turn_candidates.len() > effective_turn_boundary_width
+        {
+            any_lossy_truncation = true;
+        }
+
+        let mut layer_progressed = false;
+        let mut enemy_hp_decreased = false;
+        for &nid in &current_turn_frontier {
+            let n = arena.get(nid);
+            let f = &n.fast_eval;
+            let rem_enemies = (f.alive_enemy_count as i32) + (f.reviving_enemy_count as i32);
+            if f.enemy_hp < best_seen_enemy_hp {
+                best_seen_enemy_hp = f.enemy_hp;
+                layer_progressed = true;
+                enemy_hp_decreased = true;
+            }
+            if rem_enemies < best_seen_alive_enemies {
+                best_seen_alive_enemies = rem_enemies;
+                layer_progressed = true;
+            }
+            if n.has_full_eval() {
+                if (n.max_dark_evoke as i32) > best_seen_max_dark_evoke {
+                    best_seen_max_dark_evoke = n.max_dark_evoke as i32;
+                    layer_progressed = true;
+                }
+                if (n.total_poison_and_doom as i32) > best_seen_poison_and_doom {
+                    best_seen_poison_and_doom = n.total_poison_and_doom as i32;
+                    layer_progressed = true;
+                }
+                if (n.board_investment as i32) > best_seen_board_investment {
+                    best_seen_board_investment = n.board_investment as i32;
+                    layer_progressed = true;
+                }
+            }
+            if has_any_strategy_targets {
+                let goal_credit = f.strategy_goal_hp_credit as i32;
+                if goal_credit > best_seen_strategy_goal_hp_credit {
+                    best_seen_strategy_goal_hp_credit = goal_credit;
+                    layer_progressed = true;
+                }
+                let goal_count = f.strategy_goal_count as i32;
+                if goal_count > best_seen_strategy_goal_count {
+                    best_seen_strategy_goal_count = goal_count;
+                    layer_progressed = true;
+                }
+                if has_relic_targets {
+                    let sat_mask = arena.rare_eval(nid).relic_eval.satisfied_mask;
+                    if (sat_mask & !seen_relic_satisfied_mask) != 0 {
+                        seen_relic_satisfied_mask |= sat_mask;
+                        layer_progressed = true;
+                    }
+                }
+            }
+        }
+        turns_without_progress = if layer_progressed { 0 } else { turns_without_progress + 1 };
+        turns_since_enemy_hp_decreased = if enemy_hp_decreased {
+            0
+        } else {
+            turns_since_enemy_hp_decreased + 1
+        };
+        if turns_without_progress >= crate::eval::weights::SETUP_VALUE_HORIZON_TURNS {
+            hit_progress_stall = true;
+            if !has_victory {
+                termination = "TurnLimit";
+            }
+            break;
+        }
+        let boss_extended_turn_stalled = is_boss
+            && turn_layer + 1 >= 28
+            && turns_since_enemy_hp_decreased > 2;
+        if boss_extended_turn_stalled
+            || (turn_layer + 1 == max_turns && !current_turn_frontier.is_empty())
+        {
+            hit_max_search_turns = true;
+            if !has_victory && termination == "None" {
+                termination = "TurnLimit";
+            }
+            break;
+        }
+        step_arena.clear();
+        for &nid in &current_turn_frontier {
+            let tmp_h = arena.get(nid).state_handle;
+            if tmp_h.len > 0 {
+                let bytes = turn_staging_arena.get(tmp_h);
+                arena.get_mut(nid).state_handle = step_arena.commit_slice(bytes);
+            }
+        }
+        turn_staging_arena.clear();
+        for slab in prev_worker_slabs.iter_mut() {
+            slab.clear();
+        }
+        tt.reset_generation();
+        stand_pat_seen.clear();
+    }
+
+    let was_losslessly_exhausted = !any_lossy_truncation
+        && !any_turn_hit_per_turn_cap
+        && !hit_max_search_turns
+        && !hit_post_victory_turn_cap
+        && !hit_progress_stall
+        && !any_stop_target_reached
+        && termination == "None"
+        && branch_truncations == 0;
+
+    Ok(finalize_beam_pass_output(
+        arena,
+        &start_state,
+        root_baseline,
+        policy,
+        fixed_prefix,
+        &mut completed,
+        &latest_completed_turn_nodes,
+        &current_turn_frontier,
+        &last_active_frontier,
+        has_victory,
+        termination,
+        was_losslessly_exhausted,
+        expanded_nodes,
+        transition_count,
+        choice_replay_attempts,
+        tt.branches_pruned,
+        incumbent_pruned,
+        por_pruned,
+        packed_state_bytes_total,
+        early_turn_frontiers,
+        boss_tempo_prefixes,
+    ))
+}
+
+#[cold]
+#[inline(never)]
 fn run_novelty_pass(
     root: &BattleState,
     content: &(dyn ContentDispatcher + Sync),
@@ -7321,6 +9555,7 @@ fn run_novelty_pass(
         );
 
         let mut tasks = Vec::new();
+        let mut branch_truncations = 0u64;
         enumerate_parent_tasks(
             0,
             item.node_id,
@@ -7336,16 +9571,20 @@ fn run_novelty_pass(
             true,
             &mut tasks,
             &mut por_pruned,
+            &mut branch_truncations,
         );
 
         scratch.candidates.clear();
         {
             let mut probe_access = ProbeCacheAccess::SingleThread(&mut probe_cache);
             for task in &tasks {
-                execute_action_from_parent(
+                let _ = execute_action_from_parent(
                     &mut scratch,
                     &parent_state,
                     task,
+                    0,
+                    false,
+                    false,
                     &root.static_ctx,
                     content,
                     &root_baseline,
@@ -7630,8 +9869,33 @@ fn run_novelty_pass(
     };
 
     let total_committed = main_arena.total_bytes_committed;
-    let explicit_potion_count =
-        best_node.map_or(0, |nid| arena.get(nid).explicit_potion_count as usize);
+    let default_enemy_hp: i32 = root
+        .enemy_handles
+        .iter()
+        .filter_map(|&eh| root.creature(eh))
+        .filter(|c| c.is_alive())
+        .map(|c| c.current_hp.max(0))
+        .sum();
+    let (explicit_potion_count, raw_optional_paid_potion_cost, enemy_hp, all_strategy_targets_satisfied) =
+        match best_node {
+            Some(nid) => {
+                let n = arena.get(nid);
+                let rare = arena.rare_eval(nid);
+                (
+                    n.explicit_potion_count as usize,
+                    n.optional_paid_potion_cost as i32,
+                    n.fast_eval.enemy_hp,
+                    are_strategy_targets_satisfied_raw(&root_baseline, &n.fast_eval, &rare),
+                )
+            }
+            None => (
+                0,
+                0,
+                default_enemy_hp,
+                !root_baseline.effective_has_growth_targets
+                    && root_baseline.active_relic_targets.is_empty(),
+            ),
+        };
     let nodes_in_arena = arena.len();
     Ok(BeamRunOutput {
         best_node,
@@ -7644,7 +9908,9 @@ fn run_novelty_pass(
         death_save_use_count,
         player_hp,
         end_player_max_hp,
+        enemy_hp,
         all_forced_uses_satisfied,
+        all_strategy_targets_satisfied,
         strategic_hp_deficit,
         net_persistent_hp_delta_centi,
         net_potion_opportunity_cost_centi,
@@ -7659,6 +9925,7 @@ fn run_novelty_pass(
         optional_potion_count,
         optional_paid_potion_count,
         optional_potion_strategic_cost,
+        raw_optional_paid_potion_cost,
         optional_ambergris_count,
         used_potion_slot_mask,
         alchemize_count,
@@ -7677,12 +9944,15 @@ fn run_novelty_pass(
         por_pruned,
         packed_state_bytes_total: total_committed,
         termination,
+        was_losslessly_exhausted: false,
         terminal_cards_hint: Vec::new(),
         early_turn_frontiers: Vec::new(),
         boss_tempo_prefixes: Vec::new(),
     })
 }
 
+#[cold]
+#[inline(never)]
 fn run_boss_tempo_depth_first(
     root: &BattleState,
     content: &(dyn ContentDispatcher + Sync),
@@ -7776,6 +10046,8 @@ fn run_boss_tempo_depth_first(
             pnode.fast_eval.transposition_label(
                 pnode.beam_rank_score_or_base(),
                 pnode.potion_count,
+                pnode.optional_paid_potion_count,
+                pnode.explicit_potion_count > 0,
                 pnode.potion_strategic_cost as i32,
                 0,
                 pnode.action_count,
@@ -7793,6 +10065,7 @@ fn run_boss_tempo_depth_first(
         let p_has_la = pnode.has_choice_lookahead();
         let p_la_score = pnode.choice_lookahead_score();
         let mut tasks = Vec::new();
+        let mut branch_truncations = 0u64;
         enumerate_parent_tasks(
             0,
             item.node_id,
@@ -7808,15 +10081,19 @@ fn run_boss_tempo_depth_first(
             true,
             &mut tasks,
             &mut por_pruned,
+            &mut branch_truncations,
         );
         scratch.candidates.clear();
         {
             let mut probe_access = ProbeCacheAccess::SingleThread(&mut probe_cache);
             for task in &tasks {
-                execute_action_from_parent(
+                let _ = execute_action_from_parent(
                     &mut scratch,
                     &parent_state,
                     task,
+                    0,
+                    false,
+                    false,
                     &root.static_ctx,
                     content,
                     &root_baseline,
@@ -8029,8 +10306,33 @@ fn run_boss_tempo_depth_first(
     };
 
     let total_committed = main_arena.total_bytes_committed;
-    let explicit_potion_count =
-        best_node.map_or(0, |nid| arena.get(nid).explicit_potion_count as usize);
+    let default_enemy_hp: i32 = root
+        .enemy_handles
+        .iter()
+        .filter_map(|&eh| root.creature(eh))
+        .filter(|c| c.is_alive())
+        .map(|c| c.current_hp.max(0))
+        .sum();
+    let (explicit_potion_count, raw_optional_paid_potion_cost, enemy_hp, all_strategy_targets_satisfied) =
+        match best_node {
+            Some(nid) => {
+                let n = arena.get(nid);
+                let rare = arena.rare_eval(nid);
+                (
+                    n.explicit_potion_count as usize,
+                    n.optional_paid_potion_cost as i32,
+                    n.fast_eval.enemy_hp,
+                    are_strategy_targets_satisfied_raw(&root_baseline, &n.fast_eval, &rare),
+                )
+            }
+            None => (
+                0,
+                0,
+                default_enemy_hp,
+                !root_baseline.effective_has_growth_targets
+                    && root_baseline.active_relic_targets.is_empty(),
+            ),
+        };
     let nodes_in_arena = arena.len();
     Ok(BeamRunOutput {
         best_node,
@@ -8043,7 +10345,9 @@ fn run_boss_tempo_depth_first(
         death_save_use_count,
         player_hp,
         end_player_max_hp,
+        enemy_hp,
         all_forced_uses_satisfied,
+        all_strategy_targets_satisfied,
         strategic_hp_deficit,
         net_persistent_hp_delta_centi,
         net_potion_opportunity_cost_centi,
@@ -8058,6 +10362,7 @@ fn run_boss_tempo_depth_first(
         optional_potion_count,
         optional_paid_potion_count,
         optional_potion_strategic_cost,
+        raw_optional_paid_potion_cost,
         optional_ambergris_count,
         used_potion_slot_mask,
         alchemize_count,
@@ -8076,6 +10381,7 @@ fn run_boss_tempo_depth_first(
         por_pruned,
         packed_state_bytes_total: total_committed,
         termination,
+        was_losslessly_exhausted: false,
         terminal_cards_hint: Vec::new(),
         early_turn_frontiers: Vec::new(),
         boss_tempo_prefixes: Vec::new(),
@@ -8104,6 +10410,16 @@ fn has_reached_acceptable_battle_hp_loss_raw(
     let check_theft = policy.theft_policy == SolverTheftPolicy::PreserveResources;
     let all_forced_ok =
         (forced_used_mask & root.all_forced_potion_mask) == root.all_forced_potion_mask;
+    let policy_ok = match root.effective_potion_policy {
+        SolverPotionPolicy::Disabled => {
+            optional_paid_potion_count == 0
+                && (explicit_potion_count as usize) <= root.forced_directive_count
+        }
+        SolverPotionPolicy::RequireAtLeastOne => {
+            (explicit_potion_count as usize) >= root.minimum_required_potion_uses
+        }
+        SolverPotionPolicy::Smart => true,
+    };
     root.can_stop_at_hp_target
         && complete_victory
         && !f.player_dead()
@@ -8111,13 +10427,10 @@ fn has_reached_acceptable_battle_hp_loss_raw(
         && f.death_save_use_count == 0
         && (!check_theft || (f.outstanding_stolen == 0 && !f.forfeits_gold()))
         && all_forced_ok
-        && root.growth_target_satisfied(&rare.growth_rewards)
-        && root.relic_targets_satisfied(&rare.relic_eval)
+        && policy_ok
+        && are_strategy_targets_satisfied_raw(root, f, rare)
         && optional_paid_potion_count == 0
-        && (root.effective_potion_policy != SolverPotionPolicy::RequireAtLeastOne
-            || (explicit_potion_count as usize) >= root.minimum_required_potion_uses)
-        && root.prior_battle_hp_lost
-            + ((f.cumulative_hp_lost as i32) - root.initial_cumulative_hp_lost).max(0)
+        && projected_battle_hp_lost_from_cumulative(root, f.cumulative_hp_lost as i32)
             <= policy.acceptable_battle_hp_loss
 }
 
@@ -8147,19 +10460,26 @@ fn has_reached_acceptable_battle_hp_loss(
     out: &BeamRunOutput,
 ) -> bool {
     let check_theft = policy.theft_policy == SolverTheftPolicy::PreserveResources;
+    let policy_ok = match root.effective_potion_policy {
+        SolverPotionPolicy::Disabled => {
+            out.optional_paid_potion_count == 0
+                && out.explicit_potion_count <= root.forced_directive_count
+        }
+        SolverPotionPolicy::RequireAtLeastOne => {
+            out.explicit_potion_count >= root.minimum_required_potion_uses
+        }
+        SolverPotionPolicy::Smart => true,
+    };
     root.can_stop_at_hp_target
         && out.won
         && out.survives
         && out.death_save_use_count == 0
         && (!check_theft || (out.outstanding_stolen == 0 && !out.forfeits_gold))
         && out.all_forced_uses_satisfied
-        && root.growth_target_satisfied(&out.growth_rewards)
-        && root.relic_targets_satisfied(&out.relic_eval)
+        && policy_ok
+        && are_strategy_targets_satisfied_output(root, out)
         && out.optional_paid_potion_count == 0
-        && (root.effective_potion_policy != SolverPotionPolicy::RequireAtLeastOne
-            || out.explicit_potion_count >= root.minimum_required_potion_uses)
-        && root.prior_battle_hp_lost
-            + (out.hp_lost - root.initial_cumulative_hp_lost).max(0)
+        && projected_battle_hp_lost_from_cumulative(root, out.hp_lost)
             <= policy.acceptable_battle_hp_loss
 }
 
@@ -8217,6 +10537,19 @@ fn is_better_run_output_with_policy(
         return cand.all_forced_uses_satisfied;
     }
     if !cand.won && !cur.won {
+        // Do not let a budget-truncated partial ongoing pass overwrite a complete EventDefeat pass.
+        if cur.termination == "EventDefeat"
+            && cand.termination != "None"
+            && cand.termination != "EventDefeat"
+        {
+            return false;
+        }
+        if cand.termination == "EventDefeat"
+            && cur.termination != "None"
+            && cur.termination != "EventDefeat"
+        {
+            return true;
+        }
         if cand.has_completed_turn_ongoing != cur.has_completed_turn_ongoing {
             return cand.has_completed_turn_ongoing;
         }
@@ -8260,6 +10593,22 @@ fn is_better_run_output_with_policy(
         }
     }
 
+    if !cand.won && !cand.survives && !cur.won && !cur.survives {
+        if cand.net_potion_opportunity_cost_centi != cur.net_potion_opportunity_cost_centi {
+            return cand.net_potion_opportunity_cost_centi < cur.net_potion_opportunity_cost_centi;
+        }
+        if cand.optional_paid_potion_count != cur.optional_paid_potion_count {
+            return cand.optional_paid_potion_count < cur.optional_paid_potion_count;
+        }
+        if cand.enemy_hp != cur.enemy_hp {
+            return cand.enemy_hp < cur.enemy_hp;
+        }
+        if cand.best_turn != cur.best_turn {
+            return cand.best_turn > cur.best_turn;
+        }
+        return cand.score > cur.score;
+    }
+
     let cand_v = (cand.net_persistent_hp_delta_centi as i64)
         - (cand.net_potion_opportunity_cost_centi as i64);
     let cur_v = (cur.net_persistent_hp_delta_centi as i64)
@@ -8276,20 +10625,66 @@ fn is_better_run_output_with_policy(
     if cand.strategy_goal_count != cur.strategy_goal_count {
         return cand.strategy_goal_count > cur.strategy_goal_count;
     }
-    if !cand.won && !cand.survives && !cur.won && !cur.survives {
-        if cand.best_turn != cur.best_turn {
-            return cand.best_turn > cur.best_turn;
-        }
-    } else if cand.best_turn != cur.best_turn {
-        return cand.best_turn < cur.best_turn;
-    }
-    if cand.hp_lost != cur.hp_lost {
-        return cand.hp_lost < cur.hp_lost;
+    let cand_battle_hp_lost =
+        projected_battle_hp_lost_from_cumulative(&cand.root_baseline, cand.hp_lost);
+    let cur_battle_hp_lost =
+        projected_battle_hp_lost_from_cumulative(&cur.root_baseline, cur.hp_lost);
+    if cand_battle_hp_lost != cur_battle_hp_lost {
+        return cand_battle_hp_lost < cur_battle_hp_lost;
     }
     if cand.potion_count != cur.potion_count {
         return cand.potion_count < cur.potion_count;
     }
+    if cand.best_turn != cur.best_turn {
+        return cand.best_turn < cur.best_turn;
+    }
+    if cand.enemy_hp != cur.enemy_hp {
+        return cand.enemy_hp < cur.enemy_hp;
+    }
     cand.score > cur.score
+}
+
+#[inline]
+fn build_paid_potion_improve_input(
+    base: &BeamRunOutput,
+    root_baseline: &RootEvalBaseline,
+    check_theft: bool,
+) -> PaidPotionImproveInput {
+    PaidPotionImproveInput {
+        won: base.won,
+        survives: base.survives,
+        death_save_use_count: base.death_save_use_count,
+        end_player_hp: base.player_hp,
+        end_player_max_hp: base.end_player_max_hp,
+        used_potion_slot_mask: base.used_potion_slot_mask,
+        optional_paid_potion_count: base.optional_paid_potion_count.min(u8::MAX as usize) as u8,
+        raw_potion_strategic_cost: base.raw_optional_paid_potion_cost,
+        net_potion_opportunity_cost_centi: base.net_potion_opportunity_cost_centi,
+        alchemize_count: base.alchemize_count,
+        empty_potion_slots: base.empty_potion_slots,
+        all_strategy_targets_satisfied: are_strategy_targets_satisfied_output(root_baseline, base),
+        all_growth_targets_satisfied: !root_baseline.effective_has_growth_targets
+            || root_baseline
+                .growth_opportunity_targets
+                .is_satisfied_by(&base.growth_rewards),
+        growth_hp_credit: base.strategy_goal_hp_credit,
+        relic_satisfied_mask: base.relic_eval.satisfied_mask as u32,
+        outstanding_stolen: base.outstanding_stolen,
+        forfeits_gold: base.forfeits_gold,
+        theft_preserve_resources: check_theft,
+    }
+}
+
+#[inline]
+fn can_any_paid_potion_improve_output(
+    root_baseline: &RootEvalBaseline,
+    out: &BeamRunOutput,
+    check_theft: bool,
+) -> bool {
+    PotionUsePolicy::can_any_paid_potion_improve_on(
+        build_paid_potion_improve_input(out, root_baseline, check_theft),
+        root_baseline,
+    )
 }
 
 fn should_run_smart_potion_pass(
@@ -8314,18 +10709,44 @@ fn should_run_smart_potion_pass(
     if !base.all_forced_uses_satisfied {
         return true;
     }
-    PotionUsePolicy::can_any_paid_potion_improve_on(
-        base.won,
-        base.survives,
-        base.death_save_use_count,
-        base.player_hp,
-        base.end_player_max_hp,
-        base.used_potion_slot_mask,
-        base.outstanding_stolen,
-        base.forfeits_gold,
-        check_theft,
-        root_baseline,
-    )
+    can_any_paid_potion_improve_output(root_baseline, base, check_theft)
+}
+
+#[inline]
+fn is_unimprovable_paid_win(
+    stage_number: usize,
+    selected_best: Option<&BeamRunOutput>,
+    root_baseline: &RootEvalBaseline,
+    check_theft: bool,
+) -> bool {
+    let Some(best) = selected_best else {
+        return false;
+    };
+    let has_any_strategy_targets = root_baseline.effective_has_growth_targets
+        || !root_baseline.active_relic_targets.is_empty();
+    let battle_hp_lost = projected_battle_hp_lost_from_cumulative(root_baseline, best.hp_lost);
+    stage_number > 1
+        && best.won
+        && best.survives
+        && best.death_save_use_count == 0
+        && best.optional_paid_potion_count > 0
+        && battle_hp_lost <= 0
+        && best.strategic_hp_deficit <= 0
+        && (!check_theft || (best.outstanding_stolen == 0 && !best.forfeits_gold))
+        && satisfies_run_output_hard_constraints(best)
+        && (!has_any_strategy_targets || are_strategy_targets_satisfied_output(root_baseline, best))
+        && best.raw_optional_paid_potion_cost <= root_baseline.min_paid_potion_cost
+        && !can_any_paid_potion_improve_output(root_baseline, best, check_theft)
+}
+
+#[inline]
+fn resolve_initial_beam_width(configured_beam_width: usize, root: &RootEvalBaseline) -> usize {
+    let w = configured_beam_width.clamp(4, MAX_BEAM_WIDTH);
+    if root.is_act_ending_boss && w < 45 {
+        45
+    } else {
+        w
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -8343,10 +10764,19 @@ fn run_adaptive_stage(
     abort: &SearchAbortSlot,
     progress_cb: Option<&(dyn Fn(&SearchProgress) + Sync)>,
     started: &Instant,
+    stage_number: usize,
     stage_width: usize,
     stage_node_ceiling: usize,
     eval_mode: EvalMode,
     rollout_horizon_turns: usize,
+    stage_deadline_ms: u64,
+    full_deadline_ms: u64,
+    can_scale_adaptive_stages: bool,
+    allow_death_save_rescue: bool,
+    stage1_phase_b_timed_out: &mut bool,
+    stage1_phase_a_completed_cleanly: &mut bool,
+    stage1_phase_a_losslessly_exhausted: &mut bool,
+    post_best_boundary: &mut &'static str,
     total_expanded: &mut usize,
     total_transitions: &mut u64,
     total_choice_replays: &mut u64,
@@ -8356,63 +10786,286 @@ fn run_adaptive_stage(
     baseline_zero_potion: &mut Option<BeamRunOutput>,
     selected_best: &mut Option<BeamRunOutput>,
     resources: &mut PassResources,
-) -> Result<(), KernelError> {
+) -> Result<bool, KernelError> {
     if let Some(err) = abort.clone_error() {
         return Err(err);
     }
-    let stage_available = stage_node_ceiling.saturating_sub(*total_expanded);
-    if stage_available == 0 || cancel.load(Ordering::Relaxed) {
-        return Ok(());
-    }
-    let rem_ms = || -> Option<u64> {
-        if base_profile.soft_time_budget_ms == 0 {
+    let rem_ms_for = |deadline_ms: u64| -> Option<u64> {
+        if deadline_ms == 0 {
             Some(0)
         } else {
             let elapsed = started.elapsed().as_millis() as u64;
-            if elapsed >= base_profile.soft_time_budget_ms {
+            if elapsed >= deadline_ms {
                 None
             } else {
-                Some((base_profile.soft_time_budget_ms - elapsed).max(1))
+                Some((deadline_ms - elapsed).max(1))
             }
         }
     };
-    let Some(avail_ms_before_a) = rem_ms() else {
-        return Ok(());
+    if stage_number > 1 {
+        if rem_ms_for(stage_deadline_ms).is_none() {
+            *post_best_boundary = "TimeLimit";
+            return Ok(false);
+        }
+        if *total_expanded >= stage_node_ceiling {
+            if *post_best_boundary != "TimeLimit" {
+                *post_best_boundary = BeamWidthPortfolio::NODE_LIMIT_TERMINATION;
+            }
+            return Ok(false);
+        }
+    }
+    let stage_available = stage_node_ceiling.saturating_sub(*total_expanded);
+    if stage_available == 0 || cancel.load(Ordering::Relaxed) {
+        return Ok(false);
+    }
+    let Some(avail_ms_before_a) = rem_ms_for(stage_deadline_ms) else {
+        return Ok(false);
     };
 
     let smart_mode = root_baseline_info.effective_potion_policy == SolverPotionPolicy::Smart;
     let is_disabled_mode =
         root_baseline_info.effective_potion_policy == SolverPotionPolicy::Disabled;
     let check_theft = policy.theft_policy == SolverTheftPolicy::PreserveResources;
+    let is_elite_or_boss = matches!(root.static_ctx.room_type, RoomType::Elite | RoomType::Boss);
     let reserve_for_paid_potions =
         smart_mode && root_baseline_info.paid_optional_potion_count > 0;
     let phase_a_allow_paid = !smart_mode && !is_disabled_mode;
 
-    let phase_a_nodes = if reserve_for_paid_potions {
-        (stage_available * 60 / 100)
-            .max(500.min(stage_available))
-            .min(stage_available)
-    } else {
-        stage_available
-    };
-    let phase_a_time_ms = if avail_ms_before_a == 0 {
-        0
-    } else if reserve_for_paid_potions {
-        (avail_ms_before_a * 65 / 100).max(50).min(avail_ms_before_a)
-    } else {
-        avail_ms_before_a
-    };
+    let has_clean_survival_best_before_a = selected_best
+        .as_ref()
+        .is_some_and(|b| b.won && b.survives && b.death_save_use_count == 0);
+    let stage2_prioritize_phase_b = stage_number == 2
+        && reserve_for_paid_potions
+        && can_scale_adaptive_stages
+        && has_clean_survival_best_before_a
+        && *stage1_phase_a_completed_cleanly
+        && (*stage1_phase_b_timed_out
+            || selected_best.as_ref().is_some_and(|b| {
+                projected_battle_hp_lost_from_cumulative(root_baseline_info, b.hp_lost) >= 20
+            }))
+        && baseline_zero_potion.is_some()
+        && !is_unimprovable_paid_win(
+            stage_number,
+            selected_best.as_ref(),
+            root_baseline_info,
+            check_theft,
+        )
+        && should_run_smart_potion_pass(
+            baseline_zero_potion.as_ref(),
+            root_baseline_info,
+            check_theft,
+        );
+    let skip_stage2_phase_a = stage2_prioritize_phase_b && *stage1_phase_a_losslessly_exhausted;
 
-    let mut phase_a_profile = base_profile.clone();
-    phase_a_profile.beam_width = stage_width.max(1);
-    phase_a_profile.max_expanded_nodes = phase_a_nodes.max(1);
-    phase_a_profile.soft_time_budget_ms = phase_a_time_ms;
+    let phase_a_was_losslessly_exhausted: bool;
+    let phase_a_boundary_reason: &'static str;
 
-    let phase_a = run_beam_pass_with_resources(
+    if !skip_stage2_phase_a {
+        let (phase_a_percent, phase_a_time_percent) = if stage2_prioritize_phase_b {
+            let p = if *stage1_phase_b_timed_out { 15 } else { 20 };
+            (p, p)
+        } else {
+            let p = if is_elite_or_boss
+                || (root_baseline_info.initial_player_hp as i64) * 100
+                    <= (root_baseline_info.initial_player_max_hp as i64) * 60
+            {
+                50
+            } else {
+                60
+            };
+            (p, p + 5)
+        };
+        let min_turn_nodes = crate::eval::weights::MINIMUM_TURN_LAYER_EXPANDED_NODES;
+        let phase_a_nodes = if reserve_for_paid_potions {
+            ((stage_available * phase_a_percent) / 100)
+                .max(min_turn_nodes.min(stage_available))
+                .min(stage_available)
+        } else {
+            stage_available
+        };
+        let phase_a_time_ms = if avail_ms_before_a == 0 {
+            0
+        } else if reserve_for_paid_potions && avail_ms_before_a >= 400 {
+            ((avail_ms_before_a * phase_a_time_percent as u64) / 100)
+                .max(150)
+                .min(avail_ms_before_a)
+        } else {
+            avail_ms_before_a
+        };
+
+        let mut phase_a_profile = base_profile.clone();
+        phase_a_profile.beam_width = stage_width.clamp(1, MAX_BEAM_WIDTH);
+        phase_a_profile.max_expanded_nodes = phase_a_nodes.max(1);
+        phase_a_profile.soft_time_budget_ms = phase_a_time_ms;
+
+        let phase_a = run_beam_pass_with_resources(
+            root,
+            content,
+            policy,
+            &phase_a_profile,
+            cert,
+            incumbent_table,
+            shared_incumbent,
+            pool,
+            cancel,
+            abort,
+            progress_cb,
+            PassSearchOptions {
+                allow_paid_optional_potions: phase_a_allow_paid,
+                prefer_potion_buckets: phase_a_allow_paid
+                    && root_baseline_info.paid_optional_potion_count > 0,
+                eval_mode,
+                early_turn_scout_depth: 0,
+                boss_tempo_scout_turns: 0,
+                rollout_horizon_turns,
+                allow_death_save_rescue,
+                relax_zero_potion_reserve: false,
+                min_zero_potion_reserve_percent: 0,
+            },
+            None,
+            resources,
+        )?;
+
+        *total_expanded += phase_a.expanded_nodes;
+        *total_transitions += phase_a.transition_count;
+        *total_choice_replays += phase_a.choice_replay_attempts;
+        *total_tt_pruned += phase_a.tt_pruned;
+        *total_incumbent_pruned += phase_a.incumbent_pruned;
+        *total_por_pruned += phase_a.por_pruned;
+
+        if stage_number == 1 {
+            *stage1_phase_a_completed_cleanly = phase_a.termination == "None";
+            *stage1_phase_a_losslessly_exhausted = phase_a.was_losslessly_exhausted;
+        }
+        phase_a_was_losslessly_exhausted = phase_a.was_losslessly_exhausted;
+        phase_a_boundary_reason = phase_a.termination;
+
+        let phase_a_is_zero_baseline = phase_a.optional_paid_potion_count == 0;
+        let take_a = match selected_best.as_ref() {
+            None => true,
+            Some(cur) => is_better_run_output_with_policy(
+                &phase_a,
+                cur,
+                Some(policy),
+                baseline_zero_potion.as_ref(),
+            ),
+        };
+        let update_zero = phase_a_is_zero_baseline
+            && baseline_zero_potion.as_ref().is_none_or(|cur_z| {
+                is_better_run_output_with_policy(&phase_a, cur_z, Some(policy), None)
+            });
+        if take_a && update_zero {
+            let summary_clone = phase_a.clone_summary();
+            *selected_best = Some(phase_a);
+            *baseline_zero_potion = Some(summary_clone);
+            *post_best_boundary = "None";
+        } else if take_a {
+            *selected_best = Some(phase_a);
+            *post_best_boundary = "None";
+        } else {
+            if phase_a_boundary_reason == "TimeLimit" {
+                *post_best_boundary = "TimeLimit";
+            } else if phase_a_boundary_reason == BeamWidthPortfolio::NODE_LIMIT_TERMINATION
+                && *post_best_boundary != "TimeLimit"
+            {
+                *post_best_boundary = BeamWidthPortfolio::NODE_LIMIT_TERMINATION;
+            }
+            if update_zero {
+                *baseline_zero_potion = Some(phase_a);
+            }
+        }
+    } else {
+        phase_a_was_losslessly_exhausted = true;
+        phase_a_boundary_reason = "None";
+    }
+
+    let best_pass_unimprovable_paid_win = is_unimprovable_paid_win(
+        stage_number,
+        selected_best.as_ref(),
+        root_baseline_info,
+        check_theft,
+    );
+    let smart_needs_phase_b = smart_mode
+        && !best_pass_unimprovable_paid_win
+        && should_run_smart_potion_pass(
+            baseline_zero_potion.as_ref(),
+            root_baseline_info,
+            check_theft,
+        );
+    let has_clean_survival_best = selected_best
+        .as_ref()
+        .is_some_and(|b| b.won && b.survives && b.death_save_use_count == 0);
+
+    let mut phase_b_deadline_ms = stage_deadline_ms;
+    if stage_number == 2
+        && smart_needs_phase_b
+        && can_scale_adaptive_stages
+        && has_clean_survival_best
+        && (*stage1_phase_b_timed_out
+            || selected_best.as_ref().is_some_and(|b| {
+                projected_battle_hp_lost_from_cumulative(root_baseline_info, b.hp_lost) >= 20
+            }))
+        && !cancel.load(Ordering::Relaxed)
+        && full_deadline_ms > 0
+    {
+        if let Some(full_rem) = rem_ms_for(full_deadline_ms) {
+            if full_rem >= 800 {
+                let share_pct = if *stage1_phase_a_completed_cleanly {
+                    85
+                } else {
+                    80
+                };
+                let elapsed_now = started.elapsed().as_millis() as u64;
+                let extended = full_deadline_ms
+                    .min(elapsed_now + 400u64.max((full_rem * share_pct) / 100));
+                if extended > stage_deadline_ms {
+                    phase_b_deadline_ms = extended;
+                }
+            }
+        }
+    }
+
+    let phase_b_rem_ms = rem_ms_for(phase_b_deadline_ms);
+    let run_paid_potion_phase = smart_needs_phase_b
+        && !cancel.load(Ordering::Relaxed)
+        && phase_b_rem_ms.is_some()
+        && *total_expanded < stage_node_ceiling;
+
+    if !run_paid_potion_phase {
+        if smart_needs_phase_b {
+            if phase_b_rem_ms.is_none() {
+                *post_best_boundary = "TimeLimit";
+            } else if *total_expanded >= stage_node_ceiling && *post_best_boundary != "TimeLimit" {
+                *post_best_boundary = BeamWidthPortfolio::NODE_LIMIT_TERMINATION;
+            }
+        } else if stage_number > 1
+            && !matches!(phase_a_boundary_reason, "TimeLimit" | "NodeLimit")
+        {
+            *post_best_boundary = "None";
+        }
+        return Ok(phase_a_was_losslessly_exhausted && !smart_needs_phase_b);
+    }
+
+    let avail_ms_b = phase_b_rem_ms.expect("checked above");
+    let phase_b_nodes = stage_node_ceiling.saturating_sub(*total_expanded).max(1);
+    let potion_width = ((stage_width * 5) / 4).max(stage_width).min(MAX_BEAM_WIDTH);
+    let mut phase_b_profile = base_profile.clone();
+    phase_b_profile.beam_width = potion_width;
+    phase_b_profile.max_expanded_nodes = phase_b_nodes;
+    phase_b_profile.soft_time_budget_ms = avail_ms_b;
+
+    let phase_a_has_clean_win = baseline_zero_potion
+        .as_ref()
+        .is_some_and(|b| b.won && b.survives && b.death_save_use_count == 0);
+    let phase_b_relax_zero_potion_reserve = !phase_a_has_clean_win;
+    let phase_b_min_zero_potion_reserve_percent = if phase_a_has_clean_win { 0 } else { 25 };
+    let phase_b_allow_death_save_rescue = allow_death_save_rescue && !has_clean_survival_best;
+
+    let phase_b = run_beam_pass_with_resources(
         root,
         content,
         policy,
-        &phase_a_profile,
+        &phase_b_profile,
         cert,
         incumbent_table,
         shared_incumbent,
@@ -8421,251 +11074,653 @@ fn run_adaptive_stage(
         abort,
         progress_cb,
         PassSearchOptions {
-            allow_paid_optional_potions: phase_a_allow_paid,
-            prefer_potion_buckets: phase_a_allow_paid
-                && root_baseline_info.paid_optional_potion_count > 0,
+            allow_paid_optional_potions: true,
+            prefer_potion_buckets: true,
             eval_mode,
             early_turn_scout_depth: 0,
             boss_tempo_scout_turns: 0,
             rollout_horizon_turns,
+            allow_death_save_rescue: phase_b_allow_death_save_rescue,
+            relax_zero_potion_reserve: phase_b_relax_zero_potion_reserve,
+            min_zero_potion_reserve_percent: phase_b_min_zero_potion_reserve_percent,
         },
         None,
         resources,
     )?;
 
-    *total_expanded += phase_a.expanded_nodes;
-    *total_transitions += phase_a.transition_count;
-    *total_choice_replays += phase_a.choice_replay_attempts;
-    *total_tt_pruned += phase_a.tt_pruned;
-    *total_incumbent_pruned += phase_a.incumbent_pruned;
-    *total_por_pruned += phase_a.por_pruned;
+    *total_expanded += phase_b.expanded_nodes;
+    *total_transitions += phase_b.transition_count;
+    *total_choice_replays += phase_b.choice_replay_attempts;
+    *total_tt_pruned += phase_b.tt_pruned;
+    *total_incumbent_pruned += phase_b.incumbent_pruned;
+    *total_por_pruned += phase_b.por_pruned;
 
-    let phase_a_is_zero_baseline = phase_a.optional_paid_potion_count == 0;
-    let mut take_a = match selected_best.as_ref() {
+    if stage_number == 1 && phase_b.termination == "TimeLimit" {
+        *stage1_phase_b_timed_out = true;
+    }
+
+    let phase_b_exhausted = phase_b.was_losslessly_exhausted;
+    let phase_b_term = phase_b.termination;
+    let take_b = match selected_best.as_ref() {
         None => true,
         Some(cur) => is_better_run_output_with_policy(
-            &phase_a,
+            &phase_b,
             cur,
             Some(policy),
             baseline_zero_potion.as_ref(),
         ),
     };
-    let update_zero = if phase_a_is_zero_baseline {
-        match baseline_zero_potion.as_ref() {
-            None => true,
-            Some(cur_z) => is_better_run_output_with_policy(&phase_a, cur_z, Some(policy), None),
-        }
+    if take_b {
+        *selected_best = Some(phase_b);
+        *post_best_boundary = "None";
     } else {
-        false
+        if phase_b.optional_paid_potion_count == 0
+            && baseline_zero_potion.as_ref().is_none_or(|z| {
+                is_better_run_output_with_policy(&phase_b, z, Some(policy), None)
+            })
+        {
+            *baseline_zero_potion = Some(phase_b);
+        }
+        if phase_b_term == "TimeLimit" {
+            *post_best_boundary = "TimeLimit";
+        } else if phase_b_term == BeamWidthPortfolio::NODE_LIMIT_TERMINATION
+            && *post_best_boundary != "TimeLimit"
+        {
+            *post_best_boundary = BeamWidthPortfolio::NODE_LIMIT_TERMINATION;
+        } else if stage_number > 1
+            && !matches!(phase_a_boundary_reason, "TimeLimit" | "NodeLimit")
+            && !matches!(phase_b_term, "TimeLimit" | "NodeLimit")
+        {
+            *post_best_boundary = "None";
+        }
+    }
+
+    Ok(phase_a_was_losslessly_exhausted && phase_b_exhausted)
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct AdaptiveStagePlan {
+    is_default_adaptive_profile: bool,
+    can_scale_custom_adaptive: bool,
+    can_scale_adaptive_stages: bool,
+    stage1_width: usize,
+    stage1_ceiling: usize,
+    stage2_width: usize,
+    stage2_ceiling: usize,
+    stage3_width: usize,
+    stage3b_width: usize,
+    stage3_ceiling: usize,
+    max_total_nodes: usize,
+}
+
+impl AdaptiveStagePlan {
+    fn compute(
+        profile: &SolverSearchProfile,
+        root_baseline: &RootEvalBaseline,
+        adaptive_escalation_enabled: bool,
+    ) -> Self {
+        let is_default_adaptive_profile = adaptive_escalation_enabled
+            && profile.beam_width == 96
+            && profile.max_expanded_nodes == 150_000;
+        let configured_beam = resolve_initial_beam_width(profile.beam_width, root_baseline);
+        let configured_nodes = profile.max_expanded_nodes.max(1);
+        let can_scale_custom_adaptive = adaptive_escalation_enabled
+            && !is_default_adaptive_profile
+            && configured_nodes >= 30_000;
+        let can_scale_adaptive_stages = is_default_adaptive_profile || can_scale_custom_adaptive;
+        let min_turn_nodes = crate::eval::weights::MINIMUM_TURN_LAYER_EXPANDED_NODES;
+
+        let stage1_width = if is_default_adaptive_profile {
+            96
+        } else {
+            configured_beam
+        };
+        let stage1_ceiling = if is_default_adaptive_profile {
+            150_000
+        } else if can_scale_custom_adaptive {
+            ((configured_nodes * 35) / 100).max(min_turn_nodes)
+        } else {
+            configured_nodes
+        };
+        let stage2_width = if is_default_adaptive_profile {
+            240
+        } else {
+            (configured_beam * 2).min(MAX_BEAM_WIDTH).max(configured_beam)
+        };
+        let stage2_ceiling = if is_default_adaptive_profile {
+            320_000
+        } else if can_scale_custom_adaptive {
+            configured_nodes.min(
+                (stage1_ceiling + min_turn_nodes).max((configured_nodes * 68) / 100),
+            )
+        } else {
+            configured_nodes
+        };
+        let stage3_width = if is_default_adaptive_profile {
+            320
+        } else {
+            ((stage2_width * 4) / 3).min(MAX_BEAM_WIDTH).max(stage2_width)
+        };
+        let stage3b_width = if is_default_adaptive_profile {
+            384
+        } else {
+            ((stage3_width * 6) / 5).min(MAX_BEAM_WIDTH).max(stage3_width)
+        };
+        let stage3_ceiling = if is_default_adaptive_profile {
+            500_000
+        } else {
+            configured_nodes
+        };
+        let max_total_nodes = if is_default_adaptive_profile {
+            stage3_ceiling.max(650_000)
+        } else {
+            configured_nodes
+        };
+
+        Self {
+            is_default_adaptive_profile,
+            can_scale_custom_adaptive,
+            can_scale_adaptive_stages,
+            stage1_width,
+            stage1_ceiling,
+            stage2_width,
+            stage2_ceiling,
+            stage3_width,
+            stage3b_width,
+            stage3_ceiling,
+            max_total_nodes,
+        }
+    }
+}
+
+#[inline]
+fn should_stage1_early_exit(
+    root_baseline: &RootEvalBaseline,
+    policy: &SearchPolicy,
+    stage1_out: &BeamRunOutput,
+    stage1_losslessly_exhausted: bool,
+    smart_mode: bool,
+    check_theft: bool,
+) -> bool {
+    if stage1_losslessly_exhausted {
+        return true;
+    }
+    let stage1_clean_survival = stage1_out.won
+        && stage1_out.survives
+        && stage1_out.death_save_use_count == 0
+        && (!check_theft || (stage1_out.outstanding_stolen == 0 && !stage1_out.forfeits_gold));
+    let stage1_raw_hp_lost =
+        projected_battle_hp_lost_from_cumulative(root_baseline, stage1_out.hp_lost);
+    let stage1_paid = stage1_out.optional_paid_potion_count;
+    let can_improve = smart_mode
+        && can_any_paid_potion_improve_output(root_baseline, stage1_out, check_theft);
+    let stage1_meets_target =
+        has_reached_acceptable_battle_hp_loss(root_baseline, policy, stage1_out) && !can_improve;
+    stage1_meets_target
+        || (stage1_clean_survival
+            && are_strategy_targets_satisfied_output(root_baseline, stage1_out)
+            && satisfies_run_output_hard_constraints(stage1_out)
+            && stage1_raw_hp_lost <= 0
+            && stage1_paid == 0
+            && !can_improve)
+}
+
+#[inline]
+fn should_escalate_to_stage3(
+    root_baseline: &RootEvalBaseline,
+    policy: &SearchPolicy,
+    stage2_out: &BeamRunOutput,
+    stage2_losslessly_exhausted: bool,
+    is_elite_or_boss: bool,
+    smart_mode: bool,
+    check_theft: bool,
+) -> bool {
+    if stage2_losslessly_exhausted {
+        return false;
+    }
+    let has_any_strategy_targets = root_baseline.effective_has_growth_targets
+        || !root_baseline.active_relic_targets.is_empty();
+    let stage2_clean_survival = stage2_out.won
+        && stage2_out.survives
+        && stage2_out.death_save_use_count == 0
+        && (!check_theft || (stage2_out.outstanding_stolen == 0 && !stage2_out.forfeits_gold));
+    let stage2_eff_loss = stage2_out.strategic_hp_deficit.max(0);
+    let stage2_raw_hp_lost =
+        projected_battle_hp_lost_from_cumulative(root_baseline, stage2_out.hp_lost);
+    let stage2_trigger_hp_loss = stage2_eff_loss.max(stage2_raw_hp_lost);
+    let stage2_paid = stage2_out.optional_paid_potion_count;
+    let stage2_all_strategy_sat =
+        are_strategy_targets_satisfied_output(root_baseline, stage2_out);
+    let root_hp = root_baseline.initial_player_hp.max(1);
+    let can_improve = smart_mode
+        && can_any_paid_potion_improve_output(root_baseline, stage2_out, check_theft);
+    let stage2_meets_target =
+        has_reached_acceptable_battle_hp_loss(root_baseline, policy, stage2_out) && !can_improve;
+
+    !stage2_meets_target
+        && (!stage2_out.won
+            || !stage2_clean_survival
+            || (has_any_strategy_targets && !stage2_all_strategy_sat)
+            || stage2_trigger_hp_loss >= 18
+            || stage2_trigger_hp_loss * 4 >= root_hp
+            || (is_elite_or_boss && (stage2_trigger_hp_loss >= 8 || stage2_paid >= 1)))
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn solve_adaptive_stages(
+    root: &BattleState,
+    content: &(dyn ContentDispatcher + Sync),
+    policy: &SearchPolicy,
+    profile: &SolverSearchProfile,
+    cert: &ClosureCertificate,
+    incumbent_table: &PrimaryIncumbentTable,
+    pool: Option<&rayon::ThreadPool>,
+    cancel: &AtomicBool,
+    abort: &SearchAbortSlot,
+    progress_cb: Option<&(dyn Fn(&SearchProgress) + Sync)>,
+    adaptive_escalation_enabled: bool,
+    total_expanded: &mut usize,
+    total_transitions: &mut u64,
+    total_choice_replays: &mut u64,
+    total_tt_pruned: &mut u64,
+    total_incumbent_pruned: &mut u64,
+    total_por_pruned: &mut u64,
+    resources: &mut PassResources,
+) -> Result<BeamRunOutput, KernelError> {
+    let started = Instant::now();
+    let root_baseline_info = RootEvalBaseline::from_state_with_policy(root, content, policy);
+    let plan = AdaptiveStagePlan::compute(profile, &root_baseline_info, adaptive_escalation_enabled);
+    let AdaptiveStagePlan {
+        can_scale_adaptive_stages,
+        stage1_width,
+        stage1_ceiling,
+        stage2_width,
+        stage2_ceiling,
+        stage3_width,
+        stage3b_width,
+        stage3_ceiling,
+        max_total_nodes,
+        ..
+    } = plan;
+
+    let is_elite_or_boss = matches!(root.static_ctx.room_type, RoomType::Elite | RoomType::Boss);
+    let smart_mode = root_baseline_info.effective_potion_policy == SolverPotionPolicy::Smart;
+    let check_theft = policy.theft_policy == SolverTheftPolicy::PreserveResources;
+    let min_turn_nodes = crate::eval::weights::MINIMUM_TURN_LAYER_EXPANDED_NODES;
+
+    let mut shared_incumbent = FrozenIncumbentBound::default();
+    if cancel.load(Ordering::Relaxed) {
+        return run_beam_pass_with_resources(
+            root,
+            content,
+            policy,
+            profile,
+            cert,
+            incumbent_table,
+            &mut shared_incumbent,
+            pool,
+            cancel,
+            abort,
+            progress_cb,
+            PassSearchOptions::default(),
+            None,
+            resources,
+        );
+    }
+
+    let mut baseline_zero_potion: Option<BeamRunOutput> = None;
+    let mut selected_best: Option<BeamRunOutput> = None;
+    let mut post_best_boundary: &'static str = "None";
+    let mut stage1_phase_b_timed_out = false;
+    let mut stage1_phase_a_completed_cleanly = false;
+    let mut stage1_phase_a_losslessly_exhausted = false;
+
+    let full_deadline_ms = profile.soft_time_budget_ms;
+    let stage1_deadline_ms = if can_scale_adaptive_stages && full_deadline_ms >= 1500 {
+        ((full_deadline_ms * 50) / 100).clamp(600, full_deadline_ms)
+    } else {
+        full_deadline_ms
     };
-    if reserve_for_paid_potions
-        && should_run_smart_potion_pass(
-            if update_zero {
-                Some(&phase_a)
-            } else {
-                baseline_zero_potion.as_ref()
-            },
-            root_baseline_info,
-            check_theft,
-        )
+    let stage1_rollout_horizon = if is_elite_or_boss { 6 } else { 4 };
+
+    let stage1_losslessly_exhausted = run_adaptive_stage(
+        root,
+        content,
+        policy,
+        profile,
+        &root_baseline_info,
+        cert,
+        incumbent_table,
+        &mut shared_incumbent,
+        pool,
+        cancel,
+        abort,
+        progress_cb,
+        &started,
+        1,
+        stage1_width,
+        stage1_ceiling,
+        EvalMode::Balanced,
+        stage1_rollout_horizon,
+        stage1_deadline_ms,
+        full_deadline_ms,
+        can_scale_adaptive_stages,
+        false,
+        &mut stage1_phase_b_timed_out,
+        &mut stage1_phase_a_completed_cleanly,
+        &mut stage1_phase_a_losslessly_exhausted,
+        &mut post_best_boundary,
+        total_expanded,
+        total_transitions,
+        total_choice_replays,
+        total_tt_pruned,
+        total_incumbent_pruned,
+        total_por_pruned,
+        &mut baseline_zero_potion,
+        &mut selected_best,
+        resources,
+    )?;
+
+    let Some(stage1_out) = selected_best.as_ref() else {
+        return run_beam_pass_with_resources(
+            root,
+            content,
+            policy,
+            profile,
+            cert,
+            incumbent_table,
+            &mut shared_incumbent,
+            pool,
+            cancel,
+            abort,
+            progress_cb,
+            PassSearchOptions::default(),
+            None,
+            resources,
+        );
+    };
+    let stage1_early_exit = should_stage1_early_exit(
+        &root_baseline_info,
+        policy,
+        stage1_out,
+        stage1_losslessly_exhausted,
+        smart_mode,
+        check_theft,
+    );
+
+    let has_time_left = full_deadline_ms == 0
+        || (started.elapsed().as_millis() as u64) < full_deadline_ms;
+    if can_scale_adaptive_stages
+        && !stage1_early_exit
         && !cancel.load(Ordering::Relaxed)
-        && *total_expanded < stage_node_ceiling
+        && has_time_left
+        && *total_expanded < stage2_ceiling
     {
-        if let Some(avail_ms_b) = rem_ms() {
-            if take_a || update_zero {
-                if take_a && !update_zero {
-                    *selected_best = Some(phase_a);
-                } else if take_a {
-                    let summary_clone = BeamRunOutput {
-                        best_node: phase_a.best_node,
-                        best_turn: phase_a.best_turn,
-                        nodes_in_arena: phase_a.nodes_in_arena,
-                        root_baseline: phase_a.root_baseline.clone(),
-                        won: phase_a.won,
-                        survives: phase_a.survives,
-                        is_event_defeat: phase_a.is_event_defeat,
-                        death_save_use_count: phase_a.death_save_use_count,
-                        player_hp: phase_a.player_hp,
-                        end_player_max_hp: phase_a.end_player_max_hp,
-                        all_forced_uses_satisfied: phase_a.all_forced_uses_satisfied,
-                        strategic_hp_deficit: phase_a.strategic_hp_deficit,
-                        net_persistent_hp_delta_centi: phase_a.net_persistent_hp_delta_centi,
-                        net_potion_opportunity_cost_centi: phase_a
-                            .net_potion_opportunity_cost_centi,
-                        strategy_goal_hp_credit: phase_a.strategy_goal_hp_credit,
-                        strategy_goal_count: phase_a.strategy_goal_count,
-                        growth_rewards: phase_a.growth_rewards,
-                        relic_eval: phase_a.relic_eval,
-                        recovered_hp: phase_a.recovered_hp,
-                        hp_lost: phase_a.hp_lost,
-                        potion_count: phase_a.potion_count,
-                        explicit_potion_count: phase_a.explicit_potion_count,
-                        optional_potion_count: phase_a.optional_potion_count,
-                        optional_paid_potion_count: phase_a.optional_paid_potion_count,
-                        optional_potion_strategic_cost: phase_a.optional_potion_strategic_cost,
-                        optional_ambergris_count: phase_a.optional_ambergris_count,
-                        used_potion_slot_mask: phase_a.used_potion_slot_mask,
-                        alchemize_count: phase_a.alchemize_count,
-                        empty_potion_slots: phase_a.empty_potion_slots,
-                        outstanding_stolen: phase_a.outstanding_stolen,
-                        forfeits_gold: phase_a.forfeits_gold,
-                        has_completed_turn_ongoing: phase_a.has_completed_turn_ongoing,
-                        completed_ongoing_turn: phase_a.completed_ongoing_turn,
-                        score: phase_a.score,
-                        actions: phase_a.actions.clone(),
-                        expanded_nodes: phase_a.expanded_nodes,
-                        transition_count: phase_a.transition_count,
-                        choice_replay_attempts: phase_a.choice_replay_attempts,
-                        tt_pruned: phase_a.tt_pruned,
-                        incumbent_pruned: phase_a.incumbent_pruned,
-                        por_pruned: phase_a.por_pruned,
-                        packed_state_bytes_total: phase_a.packed_state_bytes_total,
-                        termination: phase_a.termination,
-                        terminal_cards_hint: phase_a.terminal_cards_hint.clone(),
-                        early_turn_frontiers: Vec::new(),
-                        boss_tempo_prefixes: Vec::new(),
-                    };
-                    *selected_best = Some(phase_a);
-                    *baseline_zero_potion = Some(summary_clone);
-                } else {
-                    *baseline_zero_potion = Some(phase_a);
-                }
-            }
-
-            let phase_b_nodes = stage_node_ceiling.saturating_sub(*total_expanded).max(1);
-            let potion_width = ((stage_width * 5) / 4).max(stage_width).min(512);
-            let mut phase_b_profile = base_profile.clone();
-            phase_b_profile.beam_width = potion_width;
-            phase_b_profile.max_expanded_nodes = phase_b_nodes;
-            phase_b_profile.soft_time_budget_ms = avail_ms_b;
-
-            let phase_b = run_beam_pass_with_resources(
-                root,
-                content,
-                policy,
-                &phase_b_profile,
-                cert,
-                incumbent_table,
-                shared_incumbent,
-                pool,
-                cancel,
-                abort,
-                progress_cb,
-                PassSearchOptions {
-                    allow_paid_optional_potions: true,
-                    prefer_potion_buckets: true,
-                    eval_mode,
-                    early_turn_scout_depth: 0,
-                    boss_tempo_scout_turns: 0,
-                    rollout_horizon_turns,
-                },
-                None,
-                resources,
-            )?;
-
-            *total_expanded += phase_b.expanded_nodes;
-            *total_transitions += phase_b.transition_count;
-            *total_choice_replays += phase_b.choice_replay_attempts;
-            *total_tt_pruned += phase_b.tt_pruned;
-            *total_incumbent_pruned += phase_b.incumbent_pruned;
-            *total_por_pruned += phase_b.por_pruned;
-
-            let take_b = match selected_best.as_ref() {
-                None => true,
-                Some(cur) => is_better_run_output_with_policy(
-                    &phase_b,
-                    cur,
-                    Some(policy),
-                    baseline_zero_potion.as_ref(),
-                ),
-            };
-            if take_b {
-                *selected_best = Some(phase_b);
+        let stage2_deadline_ms = if full_deadline_ms >= 1500 {
+            let elapsed_now = started.elapsed().as_millis() as u64;
+            let rem = full_deadline_ms.saturating_sub(elapsed_now);
+            if rem >= 900 {
+                let stage3_reserved = (full_deadline_ms * 20) / 100;
+                let min_stage2_slice = rem.min(400u64.max((rem * 50) / 100));
+                let target_deadline = full_deadline_ms.saturating_sub(stage3_reserved);
+                let min_deadline = full_deadline_ms.min(elapsed_now + min_stage2_slice);
+                target_deadline.clamp(min_deadline, full_deadline_ms)
             } else {
-                let phase_b_term = phase_b.termination;
-                if phase_b.optional_paid_potion_count == 0
-                    && baseline_zero_potion.as_ref().is_none_or(|z| {
-                        is_better_run_output_with_policy(&phase_b, z, Some(policy), None)
-                    })
+                full_deadline_ms
+            }
+        } else {
+            full_deadline_ms
+        };
+
+        let stage2_losslessly_exhausted = run_adaptive_stage(
+            root,
+            content,
+            policy,
+            profile,
+            &root_baseline_info,
+            cert,
+            incumbent_table,
+            &mut shared_incumbent,
+            pool,
+            cancel,
+            abort,
+            progress_cb,
+            &started,
+            2,
+            stage2_width,
+            stage2_ceiling,
+            EvalMode::SetupAndSurvival,
+            6,
+            stage2_deadline_ms,
+            full_deadline_ms,
+            can_scale_adaptive_stages,
+            false,
+            &mut stage1_phase_b_timed_out,
+            &mut stage1_phase_a_completed_cleanly,
+            &mut stage1_phase_a_losslessly_exhausted,
+            &mut post_best_boundary,
+            total_expanded,
+            total_transitions,
+            total_choice_replays,
+            total_tt_pruned,
+            total_incumbent_pruned,
+            total_por_pruned,
+            &mut baseline_zero_potion,
+            &mut selected_best,
+            resources,
+        )?;
+
+        let stage2_out = selected_best.as_ref().expect("Stage 2 produced no output");
+        let stage2_clean_survival = stage2_out.won
+            && stage2_out.survives
+            && stage2_out.death_save_use_count == 0
+            && (!check_theft
+                || (stage2_out.outstanding_stolen == 0 && !stage2_out.forfeits_gold));
+        let has_time_for_3 = full_deadline_ms == 0
+            || (started.elapsed().as_millis() as u64) < full_deadline_ms;
+        let need_stage3 = can_scale_adaptive_stages
+            && !cancel.load(Ordering::Relaxed)
+            && has_time_for_3
+            && *total_expanded < stage3_ceiling
+            && should_escalate_to_stage3(
+                &root_baseline_info,
+                policy,
+                stage2_out,
+                stage2_losslessly_exhausted,
+                is_elite_or_boss,
+                smart_mode,
+                check_theft,
+            );
+
+        if need_stage3 {
+            if stage2_out.won && stage2_clean_survival {
+                let _ = run_adaptive_stage(
+                    root,
+                    content,
+                    policy,
+                    profile,
+                    &root_baseline_info,
+                    cert,
+                    incumbent_table,
+                    &mut shared_incumbent,
+                    pool,
+                    cancel,
+                    abort,
+                    progress_cb,
+                    &started,
+                    3,
+                    stage3_width,
+                    stage3_ceiling,
+                    EvalMode::Balanced,
+                    6,
+                    full_deadline_ms,
+                    full_deadline_ms,
+                    can_scale_adaptive_stages,
+                    false,
+                    &mut stage1_phase_b_timed_out,
+                    &mut stage1_phase_a_completed_cleanly,
+                    &mut stage1_phase_a_losslessly_exhausted,
+                    &mut post_best_boundary,
+                    total_expanded,
+                    total_transitions,
+                    total_choice_replays,
+                    total_tt_pruned,
+                    total_incumbent_pruned,
+                    total_por_pruned,
+                    &mut baseline_zero_potion,
+                    &mut selected_best,
+                    resources,
+                )?;
+            } else {
+                let stage3_rem_nodes = stage3_ceiling.saturating_sub(*total_expanded).max(1);
+                let stage3a_alloc_nodes = ((stage3_rem_nodes * 55) / 100).max(min_turn_nodes);
+                let stage3a_ceiling = stage3_ceiling.min(*total_expanded + stage3a_alloc_nodes);
+                let stage3a_deadline_ms = if full_deadline_ms > 0 {
+                    let elapsed_now = started.elapsed().as_millis() as u64;
+                    let rem = full_deadline_ms.saturating_sub(elapsed_now);
+                    if rem >= 1200 {
+                        let alloc = 300u64.max((rem * 55) / 100);
+                        full_deadline_ms.min(elapsed_now + alloc)
+                    } else {
+                        full_deadline_ms
+                    }
+                } else {
+                    0
+                };
+                let stage3a_allow_ds = !stage2_out.won;
+
+                let _ = run_adaptive_stage(
+                    root,
+                    content,
+                    policy,
+                    profile,
+                    &root_baseline_info,
+                    cert,
+                    incumbent_table,
+                    &mut shared_incumbent,
+                    pool,
+                    cancel,
+                    abort,
+                    progress_cb,
+                    &started,
+                    3,
+                    stage3_width,
+                    stage3a_ceiling,
+                    EvalMode::Offense,
+                    6,
+                    stage3a_deadline_ms,
+                    full_deadline_ms,
+                    can_scale_adaptive_stages,
+                    stage3a_allow_ds,
+                    &mut stage1_phase_b_timed_out,
+                    &mut stage1_phase_a_completed_cleanly,
+                    &mut stage1_phase_a_losslessly_exhausted,
+                    &mut post_best_boundary,
+                    total_expanded,
+                    total_transitions,
+                    total_choice_replays,
+                    total_tt_pruned,
+                    total_incumbent_pruned,
+                    total_por_pruned,
+                    &mut baseline_zero_potion,
+                    &mut selected_best,
+                    resources,
+                )?;
+
+                let cur_best = selected_best.as_ref().expect("Stage 3a produced no output");
+                let stage3a_clean_survival =
+                    cur_best.won && cur_best.survives && cur_best.death_save_use_count == 0;
+                let rem_ok_for_3b = full_deadline_ms == 0
+                    || full_deadline_ms.saturating_sub(started.elapsed().as_millis() as u64)
+                        >= 400;
+                if !stage3a_clean_survival
+                    && (!cur_best.won || cur_best.death_save_use_count > 0)
+                    && !cancel.load(Ordering::Relaxed)
+                    && rem_ok_for_3b
                 {
-                    *baseline_zero_potion = Some(phase_b);
-                }
-                if let Some(cur) = selected_best.as_mut() {
-                    if !cur.won
-                        && cur.termination == "None"
-                        && matches!(phase_b_term, "TimeLimit" | "NodeLimit")
-                    {
-                        cur.termination = phase_b_term;
+                    let stage3b_ceiling = if !cur_best.won {
+                        max_total_nodes.min(stage3_ceiling.max(650_000))
+                    } else {
+                        stage3_ceiling
+                    };
+                    let stage3b_allow_ds = !cur_best.won;
+                    if *total_expanded < stage3b_ceiling {
+                        let _ = run_adaptive_stage(
+                            root,
+                            content,
+                            policy,
+                            profile,
+                            &root_baseline_info,
+                            cert,
+                            incumbent_table,
+                            &mut shared_incumbent,
+                            pool,
+                            cancel,
+                            abort,
+                            progress_cb,
+                            &started,
+                            3,
+                            stage3b_width,
+                            stage3b_ceiling,
+                            EvalMode::DesperateRescue,
+                            6,
+                            full_deadline_ms,
+                            full_deadline_ms,
+                            can_scale_adaptive_stages,
+                            stage3b_allow_ds,
+                            &mut stage1_phase_b_timed_out,
+                            &mut stage1_phase_a_completed_cleanly,
+                            &mut stage1_phase_a_losslessly_exhausted,
+                            &mut post_best_boundary,
+                            total_expanded,
+                            total_transitions,
+                            total_choice_replays,
+                            total_tt_pruned,
+                            total_incumbent_pruned,
+                            total_por_pruned,
+                            &mut baseline_zero_potion,
+                            &mut selected_best,
+                            resources,
+                        )?;
                     }
                 }
             }
-            return Ok(());
         }
     }
 
-    if take_a {
-        if update_zero {
-            let zero_clone = BeamRunOutput {
-                best_node: phase_a.best_node,
-                best_turn: phase_a.best_turn,
-                nodes_in_arena: phase_a.nodes_in_arena,
-                root_baseline: phase_a.root_baseline.clone(),
-                won: phase_a.won,
-                survives: phase_a.survives,
-                is_event_defeat: phase_a.is_event_defeat,
-                death_save_use_count: phase_a.death_save_use_count,
-                player_hp: phase_a.player_hp,
-                end_player_max_hp: phase_a.end_player_max_hp,
-                all_forced_uses_satisfied: phase_a.all_forced_uses_satisfied,
-                strategic_hp_deficit: phase_a.strategic_hp_deficit,
-                net_persistent_hp_delta_centi: phase_a.net_persistent_hp_delta_centi,
-                net_potion_opportunity_cost_centi: phase_a.net_potion_opportunity_cost_centi,
-                strategy_goal_hp_credit: phase_a.strategy_goal_hp_credit,
-                strategy_goal_count: phase_a.strategy_goal_count,
-                growth_rewards: phase_a.growth_rewards,
-                relic_eval: phase_a.relic_eval,
-                recovered_hp: phase_a.recovered_hp,
-                hp_lost: phase_a.hp_lost,
-                potion_count: phase_a.potion_count,
-                explicit_potion_count: phase_a.explicit_potion_count,
-                optional_potion_count: phase_a.optional_potion_count,
-                optional_paid_potion_count: phase_a.optional_paid_potion_count,
-                optional_potion_strategic_cost: phase_a.optional_potion_strategic_cost,
-                optional_ambergris_count: phase_a.optional_ambergris_count,
-                used_potion_slot_mask: phase_a.used_potion_slot_mask,
-                alchemize_count: phase_a.alchemize_count,
-                empty_potion_slots: phase_a.empty_potion_slots,
-                outstanding_stolen: phase_a.outstanding_stolen,
-                forfeits_gold: phase_a.forfeits_gold,
-                has_completed_turn_ongoing: phase_a.has_completed_turn_ongoing,
-                completed_ongoing_turn: phase_a.completed_ongoing_turn,
-                score: phase_a.score,
-                actions: phase_a.actions.clone(),
-                expanded_nodes: phase_a.expanded_nodes,
-                transition_count: phase_a.transition_count,
-                choice_replay_attempts: phase_a.choice_replay_attempts,
-                tt_pruned: phase_a.tt_pruned,
-                incumbent_pruned: phase_a.incumbent_pruned,
-                por_pruned: phase_a.por_pruned,
-                packed_state_bytes_total: phase_a.packed_state_bytes_total,
-                termination: phase_a.termination,
-                terminal_cards_hint: phase_a.terminal_cards_hint.clone(),
-                early_turn_frontiers: Vec::new(),
-                boss_tempo_prefixes: Vec::new(),
-            };
-            *baseline_zero_potion = Some(zero_clone);
+    let mut out = selected_best.expect("adaptive stages produced no output");
+    let reached_global_stop_target = out.won
+        && has_reached_acceptable_battle_hp_loss(&root_baseline_info, policy, &out)
+        && (!smart_mode
+            || !can_any_paid_potion_improve_output(&root_baseline_info, &out, check_theft));
+    let effective_final_node_ceiling = if out.won {
+        stage3_ceiling
+    } else {
+        max_total_nodes
+    };
+    let overall_time_expired = !reached_global_stop_target
+        && full_deadline_ms > 0
+        && (started.elapsed().as_millis() as u64) >= full_deadline_ms;
+    let overall_node_limit_reached =
+        !reached_global_stop_target && *total_expanded >= effective_final_node_ceiling;
+    if !out.is_event_defeat && out.termination == "None" {
+        if overall_time_expired || post_best_boundary == "TimeLimit" {
+            out.termination = "TimeLimit";
+        } else if overall_node_limit_reached
+            || post_best_boundary == BeamWidthPortfolio::NODE_LIMIT_TERMINATION
+        {
+            out.termination = BeamWidthPortfolio::NODE_LIMIT_TERMINATION;
         }
-        *selected_best = Some(phase_a);
-        take_a = false;
-    } else if update_zero {
-        *baseline_zero_potion = Some(phase_a);
     }
-    let _ = take_a;
-    Ok(())
+    Ok(out)
 }
 
+#[cold]
+#[inline(never)]
 #[allow(clippy::too_many_arguments)]
-fn solve_beam_or_portfolio(
+fn solve_beam_portfolio_orchestration(
     root: &BattleState,
     content: &(dyn ContentDispatcher + Sync),
     policy: &SearchPolicy,
@@ -8684,298 +11739,6 @@ fn solve_beam_or_portfolio(
     total_por_pruned: &mut u64,
     resources: &mut PassResources,
 ) -> Result<BeamRunOutput, KernelError> {
-    if !policy.use_beam_width_portfolio {
-        let mut incumbent = FrozenIncumbentBound::default();
-        let out = run_beam_pass_with_resources(
-            root,
-            content,
-            policy,
-            profile,
-            cert,
-            incumbent_table,
-            &mut incumbent,
-            pool,
-            cancel,
-            abort,
-            progress_cb,
-            PassSearchOptions::default(),
-            None,
-            resources,
-        )?;
-        *total_expanded += out.expanded_nodes;
-        *total_transitions += out.transition_count;
-        *total_choice_replays += out.choice_replay_attempts;
-        *total_tt_pruned += out.tt_pruned;
-        *total_incumbent_pruned += out.incumbent_pruned;
-        *total_por_pruned += out.por_pruned;
-        return Ok(out);
-    }
-
-    let use_adaptive_stages = !policy.use_novelty_search
-        && !policy.adaptive_novelty_refinement
-        && policy
-            .beam_width_portfolio_widths
-            .as_ref()
-            .is_none_or(|w| w.is_empty())
-        && policy.beam_width_portfolio_plain_baseline_member
-        && !policy.offensive_refinement_portfolio
-        && !policy.bounded_offensive_refinement_portfolio
-        && policy.portfolio_scheduling_mode == PortfolioSchedulingMode::Sequential;
-
-    if use_adaptive_stages {
-        let started = Instant::now();
-        let root_baseline_info = RootEvalBaseline::from_state_with_policy(root, content, policy);
-        let is_default_adaptive_profile =
-            profile.beam_width == 96 && profile.max_expanded_nodes == 150_000;
-        let is_elite_or_boss =
-            matches!(root.static_ctx.room_type, RoomType::Elite | RoomType::Boss);
-        let smart_mode =
-            root_baseline_info.effective_potion_policy == SolverPotionPolicy::Smart;
-        let check_theft = policy.theft_policy == SolverTheftPolicy::PreserveResources;
-
-        let stage1_width = if is_default_adaptive_profile {
-            96
-        } else {
-            profile.beam_width.clamp(4, 512)
-        };
-        let stage1_ceiling = if is_default_adaptive_profile {
-            150_000
-        } else {
-            profile.max_expanded_nodes
-        };
-        let stage2_width = if is_default_adaptive_profile {
-            240
-        } else {
-            (profile.beam_width * 2).clamp(stage1_width, 512)
-        };
-        let stage2_ceiling = if is_default_adaptive_profile {
-            320_000
-        } else {
-            profile.max_expanded_nodes
-        };
-        let stage3_width = 320.max(stage2_width).min(512);
-        let stage3_ceiling = if is_default_adaptive_profile {
-            500_000
-        } else {
-            profile.max_expanded_nodes
-        };
-
-        let mut shared_incumbent = FrozenIncumbentBound::default();
-        if cancel.load(Ordering::Relaxed) {
-            return run_beam_pass_with_resources(
-                root,
-                content,
-                policy,
-                profile,
-                cert,
-                incumbent_table,
-                &mut shared_incumbent,
-                pool,
-                cancel,
-                abort,
-                progress_cb,
-                PassSearchOptions::default(),
-                None,
-                resources,
-            );
-        }
-
-        let mut baseline_zero_potion: Option<BeamRunOutput> = None;
-        let mut selected_best: Option<BeamRunOutput> = None;
-
-        // Stage 1: W=96 / 150k Balanced, rolloutHorizon=4
-        run_adaptive_stage(
-            root,
-            content,
-            policy,
-            profile,
-            &root_baseline_info,
-            cert,
-            incumbent_table,
-            &mut shared_incumbent,
-            pool,
-            cancel,
-            abort,
-            progress_cb,
-            &started,
-            stage1_width,
-            stage1_ceiling,
-            EvalMode::Balanced,
-            4,
-            total_expanded,
-            total_transitions,
-            total_choice_replays,
-            total_tt_pruned,
-            total_incumbent_pruned,
-            total_por_pruned,
-            &mut baseline_zero_potion,
-            &mut selected_best,
-            resources,
-        )?;
-
-        let Some(stage1_out) = selected_best.as_ref() else {
-            return run_beam_pass_with_resources(
-                root,
-                content,
-                policy,
-                profile,
-                cert,
-                incumbent_table,
-                &mut shared_incumbent,
-                pool,
-                cancel,
-                abort,
-                progress_cb,
-                PassSearchOptions::default(),
-                None,
-                resources,
-            );
-        };
-        let stage1_clean = stage1_out.won
-            && stage1_out.survives
-            && stage1_out.death_save_use_count == 0
-            && (!check_theft
-                || (stage1_out.outstanding_stolen == 0 && !stage1_out.forfeits_gold));
-        let stage1_eff_loss = stage1_out.strategic_hp_deficit.max(0);
-        let stage1_paid = stage1_out.optional_paid_potion_count;
-        let stage1_meets_target =
-            has_reached_acceptable_battle_hp_loss(&root_baseline_info, policy, stage1_out)
-                && (!smart_mode
-                    || !PotionUsePolicy::can_any_paid_potion_improve_on(
-                        stage1_out.won,
-                        stage1_out.survives,
-                        stage1_out.death_save_use_count,
-                        stage1_out.player_hp,
-                        stage1_out.end_player_max_hp,
-                        stage1_out.used_potion_slot_mask,
-                        stage1_out.outstanding_stolen,
-                        stage1_out.forfeits_gold,
-                        check_theft,
-                        &root_baseline_info,
-                    ));
-        let stage1_early_exit = stage1_meets_target
-            || (stage1_clean && stage1_eff_loss <= 0 && stage1_paid == 0)
-            || (!is_elite_or_boss
-                && stage1_clean
-                && stage1_eff_loss <= 3
-                && stage1_paid == 0
-                && stage1_out.termination == "None");
-
-        let has_time_left = profile.soft_time_budget_ms == 0
-            || (started.elapsed().as_millis() as u64) < profile.soft_time_budget_ms;
-        if !stage1_early_exit
-            && !cancel.load(Ordering::Relaxed)
-            && has_time_left
-            && *total_expanded < stage2_ceiling
-            && (is_default_adaptive_profile || profile.max_expanded_nodes >= 20_000)
-        {
-            // Stage 2: W=240 / 320k cumulative SetupAndSurvival, rolloutHorizon=6
-            run_adaptive_stage(
-                root,
-                content,
-                policy,
-                profile,
-                &root_baseline_info,
-                cert,
-                incumbent_table,
-                &mut shared_incumbent,
-                pool,
-                cancel,
-                abort,
-                progress_cb,
-                &started,
-                stage2_width,
-                stage2_ceiling,
-                EvalMode::SetupAndSurvival,
-                6,
-                total_expanded,
-                total_transitions,
-                total_choice_replays,
-                total_tt_pruned,
-                total_incumbent_pruned,
-                total_por_pruned,
-                &mut baseline_zero_potion,
-                &mut selected_best,
-                resources,
-            )?;
-
-            let stage2_out = selected_best.as_ref().expect("Stage 2 produced no output");
-            let stage2_clean = stage2_out.won
-                && stage2_out.survives
-                && stage2_out.death_save_use_count == 0
-                && (!check_theft
-                    || (stage2_out.outstanding_stolen == 0 && !stage2_out.forfeits_gold));
-            let stage2_eff_loss = stage2_out.strategic_hp_deficit.max(0);
-            let stage2_paid = stage2_out.optional_paid_potion_count;
-            let stage2_meets_target =
-                has_reached_acceptable_battle_hp_loss(&root_baseline_info, policy, stage2_out)
-                    && (!smart_mode
-                        || !PotionUsePolicy::can_any_paid_potion_improve_on(
-                            stage2_out.won,
-                            stage2_out.survives,
-                            stage2_out.death_save_use_count,
-                            stage2_out.player_hp,
-                            stage2_out.end_player_max_hp,
-                            stage2_out.used_potion_slot_mask,
-                            stage2_out.outstanding_stolen,
-                            stage2_out.forfeits_gold,
-                            check_theft,
-                            &root_baseline_info,
-                        ));
-            let root_hp = root_baseline_info.initial_player_hp.max(1);
-            let has_time_for_3 = profile.soft_time_budget_ms == 0
-                || (started.elapsed().as_millis() as u64) < profile.soft_time_budget_ms;
-            let need_stage3 = is_default_adaptive_profile
-                && !stage2_meets_target
-                && !cancel.load(Ordering::Relaxed)
-                && has_time_for_3
-                && *total_expanded < stage3_ceiling
-                && (!stage2_out.won
-                    || !stage2_clean
-                    || stage2_eff_loss >= 18
-                    || stage2_eff_loss * 4 >= root_hp
-                    || (is_elite_or_boss && (stage2_eff_loss >= 12 || stage2_paid >= 2)));
-
-            if need_stage3 {
-                let stage3_mode = if !stage2_out.won {
-                    EvalMode::Offense
-                } else {
-                    EvalMode::Balanced
-                };
-                run_adaptive_stage(
-                    root,
-                    content,
-                    policy,
-                    profile,
-                    &root_baseline_info,
-                    cert,
-                    incumbent_table,
-                    &mut shared_incumbent,
-                    pool,
-                    cancel,
-                    abort,
-                    progress_cb,
-                    &started,
-                    stage3_width,
-                    stage3_ceiling,
-                    stage3_mode,
-                    6,
-                    total_expanded,
-                    total_transitions,
-                    total_choice_replays,
-                    total_tt_pruned,
-                    total_incumbent_pruned,
-                    total_por_pruned,
-                    &mut baseline_zero_potion,
-                    &mut selected_best,
-                    resources,
-                )?;
-            }
-        }
-
-        return Ok(selected_best.expect("adaptive stages produced no output"));
-    }
-
     let started = Instant::now();
     let has_power = PowerCardValuationRegistry::has_reachable_power(root);
     let specs = BeamWidthPortfolio::production_members(
@@ -9087,15 +11850,17 @@ fn solve_beam_or_portfolio(
         _ => false,
     };
 
-    let outcome = if policy.portfolio_scheduling_mode == PortfolioSchedulingMode::Parallel
-        && policy.max_degree_of_parallelism > 1
+    let dop = policy
+        .max_degree_of_parallelism
+        .clamp(1, crate::eval::weights::MAXIMUM_SEARCH_MAX_DEGREE_OF_PARALLELISM);
+    let outcome = if policy.portfolio_scheduling_mode == PortfolioSchedulingMode::Parallel && dop > 1
     {
         BeamWidthPortfolio::run_with_mode(
             &specs,
             profile.max_expanded_nodes,
             profile,
             policy.portfolio_scheduling_mode,
-            policy.max_degree_of_parallelism,
+            dop,
             |member_profile| {
                 let m_start = Instant::now();
                 let mut member_incumbent = FrozenIncumbentBound::default();
@@ -9163,6 +11928,682 @@ fn solve_beam_or_portfolio(
     Ok(out)
 }
 
+#[allow(clippy::too_many_arguments)]
+fn solve_beam_or_portfolio(
+    root: &BattleState,
+    content: &(dyn ContentDispatcher + Sync),
+    policy: &SearchPolicy,
+    profile: &SolverSearchProfile,
+    cert: &ClosureCertificate,
+    incumbent_table: &PrimaryIncumbentTable,
+    pool: Option<&rayon::ThreadPool>,
+    cancel: &AtomicBool,
+    abort: &SearchAbortSlot,
+    progress_cb: Option<&(dyn Fn(&SearchProgress) + Sync)>,
+    total_expanded: &mut usize,
+    total_transitions: &mut u64,
+    total_choice_replays: &mut u64,
+    total_tt_pruned: &mut u64,
+    total_incumbent_pruned: &mut u64,
+    total_por_pruned: &mut u64,
+    resources: &mut PassResources,
+) -> Result<BeamRunOutput, KernelError> {
+    let use_adaptive_stages = !policy.use_novelty_search
+        && !policy.adaptive_novelty_refinement
+        && policy
+            .beam_width_portfolio_widths
+            .as_ref()
+            .is_none_or(|w| w.is_empty())
+        && policy.beam_width_portfolio_plain_baseline_member
+        && !policy.offensive_refinement_portfolio
+        && !policy.bounded_offensive_refinement_portfolio
+        && policy.portfolio_scheduling_mode == PortfolioSchedulingMode::Sequential;
+
+    if !policy.use_beam_width_portfolio || use_adaptive_stages {
+        return solve_adaptive_stages(
+            root,
+            content,
+            policy,
+            profile,
+            cert,
+            incumbent_table,
+            pool,
+            cancel,
+            abort,
+            progress_cb,
+            policy.use_beam_width_portfolio,
+            total_expanded,
+            total_transitions,
+            total_choice_replays,
+            total_tt_pruned,
+            total_incumbent_pruned,
+            total_por_pruned,
+            resources,
+        );
+    }
+
+    solve_beam_portfolio_orchestration(
+        root,
+        content,
+        policy,
+        profile,
+        cert,
+        incumbent_table,
+        pool,
+        cancel,
+        abort,
+        progress_cb,
+        total_expanded,
+        total_transitions,
+        total_choice_replays,
+        total_tt_pruned,
+        total_incumbent_pruned,
+        total_por_pruned,
+        resources,
+    )
+}
+
+#[cold]
+#[inline(never)]
+fn prepare_compacted_root(root: &BattleState, content: &dyn ContentDispatcher) -> Option<BattleState> {
+    let need_card_floors =
+        root.static_ctx.root_card_floors.is_empty() && !root.cards.is_empty();
+    let need_clutter_indices = !root.static_ctx.has_root_clutter_indices
+        && !root.cards.is_empty()
+        && root.cards.len() <= u16::MAX as usize;
+    let need_initial_cards = root.static_ctx.root_combat_delta_len == 0
+        && !root.cards.is_empty()
+        && root.cards.len() <= 512
+        && root.cards_are_contiguous();
+    let need_card_hook_mask = (root.static_ctx.root_combat_delta_len > 0 || need_initial_cards)
+        && !root.static_ctx.has_root_card_hook_mask
+        && content.hook_mask_tables().is_some();
+    let need_handle_layout = (!root.handle_layout.cards && root.cards_are_contiguous())
+        || (!root.handle_layout.creatures && root.creatures_are_contiguous());
+    let need_extra_clutter_clear = root.extra_clutter_hint.0
+        && !root.cards.is_empty()
+        && root.cards.len() <= u16::MAX as usize
+        && (!root.static_ctx.has_root_clutter_indices
+            || root.cards.len() == root.static_ctx.root_initial_cards_len);
+    let need_turn_cache = !root.semantic_history.turn_cache.valid;
+    let need_eot_clear = root.eot_card_cleanup_dirty.0
+        && !root
+            .cards
+            .iter()
+            .any(|c| BattleState::card_has_eot_cleanup_state(c, &root.card_extensions));
+
+    if root.static_ctx.compact_turn_history
+        && root.static_ctx.has_root_rngs
+        && root.static_ctx.has_root_relics
+        && !need_card_floors
+        && !need_clutter_indices
+        && !need_initial_cards
+        && !need_card_hook_mask
+        && !need_handle_layout
+        && !need_extra_clutter_clear
+        && !need_turn_cache
+        && !need_eot_clear
+    {
+        return None;
+    }
+
+    let mut compacted_root = root.clone();
+    if need_eot_clear {
+        compacted_root.eot_card_cleanup_dirty = sts2_kernel::state::EotCleanupDirtyFlag(false);
+    }
+    let mut ctx = (*root.static_ctx).clone();
+    ctx.compact_turn_history = true;
+    if !ctx.has_root_rngs {
+        ctx.set_root_rngs(root.run_rngs.streams, root.player_rngs.streams);
+    }
+    if !ctx.has_root_relics {
+        ctx.set_root_relics(&root.player.relics);
+        compacted_root.relic_dirty_mask = RelicDirtyMask(0);
+    }
+    if ctx.root_card_floors.is_empty() && !root.cards.is_empty() {
+        ctx.set_root_card_floors(&root.cards);
+    }
+    if !ctx.has_root_clutter_indices
+        && !root.cards.is_empty()
+        && root.cards.len() <= u16::MAX as usize
+    {
+        if let Some(tables) = content.hook_mask_tables() {
+            ctx.set_root_clutter_indices(&root.cards, |id| tables.card_is_status_or_curse(id));
+        } else {
+            ctx.set_root_clutter_indices(&root.cards, |id| {
+                content.card_meta(id).is_ok_and(|m| {
+                    matches!(
+                        m.card_type,
+                        sts2_types::CardType::Status | sts2_types::CardType::Curse
+                    )
+                })
+            });
+        }
+    }
+    if ctx.has_root_clutter_indices
+        && compacted_root.cards.len() == ctx.root_initial_cards_len
+    {
+        compacted_root.extra_clutter_hint = sts2_kernel::state::ExtraClutterHintFlag(false);
+    }
+    ctx.root_deck_contiguous = ctx
+        .root_deck_cards
+        .iter()
+        .enumerate()
+        .all(|(i, c)| c.handle.0 == (i + 1) as u32);
+    if ctx.root_combat_delta_len == 0 && !root.cards.is_empty() && root.cards.len() <= 512 {
+        ctx.set_root_initial_cards(&root.cards, &root.player);
+        if ctx.root_combat_delta_len > 0 {
+            compacted_root.card_meta_dirty = sts2_kernel::state::CardMetaDirtyMask::CLEAN;
+        }
+    }
+    if ctx.root_combat_delta_len > 0 && !ctx.has_root_card_hook_mask {
+        if let Some(tables) = content.hook_mask_tables() {
+            ctx.set_root_card_hook_mask(|c| {
+                !c.removed_from_state
+                    && (tables.card_has_hook(c.id)
+                        || c.ext_index.is_some()
+                        || (!tables.afflictions_self_card_entered_only && c.affliction.is_some()))
+            });
+        }
+    }
+    if !compacted_root.semantic_history.turn_cache.valid {
+        let tk = compacted_root.current_turn_key();
+        compacted_root.semantic_history.refresh_turn_cache(&tk);
+    }
+    compacted_root.recompute_handle_layout();
+    compacted_root.static_ctx = Arc::new(ctx);
+    Some(compacted_root)
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn run_novelty_mode(
+    root: &BattleState,
+    content: &(dyn ContentDispatcher + Sync),
+    policy: &SearchPolicy,
+    base_profile: &SolverSearchProfile,
+    cert: &ClosureCertificate,
+    incumbent_table: &PrimaryIncumbentTable,
+    pool_ref: Option<&rayon::ThreadPool>,
+    cancel: &AtomicBool,
+    abort: &SearchAbortSlot,
+    progress_cb: Option<&(dyn Fn(&SearchProgress) + Sync)>,
+    started: Instant,
+    act_ending_boss: bool,
+    total_expanded: &mut usize,
+    total_transitions: &mut u64,
+    total_choice_replays: &mut u64,
+    total_tt_pruned: &mut u64,
+    total_incumbent_pruned: &mut u64,
+    total_por_pruned: &mut u64,
+    resources: &mut PassResources,
+) -> Result<BeamRunOutput, KernelError> {
+    if let Some(exp_profile) = policy
+        .novelty_budget
+        .exploration(base_profile, act_ending_boss)
+    {
+        let exp_out = run_novelty_pass(
+            root,
+            content,
+            policy,
+            &exp_profile,
+            cert,
+            incumbent_table,
+            cancel,
+            abort,
+            &policy.novelty_options,
+        )?;
+        *total_expanded += exp_out.expanded_nodes;
+        *total_transitions += exp_out.transition_count;
+        *total_choice_replays += exp_out.choice_replay_attempts;
+        *total_tt_pruned += exp_out.tt_pruned;
+        *total_incumbent_pruned += exp_out.incumbent_pruned;
+        *total_por_pruned += exp_out.por_pruned;
+
+        let settled = exp_out.root_baseline.all_forced_potion_mask == 0
+            && has_reached_acceptable_battle_hp_loss(&exp_out.root_baseline, policy, &exp_out);
+        let elapsed_ms = started.elapsed().as_millis() as u64;
+        let remaining = NoveltyPortfolioBudget::remaining(
+            base_profile,
+            elapsed_ms,
+            exp_out.expanded_nodes,
+        );
+        if settled || remaining.is_none() || cancel.load(Ordering::Relaxed) {
+            return Ok(exp_out);
+        }
+        let beam_out = solve_beam_or_portfolio(
+            root,
+            content,
+            policy,
+            &remaining.unwrap(),
+            cert,
+            incumbent_table,
+            pool_ref,
+            cancel,
+            abort,
+            progress_cb,
+            total_expanded,
+            total_transitions,
+            total_choice_replays,
+            total_tt_pruned,
+            total_incumbent_pruned,
+            total_por_pruned,
+            resources,
+        )?;
+        Ok(if is_better_run_output(&exp_out, &beam_out) {
+            exp_out
+        } else {
+            beam_out
+        })
+    } else {
+        solve_beam_or_portfolio(
+            root,
+            content,
+            policy,
+            base_profile,
+            cert,
+            incumbent_table,
+            pool_ref,
+            cancel,
+            abort,
+            progress_cb,
+            total_expanded,
+            total_transitions,
+            total_choice_replays,
+            total_tt_pruned,
+            total_incumbent_pruned,
+            total_por_pruned,
+            resources,
+        )
+    }
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn run_adaptive_novelty_mode(
+    root: &BattleState,
+    content: &(dyn ContentDispatcher + Sync),
+    policy: &SearchPolicy,
+    base_profile: &SolverSearchProfile,
+    cert: &ClosureCertificate,
+    incumbent_table: &PrimaryIncumbentTable,
+    pool_ref: Option<&rayon::ThreadPool>,
+    cancel: &AtomicBool,
+    abort: &SearchAbortSlot,
+    progress_cb: Option<&(dyn Fn(&SearchProgress) + Sync)>,
+    started: Instant,
+    act_ending_boss: bool,
+    total_expanded: &mut usize,
+    total_transitions: &mut u64,
+    total_choice_replays: &mut u64,
+    total_tt_pruned: &mut u64,
+    total_incumbent_pruned: &mut u64,
+    total_por_pruned: &mut u64,
+    resources: &mut PassResources,
+) -> Result<BeamRunOutput, KernelError> {
+    let b_start = Instant::now();
+    let baseline = solve_beam_or_portfolio(
+        root,
+        content,
+        policy,
+        base_profile,
+        cert,
+        incumbent_table,
+        pool_ref,
+        cancel,
+        abort,
+        progress_cb,
+        total_expanded,
+        total_transitions,
+        total_choice_replays,
+        total_tt_pruned,
+        total_incumbent_pruned,
+        total_por_pruned,
+        resources,
+    )?;
+    let baseline_ms = b_start.elapsed().as_millis() as u64;
+    let elapsed_ms = started.elapsed().as_millis() as u64;
+    if cancel.load(Ordering::Relaxed)
+        || can_finish_target_portfolio(
+            &baseline.root_baseline,
+            policy,
+            base_profile,
+            &baseline,
+            cert,
+        )
+    {
+        return Ok(baseline);
+    }
+    if let Some(ref_profile) = policy.novelty_budget.refinement_after_baseline(
+        base_profile,
+        baseline_ms,
+        baseline.expanded_nodes,
+        elapsed_ms,
+        act_ending_boss,
+    ) {
+        let nov_out = run_novelty_pass(
+            root,
+            content,
+            policy,
+            &ref_profile,
+            cert,
+            incumbent_table,
+            cancel,
+            abort,
+            &policy.novelty_options,
+        )?;
+        *total_expanded += nov_out.expanded_nodes;
+        *total_transitions += nov_out.transition_count;
+        *total_choice_replays += nov_out.choice_replay_attempts;
+        *total_tt_pruned += nov_out.tt_pruned;
+        *total_incumbent_pruned += nov_out.incumbent_pruned;
+        *total_por_pruned += nov_out.por_pruned;
+        Ok(if is_better_run_output(&nov_out, &baseline) {
+            nov_out
+        } else {
+            baseline
+        })
+    } else {
+        Ok(baseline)
+    }
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn run_early_turn_exploration_pass(
+    root: &BattleState,
+    content: &(dyn ContentDispatcher + Sync),
+    policy: &SearchPolicy,
+    base_profile: &SolverSearchProfile,
+    cert: &ClosureCertificate,
+    incumbent_table: &PrimaryIncumbentTable,
+    pool_ref: Option<&rayon::ThreadPool>,
+    cancel: &AtomicBool,
+    abort: &SearchAbortSlot,
+    started: Instant,
+    etc_budget_ms: u64,
+    total_expanded: &mut usize,
+    total_transitions: &mut u64,
+    total_choice_replays: &mut u64,
+    selected: &mut BeamRunOutput,
+    resources: &mut PassResources,
+) -> Result<(), KernelError> {
+    let etc_remaining_ms =
+        || etc_budget_ms.saturating_sub(started.elapsed().as_millis() as u64);
+    if etc_remaining_ms() == 0 {
+        return Ok(());
+    }
+    let mut scout_profile = base_profile.clone();
+    scout_profile.beam_width = (base_profile.beam_width * 4).clamp(64, 384);
+    scout_profile.max_expanded_nodes = base_profile.max_expanded_nodes.min(150_000);
+    scout_profile.soft_time_budget_ms = etc_remaining_ms().max(1);
+    let mut etc_incumbent = FrozenIncumbentBound::default();
+    match run_beam_pass_with_resources(
+        root,
+        content,
+        policy,
+        &scout_profile,
+        cert,
+        incumbent_table,
+        &mut etc_incumbent,
+        pool_ref,
+        cancel,
+        abort,
+        None,
+        PassSearchOptions {
+            early_turn_scout_depth: policy.early_turn_exploration_depth,
+            ..Default::default()
+        },
+        None,
+        resources,
+    ) {
+        Ok(scout) => {
+            *total_expanded += scout.expanded_nodes;
+            *total_transitions += scout.transition_count;
+            *total_choice_replays += scout.choice_replay_attempts;
+            if is_better_run_output(&scout, selected) {
+                *selected = scout;
+            } else {
+                let ordered = interleave_potion_frontiers(scout.early_turn_frontiers);
+                let mut cont_budget = EARLY_TURN_EXPLORATION_NODE_BUDGET;
+                for (rank, cand) in ordered
+                    .into_iter()
+                    .take(EARLY_TURN_EXPLORATION_MAX_RANK_LIMIT)
+                    .enumerate()
+                {
+                    if rank >= EARLY_TURN_EXPLORATION_INITIAL_RANK_LIMIT && !selected.won {
+                        break;
+                    }
+                    let rem_ms = etc_remaining_ms();
+                    if cont_budget < 100 || rem_ms == 0 || cancel.load(Ordering::Relaxed) {
+                        break;
+                    }
+                    let _ = select_early_turn_continuation_incumbent(
+                        incumbent_table.try_get(PrimaryIncumbentBucket {
+                            potions: 0,
+                            forfeits_gold: false,
+                        }),
+                        false,
+                        selected.potion_count > 0,
+                        cand.actions
+                            .iter()
+                            .any(|a| matches!(a, PlannedAction::UsePotion { .. })),
+                    );
+                    let mut cont_profile = base_profile.clone();
+                    cont_profile.max_expanded_nodes =
+                        cont_budget.min(base_profile.max_expanded_nodes);
+                    cont_profile.soft_time_budget_ms = rem_ms;
+                    match run_beam_pass_with_resources(
+                        root,
+                        content,
+                        policy,
+                        &cont_profile,
+                        cert,
+                        incumbent_table,
+                        &mut etc_incumbent,
+                        pool_ref,
+                        cancel,
+                        abort,
+                        None,
+                        PassSearchOptions::default(),
+                        Some(&cand.actions),
+                        resources,
+                    ) {
+                        Ok(cont) => {
+                            cont_budget = cont_budget.saturating_sub(cont.expanded_nodes);
+                            *total_expanded += cont.expanded_nodes;
+                            *total_transitions += cont.transition_count;
+                            *total_choice_replays += cont.choice_replay_attempts;
+                            if is_better_run_output(&cont, selected) {
+                                *selected = cont;
+                            }
+                        }
+                        Err(err) if abort.is_tripped() || should_abort_search_on_kernel_error(&err) => {
+                            return Err(err);
+                        }
+                        Err(_) => {}
+                    }
+                }
+            }
+        }
+        Err(err) if abort.is_tripped() || should_abort_search_on_kernel_error(&err) => {
+            return Err(err);
+        }
+        Err(_) => {}
+    }
+    Ok(())
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn run_boss_tempo_post_pass(
+    root: &BattleState,
+    content: &(dyn ContentDispatcher + Sync),
+    policy: &SearchPolicy,
+    base_profile: &SolverSearchProfile,
+    cert: &ClosureCertificate,
+    incumbent_table: &PrimaryIncumbentTable,
+    pool_ref: Option<&rayon::ThreadPool>,
+    cancel: &AtomicBool,
+    abort: &SearchAbortSlot,
+    total_expanded: &mut usize,
+    total_transitions: &mut u64,
+    total_choice_replays: &mut u64,
+    selected: &mut BeamRunOutput,
+    resources: &mut PassResources,
+) -> Result<(), KernelError> {
+    let tempo_budget =
+        BossTempoSearchOptions::additional_budget(base_profile, policy.time_budget_ms.max(1000));
+    let mut tempo_incumbent = FrozenIncumbentBound::default();
+    match run_beam_pass_with_resources(
+        root,
+        content,
+        policy,
+        &tempo_budget,
+        cert,
+        incumbent_table,
+        &mut tempo_incumbent,
+        pool_ref,
+        cancel,
+        abort,
+        None,
+        PassSearchOptions {
+            boss_tempo_scout_turns: policy.boss_tempo_options.scout_turns.max(1),
+            ..Default::default()
+        },
+        None,
+        resources,
+    ) {
+        Ok(scout) => {
+            *total_expanded += scout.expanded_nodes;
+            *total_transitions += scout.transition_count;
+            *total_choice_replays += scout.choice_replay_attempts;
+            let prefixes = scout.boss_tempo_prefixes.clone();
+            if is_better_run_output(&scout, selected) {
+                *selected = scout;
+            }
+            for prefix in prefixes.into_iter().take(2) {
+                if cancel.load(Ordering::Relaxed) {
+                    break;
+                }
+                match run_beam_pass_with_resources(
+                    root,
+                    content,
+                    policy,
+                    &tempo_budget,
+                    cert,
+                    incumbent_table,
+                    &mut tempo_incumbent,
+                    pool_ref,
+                    cancel,
+                    abort,
+                    None,
+                    PassSearchOptions::default(),
+                    Some(&prefix.actions),
+                    resources,
+                ) {
+                    Ok(cont) => {
+                        *total_expanded += cont.expanded_nodes;
+                        *total_transitions += cont.transition_count;
+                        *total_choice_replays += cont.choice_replay_attempts;
+                        if is_better_run_output(&cont, selected) {
+                            *selected = cont;
+                        }
+                    }
+                    Err(err) if abort.is_tripped() || should_abort_search_on_kernel_error(&err) => {
+                        return Err(err);
+                    }
+                    Err(_) => {}
+                }
+            }
+        }
+        Err(err) if abort.is_tripped() || should_abort_search_on_kernel_error(&err) => {
+            return Err(err);
+        }
+        Err(_) => {}
+    }
+    match run_boss_tempo_depth_first(
+        root,
+        content,
+        policy,
+        &tempo_budget,
+        cert,
+        incumbent_table,
+        cancel,
+        abort,
+        &policy.boss_tempo_options,
+    ) {
+        Ok(tempo_out) => {
+            *total_expanded += tempo_out.expanded_nodes;
+            *total_transitions += tempo_out.transition_count;
+            *total_choice_replays += tempo_out.choice_replay_attempts;
+            if is_better_run_output(&tempo_out, selected) {
+                *selected = tempo_out;
+            }
+        }
+        Err(err) if abort.is_tripped() || should_abort_search_on_kernel_error(&err) => {
+            return Err(err);
+        }
+        Err(_) => {}
+    }
+    Ok(())
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn build_solve_response(
+    selected: BeamRunOutput,
+    cert: ClosureCertificate,
+    incumbent_table: &PrimaryIncumbentTable,
+    started: Instant,
+    total_expanded: usize,
+    total_transitions: u64,
+    total_choice_replays: u64,
+    total_tt_pruned: u64,
+    total_incumbent_pruned: u64,
+    total_por_pruned: u64,
+) -> InCombatSolveResponse {
+    let packed_state_bytes_total = selected.packed_state_bytes_total;
+    let nodes_in_arena = selected.nodes_in_arena as u64;
+    let avg_packed_bytes = if nodes_in_arena > 0 {
+        packed_state_bytes_total / nodes_in_arena
+    } else {
+        0
+    };
+
+    let _ = selected.best_node;
+    let _ = selected.root_baseline;
+
+    InCombatSolveResponse {
+        actions: selected.actions,
+        score: selected.score,
+        nodes_expanded: total_expanded,
+        terminal_cards_hint: selected.terminal_cards_hint,
+        stats: SearchStatistics {
+            won: selected.won,
+            strategic_hp_deficit: selected.strategic_hp_deficit,
+            hp_lost: selected.hp_lost,
+            potion_count: selected.potion_count,
+            transition_count: total_transitions,
+            choice_replay_attempts: total_choice_replays,
+            tt_branches_pruned: total_tt_pruned,
+            incumbent_branches_pruned: total_incumbent_pruned
+                + incumbent_table.branches_pruned.load(Ordering::Relaxed) as u64,
+            por_branches_pruned: total_por_pruned,
+            avg_packed_state_bytes: avg_packed_bytes,
+            elapsed_ms: started.elapsed().as_millis() as u64,
+            closure_healing_certified: cert.healing_certified,
+            closure_growth_zero_certified: cert.growth_certified_zero,
+            termination: selected.termination.to_owned(),
+        },
+    }
+}
+
 pub struct CombatSearchCoordinator;
 
 impl CombatSearchCoordinator {
@@ -9173,113 +12614,8 @@ impl CombatSearchCoordinator {
         cancel: &AtomicBool,
         progress_cb: Option<&(dyn Fn(&SearchProgress) + Sync)>,
     ) -> Result<InCombatSolveResponse, KernelError> {
-        let mut compacted_root;
-        let need_card_floors =
-            root.static_ctx.root_card_floors.is_empty() && !root.cards.is_empty();
-        let need_clutter_indices = !root.static_ctx.has_root_clutter_indices
-            && !root.cards.is_empty()
-            && root.cards.len() <= u16::MAX as usize;
-        let need_initial_cards = root.static_ctx.root_combat_delta_len == 0
-            && !root.cards.is_empty()
-            && root.cards.len() <= 512
-            && root.cards_are_contiguous();
-        let need_card_hook_mask = (root.static_ctx.root_combat_delta_len > 0 || need_initial_cards)
-            && !root.static_ctx.has_root_card_hook_mask
-            && content.hook_mask_tables().is_some();
-        let need_handle_layout = (!root.handle_layout.cards && root.cards_are_contiguous())
-            || (!root.handle_layout.creatures && root.creatures_are_contiguous());
-        let need_extra_clutter_clear = root.extra_clutter_hint.0
-            && !root.cards.is_empty()
-            && root.cards.len() <= u16::MAX as usize
-            && (!root.static_ctx.has_root_clutter_indices
-                || root.cards.len() == root.static_ctx.root_initial_cards_len);
-        let need_turn_cache = !root.semantic_history.turn_cache.valid;
-        let need_eot_clear = root.eot_card_cleanup_dirty.0
-            && !root.cards.iter().any(|c| {
-                BattleState::card_has_eot_cleanup_state(c, &root.card_extensions)
-            });
-        let root = if !root.static_ctx.compact_turn_history
-            || !root.static_ctx.has_root_rngs
-            || !root.static_ctx.has_root_relics
-            || need_card_floors
-            || need_clutter_indices
-            || need_initial_cards
-            || need_card_hook_mask
-            || need_handle_layout
-            || need_extra_clutter_clear
-            || need_turn_cache
-            || need_eot_clear
-        {
-            compacted_root = root.clone();
-            if need_eot_clear {
-                compacted_root.eot_card_cleanup_dirty =
-                    sts2_kernel::state::EotCleanupDirtyFlag(false);
-            }
-            let mut ctx = (*root.static_ctx).clone();
-            ctx.compact_turn_history = true;
-            if !ctx.has_root_rngs {
-                ctx.set_root_rngs(root.run_rngs.streams, root.player_rngs.streams);
-            }
-            if !ctx.has_root_relics {
-                ctx.set_root_relics(&root.player.relics);
-                compacted_root.relic_dirty_mask = RelicDirtyMask(0);
-            }
-            if ctx.root_card_floors.is_empty() && !root.cards.is_empty() {
-                ctx.set_root_card_floors(&root.cards);
-            }
-            if !ctx.has_root_clutter_indices
-                && !root.cards.is_empty()
-                && root.cards.len() <= u16::MAX as usize
-            {
-                if let Some(tables) = content.hook_mask_tables() {
-                    ctx.set_root_clutter_indices(&root.cards, |id| {
-                        tables.card_is_status_or_curse(id)
-                    });
-                } else {
-                    ctx.set_root_clutter_indices(&root.cards, |id| {
-                        content.card_meta(id).is_ok_and(|m| {
-                            matches!(m.card_type, sts2_types::CardType::Status | sts2_types::CardType::Curse)
-                        })
-                    });
-                }
-            }
-            if ctx.has_root_clutter_indices
-                && compacted_root.cards.len() == ctx.root_initial_cards_len
-            {
-                compacted_root.extra_clutter_hint = sts2_kernel::state::ExtraClutterHintFlag(false);
-            }
-            ctx.root_deck_contiguous = ctx
-                .root_deck_cards
-                .iter()
-                .enumerate()
-                .all(|(i, c)| c.handle.0 == (i + 1) as u32);
-            if ctx.root_combat_delta_len == 0 && !root.cards.is_empty() && root.cards.len() <= 512 {
-                ctx.set_root_initial_cards(&root.cards, &root.player);
-                if ctx.root_combat_delta_len > 0 {
-                    compacted_root.card_meta_dirty = sts2_kernel::state::CardMetaDirtyMask::CLEAN;
-                }
-            }
-            if ctx.root_combat_delta_len > 0 && !ctx.has_root_card_hook_mask {
-                if let Some(tables) = content.hook_mask_tables() {
-                    ctx.set_root_card_hook_mask(|c| {
-                        !c.removed_from_state
-                            && (tables.card_has_hook(c.id)
-                                || c.ext_index.is_some()
-                                || (!tables.afflictions_self_card_entered_only
-                                    && c.affliction.is_some()))
-                    });
-                }
-            }
-            if !compacted_root.semantic_history.turn_cache.valid {
-                let tk = compacted_root.current_turn_key();
-                compacted_root.semantic_history.refresh_turn_cache(&tk);
-            }
-            compacted_root.recompute_handle_layout();
-            compacted_root.static_ctx = Arc::new(ctx);
-            &compacted_root
-        } else {
-            root
-        };
+        let compacted_opt = prepare_compacted_root(root, content);
+        let root = compacted_opt.as_ref().unwrap_or(root);
         let started = Instant::now();
         let cert = ClosureCertificate::certify(root, content);
         let incumbent_table = PrimaryIncumbentTable::new();
@@ -9324,92 +12660,7 @@ impl CombatSearchCoordinator {
         let abort = SearchAbortSlot::new();
 
         let mut selected = if policy.use_novelty_search && !policy.adaptive_novelty_refinement {
-            if let Some(exp_profile) = policy
-                .novelty_budget
-                .exploration(&base_profile, act_ending_boss)
-            {
-                let exp_out = run_novelty_pass(
-                    root,
-                    content,
-                    policy,
-                    &exp_profile,
-                    &cert,
-                    &incumbent_table,
-                    cancel,
-                    &abort,
-                    &policy.novelty_options,
-                )?;
-                total_expanded += exp_out.expanded_nodes;
-                total_transitions += exp_out.transition_count;
-                total_choice_replays += exp_out.choice_replay_attempts;
-                total_tt_pruned += exp_out.tt_pruned;
-                total_incumbent_pruned += exp_out.incumbent_pruned;
-                total_por_pruned += exp_out.por_pruned;
-
-                let settled = exp_out.root_baseline.all_forced_potion_mask == 0
-                    && has_reached_acceptable_battle_hp_loss(
-                        &exp_out.root_baseline,
-                        policy,
-                        &exp_out,
-                    );
-                let elapsed_ms = started.elapsed().as_millis() as u64;
-                let remaining = NoveltyPortfolioBudget::remaining(
-                    &base_profile,
-                    elapsed_ms,
-                    exp_out.expanded_nodes,
-                );
-                if settled || remaining.is_none() || cancel.load(Ordering::Relaxed) {
-                    exp_out
-                } else {
-                    let beam_out = solve_beam_or_portfolio(
-                        root,
-                        content,
-                        policy,
-                        &remaining.unwrap(),
-                        &cert,
-                        &incumbent_table,
-                        pool_ref,
-                        cancel,
-                        &abort,
-                        progress_cb,
-                        &mut total_expanded,
-                        &mut total_transitions,
-                        &mut total_choice_replays,
-                        &mut total_tt_pruned,
-                        &mut total_incumbent_pruned,
-                        &mut total_por_pruned,
-                        &mut resources,
-                    )?;
-                    if is_better_run_output(&exp_out, &beam_out) {
-                        exp_out
-                    } else {
-                        beam_out
-                    }
-                }
-            } else {
-                solve_beam_or_portfolio(
-                    root,
-                    content,
-                    policy,
-                    &base_profile,
-                    &cert,
-                    &incumbent_table,
-                    pool_ref,
-                    cancel,
-                    &abort,
-                    progress_cb,
-                    &mut total_expanded,
-                    &mut total_transitions,
-                    &mut total_choice_replays,
-                    &mut total_tt_pruned,
-                    &mut total_incumbent_pruned,
-                    &mut total_por_pruned,
-                    &mut resources,
-                )?
-            }
-        } else if policy.adaptive_novelty_refinement {
-            let b_start = Instant::now();
-            let baseline = solve_beam_or_portfolio(
+            run_novelty_mode(
                 root,
                 content,
                 policy,
@@ -9420,6 +12671,8 @@ impl CombatSearchCoordinator {
                 cancel,
                 &abort,
                 progress_cb,
+                started,
+                act_ending_boss,
                 &mut total_expanded,
                 &mut total_transitions,
                 &mut total_choice_replays,
@@ -9427,51 +12680,29 @@ impl CombatSearchCoordinator {
                 &mut total_incumbent_pruned,
                 &mut total_por_pruned,
                 &mut resources,
-            )?;
-            let baseline_ms = b_start.elapsed().as_millis() as u64;
-            let elapsed_ms = started.elapsed().as_millis() as u64;
-            if cancel.load(Ordering::Relaxed)
-                || can_finish_target_portfolio(
-                    &baseline.root_baseline,
-                    policy,
-                    &base_profile,
-                    &baseline,
-                    &cert,
-                )
-            {
-                baseline
-            } else if let Some(ref_profile) = policy.novelty_budget.refinement_after_baseline(
+            )?
+        } else if policy.adaptive_novelty_refinement {
+            run_adaptive_novelty_mode(
+                root,
+                content,
+                policy,
                 &base_profile,
-                baseline_ms,
-                baseline.expanded_nodes,
-                elapsed_ms,
+                &cert,
+                &incumbent_table,
+                pool_ref,
+                cancel,
+                &abort,
+                progress_cb,
+                started,
                 act_ending_boss,
-            ) {
-                let nov_out = run_novelty_pass(
-                    root,
-                    content,
-                    policy,
-                    &ref_profile,
-                    &cert,
-                    &incumbent_table,
-                    cancel,
-                    &abort,
-                    &policy.novelty_options,
-                )?;
-                total_expanded += nov_out.expanded_nodes;
-                total_transitions += nov_out.transition_count;
-                total_choice_replays += nov_out.choice_replay_attempts;
-                total_tt_pruned += nov_out.tt_pruned;
-                total_incumbent_pruned += nov_out.incumbent_pruned;
-                total_por_pruned += nov_out.por_pruned;
-                if is_better_run_output(&nov_out, &baseline) {
-                    nov_out
-                } else {
-                    baseline
-                }
-            } else {
-                baseline
-            }
+                &mut total_expanded,
+                &mut total_transitions,
+                &mut total_choice_replays,
+                &mut total_tt_pruned,
+                &mut total_incumbent_pruned,
+                &mut total_por_pruned,
+                &mut resources,
+            )?
         } else {
             solve_beam_or_portfolio(
                 root,
@@ -9494,124 +12725,35 @@ impl CombatSearchCoordinator {
             )?
         };
 
-        // Optional Early-Turn Frontier Exploration
         let etc_budget_ms = if policy.early_turn_exploration_budget_ms > 0 {
             policy.early_turn_exploration_budget_ms
         } else {
             policy.time_budget_ms
         };
-        let etc_remaining_ms = || {
-            etc_budget_ms.saturating_sub(started.elapsed().as_millis() as u64)
-        };
         if policy.early_turn_exploration_depth > 0
             && !cancel.load(Ordering::Relaxed)
             && !has_reached_acceptable_battle_hp_loss(&selected.root_baseline, policy, &selected)
-            && etc_remaining_ms() > 0
         {
-            let mut scout_profile = base_profile.clone();
-            scout_profile.beam_width = (base_profile.beam_width * 4).clamp(64, 384);
-            scout_profile.max_expanded_nodes = base_profile.max_expanded_nodes.min(150_000);
-            scout_profile.soft_time_budget_ms = etc_remaining_ms().max(1);
-            let mut etc_incumbent = FrozenIncumbentBound::default();
-            match run_beam_pass_with_resources(
+            run_early_turn_exploration_pass(
                 root,
                 content,
                 policy,
-                &scout_profile,
+                &base_profile,
                 &cert,
                 &incumbent_table,
-                &mut etc_incumbent,
                 pool_ref,
                 cancel,
                 &abort,
-                None,
-                PassSearchOptions {
-                    early_turn_scout_depth: policy.early_turn_exploration_depth,
-                    ..Default::default()
-                },
-                None,
+                started,
+                etc_budget_ms,
+                &mut total_expanded,
+                &mut total_transitions,
+                &mut total_choice_replays,
+                &mut selected,
                 &mut resources,
-            ) {
-                Ok(scout) => {
-                    total_expanded += scout.expanded_nodes;
-                    total_transitions += scout.transition_count;
-                    total_choice_replays += scout.choice_replay_attempts;
-                    if is_better_run_output(&scout, &selected) {
-                        selected = scout;
-                    } else {
-                        let ordered = interleave_potion_frontiers(scout.early_turn_frontiers);
-                        let mut cont_budget = EARLY_TURN_EXPLORATION_NODE_BUDGET;
-                        for (rank, cand) in ordered
-                            .into_iter()
-                            .take(EARLY_TURN_EXPLORATION_MAX_RANK_LIMIT)
-                            .enumerate()
-                        {
-                            if rank >= EARLY_TURN_EXPLORATION_INITIAL_RANK_LIMIT && !selected.won {
-                                break;
-                            }
-                            let rem_ms = etc_remaining_ms();
-                            if cont_budget < 100 || rem_ms == 0 || cancel.load(Ordering::Relaxed) {
-                                break;
-                            }
-                            let _ = select_early_turn_continuation_incumbent(
-                                incumbent_table.try_get(PrimaryIncumbentBucket {
-                                    potions: 0,
-                                    forfeits_gold: false,
-                                }),
-                                false,
-                                selected.potion_count > 0,
-                                cand.actions
-                                    .iter()
-                                    .any(|a| matches!(a, PlannedAction::UsePotion { .. })),
-                            );
-                            let mut cont_profile = base_profile.clone();
-                            cont_profile.max_expanded_nodes =
-                                cont_budget.min(base_profile.max_expanded_nodes);
-                            cont_profile.soft_time_budget_ms = rem_ms;
-                            match run_beam_pass_with_resources(
-                                root,
-                                content,
-                                policy,
-                                &cont_profile,
-                                &cert,
-                                &incumbent_table,
-                                &mut etc_incumbent,
-                                pool_ref,
-                                cancel,
-                                &abort,
-                                None,
-                                PassSearchOptions::default(),
-                                Some(&cand.actions),
-                                &mut resources,
-                            ) {
-                                Ok(cont) => {
-                                    cont_budget = cont_budget.saturating_sub(cont.expanded_nodes);
-                                    total_expanded += cont.expanded_nodes;
-                                    total_transitions += cont.transition_count;
-                                    total_choice_replays += cont.choice_replay_attempts;
-                                    if is_better_run_output(&cont, &selected) {
-                                        selected = cont;
-                                    }
-                                }
-                                Err(err)
-                                    if abort.is_tripped()
-                                        || should_abort_search_on_kernel_error(&err) =>
-                                {
-                                    return Err(err);
-                                }
-                                Err(_) => {}
-                            }
-                        }
-                    }
-                }
-                Err(err) if abort.is_tripped() || should_abort_search_on_kernel_error(&err) => {
-                    return Err(err);
-                }
-                Err(_) => {}
-            }
+            )?;
         }
 
-        // Optional Boss-Tempo Discrepancy Search on Boss Encounters
         if policy.use_boss_tempo_search
             && root.static_ctx.room_type == RoomType::Boss
             && !cancel.load(Ordering::Relaxed)
@@ -9623,105 +12765,22 @@ impl CombatSearchCoordinator {
                 &cert,
             )
         {
-            let tempo_budget = BossTempoSearchOptions::additional_budget(
-                &base_profile,
-                policy.time_budget_ms.max(1000),
-            );
-            let mut tempo_incumbent = FrozenIncumbentBound::default();
-            match run_beam_pass_with_resources(
+            run_boss_tempo_post_pass(
                 root,
                 content,
                 policy,
-                &tempo_budget,
+                &base_profile,
                 &cert,
                 &incumbent_table,
-                &mut tempo_incumbent,
                 pool_ref,
                 cancel,
                 &abort,
-                None,
-                PassSearchOptions {
-                    boss_tempo_scout_turns: policy.boss_tempo_options.scout_turns.max(1),
-                    ..Default::default()
-                },
-                None,
+                &mut total_expanded,
+                &mut total_transitions,
+                &mut total_choice_replays,
+                &mut selected,
                 &mut resources,
-            ) {
-                Ok(scout) => {
-                    total_expanded += scout.expanded_nodes;
-                    total_transitions += scout.transition_count;
-                    total_choice_replays += scout.choice_replay_attempts;
-                    let prefixes = scout.boss_tempo_prefixes.clone();
-                    if is_better_run_output(&scout, &selected) {
-                        selected = scout;
-                    }
-                    for prefix in prefixes.into_iter().take(2) {
-                        if cancel.load(Ordering::Relaxed) {
-                            break;
-                        }
-                        match run_beam_pass_with_resources(
-                            root,
-                            content,
-                            policy,
-                            &tempo_budget,
-                            &cert,
-                            &incumbent_table,
-                            &mut tempo_incumbent,
-                            pool_ref,
-                            cancel,
-                            &abort,
-                            None,
-                            PassSearchOptions::default(),
-                            Some(&prefix.actions),
-                            &mut resources,
-                        ) {
-                            Ok(cont) => {
-                                total_expanded += cont.expanded_nodes;
-                                total_transitions += cont.transition_count;
-                                total_choice_replays += cont.choice_replay_attempts;
-                                if is_better_run_output(&cont, &selected) {
-                                    selected = cont;
-                                }
-                            }
-                            Err(err)
-                                if abort.is_tripped()
-                                    || should_abort_search_on_kernel_error(&err) =>
-                            {
-                                return Err(err);
-                            }
-                            Err(_) => {}
-                        }
-                    }
-                }
-                Err(err) if abort.is_tripped() || should_abort_search_on_kernel_error(&err) => {
-                    return Err(err);
-                }
-                Err(_) => {}
-            }
-            match run_boss_tempo_depth_first(
-                root,
-                content,
-                policy,
-                &tempo_budget,
-                &cert,
-                &incumbent_table,
-                cancel,
-                &abort,
-                &policy.boss_tempo_options,
-            ) {
-                Ok(tempo_out) => {
-                    total_expanded += tempo_out.expanded_nodes;
-                    total_transitions += tempo_out.transition_count;
-                    total_choice_replays += tempo_out.choice_replay_attempts;
-                    if is_better_run_output(&tempo_out, &selected) {
-                        selected = tempo_out;
-                    }
-                }
-                Err(err) if abort.is_tripped() || should_abort_search_on_kernel_error(&err) => {
-                    return Err(err);
-                }
-                Err(_) => {}
-            }
+            )?;
         }
 
         if let Some(err) = abort.clone_error() {
@@ -9745,40 +12804,18 @@ impl CombatSearchCoordinator {
             ));
         }
 
-        let packed_state_bytes_total = selected.packed_state_bytes_total;
-        let nodes_in_arena = selected.nodes_in_arena as u64;
-        let avg_packed_bytes = if nodes_in_arena > 0 {
-            packed_state_bytes_total / nodes_in_arena
-        } else {
-            0
-        };
-
-        let _ = selected.best_node;
-        let _ = selected.root_baseline;
-
-        Ok(InCombatSolveResponse {
-            actions: selected.actions,
-            score: selected.score,
-            nodes_expanded: total_expanded,
-            terminal_cards_hint: selected.terminal_cards_hint,
-            stats: SearchStatistics {
-                won: selected.won,
-                strategic_hp_deficit: selected.strategic_hp_deficit,
-                hp_lost: selected.hp_lost,
-                potion_count: selected.potion_count,
-                transition_count: total_transitions,
-                choice_replay_attempts: total_choice_replays,
-                tt_branches_pruned: total_tt_pruned,
-                incumbent_branches_pruned: total_incumbent_pruned
-                    + incumbent_table.branches_pruned.load(Ordering::Relaxed) as u64,
-                por_branches_pruned: total_por_pruned,
-                avg_packed_state_bytes: avg_packed_bytes,
-                elapsed_ms: started.elapsed().as_millis() as u64,
-                closure_healing_certified: cert.healing_certified,
-                closure_growth_zero_certified: cert.growth_certified_zero,
-                termination: selected.termination.to_owned(),
-            },
-        })
+        Ok(build_solve_response(
+            selected,
+            cert,
+            &incumbent_table,
+            started,
+            total_expanded,
+            total_transitions,
+            total_choice_replays,
+            total_tt_pruned,
+            total_incumbent_pruned,
+            total_por_pruned,
+        ))
     }
 }
 
@@ -9802,6 +12839,7 @@ mod tests {
         ResolvedChoiceCandidate {
             choices_offset: 0,
             choices_len: 1,
+            depth0_sig: 0,
             action: CompactAction::new(CompactActionKind::EndTurn, 1, PorActionClass::Barrier).0,
             por_key: 0,
             has_extra_end_turn: false,
@@ -9842,6 +12880,7 @@ mod tests {
             lookahead_score,
             lookahead_hp_lost,
             lookahead_board_investment,
+            lookahead_setup_score: 0,
             has_lookahead,
             lookahead_victory,
         }
