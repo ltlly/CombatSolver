@@ -1303,7 +1303,7 @@ internal static partial class HotCombatEngine
 
     internal static void GainEnergy(ref CombatHotState s, HotRules rules, int amount)
     {
-        if (amount <= 0)
+        if (amount <= 0 || IsOverOrEnding(in s))
             return;
         if (GetPowerAmountById(in s, rules, 0, HotPowerId.NoEnergyGainPower) > 0)
             return;
@@ -1312,7 +1312,7 @@ internal static partial class HotCombatEngine
 
     internal static void LoseEnergy(ref CombatHotState s, int amount)
     {
-        if (amount <= 0)
+        if (amount <= 0 || IsOverOrEnding(in s))
             return;
         s.Energy = Math.Max(0, s.Energy - amount);
     }
@@ -1324,7 +1324,7 @@ internal static partial class HotCombatEngine
         HotExecScratch scratch,
         int amount)
     {
-        if (amount <= 0)
+        if (amount <= 0 || IsOverOrEnding(in s))
             return;
         s.Stars += amount;
         s.Counters[(int)HotCounterSlot.StarsGainedThisTurn] += amount;
