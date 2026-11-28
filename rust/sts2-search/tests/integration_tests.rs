@@ -10,9 +10,11 @@ use sts2_kernel::{
 };
 use sts2_search::arena::{LocalStateSlab, MainStateArena, NodeArena, SearchNode};
 use sts2_search::eval::{
-    BossHpRelief, BossHpStrategy, FullEvalDetails, PotionSlotDirective, PotionUsePolicy, PowerCardValuationRegistry, PowerRoutePriority, RelicCounterId,
-    RelicCounterRule, RootEvalBaseline, RouteQuality, RouteQualityPolicy, RouteQualityProjection,
-    SolverPotionDirective, SolverPotionPolicy, StoredFastEval, StoredNodeEval,
+    compute_terminal_rank_score_with_centi, evaluate_fast, BossHpRelief, BossHpStrategy,
+    FullEvalDetails, PotionSlotDirective, PotionUsePolicy, PowerCardValuationRegistry,
+    PowerRoutePriority, RelicCounterId, RelicCounterRule, RootEvalBaseline, RouteQuality,
+    RouteQualityPolicy, RouteQualityProjection, SolverPotionDirective, SolverPotionPolicy,
+    StoredFastEval, StoredNodeEval,
 };
 use sts2_search::hash::StateHash;
 use sts2_search::novelty::NoveltyPortfolioBudget;
@@ -3610,4 +3612,166 @@ fn frozen_incumbent_bound_guards_enforce_hp_loss_and_potion_count_above_best_tur
         900,
         false,
     ));
+}
+
+#[test]
+fn terminal_rank_score_includes_action_penalty_and_paid_potion_cost_parity() {
+    let deck_one = vec![
+        CardId::StrikeIronclad,
+        CardId::DefendIronclad,
+        CardId::DefendIronclad,
+        CardId::DefendIronclad,
+        CardId::DefendIronclad,
+    ];
+    let root_one = build_combat(
+        CharacterId::Ironclad,
+        &deck_one,
+        &[],
+        &[],
+        &[(MonsterId::Nibbit, 6)],
+        RoomType::Monster,
+        "TERM_ACT_1",
+    );
+    let deck_two = vec![
+        CardId::StrikeIronclad,
+        CardId::StrikeIronclad,
+        CardId::DefendIronclad,
+        CardId::DefendIronclad,
+        CardId::DefendIronclad,
+    ];
+    let root_two = build_combat(
+        CharacterId::Ironclad,
+        &deck_two,
+        &[],
+        &[],
+        &[(MonsterId::Nibbit, 12)],
+        RoomType::Monster,
+        "TERM_ACT_2",
+    );
+
+    let policy_zero = SearchPolicy {
+        beam_width: 24,
+        max_nodes: 1000,
+        time_budget_ms: 0,
+        allow_potions: false,
+        allow_random_cards: false,
+        max_degree_of_parallelism: 1,
+        ..Default::default()
+    };
+    let r1 = SearchEngine.solve_state(&root_one, &policy_zero, &Sts2Content).unwrap();
+    let r2 = SearchEngine.solve_state(&root_two, &policy_zero, &Sts2Content).unwrap();
+    assert!(r1.stats.won && r2.stats.won);
+    assert_eq!(r1.actions.len(), 1);
+    assert_eq!(r2.actions.len(), 2);
+
+    let end1 = replay_actions_to_end(&root_one, &r1.actions);
+    let end2 = replay_actions_to_end(&root_two, &r2.actions);
+    let rb1 = RootEvalBaseline::from_state_with_policy(&root_one, &Sts2Content, &policy_zero);
+    let rb2 = RootEvalBaseline::from_state_with_policy(&root_two, &Sts2Content, &policy_zero);
+    let fast1 = evaluate_fast(&end1, &Sts2Content, &rb1, None);
+    let fast2 = evaluate_fast(&end2, &Sts2Content, &rb2, None);
+    let expected1 = compute_terminal_rank_score_with_centi(&fast1, &rb1, 0, 1).round() as i64;
+    let expected2 = compute_terminal_rank_score_with_centi(&fast2, &rb2, 0, 2).round() as i64;
+    assert_eq!(r1.score, expected1);
+    assert_eq!(r2.score, expected2);
+    // Equal HP delta and turn count: one extra action deducts exactly 10 points vs raw base_score.
+    assert_eq!(r1.score - r2.score, 10);
+    assert_eq!(fast1.base_score.round() as i64 - r1.score, 10);
+
+    // Paid potion win includes net potion opportunity cost and action penalty.
+    let root_pot = build_combat(
+        CharacterId::Ironclad,
+        &deck_two,
+        &[],
+        &[PotionId::FirePotion],
+        &[(MonsterId::Nibbit, 26)],
+        RoomType::Monster,
+        "TERM_PAID_POT",
+    );
+    let policy_pot = SearchPolicy {
+        beam_width: 24,
+        max_nodes: 1500,
+        time_budget_ms: 0,
+        allow_potions: true,
+        potion_policy: SolverPotionPolicy::RequireAtLeastOne,
+        allow_random_cards: false,
+        max_degree_of_parallelism: 2,
+        ..Default::default()
+    };
+    let r_pot = SearchEngine
+        .solve_state(&root_pot, &policy_pot, &Sts2Content)
+        .unwrap();
+    assert!(r_pot.stats.won);
+    assert!(r_pot
+        .actions
+        .iter()
+        .any(|a| matches!(a, PlannedAction::UsePotion { potion_slot: 0, .. })));
+    let end_pot = replay_actions_to_end(&root_pot, &r_pot.actions);
+    let rb_pot = RootEvalBaseline::from_state_with_policy(&root_pot, &Sts2Content, &policy_pot);
+    let fast_pot = evaluate_fast(&end_pot, &Sts2Content, &rb_pot, None);
+    let slot0_cost = i32::from(rb_pot.root_slot_costs[0]);
+    let net_pot_centi = PotionUsePolicy::compute_net_potion_opportunity_cost_centi(
+        slot0_cost,
+        1,
+        fast_pot.alchemize_count as i32,
+        fast_pot.empty_potion_slots as i32,
+        &rb_pot,
+    );
+    assert!(net_pot_centi > 0);
+    let expected_pot = compute_terminal_rank_score_with_centi(
+        &fast_pot,
+        &rb_pot,
+        net_pot_centi,
+        r_pot.actions.len() as u16,
+    )
+    .round() as i64;
+    assert_eq!(r_pot.score, expected_pot);
+    assert!(r_pot.score < fast_pot.base_score.round() as i64);
+}
+
+#[test]
+fn determinism_dop_1_4_adaptive_stages_when_node_bounded() {
+    let deck = vec![
+        CardId::Bash,
+        CardId::StrikeIronclad,
+        CardId::StrikeIronclad,
+        CardId::StrikeIronclad,
+        CardId::StrikeIronclad,
+        CardId::StrikeIronclad,
+        CardId::DefendIronclad,
+        CardId::DefendIronclad,
+        CardId::DefendIronclad,
+        CardId::DefendIronclad,
+    ];
+    let root = build_combat(
+        CharacterId::Ironclad,
+        &deck,
+        &[RelicId::BurningBlood],
+        &[PotionId::FirePotion],
+        &[(MonsterId::Nibbit, 34), (MonsterId::ShrinkerBeetle, 28)],
+        RoomType::Monster,
+        "ADAPTIVE_DOP_NODE_BOUND",
+    );
+
+    let run = |dop: usize| {
+        let policy = SearchPolicy {
+            beam_width: 64,
+            max_nodes: 2000,
+            time_budget_ms: 0,
+            allow_potions: true,
+            allow_random_cards: false,
+            use_beam_width_portfolio: true,
+            max_degree_of_parallelism: dop,
+            ..Default::default()
+        };
+        SearchEngine.solve_state(&root, &policy, &Sts2Content).unwrap()
+    };
+
+    let r1 = run(1);
+    let r4 = run(4);
+    assert!(r1.stats.won);
+    assert_eq!(r1.actions, r4.actions);
+    assert_eq!(r1.score, r4.score);
+    assert_eq!(r1.nodes_expanded, r4.nodes_expanded);
+    assert_eq!(r1.stats.transition_count, r4.stats.transition_count);
 }

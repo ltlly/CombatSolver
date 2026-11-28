@@ -4434,6 +4434,40 @@ fn get_growth_card_budget(
 }
 
 #[inline]
+pub(crate) fn resolve_card_instance_base_damage(
+    state: &BattleState,
+    content: &dyn ContentDispatcher,
+    ch: CardHandle,
+    card_id: CardId,
+    upg: bool,
+    profile: &CardRolloutProfile,
+) -> i32 {
+    let static_dmg = if upg {
+        profile.upg_damage as i32
+    } else {
+        profile.base_damage as i32
+    };
+    if card_has_dynamic_comparison_values(card_id) {
+        return read_comparison_var(state, content, ch, "Damage").unwrap_or(static_dmg);
+    }
+    if matches!(card_id, CardId::Bolas | CardId::ThrummingHatchet) {
+        let key = if card_id == CardId::Bolas {
+            "Bolas._damage"
+        } else {
+            "ThrummingHatchet._damage"
+        };
+        if let Some(ext) = state.card(ch).and_then(|c| state.card_ext(c.ext_index)) {
+            if let Some(fv) = ext.private_fields.get(key) {
+                if let FieldValue::Decimal(d) = fv {
+                    return d.to_i32_trunc().unwrap_or(static_dmg);
+                }
+            }
+        }
+    }
+    static_dmg
+}
+
+#[inline]
 fn estimate_dynamic_card_base_damage(
     state: &BattleState,
     content: &dyn ContentDispatcher,
@@ -4446,16 +4480,7 @@ fn estimate_dynamic_card_base_damage(
     if card_id == CardId::BodySlam {
         return ctx.player_block;
     }
-    let static_dmg = if upg {
-        profile.upg_damage as i32
-    } else {
-        profile.base_damage as i32
-    };
-    if card_has_dynamic_comparison_values(card_id) {
-        read_comparison_var(state, content, ch, "Damage").unwrap_or(static_dmg)
-    } else {
-        static_dmg
-    }
+    resolve_card_instance_base_damage(state, content, ch, card_id, upg, profile)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -7656,6 +7681,11 @@ pub(crate) fn evaluate_turn_boundary_rollouts_with_workspaces(
     out
 }
 
+/// Evaluates turn-boundary rollout candidates sequentially or via the shared Rayon pool.
+///
+/// Parallel (`DOP=N`) vs single-thread (`DOP=1`) execution produces bit-identical results whenever
+/// `deadline` is `None` or not reached; when a wall-clock `deadline` expires mid-batch, worker count
+/// and OS scheduling decide how many candidates complete before cancellation (matching C# `HotSearchCoordinator`).
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn evaluate_turn_boundary_rollouts_into(
     state_arena: &MainStateArena,

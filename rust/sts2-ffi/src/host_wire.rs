@@ -1486,6 +1486,15 @@ pub fn solve_in_combat_host_v1_json(
     cancel: &AtomicBool,
     progress_cb: Option<&(dyn Fn(&HostProgressDto) + Sync)>,
 ) -> HostSolveResponse {
+    solve_in_combat_host_v1_json_with_hook(req_json, cancel, progress_cb, || {})
+}
+
+fn solve_in_combat_host_v1_json_with_hook<F: FnOnce()>(
+    req_json: &[u8],
+    cancel: &AtomicBool,
+    progress_cb: Option<&(dyn Fn(&HostProgressDto) + Sync)>,
+    post_search_hook: F,
+) -> HostSolveResponse {
     let started = Instant::now();
     let mut req: HostSolveRequest = match serde_json::from_slice(req_json) {
         Ok(r) => r,
@@ -1719,8 +1728,10 @@ pub fn solve_in_combat_host_v1_json(
         },
     };
 
-    let is_cancelled = cancel.load(Ordering::Relaxed) || sol.stats.termination == "Cancelled";
-    if !is_cancelled
+    let is_cancelled_before_replay =
+        cancel.load(Ordering::Relaxed) || sol.stats.termination == "Cancelled";
+    post_search_hook();
+    if !is_cancelled_before_replay
         && req.overall_timeout_milliseconds > 0
         && (started.elapsed().as_secs_f64() * 1000.0) >= req.overall_timeout_milliseconds as f64
     {
@@ -1743,6 +1754,7 @@ pub fn solve_in_combat_host_v1_json(
         &content,
     );
     let elapsed_ms = started.elapsed().as_secs_f64() * 1000.0;
+    let is_cancelled = is_cancelled_before_replay || cancel.load(Ordering::Relaxed);
 
     if is_cancelled {
         let best_so_far = match trace_res {
@@ -2279,5 +2291,87 @@ mod tests {
             assert!(resp.result.is_none());
             assert!(resp.best_so_far.is_none());
         }
+    }
+
+    #[test]
+    fn host_v1_post_search_cancellation_returns_cancelled_with_best_so_far() {
+        use sts2_types::{CardId, RoomType};
+
+        let growth = serde_json::json!({
+            "handOfGreed": 0, "theHunt": 0, "feed": 0, "royalties": 0,
+            "alchemize": 0, "geneticAlgorithm": 0, "theScythe": 0,
+            "goopy": 0, "forbiddenGrimoire": 0, "madScience": 0, "showOff": 0,
+            "thirdParty": null
+        });
+        let live = build_host_test_live_json(
+            &[
+                CardId::StrikeIronclad,
+                CardId::StrikeIronclad,
+                CardId::StrikeIronclad,
+                CardId::DefendIronclad,
+                CardId::DefendIronclad,
+            ],
+            6,
+            [None, None, None],
+            true,
+            0,
+            RoomType::Monster,
+        );
+        let req_val = serde_json::json!({
+            "abiVersion": 1,
+            "requestId": "v1-post-search-cancel-test",
+            "liveState": live,
+            "characterId": "IRONCLAD",
+            "ascension": 0,
+            "gameMode": "Standard",
+            "encounterIsWeak": true,
+            "initialEncounterMonsterCount": 1,
+            "totalFloor": 1,
+            "actIndex": 0,
+            "mapCol": 0,
+            "mapRow": 0,
+            "priorBattleHpLost": 0,
+            "searchBudgetMilliseconds": 2000,
+            "overallTimeoutMilliseconds": 5000,
+            "maxDegreeOfParallelism": 1,
+            "policy": {
+                "potionPolicy": "Disabled",
+                "potionDirectives": [],
+                "predictPotionReward": false,
+                "relicStrategyEnabled": true,
+                "relicCounterRules": [],
+                "growthBudgets": growth,
+                "brightestFlameMaxHpLossLimit": null,
+                "ignoreLongTermRewards": false,
+                "actTransitionBossHpStrategy": "ProgressionFirst",
+                "finalBossHpStrategy": "ProgressionFirst",
+                "acceptableBattleHpLoss": 0,
+                "stopAtAcceptableBattleHpLoss": true,
+                "useBeamWidthPortfolio": false,
+                "useNoveltyPortfolio": false,
+                "useEarlyTurnExploration": false,
+                "beamWidth": 16,
+                "potionFreeBeamWidth": null,
+                "potionBeamWidth": null,
+                "maxExpandedNodes": 500,
+                "maxCardBranchesPerNode": 32,
+                "maxPileChoiceBranchesPerAction": 18,
+                "maxHandChoiceBranchesPerAction": 24,
+                "softTimeBudgetMilliseconds": 2000,
+                "theftPolicy": "Ignore"
+            },
+        });
+        let req_bytes = serde_json::to_vec(&req_val).unwrap();
+        let cancel = AtomicBool::new(false);
+        let resp = solve_in_combat_host_v1_json_with_hook(&req_bytes, &cancel, None, || {
+            cancel.store(true, Ordering::Relaxed);
+        });
+        assert_eq!(resp.outcome, "Cancelled");
+        assert!(resp.result.is_none());
+        let best = resp
+            .best_so_far
+            .expect("verified route should be preserved as bestSoFar when cancelled during replay");
+        assert!(!best.actions.is_empty());
+        assert!(best.terminal.all_enemies_dead);
     }
 }

@@ -2130,13 +2130,11 @@ fn pick_top_k_niche_fast_impl(
     fast_keys: &[i64],
     marks: &mut [u8],
     heap_fast: &mut Vec<(i64, f64, u32)>,
-    _scan_buf: &mut Vec<u32>,
     take: usize,
     pareto_extra: usize,
     out: &mut Vec<(f64, NodeId)>,
     pareto_out: &mut [usize; PER_NICHE_PARETO_TOP_K],
     pareto_count_out: &mut usize,
-    _use_simd: bool,
 ) -> usize {
     *pareto_count_out = 0;
     let total_k = take + pareto_extra;
@@ -4138,7 +4136,6 @@ mod tests {
             for &(take, pareto_extra) in &[(1usize, 0usize), (5, 4), (16, 16), (32, 32)] {
                 let mut marks_scalar = init_marks.clone();
                 let mut heap_scalar = Vec::new();
-                let mut scan_buf = Vec::new();
                 let mut out_scalar = Vec::new();
                 let mut p_scalar = [0usize; PER_NICHE_PARETO_TOP_K];
                 let mut pc_scalar = 0usize;
@@ -4149,13 +4146,11 @@ mod tests {
                     &fast_keys,
                     &mut marks_scalar,
                     &mut heap_scalar,
-                    &mut scan_buf,
                     take,
                     pareto_extra,
                     &mut out_scalar,
                     &mut p_scalar,
                     &mut pc_scalar,
-                    false,
                 );
                 let unmarked_total = init_marks.iter().filter(|&&m| m == 0).count();
                 assert_eq!(added_scalar, take.min(unmarked_total));

@@ -13,13 +13,13 @@ use crate::early_turn::{
     EARLY_TURN_EXPLORATION_MAX_RANK_LIMIT, EARLY_TURN_EXPLORATION_NODE_BUDGET,
 };
 use crate::eval::{
-    allows_brightest_flame, compute_beam_rank_score_with_centi, evaluate_fast,
-    evaluate_fast_and_full_fused, evaluate_full, evaluate_full_details_cached, select_final_plan,
-    ActEndingBossPolicy, EvalMode, FastEvalSummary, FullEvalDetails, IntentHitsCache,
-    PaidPotionImproveInput, PotionUsePolicy, PotionValuationRegistry, PowerCardValuationRegistry,
-    PowerRoutePriority, RareNodeEval, RelicCounterEvaluation, RelicCounterId, RootEvalBaseline,
-    SolverPotionPolicy, SolverTheftPolicy, StoredFastEval, StoredNodeEval,
-    FAST_FLAG_FORFEITS_GOLD,
+    allows_brightest_flame, compute_beam_rank_score_with_centi,
+    compute_terminal_rank_score_with_centi, evaluate_fast, evaluate_fast_and_full_fused,
+    evaluate_full, evaluate_full_details_cached, select_final_plan, ActEndingBossPolicy,
+    EvalMode, FastEvalSummary, FullEvalDetails, IntentHitsCache, PaidPotionImproveInput,
+    PotionUsePolicy, PotionValuationRegistry, PowerCardValuationRegistry, PowerRoutePriority,
+    RareNodeEval, RelicCounterEvaluation, RelicCounterId, RootEvalBaseline, SolverPotionPolicy,
+    SolverTheftPolicy, StoredFastEval, StoredNodeEval, FAST_FLAG_FORFEITS_GOLD,
 };
 use crate::hash::StateHash;
 use crate::novelty::{
@@ -46,8 +46,8 @@ use crate::pruning::{
 use crate::rollout::{
     encode_choice_probe_rank_score, evaluate_choice_probe_in_place,
     evaluate_choice_probe_in_place_with_restore, evaluate_choice_probe_packed,
-    evaluate_turn_boundary_rollouts_into, ChoiceProbeCache, ChoiceProbeResult,
-    ChoiceProbeWorkspace, ProbeCacheAccess, RolloutResult, TurnRolloutCache,
+    evaluate_turn_boundary_rollouts_into, resolve_card_instance_base_damage, ChoiceProbeCache,
+    ChoiceProbeResult, ChoiceProbeWorkspace, ProbeCacheAccess, RolloutResult, TurnRolloutCache,
 };
 use crate::tt::{ShardedParetoTT, TranspositionLabel, TT_SHARD_COUNT};
 use crate::{InCombatSolveResponse, PlannedAction, SearchPolicy, SearchProgress, SearchStatistics};
@@ -1960,11 +1960,14 @@ fn filter_play_candidates_priority(
             prio += 120;
         }
         if meta.card_type == CardType::Attack {
-            let base_dmg = if card.upgrade_level > 0 {
-                rp.upg_damage
-            } else {
-                rp.base_damage
-            } as i32;
+            let base_dmg = resolve_card_instance_base_damage(
+                state,
+                content,
+                ch,
+                card.id,
+                card.upgrade_level > 0,
+                &rp,
+            );
             let hits = if card.upgrade_level > 0 {
                 rp.upg_hits
             } else {
@@ -2297,6 +2300,7 @@ struct StagedCandidateFields {
     forced_used_mask: u64,
     forced_ambergris_count: u16,
     is_terminal: bool,
+    terminal_rank_score: f64,
     fast_eval: FastEvalSummary,
     full_eval: Option<FullEvalDetails>,
     label: TranspositionLabel,
@@ -2543,9 +2547,20 @@ fn prepare_staged_candidate(
         None
     };
 
+    let terminal_rank_score = if is_terminal {
+        compute_terminal_rank_score_with_centi(
+            &fast_eval,
+            root_baseline,
+            net_potion_cost_centi,
+            action_count,
+        )
+    } else {
+        fast_eval.base_score
+    };
+
     let tt_score = full_eval
         .as_ref()
-        .map_or(fast_eval.base_score, |f| f.beam_rank_score);
+        .map_or(terminal_rank_score, |f| f.beam_rank_score);
     let label = TranspositionLabel::new(
         forced_used_mask,
         fast_eval.death_save_use_count,
@@ -2601,6 +2616,7 @@ fn prepare_staged_candidate(
         forced_used_mask,
         forced_ambergris_count,
         is_terminal,
+        terminal_rank_score,
         fast_eval,
         full_eval,
         label,
@@ -2789,7 +2805,11 @@ fn finalize_candidate(
     };
 
     let (choices_offset, choices_len) = scratch.staged_choices.push_choices(choices);
-    let base_score = s.fast_eval.base_score;
+    let base_score = if s.is_terminal {
+        s.terminal_rank_score
+    } else {
+        s.fast_eval.base_score
+    };
     let rare_eval = rare_eval_opt(&s.fast_eval);
     let stored_fast = StoredFastEval::from(&s.fast_eval);
     let stored_full = s.full_eval.map(|f| f.to_stored());
@@ -2913,29 +2933,41 @@ fn stage_resolved_choice(
     let depth0_sig = hash_step0_choices(choices.first());
 
     let terminal_probe_score = if s.is_terminal {
-        let net_potion_cost_centi =
-            PotionUsePolicy::compute_net_potion_opportunity_cost_centi(
-                s.optional_paid_potion_cost,
-                s.optional_paid_potion_count as i32,
-                s.fast_eval.alchemize_count as i32,
-                s.fast_eval.empty_potion_slots as i32,
+        if s.fast_eval.won
+            || s.fast_eval.is_event_defeat
+            || s.fast_eval.player_dead
+            || s.fast_eval.projected_player_hp <= 0
+        {
+            s.terminal_rank_score
+        } else {
+            let net_potion_cost_centi =
+                PotionUsePolicy::compute_net_potion_opportunity_cost_centi(
+                    s.optional_paid_potion_cost,
+                    s.optional_paid_potion_count as i32,
+                    s.fast_eval.alchemize_count as i32,
+                    s.fast_eval.empty_potion_slots as i32,
+                    root_baseline,
+                );
+            compute_beam_rank_score_with_centi(
+                &s.fast_eval,
+                &FullEvalDetails::default(),
                 root_baseline,
-            );
-        compute_beam_rank_score_with_centi(
-            &s.fast_eval,
-            &FullEvalDetails::default(),
-            root_baseline,
-            profile.base_score_only,
-            profile.boss_tempo_hp_pricing,
-            profile.beam_weight_perturbation,
-            eval_mode,
-            net_potion_cost_centi,
-            s.action_count,
-        )
+                profile.base_score_only,
+                profile.boss_tempo_hp_pricing,
+                profile.beam_weight_perturbation,
+                eval_mode,
+                net_potion_cost_centi,
+                s.action_count,
+            )
+        }
     } else {
         0.0
     };
-    let base_score = s.fast_eval.base_score;
+    let base_score = if s.is_terminal {
+        s.terminal_rank_score
+    } else {
+        s.fast_eval.base_score
+    };
     let rare_eval = rare_eval_opt(&s.fast_eval);
     let stored_fast = StoredFastEval::from(&s.fast_eval);
     let stored_full = s.full_eval.map(|f| f.to_stored());
@@ -6901,6 +6933,20 @@ fn materialize_promoted_victory(
         growth_rewards: pv.final_fast.growth_rewards,
         relic_eval: pv.final_fast.relic_eval,
     };
+    let promoted_net_cost = PotionUsePolicy::compute_net_potion_opportunity_cost_centi(
+        pnode.optional_paid_potion_cost as i32,
+        pnode.optional_paid_potion_count as i32,
+        pv.final_fast.alchemize_count as i32,
+        pv.final_fast.empty_potion_slots as i32,
+        root_baseline,
+    );
+    let final_action_count = pnode.action_count.saturating_add(total_acts as u16);
+    let promoted_rank_score = compute_terminal_rank_score_with_centi(
+        &pv.final_fast,
+        root_baseline,
+        promoted_net_cost,
+        final_action_count,
+    );
     for (step_idx, step) in pv.steps.iter().enumerate() {
         let is_last = step_idx + 1 == total_acts;
         let (kind, step_turn) = if step.is_end_turn != 0 {
@@ -6947,7 +6993,7 @@ fn materialize_promoted_victory(
                 pnode.state_hash
             },
             beam_rank_score: if is_last {
-                pv.final_fast.base_score
+                promoted_rank_score
             } else {
                 pnode.beam_rank_score
             },
@@ -6999,7 +7045,7 @@ fn materialize_promoted_victory(
         pnode.potion_strategic_cost as i32,
         pnode.optional_paid_potion_cost as i32,
         pnode.forced_used_mask,
-        pv.final_fast.base_score.round() as i64,
+        promoted_rank_score.round() as i64,
         has_victory,
         best_victory,
     );
@@ -7007,13 +7053,6 @@ fn materialize_promoted_victory(
         && has_reached_acceptable_battle_hp_loss_node(root_baseline, policy, arena, final_nid)
         && (!allow_paid_optional_potions || {
             let promoted_rare = arena.rare_eval(final_nid);
-            let promoted_net_cost = PotionUsePolicy::compute_net_potion_opportunity_cost_centi(
-                pnode.optional_paid_potion_cost as i32,
-                pnode.optional_paid_potion_count as i32,
-                pv.final_fast.alchemize_count as i32,
-                pv.final_fast.empty_potion_slots as i32,
-                root_baseline,
-            );
             !PotionUsePolicy::can_any_paid_potion_improve_on(
                 PaidPotionImproveInput {
                     won: true,
@@ -11306,6 +11345,12 @@ fn should_escalate_to_stage3(
             || (is_elite_or_boss && (stage2_trigger_hp_loss >= 8 || stage2_paid >= 1)))
 }
 
+/// Runs the 3-stage adaptive escalation schedule matching C# `HotSearchCoordinator`.
+///
+/// Strict bit-exact determinism across `DOP=1` and `DOP=N` holds whenever execution is node-budget
+/// or completion-bounded (`policy.time_budget_ms == 0` or the deadline is not reached). When a
+/// positive wall-clock time budget expires mid-stage or mid-rollout, stage transition and batch
+/// early-stop decisions observe wall-clock progress and trade exact DOP parity for deadline adherence.
 #[cold]
 #[inline(never)]
 #[allow(clippy::too_many_arguments)]
@@ -12908,5 +12953,98 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn filter_play_candidates_priority_prefers_scaled_lethal_rampage_copy() {
+        use sts2_content::Sts2Content;
+        use sts2_kernel::state::{CardInst, CardTempFlags, CreatureInst, FieldValue};
+        use sts2_kernel::OptCardHandle;
+        use sts2_kernel::OptI16;
+        use sts2_types::{CardId, CardKeywords, CombatSide, Dec, MonsterId};
+
+        let content = Sts2Content;
+        let mut state = empty_scratch_state(Arc::new(RootStaticContext::default()));
+        state.is_in_progress = true;
+        state.player.energy = 3;
+
+        let eh = CreatureHandle(2);
+        state.enemy_handles.push(eh);
+        state.creatures.push(CreatureInst {
+            handle: eh,
+            combat_id: Some(1),
+            side: CombatSide::Enemy,
+            slot_name: Some(Cow::Borrowed("slot_0")),
+            is_player: false,
+            pet_owner_player_index: None,
+            monster_id: Some(MonsterId::FuzzyWurmCrawler),
+            current_hp: 25,
+            max_hp: 25,
+            block: 0,
+            cumulative_hp_lost: 0,
+            is_detached: false,
+            monster: None,
+            has_minion_power: false,
+            powers: Vec::new(),
+        });
+
+        let make_card = |idx: u32, id: CardId| -> CardInst {
+            let meta = content.card_meta(id).unwrap();
+            CardInst {
+                handle: CardHandle(idx),
+                id,
+                upgrade_level: 0,
+                canonical_base_energy_cost: meta.canonical_energy_cost as i16,
+                base_energy_cost: meta.canonical_energy_cost as i16,
+                captured_energy_x_value: 0,
+                base_replay_count: 0,
+                floor_added_to_deck: OptI16::some(1),
+                deck_card_handle: OptCardHandle::NONE,
+                clone_of_handle: OptCardHandle::NONE,
+                temp_star_cost_override_this_turn: OptI16::NONE,
+                temp_cost_override_this_turn: OptI16::NONE,
+                temp_cost_override_this_turn_or_until_played: OptI16::NONE,
+                temp_cost_override_this_combat: OptI16::NONE,
+                local_keywords: meta.base_keywords,
+                keywords_added_from_outside: CardKeywords::empty(),
+                keywords_removed_from_outside: CardKeywords::empty(),
+                temp_flags: CardTempFlags::empty(),
+                affliction: None,
+                ext_index: None,
+                pile: PileType::Hand,
+                removed_from_state: false,
+                transform_into_after_play: None,
+            }
+        };
+
+        let h1 = CardHandle(1); // unscaled Rampage (10 dmg < 25 HP)
+        let h2 = CardHandle(2); // distractor Strike
+        let h3 = CardHandle(3); // scaled lethal Rampage (25 dmg == 25 HP)
+        state.cards.push(make_card(1, CardId::Rampage));
+        state.cards.push(make_card(2, CardId::StrikeIronclad));
+        state.cards.push(make_card(3, CardId::Rampage));
+        state.player.hand = vec![h1, h2, h3];
+        state
+            .card_ext_mut(h3)
+            .unwrap()
+            .private_fields
+            .insert(Cow::Borrowed("Rampage._damage"), FieldValue::Decimal(Dec::from_i32(25)));
+
+        let hand_cards = [h1, h2, h3];
+        let play_candidates = [
+            (0usize, 0usize, h1, Some(eh), PorActionClass::Barrier),
+            (0usize, 1usize, h2, Some(eh), PorActionClass::Barrier),
+            (0usize, 2usize, h3, Some(eh), PorActionClass::Barrier),
+        ];
+        let mut keep_mask = [false; 3];
+        filter_play_candidates_priority(
+            &mut state,
+            &content,
+            &hand_cards,
+            &play_candidates,
+            1,
+            &mut keep_mask,
+        );
+        assert_eq!(keep_mask, [false, false, true]);
     }
 }

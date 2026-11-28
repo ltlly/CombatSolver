@@ -6171,47 +6171,15 @@ fn soft_cap_positive(value: i32, knee: i32, second_knee: i32) -> i32 {
     tail.min(10_000)
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn compute_beam_rank_score_with_mode(
+/// Computes the canonical C#-equivalent score (`HotEvaluator.EvaluateState`) for terminal states
+/// (`player_dead`, `is_event_defeat`, or `won`) using the route's net potion opportunity cost and action count.
+pub fn compute_terminal_rank_score_with_centi(
     fast: &FastEvalSummary,
-    full: &FullEvalDetails,
     root: &RootEvalBaseline,
-    base_score_only: bool,
-    boss_tempo_hp_pricing: bool,
-    perturbation: Option<BeamWeightPerturbation>,
-    eval_mode: EvalMode,
-    potion_strategic_cost: i32,
-    action_count: u16,
-) -> f64 {
-    let net_potion_cost_centi = potion_strategic_cost
-        .max(0)
-        .saturating_mul(weights::HP_FIXED_SCALE);
-    compute_beam_rank_score_with_centi(
-        fast,
-        full,
-        root,
-        base_score_only,
-        boss_tempo_hp_pricing,
-        perturbation,
-        eval_mode,
-        net_potion_cost_centi,
-        action_count,
-    )
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn compute_beam_rank_score_with_centi(
-    fast: &FastEvalSummary,
-    full: &FullEvalDetails,
-    root: &RootEvalBaseline,
-    base_score_only: bool,
-    boss_tempo_hp_pricing: bool,
-    perturbation: Option<BeamWeightPerturbation>,
-    eval_mode: EvalMode,
     net_potion_cost_centi: i32,
     action_count: u16,
 ) -> f64 {
-    if base_score_only || fast.player_dead || fast.projected_player_hp <= 0 {
+    if fast.player_dead || fast.projected_player_hp <= 0 {
         return fast.base_score;
     }
     if fast.is_event_defeat {
@@ -6268,6 +6236,60 @@ pub fn compute_beam_rank_score_with_centi(
             }
         }
         return s;
+    }
+    fast.base_score
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn compute_beam_rank_score_with_mode(
+    fast: &FastEvalSummary,
+    full: &FullEvalDetails,
+    root: &RootEvalBaseline,
+    base_score_only: bool,
+    boss_tempo_hp_pricing: bool,
+    perturbation: Option<BeamWeightPerturbation>,
+    eval_mode: EvalMode,
+    potion_strategic_cost: i32,
+    action_count: u16,
+) -> f64 {
+    let net_potion_cost_centi = potion_strategic_cost
+        .max(0)
+        .saturating_mul(weights::HP_FIXED_SCALE);
+    compute_beam_rank_score_with_centi(
+        fast,
+        full,
+        root,
+        base_score_only,
+        boss_tempo_hp_pricing,
+        perturbation,
+        eval_mode,
+        net_potion_cost_centi,
+        action_count,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn compute_beam_rank_score_with_centi(
+    fast: &FastEvalSummary,
+    full: &FullEvalDetails,
+    root: &RootEvalBaseline,
+    base_score_only: bool,
+    boss_tempo_hp_pricing: bool,
+    perturbation: Option<BeamWeightPerturbation>,
+    eval_mode: EvalMode,
+    net_potion_cost_centi: i32,
+    action_count: u16,
+) -> f64 {
+    if base_score_only || fast.player_dead || fast.projected_player_hp <= 0 {
+        return fast.base_score;
+    }
+    if fast.is_event_defeat || fast.won {
+        return compute_terminal_rank_score_with_centi(
+            fast,
+            root,
+            net_potion_cost_centi,
+            action_count,
+        );
     }
 
     let _ = (
