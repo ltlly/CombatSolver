@@ -221,6 +221,9 @@ internal static class GameBootstrap
         Patch(typeof(Godot.OS), nameof(Godot.OS.GetCmdlineArgs), prefix: nameof(EmptyStringArrayPrefix),
             note: "Godot.OS.GetCmdlineArgs -> empty",
             args: Type.EmptyTypes);
+        Patch(typeof(Godot.OS), nameof(Godot.OS.GetExecutablePath), prefix: nameof(EmptyStringPrefix),
+            note: "Godot.OS.GetExecutablePath -> \"\"（ReleaseInfoManager 离线不读安装包路径）",
+            args: Type.EmptyTypes);
 
         Patch(typeof(Godot.Engine), nameof(Godot.Engine.GetMainLoop), prefix: nameof(NullMainLoopPrefix),
             note: "Godot.Engine.GetMainLoop -> null",
@@ -603,6 +606,12 @@ internal static class GameBootstrap
     private static bool EmptyStringArrayPrefix(ref string[] __result)
     {
         __result = Array.Empty<string>();
+        return false;
+    }
+
+    private static bool EmptyStringPrefix(ref string __result)
+    {
+        __result = string.Empty;
         return false;
     }
 
