@@ -33,6 +33,7 @@ internal static class QualityBenchRunner
         int budgetMs = 15_000;
         string searchMode = "Coordinator";
         string potionPolicy = "Smart";
+        string backend = "hot";
         bool stopAtZeroLoss = false;
         string? filter = null;
         string repoRoot = ResolveRepoRoot();
@@ -72,6 +73,9 @@ internal static class QualityBenchRunner
                 case "--potion-policy":
                     potionPolicy = NextVal();
                     break;
+                case "--backend":
+                    backend = NextVal().ToLowerInvariant();
+                    break;
                 case "--stop-at-zero-loss":
                     stopAtZeroLoss = true;
                     break;
@@ -91,6 +95,10 @@ internal static class QualityBenchRunner
             throw new ArgumentException("--profile 只支持 Low|Medium|High|VeryHigh|Custom。");
         if (searchMode is not ("Coordinator" or "Evaluate"))
             throw new ArgumentException("--search-mode 只支持 Coordinator|Evaluate。");
+        if (backend is not ("hot" or "rust"))
+            throw new ArgumentException("--backend 只支持 hot|rust。");
+        if (backend == "rust" && searchMode != "Coordinator")
+            throw new ArgumentException("--backend rust 仅支持 Coordinator 模式。");
         SolverPotionPolicy parsedPotionPolicy = Enum.Parse<SolverPotionPolicy>(potionPolicy, ignoreCase: true);
 
         bool includeDev = slice is "all" or "dev" or "a" or "ab";
@@ -99,8 +107,9 @@ internal static class QualityBenchRunner
             throw new ArgumentException($"--tier 只支持 all|dev|holdout（或兼容别名 A|B|AB），收到：{slice}");
 
         string suiteName = $"corpora-{slice}";
+        string backendSuffix = backend == "hot" ? string.Empty : $"-{backend}";
         dumpOutcomesPath ??= Path.Combine(
-            repoRoot, ".local", "offline-harness", $"{suiteName}-{profile.ToLowerInvariant()}-dop{dop}.json");
+            repoRoot, ".local", "offline-harness", $"{suiteName}-{profile.ToLowerInvariant()}-dop{dop}{backendSuffix}.json");
 
         List<CorporaFightEntry> entries = [];
         if (includeDev)
@@ -127,7 +136,7 @@ internal static class QualityBenchRunner
 
         Stopwatch totalSw = Stopwatch.StartNew();
         Console.WriteLine(
-            $"=== --bench-corpora (slice={slice}, fights={entries.Count}, profile={profile}, " +
+            $"=== --bench-corpora (backend={backend}, slice={slice}, fights={entries.Count}, profile={profile}, " +
             $"mode={searchMode}, potion={parsedPotionPolicy}, dop={dop}, budgetMs={budgetMs}) ===");
 
         HarnessLog.TraceInit = false;
@@ -154,6 +163,23 @@ internal static class QualityBenchRunner
             SoftTimeBudgetMilliseconds = budgetMs,
         };
 
+        if (backend == "rust")
+        {
+            if (!InCombatRustKernelBridge.HasInstalledBackendArtifact())
+            {
+                InCombatRustKernelBridge.ModDirectoryOverrideForTesting =
+                    Path.Combine(repoRoot, ".godot", "mono", "temp", "bin", "Release");
+            }
+            Console.WriteLine($"[RustBackend] assembly={typeof(InCombatRustKernelBridge).Assembly.Location}");
+            RustKernelAvailability availability =
+                InCombatRustKernelBridge.EnsureActivated(out string? activationError);
+            if (availability != RustKernelAvailability.Ready)
+            {
+                throw new InvalidOperationException(
+                    $"Rust combat kernel backend is not ready ({availability}): {activationError}");
+            }
+        }
+
         int gen2Before = GC.CollectionCount(2);
         using MemorySampler memory = new(TimeSpan.FromMilliseconds(150));
 
@@ -163,7 +189,7 @@ internal static class QualityBenchRunner
             foreach (CorporaFightEntry entry in entries)
             {
                 FightOutcomeRecord record = RunSingleFight(
-                    loop, entry, evidenceRoot, resolvedProfile, searchMode, parsedPotionPolicy, dop, budgetMs);
+                    loop, entry, evidenceRoot, resolvedProfile, searchMode, backend, parsedPotionPolicy, dop, budgetMs);
                 outcomes.Add(record);
 
                 string statusTag = record.HardErrors > 0
@@ -217,6 +243,7 @@ internal static class QualityBenchRunner
         string evidenceRoot,
         SolverSearchProfile resolvedProfile,
         string searchMode,
+        string backend,
         SolverPotionPolicy potionPolicy,
         int dop,
         int budgetMs)
@@ -263,6 +290,94 @@ internal static class QualityBenchRunner
                 MaxDegreeOfParallelism = dop,
                 PotionPolicy = potionPolicy,
             };
+
+            if (backend == "rust")
+            {
+                var player = LocalContext.GetMe(combat)
+                    ?? throw new InvalidOperationException("找不到本地玩家。");
+                IReadOnlyList<(int Slot, string PotionId)> effectivePotions =
+                    InCombatRustKernelPolicyMapper.CaptureEffectivePotions(player);
+                if (!InCombatRustKernelPolicyMapper.TryBuildPolicy(
+                        SolverSettings.Current,
+                        settings,
+                        policy,
+                        effectivePotions,
+                        damage.PotionsUsedSoFar,
+                        out RustKernelPolicyDto? policyDto,
+                        out int searchBudgetMs,
+                        out string? policyReason)
+                    || policyDto is null)
+                {
+                    throw new InvalidOperationException(
+                        $"RustKernel policy mapping failed: {policyReason}");
+                }
+
+                (RustKernelLiveStateDto liveState, int priorBattleHpLost) =
+                    InCombatLiveStateCapturer.Capture(combat, damage);
+                InCombatRustHostMetadata meta = InCombatLiveStateCapturer.CaptureHostMetadata(combat);
+                int overallTimeoutMs = Math.Clamp(searchBudgetMs + 5_000, 5_000, 620_000);
+                var request = new RustKernelRequestDto(
+                    AbiVersion: RustKernelAbi.Version,
+                    RequestId: $"bench-{entry.FightId}-{Guid.NewGuid():N}",
+                    LiveState: liveState,
+                    CharacterId: meta.CharacterId,
+                    Ascension: meta.Ascension,
+                    GameMode: meta.GameMode,
+                    DominionId: meta.DominionId,
+                    RunModelIds: meta.RunModelIds,
+                    EncounterIsWeak: meta.EncounterIsWeak,
+                    InitialEncounterMonsterCount: meta.InitialEncounterMonsterCount,
+                    TotalFloor: meta.TotalFloor,
+                    ActIndex: meta.ActIndex,
+                    MapCol: meta.MapCol,
+                    MapRow: meta.MapRow,
+                    PriorBattleHpLost: priorBattleHpLost,
+                    SearchBudgetMilliseconds: searchBudgetMs,
+                    OverallTimeoutMilliseconds: overallTimeoutMs,
+                    MaxDegreeOfParallelism: policy.MaxDegreeOfParallelism,
+                    Policy: policyDto,
+                    PotionRewardReplacementHpCredit: policy.PredictPotionReward
+                        ? root.PotionRewardOutlook.ReplacementHpCredit
+                        : 0,
+                    IsNonFinalAct3Boss: root.EncounterRoomType == MegaCrit.Sts2.Core.Rooms.RoomType.Boss
+                        && meta.ActIndex >= 2
+                        && root.BossHpRelief == BossHpRelief.None,
+                    InitialBrightestFlameMaxHpSpent: root.InitialBrightestFlameMaxHpSpent,
+                    HasMurderousModifier: meta.HasMurderousModifier);
+
+                Stopwatch rustSw = Stopwatch.StartNew();
+                RustKernelResponseDto response = InCombatRustKernelBridge.RunInCombatAsync(
+                    request, null, CancellationToken.None).GetAwaiter().GetResult();
+                rustSw.Stop();
+
+                if (response.Outcome != "Succeeded" || response.Result is null)
+                {
+                    throw new InvalidOperationException(
+                        $"RustKernel outcome={response.Outcome} code={response.FailureCode} " +
+                        $"field={response.FieldPath} err={response.Error}");
+                }
+
+                if (!InCombatRustKernelResultMaterializer.TryMaterialize(
+                        root,
+                        names,
+                        damage,
+                        policy,
+                        response.Result,
+                        response.EffectiveDegreeOfParallelism,
+                        rustSw.Elapsed,
+                        out SolverResult? materialized,
+                        out string? failCode,
+                        out string? failDetail)
+                    || materialized is null)
+                {
+                    throw new InvalidOperationException(
+                        $"RustKernel materialize failed code={failCode}: {failDetail}");
+                }
+
+                return BenchmarkOutcomeHelper.FromSolverResult(
+                    entry.FightId, entry.Tier, entry.Group, characterId, encounterId,
+                    root, policy, materialized, rustSw.Elapsed.TotalMilliseconds);
+            }
 
             Stopwatch sw = Stopwatch.StartNew();
             SolverResult solved = searchMode == "Coordinator"
