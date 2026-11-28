@@ -178,6 +178,9 @@ fn build_battle(
             })
             .collect(),
         card_or_potion_effect_depth: 0,
+        death_save_use_count: 0,
+        death_save_relic_hp_restored: 0,
+        death_save_potion_hp_restored: 0,
     };
 
     let enemy_vec = enemy_handles.to_vec();

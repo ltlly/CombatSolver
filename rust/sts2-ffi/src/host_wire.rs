@@ -844,7 +844,11 @@ fn map_policy(
         potion_free_beam_width: p.potion_free_beam_width.map(|v| v as usize),
         potion_beam_width: p.potion_beam_width.map(|v| v as usize),
         max_turns: if req.live_state.room_type == "Boss" { 40 } else { 28 },
-        max_card_branches_per_node: p.max_card_branches_per_node as usize,
+        max_card_branches_per_node: if (32..64).contains(&p.max_card_branches_per_node) {
+            64
+        } else {
+            p.max_card_branches_per_node as usize
+        },
         max_pile_choice_branches_per_action: p.max_pile_choice_branches_per_action as usize,
         max_hand_choice_branches_per_action: p.max_hand_choice_branches_per_action as usize,
         ..Default::default()
@@ -1715,6 +1719,21 @@ pub fn solve_in_combat_host_v1_json(
         },
     };
 
+    let is_cancelled = cancel.load(Ordering::Relaxed) || sol.stats.termination == "Cancelled";
+    if !is_cancelled
+        && req.overall_timeout_milliseconds > 0
+        && (started.elapsed().as_secs_f64() * 1000.0) >= req.overall_timeout_milliseconds as f64
+    {
+        return timed_out_resp(
+            format!(
+                "The Rust combat kernel exceeded overallTimeoutMilliseconds ({} ms).",
+                req.overall_timeout_milliseconds
+            ),
+            dop_i32,
+            started.elapsed().as_secs_f64() * 1000.0,
+        );
+    }
+
     let trace_res = replay_solution_trace(
         &root_state,
         &sol,
@@ -1724,7 +1743,6 @@ pub fn solve_in_combat_host_v1_json(
         &content,
     );
     let elapsed_ms = started.elapsed().as_secs_f64() * 1000.0;
-    let is_cancelled = cancel.load(Ordering::Relaxed) || sol.stats.termination == "Cancelled";
 
     if is_cancelled {
         let best_so_far = match trace_res {
@@ -1896,10 +1914,370 @@ mod tests {
         assert_eq!(clamped.early_turn_exploration_budget_ms, 750);
         assert_eq!(clamped.novelty_budget.maximum_milliseconds, 750);
 
+        let tiny_req = sample_req(10_000, 1);
+        let tiny = map_policy(&tiny_req, &dto, 1).unwrap();
+        assert_eq!(tiny.time_budget_ms, 1);
+        assert_eq!(tiny.early_turn_exploration_budget_ms, 1);
+        assert_eq!(tiny.novelty_budget.maximum_milliseconds, 1);
+
         let unclamped_req = sample_req(10_000, 0);
         let unclamped = map_policy(&unclamped_req, &dto, 1).unwrap();
         assert_eq!(unclamped.time_budget_ms, 10_000);
         assert_eq!(unclamped.early_turn_exploration_budget_ms, 8_000);
         assert_eq!(unclamped.novelty_budget.maximum_milliseconds, 6_000);
+    }
+
+    #[test]
+    fn map_policy_normalizes_card_branches_potion_splits_and_four_act_boss() {
+        let mut dto = sample_policy_dto();
+        dto.use_beam_width_portfolio = true;
+        dto.potion_free_beam_width = None;
+        dto.potion_beam_width = None;
+
+        let mut req = sample_req(30_000, 0);
+        req.act_index = 3;
+        req.live_state.room_type = "Boss".to_owned();
+        req.is_non_final_act3_boss = Some(true);
+
+        for (configured, expected) in [(24, 24), (32, 64), (48, 64), (64, 64), (72, 72)] {
+            dto.max_card_branches_per_node = configured;
+            let mapped = map_policy(&req, &dto, 1).unwrap();
+            assert_eq!(mapped.max_card_branches_per_node, expected);
+            assert!(mapped.use_beam_width_portfolio);
+            assert_eq!(mapped.potion_free_beam_width, None);
+            assert_eq!(mapped.potion_beam_width, None);
+            assert!(mapped.is_non_final_act3_boss);
+            assert_eq!(mapped.max_turns, 40);
+        }
+
+        req.is_non_final_act3_boss = Some(false);
+        let mapped_final = map_policy(&req, &dto, 1).unwrap();
+        assert!(!mapped_final.is_non_final_act3_boss);
+    }
+
+    fn build_host_test_live_json(
+        deck_ids: &[sts2_types::CardId],
+        enemy_hp: i32,
+        potions: [Option<PotionId>; 3],
+        can_use_potions: bool,
+        act_index: i32,
+        room_type: sts2_types::RoomType,
+    ) -> LiveStateJson {
+        use sts2_kernel::snapshot::export_live_state;
+        use sts2_kernel::{
+            CardInst, CardTempFlags, CreatureInst, MonsterInst, OptCardHandle, OptI16,
+            PlayerCounters, PlayerInst, RootStaticContext, SemanticHistory,
+        };
+        use sts2_types::{
+            CardKeywords, CharacterId, GameMode, MonsterId, PlayerRngSet, PlayerTurnPhase, Rng,
+            RunRngSet,
+        };
+
+        let content = Sts2Content;
+        let run_rngs = RunRngSet::from_string_seed("HOST_WIRE_TEST");
+        let player_rngs = PlayerRngSet::from_seed(run_rngs.seed);
+        let pc = CreatureHandle(1);
+        let ec = CreatureHandle(2);
+        let mut cards = Vec::with_capacity(deck_ids.len());
+        let mut deck = Vec::with_capacity(deck_ids.len());
+        for (i, &cid) in deck_ids.iter().enumerate() {
+            let meta = content.card_meta(cid).unwrap();
+            let h = CardHandle((i + 1) as u32);
+            deck.push(h);
+            cards.push(CardInst {
+                handle: h,
+                id: cid,
+                upgrade_level: 0,
+                canonical_base_energy_cost: meta.canonical_energy_cost as i16,
+                base_energy_cost: meta.canonical_energy_cost as i16,
+                captured_energy_x_value: 0,
+                base_replay_count: 0,
+                floor_added_to_deck: OptI16::some(1),
+                deck_card_handle: OptCardHandle::some(h),
+                clone_of_handle: OptCardHandle::NONE,
+                temp_star_cost_override_this_turn: OptI16::NONE,
+                temp_cost_override_this_turn: OptI16::NONE,
+                temp_cost_override_this_turn_or_until_played: OptI16::NONE,
+                temp_cost_override_this_combat: OptI16::NONE,
+                local_keywords: meta.base_keywords,
+                keywords_added_from_outside: CardKeywords::empty(),
+                keywords_removed_from_outside: CardKeywords::empty(),
+                temp_flags: CardTempFlags::empty(),
+                affliction: None,
+                ext_index: None,
+                pile: PileType::Deck,
+                removed_from_state: false,
+                transform_into_after_play: None,
+            });
+        }
+        let mut state = BattleState {
+            static_ctx: Arc::new(RootStaticContext {
+                encounter_id: "FUZZY_WURM_CRAWLER_WEAK".to_owned(),
+                encounter_is_weak: true,
+                room_type,
+                encounter_slots: vec!["slot_0".to_owned()],
+                game_mode: GameMode::Standard,
+                ascension: 0,
+                character_id: CharacterId::Ironclad,
+                dominion_id: None,
+                act_index,
+                total_floor: 1,
+                ..Default::default()
+            }),
+            current_side: CombatSide::Player,
+            round_number: 1,
+            is_in_progress: false,
+            is_starting: false,
+            won: false,
+            is_player_extra_turn: false,
+            gold_was_stolen: false,
+            battleworn_dummy_timed_out: false,
+            end_player_turn_requested: false,
+            card_action_boundary_depth: 0,
+            next_creature_id: 2,
+            initial_encounter_monster_count: 1,
+            next_card_handle: (cards.len() + 1) as u32,
+            next_creature_handle: 3,
+            next_power_handle: 1,
+            next_attack_id: 1,
+            run_rngs,
+            player_rngs,
+            player: PlayerInst {
+                creature_handle: pc,
+                current_hp: 80,
+                max_hp: 80,
+                block: 0,
+                cumulative_hp_lost: 0,
+                gold: 0,
+                max_energy: 3,
+                base_orb_slot_count: 0,
+                is_active_for_hooks: true,
+                can_use_or_remove_potions: can_use_potions,
+                energy: 0,
+                stars: 0,
+                phase: PlayerTurnPhase::None,
+                turn_number: 1,
+                counters: PlayerCounters::default(),
+                hand: Vec::new(),
+                draw: Vec::new(),
+                discard: Vec::new(),
+                exhaust: Vec::new(),
+                play: Vec::new(),
+                deck,
+                potion_slots: smallvec::smallvec![potions[0], potions[1], potions[2]],
+                combat_generated_potion_mask: 0,
+                orb_capacity: 0,
+                orbs: Vec::new(),
+                arrows: Vec::new(),
+                relics: Vec::new(),
+                card_or_potion_effect_depth: 0,
+                death_save_use_count: 0,
+                death_save_relic_hp_restored: 0,
+                death_save_potion_hp_restored: 0,
+            },
+            cards,
+            card_extensions: Vec::new(),
+            creatures: vec![
+                CreatureInst {
+                    handle: pc,
+                    combat_id: Some(0),
+                    side: CombatSide::Player,
+                    slot_name: None,
+                    is_player: true,
+                    pet_owner_player_index: None,
+                    monster_id: None,
+                    current_hp: 80,
+                    max_hp: 80,
+                    block: 0,
+                    cumulative_hp_lost: 0,
+                    is_detached: false,
+                    monster: None,
+                    has_minion_power: false,
+                    powers: Vec::new(),
+                },
+                CreatureInst {
+                    handle: ec,
+                    combat_id: Some(1),
+                    side: CombatSide::Enemy,
+                    slot_name: Some(std::borrow::Cow::Borrowed("slot_0")),
+                    is_player: false,
+                    pet_owner_player_index: None,
+                    monster_id: Some(MonsterId::FuzzyWurmCrawler),
+                    current_hp: enemy_hp,
+                    max_hp: enemy_hp,
+                    block: 0,
+                    cumulative_hp_lost: 0,
+                    is_detached: false,
+                    monster: Some(Box::new(MonsterInst {
+                        monster_id: MonsterId::FuzzyWurmCrawler,
+                        rng: Rng::from_seed(77),
+                        is_performing_move: false,
+                        spawned_this_turn: false,
+                        current_state_id: std::borrow::Cow::Borrowed(""),
+                        next_move_id: None,
+                        next_move_can_transition_away: true,
+                        performed_first_move: false,
+                        state_log_ids: Vec::new(),
+                        transient_move_follow_up_state_id: None,
+                        setup_fields: Default::default(),
+                        private_fields: Default::default(),
+                    })),
+                    has_minion_power: false,
+                    powers: Vec::new(),
+                },
+            ],
+            power_extensions: Vec::new(),
+            ally_handles: vec![pc],
+            enemy_handles: vec![ec],
+            escaped_handles: smallvec::SmallVec::new(),
+            removed_handles: smallvec::SmallVec::new(),
+            spawned_enemy_handles: smallvec::smallvec![ec],
+            pet_handles: smallvec::SmallVec::new(),
+            attacking_creatures: smallvec::SmallVec::new(),
+            deferred_death_cleanup: smallvec::SmallVec::new(),
+            damage_history: Vec::new(),
+            semantic_history: SemanticHistory::default(),
+            pending: None,
+            vakuu_auto_select_depth: 0,
+            hook_cache: Default::default(),
+            deck_dirty: Default::default(),
+            relic_dirty_mask: Default::default(),
+            handle_layout: Default::default(),
+            card_meta_dirty: Default::default(),
+            extra_clutter_hint: Default::default(),
+            eot_card_cleanup_dirty: Default::default(),
+        };
+        CombatEngine::start_combat(&mut state, &content).unwrap();
+        export_live_state(&state).unwrap()
+    }
+
+    #[test]
+    fn host_v1_overall_timeout_returns_timed_out_and_potion_unsatisfied_returns_failed() {
+        use sts2_types::{CardId, RoomType};
+
+        let growth = serde_json::json!({
+            "handOfGreed": 0, "theHunt": 0, "feed": 0, "royalties": 0,
+            "alchemize": 0, "geneticAlgorithm": 0, "theScythe": 0,
+            "goopy": 0, "forbiddenGrimoire": 0, "madScience": 0, "showOff": 0,
+            "thirdParty": null
+        });
+
+        // 1. overallTimeoutMilliseconds = 1 on multi-turn search returns TimedOut + overall_timeout.
+        let timeout_deck = [
+            CardId::Armaments,
+            CardId::Bash,
+            CardId::StrikeIronclad,
+            CardId::StrikeIronclad,
+            CardId::DefendIronclad,
+            CardId::DefendIronclad,
+            CardId::Inflame,
+            CardId::Armaments,
+            CardId::StrikeIronclad,
+            CardId::DefendIronclad,
+            CardId::Bash,
+            CardId::StrikeIronclad,
+            CardId::DefendIronclad,
+            CardId::StrikeIronclad,
+            CardId::DefendIronclad,
+        ];
+        let timeout_live =
+            build_host_test_live_json(&timeout_deck, 9999, [None, None, None], true, 0, RoomType::Monster);
+        let timeout_req = serde_json::json!({
+            "abiVersion": 1,
+            "requestId": "v1-timeout-test",
+            "liveState": timeout_live,
+            "characterId": "IRONCLAD",
+            "ascension": 0,
+            "gameMode": "Standard",
+            "encounterIsWeak": true,
+            "initialEncounterMonsterCount": 1,
+            "totalFloor": 1,
+            "actIndex": 0,
+            "mapCol": 0,
+            "mapRow": 0,
+            "priorBattleHpLost": 0,
+            "searchBudgetMilliseconds": 10000,
+            "overallTimeoutMilliseconds": 1,
+            "maxDegreeOfParallelism": 1,
+            "policy": {
+                "potionPolicy": "Disabled",
+                "potionDirectives": [],
+                "predictPotionReward": false,
+                "relicStrategyEnabled": true,
+                "relicCounterRules": [],
+                "growthBudgets": growth,
+                "brightestFlameMaxHpLossLimit": null,
+                "ignoreLongTermRewards": false,
+                "actTransitionBossHpStrategy": "ProgressionFirst",
+                "finalBossHpStrategy": "ProgressionFirst",
+                "acceptableBattleHpLoss": 0,
+                "stopAtAcceptableBattleHpLoss": true,
+                "useBeamWidthPortfolio": true,
+                "useNoveltyPortfolio": false,
+                "useEarlyTurnExploration": false,
+                "beamWidth": 128,
+                "potionFreeBeamWidth": null,
+                "potionBeamWidth": null,
+                "maxExpandedNodes": 500000,
+                "maxCardBranchesPerNode": 64,
+                "maxPileChoiceBranchesPerAction": 18,
+                "maxHandChoiceBranchesPerAction": 24,
+                "softTimeBudgetMilliseconds": 10000,
+                "theftPolicy": "Ignore"
+            }
+        });
+        let timeout_bytes = serde_json::to_vec(&timeout_req).unwrap();
+        let cancel = AtomicBool::new(false);
+        let timeout_resp = solve_in_combat_host_v1_json(&timeout_bytes, &cancel, None);
+        assert_eq!(timeout_resp.outcome, "TimedOut");
+        assert_eq!(timeout_resp.failure_code.as_deref(), Some("overall_timeout"));
+        assert!(timeout_resp.field_path.is_none());
+        assert!(timeout_resp.result.is_none());
+        assert!(timeout_resp.best_so_far.is_none());
+
+        // 2. RequireAtLeastOne & Force with potions blocked both return Failed + hard_potion_policy_unsatisfied.
+        let potion_deck = [
+            CardId::Bash,
+            CardId::StrikeIronclad,
+            CardId::StrikeIronclad,
+            CardId::DefendIronclad,
+            CardId::DefendIronclad,
+        ];
+        let blocked_potion_live = build_host_test_live_json(
+            &potion_deck,
+            12,
+            [Some(PotionId::FirePotion), None, None],
+            false,
+            0,
+            RoomType::Monster,
+        );
+        for (potion_policy, directives) in [
+            ("RequireAtLeastOne", serde_json::json!([])),
+            (
+                "Smart",
+                serde_json::json!([{ "slot": 0, "potionId": "FIRE_POTION", "directive": "Force" }]),
+            ),
+        ] {
+            let mut req_val = timeout_req.clone();
+            req_val["requestId"] = serde_json::json!("v1-potion-unsat");
+            req_val["liveState"] = serde_json::to_value(&blocked_potion_live).unwrap();
+            req_val["overallTimeoutMilliseconds"] = serde_json::json!(5000);
+            req_val["policy"]["potionPolicy"] = serde_json::json!(potion_policy);
+            req_val["policy"]["potionDirectives"] = directives;
+            req_val["policy"]["beamWidth"] = serde_json::json!(16);
+            req_val["policy"]["maxExpandedNodes"] = serde_json::json!(500);
+            req_val["policy"]["softTimeBudgetMilliseconds"] = serde_json::json!(2000);
+
+            let bytes = serde_json::to_vec(&req_val).unwrap();
+            let resp = solve_in_combat_host_v1_json(&bytes, &cancel, None);
+            assert_eq!(resp.outcome, "Failed");
+            assert_eq!(
+                resp.failure_code.as_deref(),
+                Some("hard_potion_policy_unsatisfied")
+            );
+            assert_eq!(resp.field_path.as_deref(), Some("policy.potionPolicy"));
+            assert!(resp.result.is_none());
+            assert!(resp.best_so_far.is_none());
+        }
     }
 }

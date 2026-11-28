@@ -157,6 +157,9 @@ fn build_fool_battle(
         }],
         relics: Vec::new(),
         card_or_potion_effect_depth: 0,
+        death_save_use_count: 0,
+        death_save_relic_hp_restored: 0,
+        death_save_potion_hp_restored: 0,
     };
 
     let enemies_vec: Vec<CreatureHandle> = enemy_handles.iter().copied().collect();

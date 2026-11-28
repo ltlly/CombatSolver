@@ -1303,6 +1303,9 @@ pub fn import_live_state(
         arrows,
         relics,
         card_or_potion_effect_depth: 0,
+        death_save_use_count: 0,
+        death_save_relic_hp_restored: 0,
+        death_save_potion_hp_restored: 0,
     };
 
     let root_deck_prefix_len = cards.iter().take_while(|c| c.pile == PileType::Deck).count();

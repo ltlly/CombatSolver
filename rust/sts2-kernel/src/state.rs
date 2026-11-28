@@ -1323,6 +1323,9 @@ pub struct PlayerInst {
     pub arrows: Vec<ArrowSlotInst>,
     pub relics: Vec<RelicInst>,
     pub card_or_potion_effect_depth: i32,
+    pub death_save_use_count: u8,
+    pub death_save_relic_hp_restored: i32,
+    pub death_save_potion_hp_restored: i32,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]

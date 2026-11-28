@@ -668,6 +668,33 @@ pub fn build_card_rollout_profile(id: CardId, meta: &CardMeta) -> CardRolloutPro
     if matches!(id, CardId::Clash | CardId::GrandFinale | CardId::HighFive) {
         meta_flags |= mf::HAS_CUSTOM_PLAYABILITY;
     }
+    if matches!(
+        id,
+        CardId::Comet
+            | CardId::Deathbringer
+            | CardId::Defy
+            | CardId::FallingStar
+            | CardId::GammaBlast
+            | CardId::GoForTheEyes
+            | CardId::Haze
+            | CardId::HobblingShot
+            | CardId::KnowThyPlace
+            | CardId::LegSweep
+            | CardId::Malaise
+            | CardId::MeteorShower
+            | CardId::Nail
+            | CardId::Neutralize
+            | CardId::Null
+            | CardId::Putrefy
+            | CardId::Shockwave
+            | CardId::SuckerPunch
+            | CardId::Suppress
+            | CardId::TheEmpress
+            | CardId::Uppercut
+            | CardId::Vitriol
+    ) {
+        meta_flags |= mf::APPLIES_WEAK;
+    }
 
     CardRolloutProfile {
         base_damage,

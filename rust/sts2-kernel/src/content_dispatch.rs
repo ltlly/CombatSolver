@@ -119,6 +119,7 @@ pub mod rollout_meta_flags {
     pub const MAY_HEAL: u8 = 1 << 2;
     pub const GAINS_BLOCK: u8 = 1 << 3;
     pub const HAS_CUSTOM_PLAYABILITY: u8 = 1 << 4;
+    pub const APPLIES_WEAK: u8 = 1 << 5;
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

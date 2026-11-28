@@ -613,6 +613,9 @@ fn build_battle(character: CharacterId, hand_ids: &[CardId], enemy_hp: i32) -> (
         arrows,
         relics: Vec::new(),
         card_or_potion_effect_depth: 0,
+        death_save_use_count: 0,
+        death_save_relic_hp_restored: 0,
+        death_save_potion_hp_restored: 0,
     };
 
     let state = BattleState {

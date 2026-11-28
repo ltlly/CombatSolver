@@ -113,8 +113,14 @@ internal static class InCombatRustKernelPolicyMapper
             ?? new Dictionary<string, int>(StringComparer.Ordinal);
 
         SolverSearchProfile profile = searchPolicy.Profile;
-        int? potionFreeBeamWidth = profile == settingsSnapshot.Profile ? settingsData.SearchPotionFreeBeamWidth : null;
-        int? potionBeamWidth = profile == settingsSnapshot.Profile ? settingsData.SearchPotionBeamWidth : null;
+        // HotSearchCoordinator / HotBeamRetention never split beam width by legacy SearchPotion*BeamWidth
+        // fields (SolverSettings already folds any legacy custom values into Profile.BeamWidth); forwarding
+        // non-null splits causes Rust BeamRetentionPolicy to bypass 4-bucket MAP-Elites and Pareto.
+        int? potionFreeBeamWidth = null;
+        int? potionBeamWidth = null;
+        int maxCardBranchesPerNode = profile.MaxCardBranchesPerNode is >= 32 and < 64
+            ? 64
+            : profile.MaxCardBranchesPerNode;
 
         bool useBeamWidthPortfolio = searchPolicy.AdaptiveEscalationEnabled;
         SolverPotionPolicy effectivePotionPolicy = searchPolicy.TheftPolicy == SolverTheftPolicy.PreserveResources
@@ -144,7 +150,7 @@ internal static class InCombatRustKernelPolicyMapper
             PotionFreeBeamWidth: potionFreeBeamWidth,
             PotionBeamWidth: potionBeamWidth,
             MaxExpandedNodes: profile.MaxExpandedNodes,
-            MaxCardBranchesPerNode: profile.MaxCardBranchesPerNode,
+            MaxCardBranchesPerNode: maxCardBranchesPerNode,
             MaxPileChoiceBranchesPerAction: profile.MaxPileChoiceBranchesPerAction,
             MaxHandChoiceBranchesPerAction: profile.MaxHandChoiceBranchesPerAction,
             SoftTimeBudgetMilliseconds: searchBudgetMilliseconds,

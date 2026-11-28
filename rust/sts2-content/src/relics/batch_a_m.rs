@@ -3032,9 +3032,19 @@ pub(crate) fn dispatch_hook_at(
                 HookSlot::AfterPreventingDeath => {
                     if let HookArgs::Creature(target) = args {
                         set_bool_at(state, id, relic_idx, "LizardTail._wasUsed", true);
+                        let before_hp = state.creature(*target).map_or(0, |c| c.current_hp);
                         let max_hp = state.creature(*target).map_or(1, |c| c.max_hp);
                         let heal_amt = Dec::ONE.max(Dec::from_i32(max_hp).checked_mul(Dec::HALF)?);
                         creature::heal(state, content, *target, heal_amt)?;
+                        let after_hp = state.creature(*target).map_or(before_hp, |c| c.current_hp);
+                        if *target == state.player.creature_handle {
+                            state.player.death_save_use_count =
+                                state.player.death_save_use_count.saturating_add(1);
+                            state.player.death_save_relic_hp_restored = state
+                                .player
+                                .death_save_relic_hp_restored
+                                .saturating_add((after_hp - before_hp).max(0));
+                        }
                     }
                 }
                 _ => {}

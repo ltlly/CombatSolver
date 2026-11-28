@@ -1917,8 +1917,16 @@ pub fn dispatch_hook(
             HookSlot::AfterPreventingDeath => {
                 if let HookArgs::Creature(creature) = args {
                     if *creature == state.player.creature_handle {
+                        let before_hp = state.creature(*creature).map_or(0, |c| c.current_hp);
                         let _ =
                             potion_cmd::use_automatic(state, content, potion_idx, Some(*creature))?;
+                        let after_hp = state.creature(*creature).map_or(before_hp, |c| c.current_hp);
+                        state.player.death_save_use_count =
+                            state.player.death_save_use_count.saturating_add(1);
+                        state.player.death_save_potion_hp_restored = state
+                            .player
+                            .death_save_potion_hp_restored
+                            .saturating_add((after_hp - before_hp).max(0));
                     }
                 }
                 Ok(HookResult::default())
